@@ -1,0 +1,342 @@
+@import "tailwindcss";
+
+/* NS Perfume — white canvas, black chrome, gold topbar & accent */
+:root {
+  --color-canvas: #ffffff;
+  --color-paper: #ffffff;
+  --color-ink: #000000;
+  --color-brass: #a9873c;
+  --color-brass-deep: #a9873c;
+  --color-rosewood: #8b4a45;
+  --color-bordeaux: #8b4a45;
+  --color-taupe: #4a4a4a;
+  --color-hairline: #e8e0d0;
+  --color-muted: #f8f1e3;
+  --color-chrome: #000000;
+  --color-canvas-deep: #f8f1e3;
+  --color-hairline-dark: #333333;
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.14);
+  /* Announcement (~2.5rem) + sticky header (4.25rem) */
+  --chrome-height: 6.75rem;
+}
+
+@theme inline {
+  --color-canvas: var(--color-canvas);
+  --color-paper: var(--color-paper);
+  --color-ink: var(--color-ink);
+  --color-brass: var(--color-brass);
+  --color-brass-deep: var(--color-brass-deep);
+  --color-rosewood: var(--color-rosewood);
+  --color-bordeaux: var(--color-bordeaux);
+  --color-taupe: var(--color-taupe);
+  --color-hairline: var(--color-hairline);
+  --color-muted: var(--color-muted);
+  --color-chrome: var(--color-chrome);
+  --color-canvas-deep: var(--color-canvas-deep);
+  --color-hairline-dark: var(--color-hairline-dark);
+
+  --font-sans: var(--font-ubuntu);
+  --font-display: var(--font-ubuntu);
+  --font-mono: var(--font-ibm-plex-mono);
+  --font-serif: var(--font-eb-garamond);
+
+  --radius-xs: 2px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  --shadow-card: var(--shadow-card);
+  --shadow-modal: var(--shadow-modal);
+}
+
+@layer base {
+  ::selection {
+    background: #000000;
+    color: #ffffff;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #b0b0b0 transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: #b0b0b0;
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: #888888;
+  }
+
+  /* Dark page chrome keeps the dark scrollbar */
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: #555555 #1a1a1a;
+  }
+
+  html::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+
+  html::-webkit-scrollbar-thumb {
+    background: #555555;
+  }
+
+  /**
+   * Solid dark chrome. Semi-transparent “glass” over white reads as muddy grey
+   * (most pages pad content below the fixed header, so blur has nothing to sample).
+   * Opaque ink keeps type crisp on PDPs and still frames full-bleed heroes cleanly.
+   */
+  .nav-glass {
+    position: relative;
+    isolation: isolate;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: #0a0a0a;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      0 10px 28px rgba(0, 0, 0, 0.18);
+  }
+
+  .nav-glass-panel {
+    background: #0a0a0a;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Interactive controls: pointer by default sitewide */
+  button:not(:disabled),
+  [type="button"]:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  label[for],
+  select:not(:disabled),
+  a[href] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [type="button"]:disabled,
+  [type="submit"]:disabled,
+  [type="reset"]:disabled,
+  [aria-disabled="true"],
+  select:disabled {
+    cursor: not-allowed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
+    font-weight: 500;
+    text-wrap: balance;
+  }
+
+  p,
+  li,
+  label,
+  input,
+  textarea,
+  select {
+    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: #000000;
+    color: #ffffff;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
+  }
+
+  .font-sans {
+    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
+  }
+
+  .font-serif {
+    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+  }
+
+  .font-mono {
+    font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  }
+
+  .text-display-xl {
+    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
+    font-size: clamp(2.75rem, 6vw, 4rem);
+    line-height: 1.08;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .text-display-lg {
+    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
+    font-size: clamp(2.125rem, 3.8vw, 2.875rem);
+    line-height: 1.12;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
+
+  .text-display-md {
+    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
+    font-size: clamp(1.625rem, 2.6vw, 2.125rem);
+    line-height: 1.2;
+    font-weight: 500;
+  }
+
+  .text-heading-sm {
+    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 500;
+  }
+
+  .text-body-lg {
+    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+    font-size: 1.1875rem;
+    line-height: 1.65;
+    font-weight: 500;
+  }
+
+  .text-body {
+    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    font-weight: 500;
+  }
+
+  .text-caption {
+    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+
+  .text-eyebrow {
+    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .text-price {
+    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
+    font-size: 1.125rem;
+    line-height: 1.3;
+    font-weight: 500;
+  }
+
+  /* Light panels (currency menu, select popovers) */
+  .scrollbar-panel {
+    scrollbar-width: thin;
+    scrollbar-color: #c8c0b0 transparent;
+  }
+
+  .scrollbar-panel::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-panel::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-panel::-webkit-scrollbar-thumb {
+    background: #c8c0b0;
+    border-radius: 999px;
+  }
+
+  .scrollbar-panel::-webkit-scrollbar-thumb:hover {
+    background: #a9873c;
+  }
+
+  .container-ns {
+    width: 100%;
+    max-width: 1280px;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 2rem);
+  }
+
+  .measure {
+    max-width: 38rem;
+  }
+
+  .measure-wide {
+    max-width: 42rem;
+  }
+
+  .section-y {
+    padding-block: clamp(3.5rem, 8vw, 6rem);
+  }
+
+  /**
+   * Full-viewport homepage bands.
+   */
+  .section-hero {
+    box-sizing: border-box;
+    /* Full viewport under fixed header chrome */
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .section-viewport {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: clamp(2rem, 4vw, 3.5rem);
+  }
+
+  @media (min-width: 768px) {
+    .section-viewport {
+      min-height: calc(100dvh - var(--chrome-height));
+    }
+  }
+
+  .fade-up {
+    animation: fade-up 200ms ease-out both;
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

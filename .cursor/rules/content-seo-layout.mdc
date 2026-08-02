@@ -1,0 +1,66 @@
+---
+description: Content, SEO, and layout rules for NS Perfume storefront
+alwaysApply: true
+---
+
+# Content & Copywriting Rules
+
+## Sentence mechanics
+- Never use em dashes (—) or en dashes (–) as sentence connectors. Use a period, a comma, or "and" / "but" instead.
+  (Numeric ranges like `1 to 5` or `30-50ml` product sizes are fine; do not use en dash as a clause joiner.)
+- Never use semicolons to join two independent clauses. Split into two sentences.
+- Vary sentence length naturally. Do not write in uniform short punchy fragments back to back. That rhythm reads as AI-generated copy, not human writing.
+- No rhetorical questions as openers ("Ever wondered what makes a scent unforgettable?").
+- No exclamation marks in product or marketing copy.
+
+## Banned words and phrases
+Do not use: elevate, unleash, unlock, seamless, journey, embark, indulge, discover the world of, in today's world, when it comes to, it's important to note, look no further, whether you're... or..., isn't just [X], it's [Y], the best of both worlds, take it to the next level, redefine, curated for you, timeless elegance, unparalleled, exquisite craftsmanship (unless describing an actual documented process).
+
+## Structural tells to avoid
+- No "But that's not all" / "And here's the best part" style transitions.
+- No rule-of-three adjective stacking ("bold, timeless, unforgettable"). One precise word beats three vague ones.
+- No summary-restates-the-intro closing paragraphs.
+- Avoid bullet lists as a crutch for product descriptions. Write in prose; use lists only for genuinely list-shaped content (notes, sizes, ingredients).
+
+## Voice
+- Write like a knowledgeable person describing something they actually know, not a salesperson pitching it. The reader should never feel sold to.
+- Use concrete, sensory detail instead of adjectives. Not "a captivating and mesmerizing scent." Describe what it smells like and when it shows up (opens sharp with bergamot, settles warmer after an hour).
+- Every claim should sound specific and checkable. Real notes, real numbers, real occasions. Avoid vague superlatives like "best," "finest," "world-class."
+- Address a real moment or use case directly rather than describing the brand's feelings about itself. Write about the person wearing it, not about how proud the brand is of the product.
+
+## Buyer psychology (without manipulation)
+- Lead with the specific outcome or moment (a scent for late dinners, not "an olfactory experience").
+- Use honest specificity as the trust signal, not urgency tactics. Real note breakdowns and real performance data (sillage, longevity) do more conversion work than "limited time only."
+- Scarcity and urgency language (low stock, limited edition) only appears when it is actually true. Never fabricate urgency.
+- CTAs are plain and direct: "Shop Amber Noir," "Add to Bag." No "Don't miss out," no forced exclamation.
+- Social proof (reviews, press) is placed near the decision point (add-to-cart area, not only buried at the page bottom).
+
+# SEO Rules
+
+- Every page has exactly one H1 that reflects real search intent (product name, collection name, or the actual question the page answers).
+- Primary keyword appears naturally in the H1, one early paragraph, and one image alt tag. Never stuffed or repeated mechanically.
+- Meta title under 60 characters, meta description under 155 characters, both written as sentences a human would click, not keyword strings.
+- Prefer a hyphen `-` or plain words in titles, not en dashes.
+- Paragraphs stay short: 2 to 4 sentences. Long unbroken blocks hurt both readability and scroll-depth signals.
+- Every product page includes at least 100 to 150 words of genuine descriptive copy beneath the fold, not just a bullet spec list, for indexing depth.
+- Every blog/journal article links internally to at least one relevant product or collection using descriptive anchor text, never "click here."
+- Image alt text describes what is actually in the image, specifically, not a keyword list.
+
+# Layout / Viewport Rules
+
+## Full-viewport sections
+- Each major homepage section is designed to completely fill one viewport on first load, on desktop. The user should never have to scroll within a section to see the rest of that section. Once a section is fully visible, the next scroll action reveals the next section, not more of the current one.
+- Hero section height = `100dvh` minus the announcement bar and header height when those are sticky/fixed above it. Use `dvh`, not `vh`, so mobile browser chrome does not jump or clip content.
+- If content for a section does not fit in one viewport at a given breakpoint, split it into two full-viewport sections rather than allowing internal scroll or overflow.
+- Vertically center content within each section by default so it reads as a complete "slide," not a top-anchored block with empty space at the bottom.
+- Prefer the shared utilities `.section-viewport` (desktop+) and `.section-hero` (all breakpoints) in `globals.css`.
+
+## Responsive handling
+- On desktop and tablet, enforce the one-section-per-viewport rule strictly for major homepage bands.
+- On mobile, prioritize full-viewport for the hero. Below the hero, sections may exceed one screen when content requires it (for example a product grid), but keep each section tight and avoid empty space that forces extra scrolling.
+- Always account for the mobile browser collapsing address bar. Prefer `100dvh` / `100svh` over fixed `100vh`.
+- Test full-viewport sections at 375, 768, 1024, and 1440 before calling them done. A section that fits at 1440 but clips at 1024 fails this rule.
+
+## What breaks the rule
+- A hero with headline, subhead, image, and CTA that requires scrolling to see the CTA. Fix by tightening copy or spacing, not by letting it overflow.
+- A features section with more items than fit in one screen. Fix by reducing items per section or splitting into two sections, not by shrinking type until illegible.
