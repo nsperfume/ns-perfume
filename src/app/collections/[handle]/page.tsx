@@ -59,20 +59,21 @@ export default async function CollectionPage({ params }: Props) {
         objectPosition="center 48%"
       />
       <section className="border-b border-hairline bg-paper">
-        <div className="container-ns flex flex-wrap items-center gap-x-4 gap-y-2 py-3 font-serif text-[15px] font-medium text-ink/70">
-          <Link href="/collections" className="cursor-pointer hover:text-ink">
-            All Collections
+        <div className="container-ns flex flex-wrap items-center gap-x-4 gap-y-2 py-3.5 font-display text-[11px] uppercase tracking-[0.12em] text-taupe">
+          <Link href="/collections" className="cursor-pointer transition-colors hover:text-ink">
+            All collections
           </Link>
-          <span aria-hidden>·</span>
-          <Link href="/products" className="cursor-pointer hover:text-ink">
-            All Products
-          </Link>
-          <span aria-hidden className="hidden sm:inline">
-            ·
+          <span aria-hidden className="text-hairline">
+            /
           </span>
-          <span className="w-full sm:w-auto">
-            {products.length} product{products.length === 1 ? "" : "s"} in this
-            collection
+          <Link href="/products" className="cursor-pointer transition-colors hover:text-ink">
+            All products
+          </Link>
+          <span aria-hidden className="hidden text-hairline sm:inline">
+            /
+          </span>
+          <span className="w-full font-serif text-[0.95rem] normal-case tracking-normal text-ink/70 sm:w-auto">
+            {products.length} product{products.length === 1 ? "" : "s"} in this collection
           </span>
         </div>
       </section>

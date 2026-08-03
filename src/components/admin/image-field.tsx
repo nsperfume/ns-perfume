@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type DragEvent } from "react";
 import { cn } from "@/lib/cn";
-
-type Mode = "upload" | "link";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   label: string;
@@ -11,11 +10,21 @@ type Props = {
   onChange: (url: string) => void;
   hint?: string;
   className?: string;
+  /** compact for tight grids / galleries */
+  density?: "default" | "compact";
+  /** Preview frame shape */
+  aspect?: "square" | "portrait" | "wide";
+  /**
+   * When set (e.g. gallery slots), shows a top-right × that removes the slot.
+   * Differs from clearing the image while keeping the control.
+   */
+  onRemoveSlot?: () => void;
+  /** Open URL field by default when empty */
+  defaultUrlOpen?: boolean;
 };
 
 /**
- * Admin media control: upload a file (Cloudinary) or paste an image URL.
- * Live preview updates for both paths.
+ * Admin media control: preview + drop zone, clear ×, and visible URL field.
  */
 export function AdminImageField({
   label,
@@ -23,15 +32,20 @@ export function AdminImageField({
   onChange,
   hint,
   className,
+  density = "default",
+  aspect = "square",
+  onRemoveSlot,
+  defaultUrlOpen = false,
 }: Props) {
   const inputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [mode, setMode] = useState<Mode>(value ? "link" : "upload");
+  const [urlOpen, setUrlOpen] = useState(defaultUrlOpen);
   const [urlDraft, setUrlDraft] = useState(value);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [broken, setBroken] = useState(false);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     setUrlDraft(value);
@@ -42,6 +56,15 @@ export function AdminImageField({
   }, [value]);
 
   const previewSrc = localPreview || value;
+  const hasImage = Boolean(previewSrc) && !broken;
+  const compact = density === "compact";
+
+  const aspectClass =
+    aspect === "wide"
+      ? "aspect-[16/10]"
+      : aspect === "portrait"
+        ? "aspect-[4/5]"
+        : "aspect-square";
 
   async function uploadFile(file: File) {
     setError("");
@@ -52,136 +75,191 @@ export function AdminImageField({
     setLocalPreview(objectUrl);
 
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body,
+      });
       const json = await res.json();
       if (!json.ok) {
-        setError(
-          json.error ||
-            "Upload failed. You can still paste an image URL instead.",
-        );
+        setError(json.error || "Upload failed");
         setLocalPreview(null);
         URL.revokeObjectURL(objectUrl);
         return;
       }
       onChange(json.data.url as string);
       setUrlDraft(json.data.url as string);
-      setMode("link");
-    } catch {
-      setError("Upload network error. Paste a public image URL if needed.");
+      setUrlOpen(false);
+      URL.revokeObjectURL(objectUrl);
       setLocalPreview(null);
+    } catch {
+      setError("Network error while uploading");
+      setLocalPreview(null);
+      URL.revokeObjectURL(objectUrl);
     } finally {
       setUploading(false);
-      URL.revokeObjectURL(objectUrl);
       if (fileRef.current) fileRef.current.value = "";
     }
   }
 
   function applyUrl() {
     const next = urlDraft.trim();
-    setError("");
     setBroken(false);
-    setLocalPreview(null);
+    setError("");
     onChange(next);
+    if (next) setUrlOpen(false);
   }
 
   function clearImage() {
-    setError("");
-    setBroken(false);
     setLocalPreview(null);
     setUrlDraft("");
+    setBroken(false);
+    setError("");
     onChange("");
-    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function handleRemoveClick() {
+    if (onRemoveSlot) {
+      onRemoveSlot();
+      return;
+    }
+    clearImage();
+  }
+
+  function onDrop(e: DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      void uploadFile(file);
+    } else {
+      setError("Drop an image file (JPG, PNG, or WebP)");
+    }
   }
 
   return (
-    <div
-      className={cn(
-        "rounded-xl border border-[#e1e3e5] bg-[#fafafa] p-4",
-        className,
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-[#202223]">{label}</p>
+    <div className={cn("min-w-0", className)}>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p
+            className={cn(
+              "font-display font-semibold text-[var(--admin-ink)]",
+              compact ? "text-[13px]" : "text-sm",
+            )}
+          >
+            {label}
+          </p>
           {hint ? (
-            <p className="mt-0.5 text-xs text-[#6d7175]">{hint}</p>
+            <p className="mt-0.5 text-[13px] leading-snug text-[var(--admin-muted)]">
+              {hint}
+            </p>
           ) : null}
         </div>
-        {previewSrc ? (
+      </div>
+
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-lg border bg-[var(--admin-soft-2)] transition-colors",
+          dragging
+            ? "border-brass bg-brass/5"
+            : "border-[var(--admin-line)]",
+          hasImage
+            ? "border-solid"
+            : "border-dashed border-[var(--admin-input-border)]",
+        )}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setDragging(false);
+        }}
+        onDrop={onDrop}
+      >
+        {/* Always show remove × when we have content or a removable slot */}
+        {hasImage || onRemoveSlot ? (
           <button
             type="button"
-            onClick={clearImage}
-            className="shrink-0 text-xs font-medium text-[#8B4A45] hover:underline"
+            onClick={handleRemoveClick}
+            aria-label={onRemoveSlot ? "Remove image slot" : "Clear image"}
+            title={onRemoveSlot ? "Remove" : "Clear image"}
+            className="absolute right-2 top-2 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[var(--admin-line)] bg-[var(--admin-paper)] text-base leading-none text-[var(--admin-ink)] shadow-sm transition-colors hover:border-rosewood hover:bg-rosewood hover:text-white"
           >
-            Remove
+            ×
           </button>
         ) : null}
-      </div>
 
-      {/* Preview */}
-      <div className="mt-3 flex aspect-square w-full max-w-[220px] items-center justify-center overflow-hidden rounded-lg border border-dashed border-[#c9cccf] bg-white">
-        {previewSrc && !broken ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={previewSrc}
-            alt={`${label} preview`}
-            className="h-full w-full object-contain p-3"
-            onError={() => setBroken(true)}
-            onLoad={() => setBroken(false)}
-          />
+        {hasImage ? (
+          <div className={cn("relative bg-[var(--admin-soft)]", aspectClass)}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewSrc}
+              alt=""
+              className="h-full w-full object-contain p-2"
+              onError={() => setBroken(true)}
+              onLoad={() => setBroken(false)}
+            />
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/60 to-transparent px-3 pb-3 pt-10">
+              <label
+                htmlFor={inputId}
+                className={cn(
+                  "cursor-pointer rounded-md bg-white px-3 py-1.5 font-display text-xs font-semibold uppercase tracking-wide text-ink shadow-sm transition-opacity hover:bg-white",
+                  uploading && "pointer-events-none opacity-60",
+                )}
+              >
+                {uploading ? "Uploading…" : "Replace"}
+              </label>
+              <button
+                type="button"
+                onClick={() => setUrlOpen((v) => !v)}
+                className="cursor-pointer rounded-md border border-white/50 bg-black/40 px-3 py-1.5 font-display text-xs font-semibold uppercase tracking-wide text-white backdrop-blur-sm transition-colors hover:bg-black/55"
+              >
+                URL
+              </button>
+            </div>
+            <input
+              id={inputId}
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              disabled={uploading}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void uploadFile(f);
+              }}
+            />
+          </div>
         ) : (
-          <p className="px-4 text-center text-xs text-[#6d7175]">
-            {broken
-              ? "Could not load this image. Check the URL."
-              : "No image yet"}
-          </p>
-        )}
-      </div>
-
-      {/* Mode switch */}
-      <div className="mt-3 inline-flex rounded-lg border border-[#c9cccf] bg-white p-0.5 text-xs font-medium">
-        <button
-          type="button"
-          onClick={() => setMode("upload")}
-          className={cn(
-            "rounded-md px-3 py-1.5 transition-colors",
-            mode === "upload"
-              ? "bg-[#1a1a1a] text-white"
-              : "text-[#4a4a4a] hover:bg-[#f1f2f3]",
-          )}
-        >
-          Upload file
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("link")}
-          className={cn(
-            "rounded-md px-3 py-1.5 transition-colors",
-            mode === "link"
-              ? "bg-[#1a1a1a] text-white"
-              : "text-[#4a4a4a] hover:bg-[#f1f2f3]",
-          )}
-        >
-          Image link
-        </button>
-      </div>
-
-      {mode === "upload" ? (
-        <div className="mt-3">
           <label
             htmlFor={inputId}
             className={cn(
-              "flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#c9cccf] bg-white px-4 py-6 text-center transition-colors hover:border-[#A9873C] hover:bg-[#fffdf8]",
+              "flex w-full cursor-pointer flex-col items-center justify-center gap-2 px-4 text-center transition-colors hover:bg-[var(--admin-soft)]",
+              aspectClass,
+              compact ? "min-h-[8rem]" : "min-h-[10rem]",
               uploading && "pointer-events-none opacity-60",
             )}
           >
-            <span className="text-sm font-medium text-[#202223]">
-              {uploading ? "Uploading…" : "Choose image"}
+            <span
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-full border border-[var(--admin-line)] bg-[var(--admin-paper)] text-xl leading-none text-[var(--admin-muted)]",
+                compact && "h-9 w-9 text-lg",
+              )}
+              aria-hidden
+            >
+              +
             </span>
-            <span className="mt-1 text-xs text-[#6d7175]">
-              JPG, PNG, WebP · sent to Cloudinary when configured
+            <span className="font-display text-[15px] font-medium text-[var(--admin-ink)]">
+              {uploading ? "Uploading…" : "Drop image or click"}
+            </span>
+            <span className="text-[13px] text-[var(--admin-muted)]">
+              JPG, PNG, WebP
             </span>
             <input
               id={inputId}
@@ -196,72 +274,70 @@ export function AdminImageField({
               }}
             />
           </label>
-          <p className="mt-2 text-[11px] text-[#6d7175]">
-            Prefer a URL only? Switch to{" "}
-            <button
-              type="button"
-              className="font-medium text-[#005bd3] underline-offset-2 hover:underline"
-              onClick={() => setMode("link")}
-            >
-              Image link
-            </button>
-            .
-          </p>
-        </div>
-      ) : (
-        <div className="mt-3 space-y-2">
-          <label className="block text-xs font-medium text-[#303030]">
-            Image URL
+        )}
+      </div>
+
+      {/* URL row — always available and styled for contrast */}
+      <div className="mt-3 rounded-md border border-[var(--admin-line)] bg-[var(--admin-paper)] p-2.5">
+        {!urlOpen && !hasImage ? (
+          <button
+            type="button"
+            onClick={() => setUrlOpen(true)}
+            className="w-full cursor-pointer py-1 text-left font-display text-sm font-medium text-[var(--admin-ink)] underline-offset-2 hover:underline"
+          >
+            Or paste an image URL
+          </button>
+        ) : null}
+        {urlOpen || hasImage ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
               type="url"
               inputMode="url"
-              placeholder="https://… or /products/your-file.webp"
-              className="mt-1 w-full rounded-lg border border-[#c9cccf] bg-white px-3 py-2 text-sm outline-none focus:border-[#A9873C]"
+              placeholder="https://… or /products/photo.webp"
               value={urlDraft}
               onChange={(e) => {
                 setUrlDraft(e.target.value);
                 setBroken(false);
               }}
-              onBlur={applyUrl}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
                   applyUrl();
                 }
               }}
+              className="min-h-11 min-w-0 flex-1 rounded-md border border-[var(--admin-input-border)] bg-[var(--admin-soft-2)] px-3 py-2.5 text-[15px] text-[var(--admin-ink)] outline-none placeholder:text-[var(--admin-faint)] focus:border-brass focus:ring-2 focus:ring-brass/20"
             />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={applyUrl}
-              className="rounded-lg bg-[#1a1a1a] px-3 py-1.5 text-xs font-medium text-white"
-            >
-              Apply & preview
-            </button>
-            {urlDraft.trim() && urlDraft !== value ? (
-              <span className="self-center text-[11px] text-[#6d7175]">
-                Unsaved draft — click Apply
-              </span>
-            ) : null}
+            <div className="flex shrink-0 gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={applyUrl}
+                className="!h-11 !min-h-11 !w-auto !px-4 text-sm"
+              >
+                Apply URL
+              </Button>
+              {!hasImage ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUrlOpen(false);
+                    setUrlDraft(value);
+                  }}
+                  className="cursor-pointer px-2 font-display text-sm text-[var(--admin-muted)] hover:text-[var(--admin-ink)]"
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
           </div>
-          <p className="text-[11px] text-[#6d7175]">
-            Paste a full CDN URL, Unsplash link, or a path under{" "}
-            <code className="rounded bg-white px-1">/public</code> (e.g.{" "}
-            <code className="rounded bg-white px-1">/products/amber.webp</code>
-            ).
-          </p>
-        </div>
-      )}
+        ) : null}
+      </div>
 
-      {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
-      {uploading ? (
-        <p className="mt-2 text-xs text-[#6d7175]">Uploading to Cloudinary…</p>
+      {error ? (
+        <p className="mt-2 text-sm font-medium text-rosewood">{error}</p>
       ) : null}
-      {value && !broken ? (
-        <p className="mt-2 truncate font-mono text-[10px] text-[#6d7175]" title={value}>
-          {value}
-        </p>
+      {broken && value ? (
+        <p className="mt-2 text-sm text-rosewood">Could not load this image</p>
       ) : null}
     </div>
   );

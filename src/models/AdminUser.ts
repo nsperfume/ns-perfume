@@ -5,7 +5,12 @@ const AdminUserSchema = new Schema(
     email: { type: String, required: true, unique: true },
     name: { type: String, default: "Admin" },
     passwordHash: { type: String, required: true },
-    role: { type: String, enum: ["owner", "staff"], default: "owner" },
+    /** super_admin: Asim / owner. admin: limited staff. */
+    role: {
+      type: String,
+      enum: ["super_admin", "admin", "owner", "staff"],
+      default: "admin",
+    },
   },
   { timestamps: true },
 );

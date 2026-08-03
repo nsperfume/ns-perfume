@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminPageHeader, AdminStatusBadge } from "@/components/admin/ui";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type R = {
   _id: string;
@@ -16,10 +19,23 @@ type R = {
   verified?: boolean;
 };
 
+type AdminUser = {
+  email?: string;
+  name?: string;
+  role?: string;
+  isSuperAdmin?: boolean;
+};
+
 export default function AdminReviewsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ email?: string; name?: string } | null>(null);
+  const [user, setUser] = useState<AdminUser | null>(null);
   const [items, setItems] = useState<R[]>([]);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const canDelete = Boolean(
+    user?.isSuperAdmin || user?.role === "super_admin",
+  );
 
   function load() {
     fetch("/api/reviews?all=1")
@@ -48,77 +64,117 @@ export default function AdminReviewsPage() {
     load();
   }
 
-  async function remove(id: string) {
-    if (!confirm("Delete review?")) return;
-    await fetch(`/api/reviews/${id}`, { method: "DELETE" });
-    load();
+  async function confirmDelete() {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await fetch(`/api/reviews/${deleteId}`, { method: "DELETE" });
+      setDeleteId(null);
+      load();
+    } finally {
+      setDeleting(false);
+    }
   }
+
+  const pending = items.find((r) => r._id === deleteId);
 
   return (
     <AdminShell user={user}>
-      <h1 className="mb-2 text-2xl font-semibold tracking-tight">
-        Product reviews
-      </h1>
-      <p className="mb-6 text-sm text-[#6d7175]">
-        Reviews attached to products (PDP). Separate from site testimonials.
-      </p>
+      <AdminPageHeader
+        title="Product reviews"
+        description="Publish or hide reviews on product pages."
+      />
+
       <div className="space-y-3">
         {items.map((r) => (
           <div
             key={r._id}
-            className="rounded-xl border border-[#e1e3e5] bg-white p-4"
+            className="rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] p-5"
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-medium">
-                  {r.author}
-                  {r.city ? ` · ${r.city}` : ""} · {r.rating}/5
-                </p>
-                <p className="text-xs text-[#6d7175]">
-                  {r.productHandle} · {r.status}
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold text-[var(--admin-ink)]">
+                    {r.author}
+                    {r.city ? (
+                      <span className="font-normal text-[var(--admin-muted)]">
+                        {" "}
+                        · {r.city}
+                      </span>
+                    ) : null}
+                  </p>
+                  <span className="font-mono text-xs tabular-nums text-[var(--admin-muted)]">
+                    {r.rating}/5
+                  </span>
+                  <AdminStatusBadge status={r.status} />
+                </div>
+                <p className="mt-1 font-mono text-xs text-[var(--admin-faint)]">
+                  {r.productHandle}
                   {r.verified ? " · verified" : ""}
                 </p>
                 {r.title ? (
-                  <p className="mt-2 text-sm font-medium">{r.title}</p>
+                  <p className="mt-3 text-sm font-semibold text-[var(--admin-ink)]">
+                    {r.title}
+                  </p>
                 ) : null}
-                <p className="mt-1 text-sm text-[#4a4a4a]">{r.body}</p>
+                <p className="mt-1 text-sm leading-relaxed text-[var(--admin-muted)]">
+                  {r.body}
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {r.status !== "published" ? (
-                  <button
-                    type="button"
-                    className="rounded bg-[#1a1a1a] px-2 py-1 text-xs text-white"
+                  <Button
+                    className="!h-10 !min-h-10 !w-auto !px-4"
                     onClick={() => setStatus(r._id, "published")}
                   >
                     Publish
-                  </button>
+                  </Button>
                 ) : null}
                 {r.status !== "hidden" ? (
-                  <button
-                    type="button"
-                    className="rounded border px-2 py-1 text-xs"
+                  <Button
+                    variant="secondary"
+                    className="!h-10 !min-h-10 !w-auto !px-4"
                     onClick={() => setStatus(r._id, "hidden")}
                   >
                     Hide
-                  </button>
+                  </Button>
                 ) : null}
-                <button
-                  type="button"
-                  className="rounded border border-red-200 px-2 py-1 text-xs text-red-700"
-                  onClick={() => remove(r._id)}
-                >
-                  Delete
-                </button>
+                {canDelete ? (
+                  <Button
+                    variant="danger"
+                    className="!h-10 !min-h-10 !w-auto !px-4"
+                    onClick={() => setDeleteId(r._id)}
+                  >
+                    Delete
+                  </Button>
+                ) : null}
               </div>
             </div>
           </div>
         ))}
         {items.length === 0 ? (
-          <p className="text-sm text-[#6d7175]">
-            No reviews yet. Seed the catalog to load sample product reviews.
+          <p className="rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] px-5 py-12 text-center text-sm text-[var(--admin-muted)]">
+            No reviews yet.
           </p>
         ) : null}
       </div>
+
+      <ConfirmDialog
+        open={Boolean(deleteId)}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setDeleteId(null);
+        }}
+        title="Delete this review?"
+        description={
+          pending
+            ? `Review from ${pending.author} on ${pending.productHandle} will be permanently removed.`
+            : "This review will be permanently removed."
+        }
+        confirmLabel="Delete review"
+        cancelLabel="Keep review"
+        loading={deleting}
+        onConfirm={confirmDelete}
+      />
     </AdminShell>
   );
 }

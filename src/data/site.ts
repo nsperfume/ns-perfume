@@ -8,6 +8,15 @@ export const siteConfig = {
     "NS Perfume is a fragrance house with honest scent pyramids, clear sillage ratings, and prices that convert into the currency you choose.",
   email: "care@nsperfume.com",
   phone: "+92 300 0000000",
+  /** Shown at checkout for bank deposit / transfer payment. */
+  bankTransfer: {
+    bankName: "Habib Bank Limited (HBL)",
+    accountTitle: "NS Perfume",
+    accountNumber: "1234-5678901234",
+    iban: "PK00HABB0000123456789012",
+    branch: "Main Branch, Lahore",
+    note: "Use your order number as the transfer reference. Email proof to care@nsperfume.com if requested.",
+  },
 } as const;
 
 export const navLinks = [

@@ -8,7 +8,13 @@ import { ProductTrustProcess } from "@/components/product/trust-process";
 import { ProductReviewsSection } from "@/components/product/reviews-section";
 import { RecentlyViewed } from "@/components/product/recently-viewed";
 import { ProductCard } from "@/components/commerce/product-card";
+import { ScentPyramid } from "@/components/commerce/scent-pyramid";
+import { PerformanceMeter } from "@/components/commerce/performance-meter";
 import { JsonLd } from "@/components/seo/json-ld";
+import {
+  StoreBreadcrumb,
+  StoreSectionHeader,
+} from "@/components/layout/store-section";
 import {
   getProductReviews,
   getStoreProduct,
@@ -39,7 +45,12 @@ export default async function ProductPage({ params }: Props) {
   const all = await getStoreProducts();
   const related = product.relatedHandles
     .map((h) => all.find((p) => p.handle === h))
-    .filter((p): p is StoreProduct => Boolean(p));
+    .filter((p): p is StoreProduct => Boolean(p))
+    .slice(0, 4);
+  const fallbackRelated =
+    related.length > 0
+      ? related
+      : all.filter((p) => p.handle !== product.handle).slice(0, 4);
   const productReviews = await getProductReviews(product.handle);
   const price = product.prices[0]?.price ?? 0;
 
@@ -77,8 +88,8 @@ export default async function ProductPage({ params }: Props) {
       {
         "@type": "ListItem",
         position: 2,
-        name: product.family,
-        item: `/collections/${product.family}`,
+        name: "Products",
+        item: "/products",
       },
       {
         "@type": "ListItem",
@@ -92,66 +103,176 @@ export default async function ProductPage({ params }: Props) {
   return (
     <>
       <JsonLd data={[productLd, breadcrumbLd]} />
-      <div className="container-ns py-8 md:py-12">
-        <nav className="mb-8 text-caption text-taupe" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-brass">
-            Home
-          </Link>
-          <span className="mx-2">/</span>
-          <Link
-            href={`/collections/${product.family}`}
-            className="capitalize hover:text-brass"
-          >
-            {product.family}
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-ink">{product.name}</span>
-        </nav>
 
-        <div className="grid gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-16">
-          <ProductGallery images={product.gallery} name={product.name} />
-          <ProductPurchasePanel product={product} />
+      {/* Hero: gallery + buy box */}
+      <section className="border-b border-hairline bg-canvas">
+        <div className="container-ns py-8 md:py-10 lg:py-12">
+          <StoreBreadcrumb
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Shop", href: "/products" },
+              {
+                label: product.family,
+                href: `/collections/${product.family}`,
+              },
+              { label: product.name },
+            ]}
+          />
+
+          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12 xl:gap-16">
+            <ProductGallery images={product.gallery} name={product.name} />
+            <ProductPurchasePanel product={product} />
+          </div>
         </div>
+      </section>
 
-        <section className="border-t border-hairline section-y">
+      {/* Quick note strip */}
+      <section className="border-b border-hairline bg-paper">
+        <div className="container-ns py-10 md:py-12">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end lg:gap-14">
+            <div>
+              <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+                Composition
+              </p>
+              <h2 className="text-display-md text-balance">
+                Notes on {product.name}
+              </h2>
+              <p className="mt-3 max-w-md font-serif text-[1.05rem] leading-relaxed text-taupe">
+                How this bottle opens, develops, and finishes. Match it to heat,
+                layers of fabric, and how close you sit to other people.
+              </p>
+            </div>
+            <ScentPyramid
+              variant="inline"
+              topNotes={product.topNotes}
+              heartNotes={product.heartNotes}
+              baseNotes={product.baseNotes}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Story / wear / performance */}
+      <section className="border-b border-hairline bg-canvas section-y">
+        <div className="container-ns">
+          <StoreSectionHeader
+            eyebrow="Details"
+            title="Character and wear"
+            description="Story, wearing notes, and honest performance ratings."
+          />
           <ProductTabs product={product} />
-        </section>
 
-        <section className="border-t border-hairline section-y">
-          <h2 className="text-display-md mb-6">Ordering & Delivery</h2>
+          <div className="mt-12 grid gap-6 border-t border-hairline pt-10 md:grid-cols-2 lg:grid-cols-3">
+            <div className="border border-hairline bg-paper p-6">
+              <PerformanceMeter
+                sillage={product.sillage}
+                longevity={product.longevity}
+              />
+            </div>
+            <div className="border border-hairline bg-paper p-6">
+              <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                Concentration
+              </p>
+              <p className="mt-3 font-display text-xl font-medium text-ink">
+                {product.concentration}
+              </p>
+              <p className="mt-2 font-serif text-[1.05rem] text-taupe">
+                Sizes from{" "}
+                {product.prices.map((p) => `${p.ml}ml`).join(", ")}.
+              </p>
+            </div>
+            <div className="border border-hairline bg-paper p-6 md:col-span-2 lg:col-span-1">
+              <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                Origin
+              </p>
+              <p className="mt-3 font-display text-xl font-medium text-ink">
+                {product.countryOfOrigin}
+              </p>
+              <p className="mt-2 font-serif text-[1.05rem] text-taupe">
+                Family{" "}
+                <span className="capitalize text-ink">{product.family}</span>
+                {" · "}
+                <span className="capitalize">{product.gender}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust / process */}
+      <section className="border-b border-hairline bg-muted/40 section-y">
+        <div className="container-ns">
+          <StoreSectionHeader
+            eyebrow="Buying here"
+            title="Ordering and delivery"
+            description="What happens after you press add to bag, including cash on delivery."
+          />
           <ProductTrustProcess />
-        </section>
+        </div>
+      </section>
 
-        <section className="border-t border-hairline section-y">
-          <h2 className="text-display-md mb-4">Ingredients & Sourcing</h2>
-          <p className="mb-4 measure text-body text-taupe">
-            Country of origin: {product.countryOfOrigin}. Core materials used in
-            this formula:
-          </p>
-          <ul className="measure list-disc space-y-2 pl-4 text-body text-taupe">
+      {/* Ingredients */}
+      <section className="border-b border-hairline bg-canvas section-y">
+        <div className="container-ns grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+          <div>
+            <StoreSectionHeader
+              eyebrow="Formula"
+              title="Ingredients and sourcing"
+              className="mb-0"
+            />
+            <p className="mt-4 max-w-md font-serif text-[1.1rem] leading-relaxed text-taupe">
+              Country of origin: {product.countryOfOrigin}. Core materials used
+              in this formula are listed as disclosed for transparency, not as
+              full IFRA paperwork.
+            </p>
+          </div>
+          <ul className="columns-1 gap-x-10 sm:columns-2">
             {product.ingredients.map((ing) => (
-              <li key={ing}>{ing}</li>
+              <li
+                key={ing}
+                className="mb-3 break-inside-avoid border-b border-hairline pb-3 font-serif text-[1.05rem] text-ink/85"
+              >
+                {ing}
+              </li>
             ))}
           </ul>
-        </section>
+        </div>
+      </section>
 
+      {/* Reviews */}
+      <div className="container-ns">
         <ProductReviewsSection
           rating={product.rating}
           reviewCount={product.reviewCount}
           reviews={productReviews}
         />
+      </div>
 
-        {related.length ? (
-          <section className="border-t border-hairline section-y">
-            <h2 className="text-display-md mb-8">You May Also Like</h2>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              {related.map((p) => (
-                <ProductCard key={p.handle} product={p} />
+      {/* Related */}
+      {fallbackRelated.length ? (
+        <section className="border-t border-hairline bg-muted/30 section-y">
+          <div className="container-ns">
+            <StoreSectionHeader
+              eyebrow="Next bottles"
+              title="You may also like"
+              action={
+                <Link
+                  href="/products"
+                  className="font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+                >
+                  Shop all
+                </Link>
+              }
+            />
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              {fallbackRelated.map((p) => (
+                <ProductCard key={p.handle} product={p} showMeter />
               ))}
             </div>
-          </section>
-        ) : null}
-      </div>
+          </div>
+        </section>
+      ) : null}
+
       <RecentlyViewed currentHandle={product.handle} catalog={all} />
     </>
   );

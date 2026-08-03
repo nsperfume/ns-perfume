@@ -1,17 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
+import {
+  AdminPageHeader,
+  AdminStatusBadge,
+  AdminTable,
+  AdminTd,
+  AdminTh,
+  formatPkr,
+} from "@/components/admin/ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { StoreProduct } from "@/lib/mappers";
+
+type AdminUser = {
+  email?: string;
+  name?: string;
+  role?: string;
+  isSuperAdmin?: boolean;
+};
 
 export default function AdminProductsPage() {
   const router = useRouter();
   const [products, setProducts] = useState<StoreProduct[]>([]);
-  const [user, setUser] = useState<{ email?: string; name?: string } | null>(
-    null,
-  );
+  const [user, setUser] = useState<AdminUser | null>(null);
   const [q, setQ] = useState("");
 
   useEffect(() => {
@@ -41,72 +55,77 @@ export default function AdminProductsPage() {
 
   return (
     <AdminShell user={user}>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
-          <p className="mt-1 text-sm text-[#6d7175]">
-            {products.length} products · prices in PKR
-          </p>
-        </div>
-        <Link
-          href="/admin/products/new"
-          className="rounded-lg bg-[#1a1a1a] px-4 py-2 text-sm font-medium text-white"
-        >
-          Add product
-        </Link>
-      </div>
-      <div className="mb-4">
-        <input
+      <AdminPageHeader
+        title="Products"
+        description={`${products.length} products · prices in PKR`}
+        action={<Button href="/admin/products/new">Add product</Button>}
+      />
+
+      <div className="mb-5 max-w-md">
+        <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Filter products"
-          className="w-full max-w-md rounded-lg border border-[#c9cccf] bg-white px-3 py-2 text-sm"
+          placeholder="Filter by name or handle"
+          aria-label="Filter products"
         />
       </div>
-      <div className="overflow-hidden rounded-xl border border-[#e1e3e5] bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-[#e1e3e5] bg-[#f6f6f7] text-[#6d7175]">
-            <tr>
-              <th className="px-4 py-3 font-medium">Product</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Inventory</th>
-              <th className="px-4 py-3 font-medium">PKR from</th>
+
+      <AdminTable>
+        <thead>
+          <tr>
+            <AdminTh>Product</AdminTh>
+            <AdminTh>Status</AdminTh>
+            <AdminTh>Stock</AdminTh>
+            <AdminTh className="text-right">From</AdminTh>
+            <AdminTh className="text-right">Actions</AdminTh>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((p) => (
+            <tr
+              key={p.handle}
+              className="hover:bg-[var(--admin-soft)]"
+            >
+              <AdminTd>
+                <p className="font-semibold text-[var(--admin-ink)]">
+                  {p.name}
+                </p>
+                <p className="font-mono text-xs text-[var(--admin-muted)]">
+                  {p.handle}
+                </p>
+              </AdminTd>
+              <AdminTd>
+                <AdminStatusBadge status={p.status || "active"} />
+              </AdminTd>
+              <AdminTd className="text-[var(--admin-muted)]">
+                {p.inStock ? "In stock" : "Out of stock"}
+              </AdminTd>
+              <AdminTd className="text-right font-medium tabular-nums text-[var(--admin-ink)]">
+                {formatPkr(p.prices[0]?.price ?? 0)}
+              </AdminTd>
+              <AdminTd className="text-right">
+                <Button
+                  href={`/admin/products/${p.handle}`}
+                  variant="secondary"
+                  className="!h-10 !min-h-10 !w-auto !px-4"
+                >
+                  Edit
+                </Button>
+              </AdminTd>
             </tr>
-          </thead>
-          <tbody>
-            {filtered.map((p) => (
-              <tr
-                key={p.handle}
-                className="border-b border-[#e1e3e5] last:border-0 hover:bg-[#fafafa]"
+          ))}
+          {filtered.length === 0 ? (
+            <tr>
+              <td
+                colSpan={5}
+                className="px-4 py-14 text-center text-[var(--admin-muted)]"
               >
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/admin/products/${p.handle}`}
-                    className="font-medium text-[#005bd3] hover:underline"
-                  >
-                    {p.name}
-                  </Link>
-                  <p className="text-xs text-[#6d7175]">{p.handle}</p>
-                </td>
-                <td className="px-4 py-3 capitalize">{p.status || "active"}</td>
-                <td className="px-4 py-3">
-                  {p.inStock ? "In stock" : "Out of stock"}
-                </td>
-                <td className="px-4 py-3 font-mono">
-                  Rs {(p.prices[0]?.price ?? 0).toLocaleString("en-PK")}
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-[#6d7175]">
-                  No products. Seed the catalog from Admin Home.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+                No products match.
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+      </AdminTable>
     </AdminShell>
   );
 }

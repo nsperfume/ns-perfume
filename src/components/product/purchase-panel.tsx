@@ -26,11 +26,8 @@ function pressFeedback(e: MouseEvent<HTMLElement>) {
 }
 
 /**
- * Gift logic:
- * - "This is a gift" marks the line for checkout notes (ribbon / no price slip).
- * - Optional gift wrap adds a fixed PKR fee and a distinct SKU suffix so gift
- *   and non-gift lines do not merge incorrectly in the bag.
- * - Optional message (max 120 chars) is stored on the cart line.
+ * Purchase column: name, price, size, qty, gift options, ATC.
+ * Gift wrap fee is baked into line price with a distinct SKU suffix.
  */
 export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
   const { addItem } = useCart();
@@ -101,14 +98,14 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-7 lg:pt-1">
       <div>
         {product.badges.length ? (
           <div className="mb-3 flex flex-wrap gap-2">
             {product.badges.map((b) => (
               <span
                 key={b}
-                className="rounded-xs bg-ink px-2 py-1 font-display text-[10px] uppercase tracking-[0.12em] text-paper"
+                className="bg-ink px-2.5 py-1 font-display text-[10px] font-medium uppercase tracking-[0.12em] text-paper"
               >
                 {b === "bestseller"
                   ? "Bestseller"
@@ -121,63 +118,84 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
             ))}
           </div>
         ) : null}
-        <h1 className="text-display-lg">{product.name}</h1>
-        <p className="mt-3 text-body-lg text-taupe">{product.descriptor}</p>
-        <p className="mt-2 font-mono text-[12px] uppercase tracking-[0.12em] text-taupe">
+        <h1 className="text-display-lg text-balance">{product.name}</h1>
+        <p className="mt-3 max-w-md text-pretty font-serif text-[1.15rem] leading-relaxed text-taupe">
+          {product.descriptor}
+        </p>
+        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-taupe">
           {product.concentration}
-          {" · "}
+          <span className="mx-2 text-hairline" aria-hidden>
+            ·
+          </span>
           <span className="capitalize">{product.family}</span>
+          {!product.inStock ? (
+            <>
+              <span className="mx-2 text-hairline" aria-hidden>
+                ·
+              </span>
+              <span className="text-rosewood">Out of stock</span>
+            </>
+          ) : null}
         </p>
       </div>
 
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-y border-hairline py-5">
         <div>
-          <Price amountPkr={unitPrice} className="text-2xl" />
+          <p className="mb-1 font-display text-[10px] font-medium uppercase tracking-[0.14em] text-taupe">
+            Price
+          </p>
+          <Price amountPkr={unitPrice} className="text-[1.65rem] text-ink" />
           {isGift && giftWrap ? (
             <p className="mt-1 font-serif text-sm text-taupe">
               Includes gift wrap (+
-              <Price amountPkr={GIFT_WRAP_FEE_PKR} className="inline text-sm" />)
+              <Price amountPkr={GIFT_WRAP_FEE_PKR} className="inline text-sm text-taupe" />
+              )
             </p>
           ) : null}
         </div>
         {product.reviewCount > 0 ? (
           <Link
             href="#reviews"
-            className="font-serif text-[0.95rem] text-taupe underline-offset-4 hover:text-ink hover:underline"
+            className="group text-right font-serif text-[0.95rem] text-taupe transition-colors hover:text-ink"
           >
-            <span className="font-mono text-brass">
+            <span className="font-mono text-brass tabular-nums">
               {product.rating.toFixed(1)}
             </span>
-            {" · "}
-            {product.reviewCount} reviews
+            <span className="mx-1.5">·</span>
+            <span className="underline-offset-4 group-hover:underline">
+              {product.reviewCount} review
+              {product.reviewCount === 1 ? "" : "s"}
+            </span>
           </Link>
         ) : null}
       </div>
 
       <div>
-        <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+        <p className="mb-2.5 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
           Size
         </p>
         <SizeSelector sizes={sizes} value={sizeMl} onChange={setSizeMl} />
       </div>
 
       <div>
-        <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+        <p className="mb-2.5 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
           Quantity
         </p>
-        <div className="inline-flex items-center border border-hairline">
+        <div className="inline-flex h-11 items-stretch overflow-hidden border border-hairline">
           <button
             type="button"
-            className="min-h-11 min-w-11 cursor-pointer text-sm transition-colors hover:bg-muted"
+            className="flex w-11 cursor-pointer items-center justify-center text-sm transition-colors hover:bg-muted"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             aria-label="Decrease quantity"
           >
             −
           </button>
-          <span className="min-w-10 text-center font-mono text-sm">{qty}</span>
+          <span className="flex min-w-11 items-center justify-center border-x border-hairline font-mono text-sm tabular-nums">
+            {qty}
+          </span>
           <button
             type="button"
-            className="min-h-11 min-w-11 cursor-pointer text-sm transition-colors hover:bg-muted"
+            className="flex w-11 cursor-pointer items-center justify-center text-sm transition-colors hover:bg-muted"
             onClick={() => setQty((q) => Math.min(6, q + 1))}
             aria-label="Increase quantity"
           >
@@ -186,10 +204,15 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         </div>
       </div>
 
-      <PerformanceMeter sillage={product.sillage} longevity={product.longevity} />
+      <div className="border border-hairline bg-muted/40 p-4 sm:p-5">
+        <PerformanceMeter
+          sillage={product.sillage}
+          longevity={product.longevity}
+        />
+      </div>
 
       {/* Gift options */}
-      <div className="border border-hairline bg-[#FAF8F4] p-4 sm:p-5">
+      <div className="border border-hairline bg-paper p-4 sm:p-5">
         <label className="flex cursor-pointer items-start gap-3">
           <input
             type="checkbox"
@@ -199,7 +222,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
           />
           <span>
             <span className="block font-display text-[0.95rem] font-medium text-ink">
-              This Is A Gift
+              This is a gift
             </span>
             <span className="mt-0.5 block font-serif text-[0.95rem] text-taupe">
               We can pack it for gifting and skip a price slip in the box.
@@ -218,13 +241,13 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
               />
               <span>
                 <span className="block font-display text-[0.95rem] font-medium text-ink">
-                  Add Gift Wrap
+                  Add gift wrap
                 </span>
                 <span className="mt-0.5 block font-serif text-[0.95rem] text-taupe">
                   Tissue and ribbon finish.{" "}
                   <Price
                     amountPkr={GIFT_WRAP_FEE_PKR}
-                    className="inline text-[0.95rem]"
+                    className="inline text-[0.95rem] text-taupe"
                   />
                 </span>
               </span>
@@ -235,17 +258,17 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
                 htmlFor="gift-message"
                 className="mb-1.5 block font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe"
               >
-                Gift Message (Optional)
+                Gift message (optional)
               </label>
               <textarea
                 id="gift-message"
                 value={giftMessage}
                 onChange={(e) => setGiftMessage(e.target.value.slice(0, 120))}
                 rows={3}
-                placeholder="A short note for the recipient…"
-                className="w-full resize-none rounded-md border border-hairline bg-paper px-3 py-2.5 font-serif text-[1rem] text-ink outline-none placeholder:text-taupe/60 focus:border-ink/40"
+                placeholder="A short note for the recipient"
+                className="w-full resize-none border border-hairline bg-canvas px-3 py-2.5 font-serif text-[1rem] text-ink outline-none placeholder:text-taupe/60 focus:border-ink/40"
               />
-              <p className="mt-1 text-right font-mono text-[11px] text-taupe">
+              <p className="mt-1 text-right font-mono text-[11px] tabular-nums text-taupe">
                 {giftMessage.length}/120
               </p>
             </div>
@@ -253,18 +276,18 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3">
         <Button
-          className="w-full sm:w-auto"
+          className="w-full"
           disabled={!product.inStock}
           onClick={addToBag}
         >
-          {product.inStock ? "Add To Bag" : "Out Of Stock"}
+          {product.inStock ? "Add to bag" : "Out of stock"}
         </Button>
         <Button
           type="button"
           variant="secondary"
-          className="w-full sm:w-auto"
+          className="w-full"
           onClick={(e) => {
             pressFeedback(e);
             const nextSaved = !saved;
@@ -282,11 +305,11 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
             );
           }}
         >
-          {saved ? "In Wishlist" : "Add To Wishlist"}
+          {saved ? "Saved to wishlist" : "Add to wishlist"}
         </Button>
       </div>
 
-      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-px bg-hairline">
         {[
           "Cash on delivery",
           "Free ship Rs 8,000+",
@@ -296,7 +319,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
           <li
             key={label}
             className={cn(
-              "border border-hairline bg-paper px-2.5 py-2.5 text-center font-serif text-[0.8rem] font-medium leading-snug text-ink/80 sm:text-[0.85rem]",
+              "bg-canvas px-3 py-3 text-center font-serif text-[0.8rem] font-medium leading-snug text-ink/75 sm:text-[0.85rem]",
             )}
           >
             {label}

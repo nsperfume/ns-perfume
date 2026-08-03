@@ -5,43 +5,116 @@ import { ScentPyramid } from "@/components/commerce/scent-pyramid";
 import { cn } from "@/lib/cn";
 import type { StoreProduct } from "@/lib/mappers";
 
-const tabs = ["Scent Pyramid", "The Story", "How to Wear"] as const;
+const tabs = [
+  { id: "pyramid", label: "Scent pyramid" },
+  { id: "story", label: "The story" },
+  { id: "wear", label: "How to wear" },
+] as const;
 
 export function ProductTabs({ product }: { product: StoreProduct }) {
-  const [tab, setTab] = useState<(typeof tabs)[number]>("Scent Pyramid");
+  const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("pyramid");
 
   return (
     <div>
-      <div className="mb-8 flex flex-wrap gap-4 border-b border-hairline">
+      <div
+        role="tablist"
+        aria-label="Product details"
+        className="mb-8 flex flex-wrap gap-1 border-b border-hairline"
+      >
         {tabs.map((t) => (
           <button
-            key={t}
+            key={t.id}
             type="button"
-            onClick={() => setTab(t)}
+            role="tab"
+            aria-selected={tab === t.id}
+            id={`tab-${t.id}`}
+            onClick={() => setTab(t.id)}
             className={cn(
-              "min-h-11 border-b-2 px-1 pb-3 text-eyebrow transition-colors",
-              tab === t
-                ? "border-brass text-ink"
+              "min-h-12 cursor-pointer border-b-2 px-3 pb-3 font-display text-[12px] font-medium uppercase tracking-[0.12em] transition-colors duration-300",
+              tab === t.id
+                ? "border-ink text-ink"
                 : "border-transparent text-taupe hover:text-ink",
             )}
           >
-            {t}
+            {t.label}
           </button>
         ))}
       </div>
-      {tab === "Scent Pyramid" ? (
-        <ScentPyramid
-          topNotes={product.topNotes}
-          heartNotes={product.heartNotes}
-          baseNotes={product.baseNotes}
-        />
-      ) : null}
-      {tab === "The Story" ? (
-        <p className="measure text-body-lg text-taupe">{product.story}</p>
-      ) : null}
-      {tab === "How to Wear" ? (
-        <p className="measure text-body-lg text-taupe">{product.howToWear}</p>
-      ) : null}
+
+      <div
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+        className="min-h-[10rem]"
+      >
+        {tab === "pyramid" ? (
+          <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-start">
+            <div>
+              <p className="mb-4 max-w-md font-serif text-[1.1rem] leading-relaxed text-taupe">
+                Real top, heart, and base materials as they open and settle on
+                skin. Use this to match office air, outdoor heat, or evening
+                tables.
+              </p>
+              <ScentPyramid
+                topNotes={product.topNotes}
+                heartNotes={product.heartNotes}
+                baseNotes={product.baseNotes}
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <NoteSummary title="Opens with" notes={product.topNotes} />
+              <NoteSummary title="Settles into" notes={product.baseNotes} />
+            </div>
+          </div>
+        ) : null}
+        {tab === "story" ? (
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
+            <p className="max-w-2xl text-pretty font-serif text-[1.2rem] leading-[1.7] text-ink/85">
+              {product.story}
+            </p>
+            <aside className="border border-hairline bg-muted/50 p-6">
+              <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                At a glance
+              </p>
+              <ul className="mt-4 space-y-3 font-serif text-[1.05rem] text-ink/80">
+                <li>
+                  <span className="text-taupe">Family · </span>
+                  <span className="capitalize">{product.family}</span>
+                </li>
+                <li>
+                  <span className="text-taupe">Concentration · </span>
+                  {product.concentration}
+                </li>
+                <li>
+                  <span className="text-taupe">Origin · </span>
+                  {product.countryOfOrigin}
+                </li>
+                <li>
+                  <span className="text-taupe">Gender · </span>
+                  <span className="capitalize">{product.gender}</span>
+                </li>
+              </ul>
+            </aside>
+          </div>
+        ) : null}
+        {tab === "wear" ? (
+          <p className="measure-wide text-pretty font-serif text-[1.2rem] leading-[1.7] text-ink/85">
+            {product.howToWear}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function NoteSummary({ title, notes }: { title: string; notes: string[] }) {
+  return (
+    <div className="border border-hairline bg-paper p-5">
+      <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+        {title}
+      </p>
+      <p className="mt-3 font-serif text-[1.05rem] leading-snug text-ink">
+        {notes.join(" · ")}
+      </p>
     </div>
   );
 }

@@ -15,9 +15,25 @@ import { WishlistProvider } from "@/context/wishlist";
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
+  const isCheckout = pathname?.startsWith("/checkout");
+  /** Shopify-style order status pages omit store chrome */
+  const isTrackOrder = pathname?.startsWith("/track-order");
 
   if (isAdmin) {
     return <>{children}</>;
+  }
+
+  if (isCheckout || isTrackOrder) {
+    return (
+      <CurrencyProvider>
+        <CartProvider>
+          <UiProvider>
+            {children}
+            <ToastHost />
+          </UiProvider>
+        </CartProvider>
+      </CurrencyProvider>
+    );
   }
 
   return (

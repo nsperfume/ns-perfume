@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
 import { CollectionModel } from "@/models/Collection";
 import { resolveCollectionProducts } from "@/app/api/collections/route";
 
@@ -39,8 +39,8 @@ export async function PUT(req: Request, ctx: Ctx) {
 
 export async function DELETE(_req: Request, ctx: Ctx) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) return jsonError("Unauthorized", 401);
+    const admin = await requireSuperAdmin();
+    if (!admin) return jsonError("Forbidden", 403);
     await connectDB();
     const { handle } = await ctx.params;
     await CollectionModel.findOneAndDelete({ handle });

@@ -18,6 +18,8 @@ export type StoreProduct = {
   story: string;
   howToWear: string;
   tags: string[];
+  /** Collection handles this product is explicitly filed under. */
+  collectionHandles: string[];
   badges: ("bestseller" | "new" | "limited" | "sale")[];
   imagePrimary: string;
   imageSecondary: string;
@@ -58,6 +60,9 @@ export function mapProduct(doc: any): StoreProduct {
     story: doc.story || "",
     howToWear: doc.howToWear || "",
     tags: doc.tags || [],
+    collectionHandles: Array.isArray(doc.collectionHandles)
+      ? doc.collectionHandles
+      : [],
     badges: doc.badges || [],
     imagePrimary: doc.imagePrimary || "/products/placeholder-lifestyle.svg",
     imageSecondary: doc.imageSecondary || doc.imagePrimary || "/products/placeholder-lifestyle.svg",

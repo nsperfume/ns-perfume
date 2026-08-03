@@ -8,11 +8,13 @@ import { JournalModel } from "@/models/Journal";
 import { products as fallbackProducts } from "@/data/products";
 import { collections as fallbackCollections } from "@/data/collections";
 import { journalPosts as fallbackJournal } from "@/data/journal";
+import { productsInCollectionQuery } from "@/lib/collection-query";
 
 function toPkrFallback(p: (typeof fallbackProducts)[0]): StoreProduct {
   return {
     ...p,
     id: p.handle,
+    collectionHandles: [],
     prices: p.prices.map((s) => ({
       ml: s.ml,
       price: Math.round(s.price * 280),
@@ -79,32 +81,10 @@ export async function getCollectionWithProducts(handle: string) {
       status: "active",
     }).lean();
     if (collection) {
-      let products: StoreProduct[] = [];
-      if (collection.productHandles?.length) {
-        const docs = await ProductModel.find({
-          handle: { $in: collection.productHandles },
-          status: "active",
-        }).lean();
-        products = docs.map(mapProduct);
-      } else if (collection.filterTags?.length) {
-        const tags = collection.filterTags as string[];
-        const docs = await ProductModel.find({
-          status: "active",
-          $or: [
-            { tags: { $in: tags } },
-            {
-              badges: {
-                $in: tags
-                  .filter((t) => t.startsWith("badge:"))
-                  .map((t) => t.replace("badge:", "")),
-              },
-            },
-          ],
-        }).lean();
-        products = docs.map(mapProduct);
-      } else {
-        products = await getStoreProducts();
-      }
+      const docs = await ProductModel.find(
+        productsInCollectionQuery(collection),
+      ).lean();
+      const products = docs.map(mapProduct);
       return { collection, products };
     }
   } catch (e) {

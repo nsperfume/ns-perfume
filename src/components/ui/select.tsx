@@ -49,7 +49,7 @@ export function Select({
       {label ? (
         <label
           htmlFor={id}
-          className="font-serif text-[13px] font-bold uppercase tracking-[0.12em] text-ink/70"
+          className="font-display text-sm font-medium text-ink/80"
         >
           {label}
         </label>
@@ -63,12 +63,12 @@ export function Select({
           id={id}
           aria-label={ariaLabel ?? label}
           className={cn(
-            "group inline-flex min-h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-md border px-3 py-2 font-serif text-[15px] font-medium outline-none transition-colors",
-            "focus-visible:ring-2 focus-visible:ring-ink/20 disabled:cursor-not-allowed disabled:opacity-50",
-            "data-[placeholder]:text-taupe",
+            "group inline-flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-md border px-3.5 py-2.5 font-display text-base font-medium outline-none transition-colors",
+            "focus-visible:ring-2 focus-visible:ring-brass/25 disabled:cursor-not-allowed disabled:opacity-50",
+            "data-[placeholder]:text-[#9aa1ad]",
             dark
               ? "border-white/25 bg-white/5 text-paper backdrop-blur-md hover:border-white/50 data-[state=open]:border-white/50"
-              : "border-hairline bg-paper text-ink hover:border-ink/35 data-[state=open]:border-ink/40",
+              : "border-[#d8dbe2] bg-paper text-ink hover:border-ink/30 data-[state=open]:border-brass",
             triggerClassName,
           )}
         >
@@ -86,11 +86,18 @@ export function Select({
           <SelectPrimitive.Content
             position="popper"
             sideOffset={6}
+            collisionPadding={12}
             className={cn(
               "scrollbar-panel z-[80] max-h-[min(18rem,70vh)] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-hairline bg-paper text-ink shadow-modal",
             )}
           >
-            <SelectPrimitive.Viewport className="p-1">
+            <SelectPrimitive.Viewport
+              className="p-1"
+              style={{
+                // Prevent popper from forcing page height under scroll parents
+                minWidth: "var(--radix-select-trigger-width)",
+              }}
+            >
               {options.map((opt) => (
                 <SelectPrimitive.Item
                   key={opt.value}

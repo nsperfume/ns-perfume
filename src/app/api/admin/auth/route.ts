@@ -7,8 +7,11 @@ import {
   clearAdminSessionCookie,
   verifyPassword,
   getAdminSession,
+  normalizeRole,
 } from "@/lib/auth";
 import { AdminUserModel } from "@/models/AdminUser";
+
+const SUPER_NAME = "Asim Ali";
 
 export async function GET() {
   const session = await getAdminSession();
@@ -17,6 +20,8 @@ export async function GET() {
     email: session.email,
     name: session.name,
     sub: session.sub,
+    role: session.role,
+    isSuperAdmin: session.role === "super_admin",
   });
 }
 
@@ -34,32 +39,38 @@ export async function POST(req: Request) {
       process.env.ADMIN_PASSWORD || "ChangeMeNSAdmin123!";
 
     /**
-     * Env bootstrap: if login matches ADMIN_EMAIL + ADMIN_PASSWORD,
-     * create the owner (when missing) or re-sync the password hash.
-     * Fixes stuck logins after an earlier seed with a different password.
+     * Env bootstrap creates / re-syncs the super admin (Asim Ali).
      */
     if (email === bootstrapEmail && password === bootstrapPass) {
       let user = await AdminUserModel.findOne({ email: bootstrapEmail });
       if (!user) {
         user = await AdminUserModel.create({
           email: bootstrapEmail,
-          name: "Store Owner",
+          name: SUPER_NAME,
           passwordHash: await hashPassword(bootstrapPass),
-          role: "owner",
+          role: "super_admin",
         });
       } else {
         user.passwordHash = await hashPassword(bootstrapPass);
+        user.role = "super_admin";
+        if (!user.name || user.name === "Store Owner" || user.name === "Admin") {
+          user.name = SUPER_NAME;
+        }
         await user.save();
       }
+      const role = normalizeRole(user.role);
       const token = await createAdminToken({
         sub: String(user._id),
         email: user.email,
         name: user.name,
+        role,
       });
       await setAdminSessionCookie(token);
       return jsonOk({
         email: user.email,
         name: user.name,
+        role,
+        isSuperAdmin: role === "super_admin",
         bootstrapped: true,
       });
     }
@@ -68,13 +79,25 @@ export async function POST(req: Request) {
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return jsonError("Invalid email or password", 401);
     }
+    const role = normalizeRole(user.role);
+    // Soft-upgrade legacy owner
+    if (user.role === "owner") {
+      user.role = "super_admin";
+      await user.save();
+    }
     const token = await createAdminToken({
       sub: String(user._id),
       email: user.email,
       name: user.name,
+      role,
     });
     await setAdminSessionCookie(token);
-    return jsonOk({ email: user.email, name: user.name });
+    return jsonOk({
+      email: user.email,
+      name: user.name,
+      role,
+      isSuperAdmin: role === "super_admin",
+    });
   } catch (e) {
     console.error(e);
     return jsonError("Login failed", 500);

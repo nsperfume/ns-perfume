@@ -37,6 +37,8 @@ const ProductSchema = new Schema(
     story: { type: String, default: "" },
     howToWear: { type: String, default: "" },
     tags: { type: [String], default: [] },
+    /** Explicit storefront collection membership (handles). */
+    collectionHandles: { type: [String], default: [], index: true },
     badges: {
       type: [String],
       default: [],

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import {
   HomeHero,
+  HomeTrustBanner,
   ShopByCollection,
   BestsellersSection,
+  HomePromoBanner,
   BrandStoryBand,
   FindYourScentTeaser,
   TestimonialsSection,
@@ -42,14 +44,21 @@ export default async function HomePage() {
     description: siteConfig.description,
   };
 
+  const bestsellerList =
+    bestsellers.length >= 4
+      ? bestsellers
+      : [...bestsellers, ...products].filter(
+          (p, i, arr) => arr.findIndex((x) => x.handle === p.handle) === i,
+        );
+
   return (
     <>
       <JsonLd data={orgLd} />
       <HomeHero />
+      <HomeTrustBanner />
       <ShopByCollection />
-      <BestsellersSection
-        products={bestsellers.length ? bestsellers : products.slice(0, 4)}
-      />
+      <BestsellersSection products={bestsellerList} />
+      <HomePromoBanner />
       <BrandStoryBand />
       <FindYourScentTeaser />
       <TestimonialsSection
@@ -71,7 +80,8 @@ export default async function HomePage() {
           excerpt: p.excerpt,
           date: p.date,
           readTime: p.readTime,
-          imageTone: "imageTone" in p ? (p as { imageTone?: string }).imageTone : undefined,
+          imageTone:
+            "imageTone" in p ? (p as { imageTone?: string }).imageTone : undefined,
         }))}
       />
       <UgcGrid />

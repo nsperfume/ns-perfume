@@ -300,11 +300,11 @@
   }
 
   /**
-   * Full-viewport homepage bands.
+   * Full-viewport homepage bands (desktop + tablet).
+   * Mobile: content-first height, not forced empty space.
    */
   .section-hero {
     box-sizing: border-box;
-    /* Full viewport under fixed header chrome */
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -316,13 +316,19 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-block: clamp(2rem, 4vw, 3.5rem);
+    padding-block: clamp(2.5rem, 6vw, 4rem);
   }
 
   @media (min-width: 768px) {
     .section-viewport {
       min-height: calc(100dvh - var(--chrome-height));
+      padding-block: clamp(2rem, 3.5vw, 3.5rem);
     }
+  }
+
+  /* Embla: prevent layout shift from overflow */
+  .embla {
+    overflow: hidden;
   }
 
   .fade-up {
@@ -339,4 +345,114 @@
       transform: translateY(0);
     }
   }
+}
+
+/* Admin panel surfaces (isolated from storefront brand canvas) */
+.admin-app {
+  --admin-page: #eef0f3;
+  --admin-paper: #ffffff;
+  --admin-ink: #1c1f26;
+  --admin-muted: #5c6370;
+  --admin-faint: #9aa1ad;
+  --admin-line: #e4e6ea;
+  --admin-soft: #f3f4f6;
+  --admin-soft-2: #f6f7f9;
+  --admin-sidebar: #1c1f26;
+  --admin-sidebar-text: rgba(255, 255, 255, 0.72);
+  --admin-sidebar-muted: rgba(255, 255, 255, 0.42);
+  --admin-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --admin-sidebar-active-bg: #ffffff;
+  --admin-sidebar-active-text: #1c1f26;
+  --admin-danger: #c62828;
+  --admin-danger-hover: #9a1b1b;
+  --admin-input-border: #d8dbe2;
+  --admin-shadow: 0 1px 2px rgba(28, 31, 38, 0.04);
+  --color-paper: #ffffff;
+  --color-ink: #1c1f26;
+  --color-canvas: #eef0f3;
+  --color-hairline: #e4e6ea;
+  --color-taupe: #5c6370;
+  color: var(--admin-ink);
+  background: var(--admin-page);
+}
+
+/* While admin is open: document itself must not scroll */
+html.admin-scroll-lock,
+html.admin-scroll-lock body {
+  overflow: hidden !important;
+  height: 100% !important;
+  overscroll-behavior: none;
+}
+
+/* Only the content pane scrolls; keep scrollbar light & predictable */
+.admin-app .admin-main-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #9aa1ad transparent;
+}
+
+.admin-app[data-theme="dark"] .admin-main-scroll {
+  scrollbar-color: #4b5563 transparent;
+}
+
+.admin-app .admin-main-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-app .admin-main-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-app .admin-main-scroll::-webkit-scrollbar-thumb {
+  background: #9aa1ad;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.admin-app[data-theme="dark"] .admin-main-scroll::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  background-clip: padding-box;
+}
+
+.admin-app .admin-sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.admin-app .admin-sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.admin-app .admin-sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+
+.admin-app[data-theme="dark"] {
+  --admin-page: #0f1115;
+  --admin-paper: #181b22;
+  --admin-ink: #eef0f3;
+  --admin-muted: #9aa1ad;
+  --admin-faint: #6b7280;
+  --admin-line: #2a2f3a;
+  --admin-soft: #1f242e;
+  --admin-soft-2: #151921;
+  --admin-sidebar: #0a0c10;
+  --admin-sidebar-text: rgba(238, 240, 243, 0.72);
+  --admin-sidebar-muted: rgba(238, 240, 243, 0.4);
+  --admin-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --admin-sidebar-active-bg: #eef0f3;
+  --admin-sidebar-active-text: #0f1115;
+  --admin-danger: #e53935;
+  --admin-danger-hover: #c62828;
+  --admin-input-border: #333945;
+  --admin-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  /* Shared UI (Button, Input, Select) inside admin */
+  --color-paper: #181b22;
+  --color-ink: #eef0f3;
+  --color-canvas: #0f1115;
+  --color-hairline: #2a2f3a;
+  --color-taupe: #9aa1ad;
+  color-scheme: dark;
 }
