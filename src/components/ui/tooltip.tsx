@@ -88,3 +88,54 @@ export function FieldHint({
     </Tooltip>
   );
 }
+
+function InfoCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      className={className}
+      aria-hidden
+    >
+      <circle
+        cx="8"
+        cy="8"
+        r="6.25"
+        stroke="currentColor"
+        strokeWidth="1.25"
+      />
+      <path
+        d="M8 7.25v3.5"
+        stroke="currentColor"
+        strokeWidth="1.35"
+        strokeLinecap="round"
+      />
+      <circle cx="8" cy="5.15" r="0.85" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Storefront info hint for product specs (sillage, longevity, etc.). */
+export function InfoTip({
+  content,
+  label = "More info",
+}: {
+  content: ReactNode;
+  label?: string;
+}) {
+  return (
+    <Tooltip
+      content={content}
+      aria-label={label}
+      side="top"
+      className="max-w-[15.5rem] px-3 py-2 font-serif text-[0.8rem] font-normal leading-snug tracking-normal"
+    >
+      <button
+        type="button"
+        className="inline-flex h-5 w-5 shrink-0 cursor-help items-center justify-center rounded-full text-ink/55 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40"
+      >
+        <InfoCircleIcon className="h-[15px] w-[15px]" />
+      </button>
+    </Tooltip>
+  );
+}

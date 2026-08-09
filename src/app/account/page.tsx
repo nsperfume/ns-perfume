@@ -1,27 +1,25 @@
 import type { Metadata } from "next";
-import { Button } from "@/components/ui/button";
+import { Suspense } from "react";
+import AccountClient from "./account-client";
 
 export const metadata: Metadata = {
   title: "Account",
-  description: "Sign in and order history for NS Perfume will live here soon.",
+  description:
+    "Sign in to NS Perfume for order history, repeat orders, and a simple profile.",
 };
 
 export default function AccountPage() {
   return (
-    <section className="bg-canvas section-y">
-      <div className="container-ns max-w-lg">
-        <h1 className="text-display-lg mb-3">Account</h1>
-        <p className="measure mb-8 font-sans text-body text-taupe">
-          Customer sign-in and order history are not open yet. You can still
-          track a recent order or reach care by email.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <Button href="/track-order">Track an order</Button>
-          <Button href="/contact" variant="secondary">
-            Contact care
-          </Button>
-        </div>
-      </div>
-    </section>
+    <Suspense
+      fallback={
+        <section className="bg-canvas section-y">
+          <div className="container-ns max-w-lg">
+            <p className="font-serif text-taupe">Loading your account…</p>
+          </div>
+        </section>
+      }
+    >
+      <AccountClient />
+    </Suspense>
   );
 }

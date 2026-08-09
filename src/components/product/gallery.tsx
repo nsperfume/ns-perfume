@@ -4,6 +4,36 @@ import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 
+function Chevron({
+  dir,
+  className,
+}: {
+  dir: "left" | "right";
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      {dir === "left" ? (
+        <path d="M15 18 9 12l6-6" />
+      ) : (
+        <path d="m9 18 6-6-6-6" />
+      )}
+    </svg>
+  );
+}
+
+/**
+ * Main square + full-width 2-up grid (same column width as the hero).
+ */
 export function ProductGallery({
   images,
   name,
@@ -31,99 +61,100 @@ export function ProductGallery({
   }, [go]);
 
   return (
-    <div className="flex flex-col gap-3 lg:sticky lg:top-[calc(var(--chrome-height)+1.25rem)] lg:flex-row lg:items-start lg:gap-3">
-      {/* Desktop vertical thumbs */}
-      <div className="hidden max-h-[min(70vh,36rem)] shrink-0 flex-col gap-2 overflow-y-auto scrollbar-panel lg:flex">
+    <div className="w-full min-w-0">
+      {/* Hero — full column width */}
+      <div className="group relative aspect-square w-full overflow-hidden bg-[#f5f5f5]">
         {list.map((src, i) => (
-          <button
-            key={`${src}-d-${i}`}
-            type="button"
-            onClick={() => setActive(i)}
+          <div
+            key={`${src}-hero-${i}`}
             className={cn(
-              "relative h-16 w-16 shrink-0 overflow-hidden bg-muted transition-[box-shadow,opacity] duration-300",
-              i === active
-                ? "ring-1 ring-ink ring-offset-2 ring-offset-canvas"
-                : "opacity-70 hover:opacity-100",
+              "absolute inset-0 transition-opacity duration-500 ease-out",
+              i === active ? "opacity-100" : "pointer-events-none opacity-0",
             )}
-            aria-label={`Show image ${i + 1}`}
-            aria-current={i === active ? "true" : undefined}
+            aria-hidden={i !== active}
           >
             <Image
               src={src}
-              alt=""
+              alt={
+                i === 0 ? `${name} perfume bottle` : `${name}, view ${i + 1}`
+              }
               fill
-              loading="lazy"
-              quality={70}
-              sizes="64px"
-              className="object-contain p-1.5"
+              priority={i === 0}
+              fetchPriority={i === 0 ? "high" : "auto"}
+              quality={90}
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 58vw, 720px"
+              className="object-contain object-center p-4 sm:p-6"
             />
-          </button>
+          </div>
         ))}
-      </div>
 
-      <div className="relative min-w-0 flex-1">
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted sm:aspect-square">
-          <Image
-            src={list[active]}
-            alt={`NS Perfume ${name}, view ${active + 1} of ${list.length}`}
-            fill
-            priority
-            fetchPriority="high"
-            quality={85}
-            className="object-contain p-6 transition-opacity duration-500 sm:p-10"
-            sizes="(max-width: 1024px) 100vw, 48vw"
-          />
-          {list.length > 1 ? (
-            <>
-              <button
-                type="button"
-                onClick={() => go(-1)}
-                className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center bg-paper/90 text-ink shadow-sm transition-opacity hover:bg-paper"
-                aria-label="Previous image"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                onClick={() => go(1)}
-                className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center bg-paper/90 text-ink shadow-sm transition-opacity hover:bg-paper"
-                aria-label="Next image"
-              >
-                ›
-              </button>
-            </>
-          ) : null}
-          <p className="absolute bottom-3 right-3 font-mono text-[11px] tabular-nums text-taupe">
-            {active + 1} / {list.length}
-          </p>
-        </div>
-
-        {/* Mobile thumbs */}
-        <div className="mt-3 grid grid-cols-5 gap-2 lg:hidden">
-          {list.map((src, i) => (
+        {list.length > 1 ? (
+          <>
             <button
-              key={`${src}-m-${i}`}
               type="button"
-              onClick={() => setActive(i)}
+              onClick={() => go(-1)}
               className={cn(
-                "relative aspect-square overflow-hidden bg-muted",
-                i === active ? "ring-1 ring-ink" : "opacity-80",
+                "absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center",
+                "border border-hairline bg-paper/95 text-ink opacity-0 transition-opacity duration-300",
+                "hover:border-ink/30 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
+                "max-md:opacity-100",
               )}
-              aria-label={`Show image ${i + 1}`}
+              aria-label="Previous image"
             >
-              <Image
-                src={src}
-                alt=""
-                fill
-                loading="lazy"
-                quality={70}
-                sizes="80px"
-                className="object-contain p-1.5"
-              />
+              <Chevron dir="left" className="h-4 w-4" />
             </button>
-          ))}
-        </div>
+            <button
+              type="button"
+              onClick={() => go(1)}
+              className={cn(
+                "absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center",
+                "border border-hairline bg-paper/95 text-ink opacity-0 transition-opacity duration-300",
+                "hover:border-ink/30 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
+                "max-md:opacity-100",
+              )}
+              aria-label="Next image"
+            >
+              <Chevron dir="right" className="h-4 w-4" />
+            </button>
+            <p className="absolute bottom-3 left-3 z-10 font-display text-[10px] font-medium uppercase tracking-[0.16em] text-taupe">
+              {active + 1} / {list.length}
+            </p>
+          </>
+        ) : null}
       </div>
+
+      {/* Same width as hero — exactly 2 per row */}
+      {list.length > 1 ? (
+        <ul className="mt-2 grid w-full grid-cols-2 gap-2 sm:mt-3 sm:gap-3">
+          {list.map((src, i) => (
+            <li key={`${src}-cell-${i}`} className="min-w-0">
+              <button
+                type="button"
+                onClick={() => setActive(i)}
+                className={cn(
+                  "relative aspect-square w-full cursor-pointer overflow-hidden bg-[#f5f5f5] transition-opacity duration-300",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
+                  i === active
+                    ? "ring-1 ring-ink ring-offset-2 ring-offset-canvas"
+                    : "hover:opacity-90",
+                )}
+                aria-label={`Show image ${i + 1}`}
+                aria-current={i === active ? "true" : undefined}
+              >
+                <Image
+                  src={src}
+                  alt=""
+                  fill
+                  loading="lazy"
+                  quality={85}
+                  sizes="(max-width: 768px) 50vw, (max-width: 1280px) 29vw, 360px"
+                  className="object-contain object-center p-3 sm:p-4"
+                />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

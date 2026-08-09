@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/context/cart";
 import { useCurrency } from "@/context/currency";
+import { useCustomer } from "@/context/customer";
 import {
   CHECKOUT_ORDER_STORAGE_KEY,
   emptyAddress,
@@ -25,6 +26,7 @@ import {
   CheckoutSelect,
 } from "@/components/checkout/fields";
 import { CheckoutOrderSummary } from "@/components/checkout/order-summary";
+import { TransferDetails } from "@/components/commerce/transfer-details";
 import { siteConfig } from "@/data/site";
 
 type Step = "information" | "shipping" | "payment";
@@ -91,6 +93,7 @@ export function CheckoutClient() {
   const router = useRouter();
   const { lines, subtotal, clearCart, closeCart } = useCart();
   const { currency } = useCurrency();
+  const { user } = useCustomer();
 
   const [hydrated, setHydrated] = useState(false);
   const [step, setStep] = useState<Step>("information");
@@ -136,6 +139,23 @@ export function CheckoutClient() {
       /* ignore */
     }
   }, [closeCart]);
+
+  useEffect(() => {
+    if (!user) return;
+    setEmail((prev) => prev || user.email);
+    setAddress((prev) => {
+      if (prev.firstName || prev.lastName || prev.phone) return prev;
+      const parts = (user.name || "").trim().split(/\s+/);
+      const firstName = parts[0] || "";
+      const lastName = parts.slice(1).join(" ");
+      return {
+        ...prev,
+        firstName: prev.firstName || firstName,
+        lastName: prev.lastName || lastName,
+        phone: prev.phone || user.phone || "",
+      };
+    });
+  }, [user]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -840,65 +860,28 @@ export function CheckoutClient() {
                         {selected && method.id === "bank" ? (
                           <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4 text-[13px] leading-relaxed text-taupe">
                             <p className="font-medium text-ink">
-                              Transfer to this account
+                              Pay to this account or wallet
                             </p>
-                            <dl className="grid gap-2 rounded-md border border-hairline bg-paper p-3 sm:grid-cols-2">
-                              <div>
-                                <dt className="text-[11px] uppercase tracking-wide text-taupe">
-                                  Bank
-                                </dt>
-                                <dd className="mt-0.5 font-medium text-ink">
-                                  {siteConfig.bankTransfer.bankName}
-                                </dd>
-                              </div>
-                              <div>
-                                <dt className="text-[11px] uppercase tracking-wide text-taupe">
-                                  Account title
-                                </dt>
-                                <dd className="mt-0.5 font-medium text-ink">
-                                  {siteConfig.bankTransfer.accountTitle}
-                                </dd>
-                              </div>
-                              <div>
-                                <dt className="text-[11px] uppercase tracking-wide text-taupe">
-                                  Account number
-                                </dt>
-                                <dd className="mt-0.5 font-mono text-[13px] font-medium text-ink">
-                                  {siteConfig.bankTransfer.accountNumber}
-                                </dd>
-                              </div>
-                              <div>
-                                <dt className="text-[11px] uppercase tracking-wide text-taupe">
-                                  IBAN
-                                </dt>
-                                <dd className="mt-0.5 break-all font-mono text-[12px] font-medium text-ink">
-                                  {siteConfig.bankTransfer.iban}
-                                </dd>
-                              </div>
-                              <div className="sm:col-span-2">
-                                <dt className="text-[11px] uppercase tracking-wide text-taupe">
-                                  Branch
-                                </dt>
-                                <dd className="mt-0.5 text-ink">
-                                  {siteConfig.bankTransfer.branch}
-                                </dd>
-                              </div>
-                              <div className="sm:col-span-2 border-t border-hairline pt-2">
-                                <dt className="text-[11px] uppercase tracking-wide text-taupe">
-                                  Amount to transfer
-                                </dt>
-                                <dd className="mt-0.5 text-[15px] font-semibold text-ink">
-                                  <PriceInline pkr={totalPkr} />
-                                </dd>
-                              </div>
-                            </dl>
+                            <TransferDetails />
+                            <div className="rounded-md border border-hairline bg-paper px-3 py-2.5">
+                              <p className="text-[11px] uppercase tracking-wide text-taupe">
+                                Amount to transfer
+                              </p>
+                              <p className="mt-0.5 text-[15px] font-semibold text-ink">
+                                <PriceInline pkr={totalPkr} />
+                              </p>
+                            </div>
                             <ul className="list-disc space-y-1.5 pl-4">
                               <li>
-                                Place the order first so you receive an order number. Use that number as the transfer reference.
+                                Place the order first so you receive an order
+                                number. Use that number as the transfer
+                                reference.
                               </li>
                               <li>{siteConfig.bankTransfer.note}</li>
                               <li>
-                                We confirm the transfer and then process shipping. Status may show as confirmed once recorded.
+                                We confirm the transfer and then process
+                                shipping. Status may show as confirmed once
+                                recorded.
                               </li>
                             </ul>
                           </div>

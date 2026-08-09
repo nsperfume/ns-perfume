@@ -22,6 +22,8 @@ export const siteImages = {
   giftCards: "/assets/gift-cards.webp",
   about: "/assets/about-our-story.webp",
   contact: "/assets/contact.webp",
+  /** PDP atmosphere band — exact 16:9 */
+  productAtmosphere: "/assets/product-atmosphere.webp",
   /** Homepage “Worn in the wild” tiles */
   wornInWild: [
     "/assets/worn-in-wild-1.webp",

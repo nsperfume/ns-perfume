@@ -9,9 +9,11 @@ import {
   AdminPageHeader,
   AdminStatusBadge,
 } from "@/components/admin/ui";
+import { AdminRichTextEditor } from "@/components/admin/rich-text-editor";
 import { Button } from "@/components/ui/button";
-import { Input, Textarea } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { richTextToPlain, sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 
 type T = {
   _id: string;
@@ -26,7 +28,7 @@ const schema = z.object({
   author: z.string().trim().min(2, "Name is required"),
   city: z.string().trim().max(80).optional(),
   productName: z.string().trim().max(120).optional(),
-  quote: z.string().trim().min(12, "Quote needs at least 12 characters"),
+  quote: z.string().trim().min(1, "Quote is required"),
 });
 
 export default function AdminTestimonialsPage() {
@@ -74,7 +76,15 @@ export default function AdminTestimonialsPage() {
   async function create(e: React.FormEvent) {
     e.preventDefault();
     setErrors({});
-    const parsed = schema.safeParse(form);
+    const plainQuote = richTextToPlain(form.quote);
+    if (plainQuote.length < 12) {
+      setErrors({ quote: "Quote needs at least 12 characters" });
+      return;
+    }
+    const parsed = schema.safeParse({
+      ...form,
+      quote: sanitizeRichHtml(toRichHtml(form.quote)),
+    });
     if (!parsed.success) {
       const next: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
@@ -151,12 +161,14 @@ export default function AdminTestimonialsPage() {
                 setForm({ ...form, productName: e.target.value })
               }
             />
-            <Textarea
+            <AdminRichTextEditor
               label="Quote"
               required
+              tip="Keep it specific. One or two sentences work best on the homepage."
               value={form.quote}
               error={errors.quote}
-              onChange={(e) => setForm({ ...form, quote: e.target.value })}
+              minHeightClass="min-h-28"
+              onChange={(quote) => setForm({ ...form, quote })}
             />
             <Button type="submit" disabled={saving} className="w-full">
               {saving ? "Saving…" : "Publish"}
@@ -184,7 +196,7 @@ export default function AdminTestimonialsPage() {
                     <AdminStatusBadge status={t.status || "published"} />
                   </div>
                   <p className="mt-2 text-sm leading-relaxed text-[var(--admin-muted)]">
-                    “{t.quote}”
+                    “{richTextToPlain(t.quote)}”
                   </p>
                   {t.productName ? (
                     <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[var(--admin-faint)]">

@@ -67,7 +67,7 @@ type TrackedOrder = {
 const paymentLabels: Record<string, string> = {
   cod: "Cash on delivery (COD)",
   card: "Credit / debit card",
-  bank: "Bank deposit / transfer",
+  bank: "Bank transfer or mobile wallet",
 };
 
 function TrackLookUpForm({

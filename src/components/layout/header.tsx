@@ -15,6 +15,7 @@ import {
 import { shopMegaMenu, siteConfig } from "@/data/site";
 import { siteImages } from "@/data/images";
 import { useCart } from "@/context/cart";
+import { useCustomer } from "@/context/customer";
 import { useWishlist } from "@/context/wishlist";
 import { useUi } from "@/context/ui";
 import { cn } from "@/lib/cn";
@@ -41,6 +42,7 @@ const iconBtn =
 
 export function Header() {
   const { openCart, itemCount } = useCart();
+  const { user } = useCustomer();
   const { count: wishCount } = useWishlist();
   const { openSearch } = useUi();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -206,8 +208,18 @@ export function Header() {
               </span>
             ) : null}
           </button>
-          <Link href="/account" className={iconBtn} aria-label="Account">
+          <Link
+            href="/account"
+            className={cn(iconBtn, "relative")}
+            aria-label={user ? "Your account" : "Sign in"}
+          >
             <UserIcon size={20} color="currentColor" />
+            {user ? (
+              <span
+                className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brass"
+                aria-hidden
+              />
+            ) : null}
           </Link>
         </div>
       </div>

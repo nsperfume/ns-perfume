@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import {
   HomeHero,
-  HomeTrustBanner,
+  HomeTrustSection,
   ShopByCollection,
   BestsellersSection,
   HomePromoBanner,
@@ -9,8 +9,9 @@ import {
   FindYourScentTeaser,
   TestimonialsSection,
   JournalPreview,
-  UgcGrid,
 } from "@/components/home/sections";
+import { PerfumeMarquee } from "@/components/home/perfume-marquee";
+import { WornInWild } from "@/components/home/worn-in-wild";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
   getBestsellers,
@@ -55,9 +56,10 @@ export default async function HomePage() {
     <>
       <JsonLd data={orgLd} />
       <HomeHero />
-      <HomeTrustBanner />
+      <PerfumeMarquee />
       <ShopByCollection />
       <BestsellersSection products={bestsellerList} />
+      <HomeTrustSection />
       <HomePromoBanner />
       <BrandStoryBand />
       <FindYourScentTeaser />
@@ -80,11 +82,12 @@ export default async function HomePage() {
           excerpt: p.excerpt,
           date: p.date,
           readTime: p.readTime,
-          imageTone:
-            "imageTone" in p ? (p as { imageTone?: string }).imageTone : undefined,
+          category: p.category,
+          imageUrl: p.imageUrl,
+          imageTone: p.imageTone,
         }))}
       />
-      <UgcGrid />
+      <WornInWild />
     </>
   );
 }

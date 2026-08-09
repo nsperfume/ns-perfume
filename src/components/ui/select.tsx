@@ -55,7 +55,7 @@ export function Select({
         </label>
       ) : null}
       <SelectPrimitive.Root
-        value={value}
+        value={value || undefined}
         onValueChange={onValueChange}
         disabled={disabled}
       >

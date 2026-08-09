@@ -6,6 +6,7 @@ import { StoreSectionHeader } from "@/components/layout/store-section";
 import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
 import { getCollections } from "@/lib/store-data";
+import { richTextToPlain } from "@/lib/rich-text";
 
 export const metadata: Metadata = {
   title: "Perfume collections | NS Perfume",
@@ -70,7 +71,7 @@ export default async function CollectionsIndexPage() {
                       {c.title}
                     </h2>
                     <p className="mt-1.5 line-clamp-2 font-serif text-[0.95rem] text-paper/80">
-                      {c.description}
+                      {richTextToPlain(c.description || "")}
                     </p>
                     <span className="mt-3 inline-block font-display text-[11px] uppercase tracking-[0.14em] text-paper/70 transition-colors group-hover:text-brass">
                       View collection

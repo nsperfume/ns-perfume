@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminImageField } from "@/components/admin/image-field";
+import { AdminRichTextEditor } from "@/components/admin/rich-text-editor";
 import {
   AdminFieldLabel,
   AdminFormSection,
@@ -21,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
+import { richTextToPlain, sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 
 type Collection = {
   _id: string;
@@ -41,7 +43,7 @@ const formSchema = z.object({
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       "Use lowercase letters, numbers, hyphens",
     ),
-  description: z.string().max(500, "Keep under 500 characters").optional(),
+  description: z.string().optional(),
   bannerImage: z
     .string()
     .trim()
@@ -95,10 +97,15 @@ export default function AdminCollectionsPage() {
     e.preventDefault();
     setFormError("");
     setErrors({});
+    const plainDescription = richTextToPlain(description);
+    if (plainDescription.length > 500) {
+      setErrors({ description: "Keep under 500 characters" });
+      return;
+    }
     const parsed = formSchema.safeParse({
       title,
       handle,
-      description,
+      description: sanitizeRichHtml(toRichHtml(description)),
       bannerImage,
       status,
     });
@@ -200,7 +207,7 @@ export default function AdminCollectionsPage() {
                         </p>
                         {c.description ? (
                           <p className="line-clamp-1 text-xs text-[var(--admin-muted)]">
-                            {c.description}
+                            {richTextToPlain(c.description)}
                           </p>
                         ) : null}
                       </div>
@@ -306,21 +313,15 @@ export default function AdminCollectionsPage() {
               tip="Draft hides the collection from shop menus until you publish."
             >
               <div>
-                <AdminFieldLabel tip="Short intro under the collection title. Optional.">
-                  Description
-                </AdminFieldLabel>
-                <textarea
-                  className={cn(adminFieldClass, "min-h-[5rem] resize-y")}
-                  rows={3}
+                <AdminRichTextEditor
+                  label="Description"
+                  tip="Short intro under the collection title. Optional."
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  error={errors.description}
+                  minHeightClass="min-h-28"
                   placeholder="Cedar, vetiver, and leather for daytime and desk."
+                  onChange={setDescription}
                 />
-                {errors.description ? (
-                  <p className="mt-1 text-sm text-rosewood">
-                    {errors.description}
-                  </p>
-                ) : null}
               </div>
               <Select
                 label="Status"

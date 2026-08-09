@@ -9,7 +9,7 @@ import {
 } from "@/components/home/testimonials-carousel";
 import type { StoreProduct } from "@/lib/mappers";
 import { pageCopy } from "@/data/copy";
-import { siteImages, wornInWildAlts } from "@/data/images";
+import { siteImages } from "@/data/images";
 import { cn } from "@/lib/cn";
 
 export type { TestimonialItem };
@@ -142,42 +142,76 @@ export function HomeHero() {
   );
 }
 
-export function HomeTrustBanner() {
+const trustPromises = [
+  {
+    title: "Cash on delivery",
+    body: "In major cities you can pay when the parcel is in your hands. No card required at checkout if COD is offered for your address. The courier confirms the amount before you hand over cash.",
+  },
+  {
+    title: "Free shipping",
+    body: "Orders over Rs 8,000 ship on complimentary standard delivery where we operate. Threshold and timing show at checkout so you know the cost before you place the order.",
+  },
+  {
+    title: "Track anytime",
+    body: "After you order, open the track page with your order number. You get status updates and a map view while the parcel moves, without waiting on a phone queue.",
+  },
+  {
+    title: "Packed for transit",
+    body: "Bottles leave in fitted inserts so glass is less likely to shift in heat or rough handling. Outer cartons stay plain for privacy when someone else receives the box.",
+  },
+  {
+    title: "Returns on sealed bottles",
+    body: "Unopened bottles in original packaging may be returned within 30 days. If something arrives damaged, write to care with your order number and photos of the parcel.",
+  },
+  {
+    title: "Honest wear notes",
+    body: "Each product lists top, heart, and base plus sillage and longevity so you can match a bottle to office air, outdoor heat, or a late table before you buy.",
+  },
+] as const;
+
+/**
+ * Full trust band — shipping, payment, and aftercare with real detail.
+ * Lives below the fold so the hero stays one clear composition.
+ */
+export function HomeTrustSection() {
   return (
-    <section className="border-b border-hairline bg-muted">
-      <div className="container-ns">
-        <ul className="grid divide-y divide-hairline sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {[
-            {
-              title: "Cash on delivery",
-              body: "Pay when the parcel arrives in major cities.",
-            },
-            {
-              title: "Free shipping",
-              body: "Complimentary standard on orders over Rs 8,000.",
-            },
-            {
-              title: "Track anytime",
-              body: "Status page with map after you place an order.",
-            },
-          ].map((item) => (
-            <li
-              key={item.title}
-              className="px-1 py-5 text-center sm:px-6 sm:py-6"
-            >
-              <p className="font-display text-[0.95rem] font-medium text-ink">
-                {item.title}
+    <section className="border-b border-hairline bg-muted/60 section-y md:section-viewport">
+      <div className="container-ns flex flex-col justify-center">
+        <SectionLead
+          eyebrow="Ordering with us"
+          title="Payment, shipping, and what happens after"
+          description="Clear terms for cash on delivery, free shipping thresholds, tracking, and returns. Read the full story once, then shop without guessing."
+        />
+
+        <ul className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-12">
+          {trustPromises.map((item, index) => (
+            <li key={item.title} className="border-t border-hairline pt-5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-taupe">
+                {String(index + 1).padStart(2, "0")}
               </p>
-              <p className="mt-1 font-serif text-[0.95rem] text-taupe">
+              <h3 className="mt-2 font-display text-[1.15rem] font-medium tracking-wide text-ink md:text-[1.25rem]">
+                {item.title}
+              </h3>
+              <p className="mt-3 max-w-sm font-serif text-[1.05rem] leading-relaxed text-taupe">
                 {item.body}
               </p>
             </li>
           ))}
         </ul>
+
+        <div className="mt-10 flex flex-wrap items-center gap-3 sm:mt-12">
+          <Button href="/shipping-returns">Shipping and returns</Button>
+          <Button href="/track-order" variant="secondary">
+            Track an order
+          </Button>
+        </div>
       </div>
     </section>
   );
 }
+
+/** @deprecated Prefer HomeTrustSection */
+export const HomeTrustBanner = HomeTrustSection;
 
 /**
  * Equal 2×2 collection grid — stable heights, no clipped rows.
@@ -447,51 +481,131 @@ export function JournalPreview({
     excerpt: string;
     date: string;
     readTime: string;
+    category?: string;
+    imageUrl?: string;
     imageTone?: string;
   }[];
 }) {
-  const shown = posts.slice(0, 3);
+  const shown = posts.slice(0, 4);
   if (!shown.length) return null;
 
+  function formatDate(value: string) {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  const [feature, ...rest] = shown;
+
   return (
-    <section className="border-b border-hairline bg-muted/40 section-y">
-      <div className="container-ns">
+    <section className="border-b border-hairline bg-muted/40 section-y md:section-viewport">
+      <div className="container-ns flex flex-col justify-center">
         <SectionLead
           eyebrow="Journal"
           title="Recent notes"
+          description="Guides on heat, office wear, notes, and gifting. Written for how perfume actually sits on skin."
           action={
-            <Button href="/journal" variant="ghost">
-              Read more
+            <Button href="/journal" variant="secondary">
+              Read the journal
             </Button>
           }
         />
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-          {shown.map((post, i) => (
-            <Link
-              key={post.slug}
-              href={`/journal/${post.slug}`}
-              className="group flex flex-col"
-            >
+        <div className="grid gap-8 lg:grid-cols-12 lg:gap-8">
+          <Link
+            href={`/journal/${feature.slug}`}
+            className="group flex flex-col lg:col-span-7"
+          >
+            <div className="relative mb-5 aspect-[16/11] overflow-hidden bg-muted">
+              {feature.imageUrl ? (
+                <Image
+                  src={feature.imageUrl}
+                  alt={`Cover for ${feature.title}`}
+                  fill
+                  loading="lazy"
+                  quality={85}
+                  className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]"
+                  sizes="(max-width: 1024px) 100vw, 58vw"
+                />
+              ) : (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundColor: feature.imageTone || "#F3EDE3",
+                  }}
+                />
+              )}
               <div
-                className="relative mb-4 aspect-[16/10]"
-                style={{ backgroundColor: post.imageTone || "#F3EDE3" }}
-              >
-                <span className="absolute left-3 top-3 font-mono text-[11px] text-ink/40">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
+                className="absolute inset-0 bg-linear-to-t from-black/55 via-transparent to-transparent opacity-80"
+                aria-hidden
+              />
+              <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+                {feature.category ? (
+                  <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-paper/70">
+                    {feature.category}
+                  </p>
+                ) : null}
+                <h3 className="font-display text-[1.35rem] font-medium leading-snug text-paper md:text-[1.55rem]">
+                  {feature.title}
+                </h3>
               </div>
-              <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-taupe">
-                {post.date} · {post.readTime}
-              </p>
-              <h3 className="font-display text-[1.2rem] font-medium leading-snug text-ink transition-colors group-hover:text-brass">
-                {post.title}
-              </h3>
-              <p className="mt-2 line-clamp-3 font-serif text-[1rem] text-taupe">
-                {post.excerpt}
-              </p>
-            </Link>
-          ))}
+            </div>
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-taupe">
+              {formatDate(feature.date)} · {feature.readTime}
+            </p>
+            <p className="max-w-xl font-serif text-[1.05rem] leading-relaxed text-taupe">
+              {feature.excerpt}
+            </p>
+            <span className="mt-4 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors group-hover:text-brass">
+              Read article
+            </span>
+          </Link>
+
+          <div className="flex flex-col divide-y divide-hairline lg:col-span-5 lg:border-l lg:border-hairline lg:pl-8">
+            {rest.map((post) => (
+              <Link
+                key={post.slug}
+                href={`/journal/${post.slug}`}
+                className="group grid grid-cols-[5.5rem_1fr] gap-4 py-5 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr] sm:py-6"
+              >
+                <div className="relative aspect-square overflow-hidden bg-muted">
+                  {post.imageUrl ? (
+                    <Image
+                      src={post.imageUrl}
+                      alt={`Cover for ${post.title}`}
+                      fill
+                      loading="lazy"
+                      quality={80}
+                      className="object-cover transition-transform duration-700 group-hover:scale-[1.05]"
+                      sizes="112px"
+                    />
+                  ) : (
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        backgroundColor: post.imageTone || "#F3EDE3",
+                      }}
+                    />
+                  )}
+                </div>
+                <div className="min-w-0 self-center">
+                  <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.12em] text-taupe">
+                    {formatDate(post.date)} · {post.readTime}
+                  </p>
+                  <h3 className="font-display text-[1.05rem] font-medium leading-snug text-ink transition-colors group-hover:text-brass sm:text-[1.15rem]">
+                    {post.title}
+                  </h3>
+                  <p className="mt-1 line-clamp-2 font-serif text-[0.95rem] text-taupe">
+                    {post.excerpt}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -499,40 +613,6 @@ export function JournalPreview({
 }
 
 /**
- * Worn in the wild: equal columns, object-contain so full imagery is visible.
+ * Worn in the wild — see `@/components/home/worn-in-wild`.
  */
-export function UgcGrid() {
-  const shots = siteImages.wornInWild;
-  return (
-    <section className="border-b border-hairline bg-canvas section-y">
-      <div className="container-ns">
-        <SectionLead
-          eyebrow="In life"
-          title="Worn in the wild"
-          description={pageCopy.wornInWild}
-        />
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
-          {shots.map((src, i) => (
-            <figure key={src} className="group">
-              <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted">
-                <Image
-                  src={src}
-                  alt={wornInWildAlts[i] ?? "Fragrance worn in everyday light"}
-                  fill
-                  loading="lazy"
-                  quality={85}
-                  className="object-contain p-2 transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.02] sm:p-3"
-                  sizes="(max-width: 640px) 100vw, 33vw"
-                />
-              </div>
-              <figcaption className="mt-3 font-mono text-[10px] uppercase tracking-[0.12em] text-taupe">
-                {String(i + 1).padStart(2, "0")} · In wear
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+export { WornInWild as UgcGrid } from "@/components/home/worn-in-wild";

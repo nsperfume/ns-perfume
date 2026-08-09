@@ -206,22 +206,23 @@ export function AdminImageField({
               onLoad={() => setBroken(false)}
             />
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/60 to-transparent px-3 pb-3 pt-10">
-              <label
-                htmlFor={inputId}
-                className={cn(
-                  "cursor-pointer rounded-md bg-white px-3 py-1.5 font-display text-xs font-semibold uppercase tracking-wide text-ink shadow-sm transition-opacity hover:bg-white",
-                  uploading && "pointer-events-none opacity-60",
-                )}
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={uploading}
+                onClick={() => fileRef.current?.click()}
+                className="!h-9 !min-h-9 !w-auto !rounded-md !px-3 text-xs"
               >
                 {uploading ? "Uploading…" : "Replace"}
-              </label>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
                 onClick={() => setUrlOpen((v) => !v)}
-                className="cursor-pointer rounded-md border border-white/50 bg-black/40 px-3 py-1.5 font-display text-xs font-semibold uppercase tracking-wide text-white backdrop-blur-sm transition-colors hover:bg-black/55"
+                className="!h-9 !min-h-9 !w-auto !rounded-md !px-3 text-xs"
               >
                 URL
-              </button>
+              </Button>
             </div>
             <input
               id={inputId}

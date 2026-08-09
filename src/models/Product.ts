@@ -15,6 +15,8 @@ const ProductSchema = new Schema(
     handle: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
     descriptor: { type: String, default: "" },
+    /** Longer product description shown on the PDP buy column. */
+    description: { type: String, default: "" },
     concentration: {
       type: String,
       enum: ["EDP", "EDT", "PARFUM"],
@@ -33,6 +35,8 @@ const ProductSchema = new Schema(
     sillage: { type: Number, min: 1, max: 5, default: 3 },
     longevity: { type: Number, min: 1, max: 5, default: 3 },
     ingredients: { type: [String], default: [] },
+    /** False for oil / attar formulas with no alcohol carrier. */
+    containsAlcohol: { type: Boolean, default: true },
     countryOfOrigin: { type: String, default: "Pakistan" },
     story: { type: String, default: "" },
     howToWear: { type: String, default: "" },

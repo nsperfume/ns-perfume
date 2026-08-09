@@ -1,3 +1,4 @@
+import { StarRating } from "@/components/ui/star-rating";
 import { cn } from "@/lib/cn";
 
 type ReviewDoc = {
@@ -9,25 +10,6 @@ type ReviewDoc = {
   city?: string;
   verified?: boolean;
 };
-
-function Stars({ rating }: { rating: number }) {
-  return (
-    <span className="inline-flex gap-0.5" aria-label={`${rating} out of 5`}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <span
-          key={i}
-          className={cn(
-            "font-mono text-[12px]",
-            i < Math.round(rating) ? "text-brass" : "text-hairline",
-          )}
-          aria-hidden
-        >
-          ★
-        </span>
-      ))}
-    </span>
-  );
-}
 
 export function ProductReviewsSection({
   rating,
@@ -43,7 +25,7 @@ export function ProductReviewsSection({
       id="reviews"
       className="scroll-mt-[calc(var(--chrome-height)+1rem)] border-t border-hairline section-y"
     >
-      <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
             From wearers
@@ -51,15 +33,16 @@ export function ProductReviewsSection({
           <h2 className="text-display-md">Product reviews</h2>
           <p className="mt-2 font-serif text-[1.05rem] text-taupe">
             {reviewCount > 0
-              ? `${rating.toFixed(1)} average from ${reviewCount} review${reviewCount === 1 ? "" : "s"}`
+              ? `${reviewCount} review${reviewCount === 1 ? "" : "s"} for this bottle`
               : "No written reviews yet for this bottle."}
           </p>
         </div>
         {rating > 0 ? (
-          <div className="flex items-center gap-2.5">
-            <Stars rating={rating} />
-            <span className="font-mono text-[13px] tabular-nums text-taupe">
-              {rating.toFixed(1)} / 5
+          <div className="flex items-center gap-3">
+            <StarRating rating={rating} size="lg" />
+            <span className="font-mono text-[1.05rem] font-medium tabular-nums text-ink">
+              {rating.toFixed(1)}
+              <span className="text-taupe"> / 5</span>
             </span>
           </div>
         ) : null}
@@ -81,8 +64,8 @@ export function ProductReviewsSection({
                 i >= 2 && "md:mt-8 md:border-t md:border-hairline md:pt-8",
               )}
             >
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <Stars rating={r.rating} />
+              <div className="mb-3 flex flex-wrap items-center gap-2.5">
+                <StarRating rating={r.rating} size="sm" />
                 {r.verified ? (
                   <span className="bg-ink px-2 py-0.5 font-display text-[10px] uppercase tracking-[0.12em] text-paper">
                     Verified

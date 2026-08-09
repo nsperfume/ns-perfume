@@ -80,7 +80,7 @@
 
   /* Dark page chrome keeps the dark scrollbar */
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     scrollbar-width: thin;
     scrollbar-color: #555555 #1a1a1a;
   }
@@ -284,7 +284,7 @@
     width: 100%;
     max-width: 1280px;
     margin-inline: auto;
-    padding-inline: clamp(1.25rem, 4vw, 2rem);
+    padding-inline: clamp(1rem, 2.5vw, 1.5rem);
   }
 
   .measure {
@@ -455,4 +455,127 @@ html.admin-scroll-lock body {
   --color-hairline: #2a2f3a;
   --color-taupe: #9aa1ad;
   color-scheme: dark;
+}
+
+/* Rich text (TipTap admin + storefront) */
+.prose-ns {
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: inherit;
+}
+
+.prose-ns > * + * {
+  margin-top: 0.9em;
+}
+
+.prose-ns p {
+  margin: 0;
+}
+
+.prose-ns h2,
+.prose-ns h3,
+.prose-ns h4 {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  color: inherit;
+}
+
+.prose-ns h2 {
+  font-size: 1.35em;
+}
+
+.prose-ns h3 {
+  font-size: 1.15em;
+}
+
+.prose-ns ul,
+.prose-ns ol {
+  padding-left: 1.25em;
+}
+
+.prose-ns ul {
+  list-style: disc;
+}
+
+.prose-ns ol {
+  list-style: decimal;
+}
+
+.prose-ns li + li {
+  margin-top: 0.35em;
+}
+
+.prose-ns a {
+  color: var(--color-brass, #a67c3d);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-ns blockquote {
+  border-left: 2px solid var(--color-hairline, #e8dfcb);
+  padding-left: 1rem;
+  color: var(--color-taupe, #8b7e6d);
+  font-style: italic;
+}
+
+.prose-ns strong {
+  font-weight: 600;
+}
+
+.prose-ns u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-ns hr {
+  border: 0;
+  border-top: 1px solid var(--color-hairline, #e8dfcb);
+  margin: 1.25em 0;
+}
+
+.admin-rte-shell .ProseMirror,
+.admin-rich-editor.ProseMirror,
+.admin-rich-editor .ProseMirror {
+  min-height: 13rem;
+}
+
+.admin-rte-shell .ProseMirror {
+  padding: 0.85rem 0.9rem;
+}
+
+.admin-rich-editor .ProseMirror p.is-editor-empty:first-child::before,
+.admin-rich-editor p.is-editor-empty:first-child::before,
+.admin-rte-shell .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--admin-faint);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.admin-day-picker {
+  --rdp-accent-color: #a67c3d;
+  --rdp-accent-background-color: rgba(166, 124, 61, 0.18);
+  --rdp-today-color: #a67c3d;
+  color: var(--admin-ink);
+  background: transparent;
+}
+
+.admin-day-picker button {
+  color: inherit;
+}
+
+/* Date popover must stay opaque even if portal stacking is awkward */
+.admin-app .admin-date-popover {
+  background-color: var(--admin-paper) !important;
+  color: var(--admin-ink);
+  opacity: 1 !important;
+  isolation: isolate;
+}
+
+.admin-app .admin-rdp {
+  color: var(--admin-ink);
 }

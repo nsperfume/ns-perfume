@@ -6,6 +6,7 @@ import { PageHero } from "@/components/layout/page-hero";
 import { JsonLd } from "@/components/seo/json-ld";
 import { siteImages } from "@/data/images";
 import { getCollectionWithProducts } from "@/lib/store-data";
+import { richTextToPlain } from "@/lib/rich-text";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -17,7 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) return { title: "Collection" };
   return {
     title: `${data.collection.title} perfume collection`,
-    description: data.collection.description,
+    description: richTextToPlain(data.collection.description || "").slice(
+      0,
+      154,
+    ),
     alternates: { canonical: `/collections/${handle}` },
   };
 }
@@ -53,7 +57,7 @@ export default async function CollectionPage({ params }: Props) {
       <JsonLd data={breadcrumbLd} />
       <PageHero
         title={collection.title}
-        description={collection.description}
+        description={richTextToPlain(collection.description || "")}
         image={siteImages.collectionsHero}
         alt={`${collection.title} collection atmosphere with fragrance bottles`}
         objectPosition="center 48%"

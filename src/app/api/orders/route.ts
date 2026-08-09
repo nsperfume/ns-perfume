@@ -2,6 +2,7 @@ import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth";
+import { getCustomerSession } from "@/lib/customer-auth";
 import { OrderModel } from "@/models/Order";
 import {
   FREE_SHIPPING_THRESHOLD_PKR,
@@ -73,6 +74,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await connectDB();
+    const session = await getCustomerSession();
+    const customerId = session?.sub || "";
     const raw = await req.json();
     const parsed = createOrderSchema.safeParse(raw);
     if (!parsed.success) {
@@ -170,6 +173,7 @@ export async function POST(req: Request) {
         email: body.email.toLowerCase().trim(),
         phone: body.phone || body.shippingAddress.phone || "",
         customerName,
+        customerId: customerId || "",
         status,
         currency: body.currency || "PKR",
         subtotalPkr,

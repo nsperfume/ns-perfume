@@ -10,6 +10,8 @@ export type Product = {
   handle: string;
   name: string;
   descriptor: string;
+  /** PDP buy-column description (HTML or plain). */
+  description?: string;
   concentration: Concentration;
   family: string;
   gender: "her" | "him" | "unisex";
@@ -20,6 +22,8 @@ export type Product = {
   sillage: number; // 1–5
   longevity: number; // 1–5
   ingredients: string[];
+  /** False for alcohol-free / oil formulas. Defaults true when omitted. */
+  containsAlcohol?: boolean;
   countryOfOrigin: string;
   story: string;
   howToWear: string;
@@ -47,12 +51,15 @@ export type JournalPost = {
   slug: string;
   title: string;
   excerpt: string;
-  body: string[];
+  body: string[] | string;
   date: string;
   readTime: string;
   relatedProductHandle?: string;
   relatedCollectionHandle?: string;
+  imageUrl?: string;
   imageTone: string;
+  category?: string;
+  status?: "published" | "draft";
 };
 
 export type CartLine = {

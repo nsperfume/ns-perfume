@@ -39,6 +39,7 @@ const OrderSchema = new Schema(
     email: { type: String, required: true, index: true },
     phone: { type: String, default: "" },
     customerName: { type: String, default: "" },
+    customerId: { type: String, default: "", index: true },
     status: {
       type: String,
       enum: [

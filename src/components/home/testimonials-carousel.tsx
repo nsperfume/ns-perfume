@@ -1,6 +1,8 @@
 "use client";
 
 import { EmblaCarousel } from "@/components/ui/embla-carousel";
+import { RichHtml } from "@/components/ui/rich-html";
+import { isRichHtml, richTextToPlain } from "@/lib/rich-text";
 
 export type TestimonialItem = {
   author: string;
@@ -25,7 +27,7 @@ export function TestimonialsCarousel({ items }: { items: TestimonialItem[] }) {
     >
       {items.map((t) => (
         <figure
-          key={`${t.author}-${t.quote.slice(0, 24)}`}
+          key={`${t.author}-${richTextToPlain(t.quote).slice(0, 24)}`}
           className="flex h-full min-h-[14rem] flex-col justify-between border-t border-hairline pt-8 sm:min-h-[16rem]"
         >
           {t.rating ? (
@@ -36,7 +38,11 @@ export function TestimonialsCarousel({ items }: { items: TestimonialItem[] }) {
             <div className="mb-4 h-px w-8 bg-brass" aria-hidden />
           )}
           <blockquote className="flex-1 font-serif text-[1.2rem] leading-relaxed text-ink sm:text-[1.35rem]">
-            “{t.quote}”
+            {isRichHtml(t.quote) ? (
+              <RichHtml html={t.quote} />
+            ) : (
+              <>“{t.quote}”</>
+            )}
           </blockquote>
           <figcaption className="mt-8">
             <p className="font-display text-[0.95rem] font-medium text-ink">

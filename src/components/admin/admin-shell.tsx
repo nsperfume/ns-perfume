@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type WheelEvent } from "react";
 import {
   BoxIcon,
+  BookOpenIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
   ExternalLinkIcon,
@@ -84,6 +85,7 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Testimonials",
         Icon: MessageCircleIcon,
       },
+      { href: "/admin/journal", label: "Journal", Icon: BookOpenIcon },
     ],
   },
   {

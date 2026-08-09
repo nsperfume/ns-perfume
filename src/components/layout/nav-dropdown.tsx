@@ -116,7 +116,7 @@ export function NavDropdown({
 
   if (wide && columns) {
     body = (
-      <div className="mx-auto w-full max-w-[70rem] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper text-ink shadow-[0_24px_48px_rgba(0,0,0,0.24)]">
+      <div className="mx-auto w-full max-w-[80rem] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper text-ink shadow-[0_24px_48px_rgba(0,0,0,0.24)]">
         <div className="flex flex-col gap-2.5 border-b border-hairline bg-[#FAF8F4] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div className="min-w-0">
             <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">

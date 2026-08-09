@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { StoreProduct } from "@/lib/mappers";
 import { AdminImageField } from "@/components/admin/image-field";
+import { AdminRichTextEditor } from "@/components/admin/rich-text-editor";
 import {
   AdminFieldLabel,
   AdminFormSection,
@@ -12,6 +13,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/cn";
+import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 
 type Props = {
   initial: StoreProduct | null;
@@ -40,6 +42,7 @@ const empty = {
   handle: "",
   name: "",
   descriptor: "",
+  description: "",
   concentration: "EDP",
   family: "fresh",
   gender: "unisex",
@@ -50,19 +53,23 @@ const empty = {
   sillage: 3,
   longevity: 3,
   ingredients: [] as string[],
+  containsAlcohol: true,
   countryOfOrigin: "—",
   story: "",
   howToWear: "",
   tags: [] as string[],
   collectionHandles: [] as string[],
   badges: [] as string[],
-  imagePrimary: "",
-  imageSecondary: "",
   gallery: [] as string[],
   relatedHandles: [] as string[],
   inStock: true,
   status: "active",
 };
+
+function initialGallery(product: StoreProduct) {
+  if (product.gallery?.length) return [...product.gallery];
+  return [product.imagePrimary, product.imageSecondary].filter(Boolean);
+}
 
 function familyOptions(current: string) {
   const list: { value: string; label: string }[] = SCENT_FAMILIES.map((f) => ({
@@ -83,6 +90,11 @@ function parseNotes(value: string) {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+/** Drop alcohol carrier lines when marking a bottle alcohol-free. */
+function withoutAlcoholIngredients(list: string[]) {
+  return list.filter((item) => !/alcohol/i.test(item));
 }
 
 function buildTags(form: {
@@ -125,6 +137,7 @@ export function ProductForm({
       handle: initial.handle,
       name: initial.name,
       descriptor: initial.descriptor,
+      description: toRichHtml(initial.description || ""),
       concentration: initial.concentration,
       family: initial.family,
       gender: initial.gender,
@@ -135,15 +148,14 @@ export function ProductForm({
       sillage: initial.sillage,
       longevity: initial.longevity,
       ingredients: initial.ingredients,
+      containsAlcohol: initial.containsAlcohol !== false,
       countryOfOrigin: initial.countryOfOrigin,
-      story: initial.story,
-      howToWear: initial.howToWear,
+      story: toRichHtml(initial.story),
+      howToWear: toRichHtml(initial.howToWear),
       tags: initial.tags,
       collectionHandles: initial.collectionHandles || [],
       badges: initial.badges,
-      imagePrimary: initial.imagePrimary,
-      imageSecondary: initial.imageSecondary,
-      gallery: initial.gallery,
+      gallery: initialGallery(initial),
       relatedHandles: initial.relatedHandles,
       inStock: initial.inStock,
       status: initial.status || "active",
@@ -195,10 +207,18 @@ export function ProductForm({
     e.preventDefault();
     setSaving(true);
     setError("");
+    const gallery = form.gallery.map((u) => u.trim()).filter(Boolean);
+    if (!gallery.length) {
+      setSaving(false);
+      setError("Add at least one gallery image (first image is the product card).");
+      return;
+    }
+
     const payload = {
       handle: form.handle,
       name: form.name,
       descriptor: form.descriptor,
+      description: sanitizeRichHtml(toRichHtml(form.description)),
       concentration: form.concentration,
       family: form.family,
       gender: form.gender,
@@ -212,18 +232,20 @@ export function ProductForm({
       baseNotes: form.baseNotes,
       sillage: form.sillage,
       longevity: form.longevity,
-      ingredients: form.ingredients,
+      ingredients: form.containsAlcohol
+        ? form.ingredients
+        : withoutAlcoholIngredients(form.ingredients),
+      containsAlcohol: form.containsAlcohol,
       countryOfOrigin: form.countryOfOrigin,
-      story: form.story,
-      howToWear: form.howToWear,
+      story: sanitizeRichHtml(toRichHtml(form.story)),
+      howToWear: sanitizeRichHtml(toRichHtml(form.howToWear)),
       tags: buildTags(form),
       collectionHandles: form.collectionHandles,
       badges: form.badges,
-      imagePrimary: form.imagePrimary,
-      imageSecondary: form.imageSecondary,
-      gallery: form.gallery.length
-        ? form.gallery
-        : [form.imagePrimary, form.imageSecondary].filter(Boolean),
+      // First gallery image = card/hero primary; second = hover.
+      imagePrimary: gallery[0],
+      imageSecondary: gallery[1] || gallery[0],
+      gallery,
       relatedHandles: form.relatedHandles,
       inStock: form.inStock,
       status: form.status,
@@ -358,70 +380,74 @@ export function ProductForm({
                   placeholder="Warm amber with a cedar trail"
                 />
               </div>
+              <div className="sm:col-span-2">
+                <AdminRichTextEditor
+                  label="Product description"
+                  tip="Shown in the buy column on the product page, under the short descriptor."
+                  value={form.description}
+                  minHeightClass="min-h-32"
+                  placeholder="What it smells like, when it suits, and how it wears."
+                  onChange={(description) => setField("description", description)}
+                />
+              </div>
             </div>
           </AdminFormSection>
 
           <AdminFormSection
             title="Images"
-            description="Primary is required for product cards."
-            tip="Drop a file, click to upload, or paste a URL under each slot."
+            description="Gallery only. The first image is the card and hero. The second is the card hover."
+            tip="Drop a file, click to upload, or paste a URL under each slot. Add at least one image."
           >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <AdminImageField
-                label="Primary"
-                hint="Card + hero"
-                aspect="square"
-                value={form.imagePrimary}
-                onChange={(url) => setField("imagePrimary", url)}
-              />
-              <AdminImageField
-                label="Hover"
-                hint="Optional. Shown on card hover"
-                aspect="square"
-                value={form.imageSecondary}
-                onChange={(url) => setField("imageSecondary", url)}
-              />
-            </div>
-
-            <div className="border-t border-[var(--admin-line)] pt-4">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <div>
-                  <p className="font-display text-base font-semibold text-[var(--admin-ink)]">
-                    Gallery
-                  </p>
-                  <p className="text-[13px] text-[var(--admin-muted)]">
-                    Extra product page photos
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setField("gallery", [...form.gallery, ""])}
-                  className="!h-9 !min-h-9 !w-auto !px-3 text-sm"
-                >
-                  + Add
-                </Button>
-              </div>
-              {form.gallery.length ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {form.gallery.map((url, i) => (
-                    <AdminImageField
-                      key={`gallery-${i}-${url || "empty"}`}
-                      label="Gallery"
-                      density="compact"
-                      aspect="square"
-                      value={url}
-                      onChange={(next) => setGalleryItem(i, next)}
-                      onRemoveSlot={() => removeGallerySlot(i)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="rounded-md border border-dashed border-[var(--admin-line)] bg-[var(--admin-soft-2)] px-3 py-4 text-center text-sm text-[var(--admin-muted)]">
-                  Primary and hover are enough for most bottles.
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div>
+                <p className="font-display text-base font-semibold text-[var(--admin-ink)]">
+                  Gallery
                 </p>
-              )}
+                <p className="text-[13px] text-[var(--admin-muted)]">
+                  1st = primary · 2nd = hover · rest = product page
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setField("gallery", [...form.gallery, ""])}
+                className="!h-9 !min-h-9 !w-auto !px-3 text-sm"
+              >
+                + Add
+              </Button>
             </div>
+            {form.gallery.length ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {form.gallery.map((url, i) => (
+                  <AdminImageField
+                    key={`gallery-${i}-${url || "empty"}`}
+                    label={
+                      i === 0
+                        ? "1 · Primary"
+                        : i === 1
+                          ? "2 · Hover"
+                          : `Gallery ${i + 1}`
+                    }
+                    hint={
+                      i === 0
+                        ? "Card and product hero"
+                        : i === 1
+                          ? "Shown on product card hover"
+                          : undefined
+                    }
+                    density="compact"
+                    aspect="square"
+                    value={url}
+                    onChange={(next) => setGalleryItem(i, next)}
+                    onRemoveSlot={() => removeGallerySlot(i)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-md border border-dashed border-[var(--admin-line)] bg-[var(--admin-soft-2)] px-3 py-4 text-center text-sm text-[var(--admin-muted)]">
+                Add a gallery image to publish this bottle.
+              </p>
+            )}
           </AdminFormSection>
 
           <AdminFormSection
@@ -429,30 +455,22 @@ export function ProductForm({
             description="Longer copy for people who scroll the product page."
             tip="Aim for at least a short paragraph. This helps SEO and sets expectations for wear."
           >
-            <div>
-              <AdminFieldLabel tip="What it smells like, when to wear it, who it suits.">
-                Product story
-              </AdminFieldLabel>
-              <textarea
-                className={cn(adminFieldClass, "min-h-[7rem] resize-y")}
-                rows={5}
-                value={form.story}
-                onChange={(e) => setField("story", e.target.value)}
-                placeholder="Opens with… settles into…"
-              />
-            </div>
-            <div>
-              <AdminFieldLabel tip="Optional. Practical guidance shown near purchase.">
-                How to wear
-              </AdminFieldLabel>
-              <textarea
-                className={cn(adminFieldClass, "min-h-[4.5rem] resize-y")}
-                rows={3}
-                value={form.howToWear}
-                onChange={(e) => setField("howToWear", e.target.value)}
-                placeholder="Two sprays on pulse points for evening…"
-              />
-            </div>
+            <AdminRichTextEditor
+              label="Product story"
+              tip="What it smells like, when to wear it, who it suits."
+              value={form.story}
+              minHeightClass="min-h-40"
+              placeholder="Opens with… settles into…"
+              onChange={(story) => setField("story", story)}
+            />
+            <AdminRichTextEditor
+              label="How to wear"
+              tip="Optional. Practical guidance shown near purchase."
+              value={form.howToWear}
+              minHeightClass="min-h-28"
+              placeholder="Two sprays on pulse points for evening…"
+              onChange={(howToWear) => setField("howToWear", howToWear)}
+            />
           </AdminFormSection>
 
           <AdminFormSection
@@ -743,6 +761,57 @@ export function ProductForm({
                   }
                 />
               </div>
+            </div>
+            <div>
+              <AdminFieldLabel tip="Shown on the product page. Leave blank if you do not want an ingredients list.">
+                Ingredients
+              </AdminFieldLabel>
+              <input
+                className={adminFieldClass}
+                value={form.ingredients.join(", ")}
+                onChange={(e) =>
+                  setField("ingredients", parseNotes(e.target.value))
+                }
+                placeholder={
+                  form.containsAlcohol
+                    ? "Alcohol denat., Parfum, Linalool"
+                    : "Parfum, Essential oils, Carrier oil"
+                }
+              />
+            </div>
+            <div>
+              <AdminFieldLabel tip="Uncheck for oil or attar formulas with no alcohol carrier. Storefront will label them alcohol-free.">
+                Alcohol
+              </AdminFieldLabel>
+              <label className="mt-1 flex min-h-12 cursor-pointer items-center gap-2.5 rounded-md border border-[var(--admin-input-border)] bg-[var(--admin-soft-2)] px-3.5 text-base text-[var(--admin-ink)]">
+                <input
+                  type="checkbox"
+                  checked={form.containsAlcohol}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setForm((f) => ({
+                      ...f,
+                      containsAlcohol: next,
+                      ingredients: next
+                        ? f.ingredients
+                        : withoutAlcoholIngredients(f.ingredients),
+                    }));
+                  }}
+                  className="h-4 w-4 accent-brass"
+                />
+                Formula contains alcohol
+              </label>
+            </div>
+            <div>
+              <AdminFieldLabel tip="Country shown under ingredients and specs.">
+                Country of origin
+              </AdminFieldLabel>
+              <input
+                className={adminFieldClass}
+                value={form.countryOfOrigin}
+                onChange={(e) => setField("countryOfOrigin", e.target.value)}
+                placeholder="Pakistan"
+              />
             </div>
           </AdminFormSection>
         </div>

@@ -18,6 +18,9 @@ type CartContextValue = {
   closeCart: () => void;
   toggleCart: () => void;
   addItem: (line: Omit<CartLine, "quantity">, quantity?: number) => void;
+  addItems: (
+    items: Array<Omit<CartLine, "quantity"> & { quantity?: number }>,
+  ) => void;
   removeItem: (sku: string) => void;
   updateQuantity: (sku: string, quantity: number) => void;
   clearCart: () => void;
@@ -68,6 +71,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const addItems = useCallback(
+    (items: Array<Omit<CartLine, "quantity"> & { quantity?: number }>) => {
+      if (!items.length) return;
+      setLines((prev) => {
+        let next = [...prev];
+        for (const item of items) {
+          const quantity = item.quantity ?? 1;
+          const { quantity: _q, ...line } = item;
+          const existing = next.find((l) => l.sku === line.sku);
+          if (existing) {
+            next = next.map((l) =>
+              l.sku === line.sku
+                ? { ...l, quantity: l.quantity + quantity }
+                : l,
+            );
+          } else {
+            next = [...next, { ...line, quantity }];
+          }
+        }
+        return next;
+      });
+      setIsOpen(true);
+    },
+    [],
+  );
+
   const removeItem = useCallback((sku: string) => {
     setLines((prev) => prev.filter((l) => l.sku !== sku));
   }, []);
@@ -99,6 +128,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       closeCart,
       toggleCart,
       addItem,
+      addItems,
       removeItem,
       updateQuantity,
       clearCart,
@@ -112,6 +142,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       closeCart,
       toggleCart,
       addItem,
+      addItems,
       removeItem,
       updateQuantity,
       clearCart,

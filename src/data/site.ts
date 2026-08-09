@@ -7,15 +7,28 @@ export const siteConfig = {
   description:
     "NS Perfume is a fragrance house with honest scent pyramids, clear sillage ratings, and prices that convert into the currency you choose.",
   email: "care@nsperfume.com",
-  phone: "+92 300 0000000",
+  /** Primary care line (JazzCash / Easypaisa / WhatsApp). No spaces for easy copy. */
+  phone: "03067861412",
+  contactName: "Asim Ali",
+  location: {
+    label: "NS Mart",
+    detail: "Qila Didar Singh",
+    mapsUrl:
+      "https://www.google.com/maps/search/NS+Mart/@32.131237,74.0168304,17z?hl=en",
+  },
+  /** Mobile wallets accepted for prepaid orders (same as primary contact number). */
+  wallets: {
+    jazzcash: "03067861412",
+    easypaisa: "03067861412",
+  },
   /** Shown at checkout for bank deposit / transfer payment. */
   bankTransfer: {
-    bankName: "Habib Bank Limited (HBL)",
-    accountTitle: "NS Perfume",
-    accountNumber: "1234-5678901234",
-    iban: "PK00HABB0000123456789012",
-    branch: "Main Branch, Lahore",
-    note: "Use your order number as the transfer reference. Email proof to care@nsperfume.com if requested.",
+    bankName: "Meezan Bank",
+    accountTitle: "Asim Ali",
+    accountNumber: "09110111027312",
+    iban: "PK68MEZN0009110111027312",
+    branch: "Qila Didar Singh (0911)",
+    note: "Use your order number as the transfer reference. WhatsApp payment proof to 03067861412 if asked.",
   },
 } as const;
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ScentPyramid } from "@/components/commerce/scent-pyramid";
+import { RichHtml } from "@/components/ui/rich-html";
 import { cn } from "@/lib/cn";
 import type { StoreProduct } from "@/lib/mappers";
 
@@ -68,9 +69,10 @@ export function ProductTabs({ product }: { product: StoreProduct }) {
         ) : null}
         {tab === "story" ? (
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
-            <p className="max-w-2xl text-pretty font-serif text-[1.2rem] leading-[1.7] text-ink/85">
-              {product.story}
-            </p>
+            <RichHtml
+              html={product.story}
+              className="max-w-2xl text-pretty font-serif text-[1.2rem] leading-[1.7] text-ink/85"
+            />
             <aside className="border border-hairline bg-muted/50 p-6">
               <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
                 At a glance
@@ -97,9 +99,10 @@ export function ProductTabs({ product }: { product: StoreProduct }) {
           </div>
         ) : null}
         {tab === "wear" ? (
-          <p className="measure-wide text-pretty font-serif text-[1.2rem] leading-[1.7] text-ink/85">
-            {product.howToWear}
-          </p>
+          <RichHtml
+            html={product.howToWear}
+            className="measure-wide text-pretty font-serif text-[1.2rem] leading-[1.7] text-ink/85"
+          />
         ) : null}
       </div>
     </div>

@@ -45,8 +45,9 @@ export const PAYMENT_METHODS: {
   },
   {
     id: "bank",
-    title: "Bank deposit / transfer",
-    description: "Transfer to our account, then we confirm and ship.",
+    title: "Bank transfer or mobile wallet",
+    description:
+      "Pay by Meezan Bank, JazzCash, or Easypaisa. We confirm, then ship.",
   },
   // Online card (Visa / Mastercard / local debit) — enable when a gateway is live.
   // {

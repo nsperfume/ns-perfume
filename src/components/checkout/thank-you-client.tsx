@@ -10,12 +10,13 @@ import {
 } from "@/lib/checkout";
 import { useCurrency } from "@/context/currency";
 import { formatSize } from "@/lib/format";
+import { TransferDetails } from "@/components/commerce/transfer-details";
 import { siteConfig } from "@/data/site";
 
 const paymentLabels: Record<PaymentMethodId, string> = {
   cod: "Cash on delivery (COD)",
   card: "Credit card",
-  bank: "Bank deposit / transfer",
+  bank: "Bank transfer or mobile wallet",
 };
 
 export function ThankYouClient() {
@@ -126,43 +127,22 @@ export function ThankYouClient() {
           {order.paymentMethod === "bank" ? (
             <section className="mt-4 rounded-md border border-hairline bg-canvas-deep p-5">
               <h2 className="font-display text-lg font-medium">
-                Bank transfer next steps
+                Payment next steps
               </h2>
               <p className="mt-2 text-[14px] leading-relaxed text-taupe">
                 Transfer{" "}
                 <span className="font-medium text-ink">
                   {format(order.totalPkr)}
                 </span>{" "}
-                and use order number{" "}
+                by bank, JazzCash, or Easypaisa. Use order number{" "}
                 <span className="font-mono font-medium text-ink">
                   {order.orderNumber}
                 </span>{" "}
                 as the reference.
               </p>
-              <dl className="mt-4 grid gap-2 text-[13px] sm:grid-cols-2">
-                <div>
-                  <dt className="text-taupe">Bank</dt>
-                  <dd className="font-medium">{siteConfig.bankTransfer.bankName}</dd>
-                </div>
-                <div>
-                  <dt className="text-taupe">Account title</dt>
-                  <dd className="font-medium">
-                    {siteConfig.bankTransfer.accountTitle}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-taupe">Account number</dt>
-                  <dd className="font-mono font-medium">
-                    {siteConfig.bankTransfer.accountNumber}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-taupe">IBAN</dt>
-                  <dd className="break-all font-mono text-[12px] font-medium">
-                    {siteConfig.bankTransfer.iban}
-                  </dd>
-                </div>
-              </dl>
+              <div className="mt-4">
+                <TransferDetails />
+              </div>
               <p className="mt-3 text-[13px] text-taupe">
                 {siteConfig.bankTransfer.note}
               </p>

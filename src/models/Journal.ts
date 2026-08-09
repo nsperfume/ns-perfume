@@ -5,9 +5,11 @@ const JournalSchema = new Schema(
     slug: { type: String, required: true, unique: true },
     title: { type: String, required: true },
     excerpt: { type: String, default: "" },
-    body: { type: [String], default: [] },
+    /** HTML from TipTap. Legacy docs may still store string[]. */
+    body: { type: Schema.Types.Mixed, default: "" },
     date: { type: String, default: "" },
     readTime: { type: String, default: "5 min" },
+    category: { type: String, default: "Guides" },
     relatedProductHandle: { type: String, default: "" },
     relatedCollectionHandle: { type: String, default: "" },
     imageUrl: { type: String, default: "" },

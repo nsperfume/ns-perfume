@@ -1,5 +1,5 @@
 import { connectDB } from "@/lib/db";
-import { mapProduct, type StoreProduct } from "@/lib/mappers";
+import { mapJournal, mapProduct, type StoreProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
 import { CollectionModel } from "@/models/Collection";
 import { TestimonialModel } from "@/models/Testimonial";
@@ -7,13 +7,14 @@ import { ReviewModel } from "@/models/Review";
 import { JournalModel } from "@/models/Journal";
 import { products as fallbackProducts } from "@/data/products";
 import { collections as fallbackCollections } from "@/data/collections";
-import { journalPosts as fallbackJournal } from "@/data/journal";
 import { productsInCollectionQuery } from "@/lib/collection-query";
 
 function toPkrFallback(p: (typeof fallbackProducts)[0]): StoreProduct {
   return {
     ...p,
     id: p.handle,
+    description: p.description || "",
+    containsAlcohol: p.containsAlcohol !== false,
     collectionHandles: [],
     prices: p.prices.map((s) => ({
       ml: s.ml,
@@ -172,20 +173,23 @@ export async function getJournalPosts() {
     const docs = await JournalModel.find({ status: "published" })
       .sort({ date: -1 })
       .lean();
-    if (docs.length) return docs;
+    return docs.map(mapJournal);
   } catch (e) {
-    console.error("getJournalPosts fallback", e);
+    console.error("getJournalPosts", e);
+    return [];
   }
-  return fallbackJournal;
 }
 
 export async function getJournalPost(slug: string) {
   try {
     await connectDB();
-    const doc = await JournalModel.findOne({ slug, status: "published" }).lean();
-    if (doc) return doc;
+    const doc = await JournalModel.findOne({
+      slug,
+      status: "published",
+    }).lean();
+    return doc ? mapJournal(doc) : null;
   } catch (e) {
-    console.error("getJournalPost fallback", e);
+    console.error("getJournalPost", e);
+    return null;
   }
-  return fallbackJournal.find((p) => p.slug === slug) || null;
 }
