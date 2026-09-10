@@ -144,14 +144,14 @@ export function AdminImageField({
         <div className="min-w-0">
           <p
             className={cn(
-              "font-display font-semibold text-[var(--admin-ink)]",
+              "font-display font-semibold text-admin-ink",
               compact ? "text-[13px]" : "text-sm",
             )}
           >
             {label}
           </p>
           {hint ? (
-            <p className="mt-0.5 text-[13px] leading-snug text-[var(--admin-muted)]">
+            <p className="mt-0.5 text-[13px] leading-snug text-admin-muted">
               {hint}
             </p>
           ) : null}
@@ -160,13 +160,13 @@ export function AdminImageField({
 
       <div
         className={cn(
-          "relative overflow-hidden rounded-lg border bg-[var(--admin-soft-2)] transition-colors",
+          "relative overflow-hidden rounded-lg border bg-admin-soft-2 transition-colors",
           dragging
             ? "border-brass bg-brass/5"
-            : "border-[var(--admin-line)]",
+            : "border-admin-line",
           hasImage
             ? "border-solid"
-            : "border-dashed border-[var(--admin-input-border)]",
+            : "border-dashed border-admin-input-border",
         )}
         onDragEnter={(e) => {
           e.preventDefault();
@@ -189,14 +189,14 @@ export function AdminImageField({
             onClick={handleRemoveClick}
             aria-label={onRemoveSlot ? "Remove image slot" : "Clear image"}
             title={onRemoveSlot ? "Remove" : "Clear image"}
-            className="absolute right-2 top-2 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[var(--admin-line)] bg-[var(--admin-paper)] text-base leading-none text-[var(--admin-ink)] shadow-sm transition-colors hover:border-rosewood hover:bg-rosewood hover:text-white"
+            className="absolute right-2 top-2 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-admin-line bg-admin-paper text-base leading-none text-admin-ink shadow-sm transition-colors hover:border-rosewood hover:bg-rosewood hover:text-white"
           >
             ×
           </button>
         ) : null}
 
         {hasImage ? (
-          <div className={cn("relative bg-[var(--admin-soft)]", aspectClass)}>
+          <div className={cn("relative bg-admin-soft", aspectClass)}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewSrc}
@@ -211,7 +211,7 @@ export function AdminImageField({
                 variant="secondary"
                 disabled={uploading}
                 onClick={() => fileRef.current?.click()}
-                className="!h-9 !min-h-9 !w-auto !rounded-md !px-3 text-xs"
+                className="h-9! min-h-9! w-auto! rounded-md! px-3! text-xs"
               >
                 {uploading ? "Uploading…" : "Replace"}
               </Button>
@@ -219,7 +219,7 @@ export function AdminImageField({
                 type="button"
                 variant="primary"
                 onClick={() => setUrlOpen((v) => !v)}
-                className="!h-9 !min-h-9 !w-auto !rounded-md !px-3 text-xs"
+                className="h-9! min-h-9! w-auto! rounded-md! px-3! text-xs"
               >
                 URL
               </Button>
@@ -241,7 +241,7 @@ export function AdminImageField({
           <label
             htmlFor={inputId}
             className={cn(
-              "flex w-full cursor-pointer flex-col items-center justify-center gap-2 px-4 text-center transition-colors hover:bg-[var(--admin-soft)]",
+              "flex w-full cursor-pointer flex-col items-center justify-center gap-2 px-4 text-center transition-colors hover:bg-admin-soft",
               aspectClass,
               compact ? "min-h-[8rem]" : "min-h-[10rem]",
               uploading && "pointer-events-none opacity-60",
@@ -249,17 +249,17 @@ export function AdminImageField({
           >
             <span
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full border border-[var(--admin-line)] bg-[var(--admin-paper)] text-xl leading-none text-[var(--admin-muted)]",
+                "flex h-10 w-10 items-center justify-center rounded-full border border-admin-line bg-admin-paper text-xl leading-none text-admin-muted",
                 compact && "h-9 w-9 text-lg",
               )}
               aria-hidden
             >
               +
             </span>
-            <span className="font-display text-[15px] font-medium text-[var(--admin-ink)]">
+            <span className="font-display text-[15px] font-medium text-admin-ink">
               {uploading ? "Uploading…" : "Drop image or click"}
             </span>
-            <span className="text-[13px] text-[var(--admin-muted)]">
+            <span className="text-[13px] text-admin-muted">
               JPG, PNG, WebP
             </span>
             <input
@@ -279,12 +279,12 @@ export function AdminImageField({
       </div>
 
       {/* URL row — always available and styled for contrast */}
-      <div className="mt-3 rounded-md border border-[var(--admin-line)] bg-[var(--admin-paper)] p-2.5">
+      <div className="mt-3 rounded-md border border-admin-line bg-admin-paper p-2.5">
         {!urlOpen && !hasImage ? (
           <button
             type="button"
             onClick={() => setUrlOpen(true)}
-            className="w-full cursor-pointer py-1 text-left font-display text-sm font-medium text-[var(--admin-ink)] underline-offset-2 hover:underline"
+            className="w-full cursor-pointer py-1 text-left font-display text-sm font-medium text-admin-ink underline-offset-2 hover:underline"
           >
             Or paste an image URL
           </button>
@@ -306,14 +306,14 @@ export function AdminImageField({
                   applyUrl();
                 }
               }}
-              className="min-h-11 min-w-0 flex-1 rounded-md border border-[var(--admin-input-border)] bg-[var(--admin-soft-2)] px-3 py-2.5 text-[15px] text-[var(--admin-ink)] outline-none placeholder:text-[var(--admin-faint)] focus:border-brass focus:ring-2 focus:ring-brass/20"
+              className="min-h-11 min-w-0 flex-1 rounded-md border border-admin-input-border bg-admin-soft-2 px-3 py-2.5 text-[15px] text-admin-ink outline-none placeholder:text-admin-faint focus:border-brass focus:ring-2 focus:ring-brass/20"
             />
             <div className="flex shrink-0 gap-2">
               <Button
                 type="button"
                 variant="secondary"
                 onClick={applyUrl}
-                className="!h-11 !min-h-11 !w-auto !px-4 text-sm"
+                className="h-11! min-h-11! w-auto! px-4! text-sm"
               >
                 Apply URL
               </Button>
@@ -324,7 +324,7 @@ export function AdminImageField({
                     setUrlOpen(false);
                     setUrlDraft(value);
                   }}
-                  className="cursor-pointer px-2 font-display text-sm text-[var(--admin-muted)] hover:text-[var(--admin-ink)]"
+                  className="cursor-pointer px-2 font-display text-sm text-admin-muted hover:text-admin-ink"
                 >
                   Cancel
                 </button>

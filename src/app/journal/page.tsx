@@ -119,7 +119,7 @@ export default async function JournalIndexPage() {
                 <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.14em] text-brass">
                   {post.category}
                 </p>
-                <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-taupe">
+                <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-taupe">
                   {formatDate(post.date)} · {post.readTime}
                 </p>
                 <h2 className="font-display text-[1.2rem] font-medium leading-snug text-ink transition-colors group-hover:text-brass">

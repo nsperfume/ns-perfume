@@ -98,7 +98,7 @@ export function WishlistClient() {
                     </Link>
 
                     <div className="flex flex-1 flex-col">
-                      <div className="mb-5 flex items-start justify-between gap-3">
+                      <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                         <div className="min-w-0">
                           <Link
                             href={`/products/${item.productHandle}`}
@@ -112,7 +112,7 @@ export function WishlistClient() {
                         </div>
                         <Price
                           amountPkr={item.pricePkr}
-                          className="shrink-0 pt-0.5 text-[1rem] font-medium tabular-nums"
+                          className="shrink-0 text-[1rem] font-medium tabular-nums sm:pt-0.5"
                         />
                       </div>
 

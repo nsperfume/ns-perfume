@@ -43,7 +43,7 @@ export function ProductCard({
         className,
       )}
     >
-      <div className="relative mb-3.5 aspect-[4/5] w-full overflow-hidden bg-muted">
+      <div className="relative mb-3 aspect-square w-full overflow-hidden bg-muted sm:mb-3.5 sm:aspect-4/5">
         <Image
           src={product.imagePrimary}
           alt={`NS Perfume ${product.name} bottle`}
@@ -51,7 +51,7 @@ export function ProductCard({
           priority={priority}
           loading={priority ? "eager" : "lazy"}
           quality={80}
-          className="object-cover object-center transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03] group-hover:opacity-0"
+          className="object-cover object-center transition-transform duration-700 ease-out will-change-transform group-hover:scale-105"
           sizes="(max-width: 640px) 70vw, (max-width: 1024px) 40vw, 28vw"
         />
         <Image
@@ -60,14 +60,18 @@ export function ProductCard({
           fill
           loading="lazy"
           quality={80}
-          className="object-cover object-center opacity-0 transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03] group-hover:opacity-100"
+          className="object-cover object-center scale-105 opacity-0 transition-[opacity,transform] duration-700 ease-out will-change-transform group-hover:scale-105 group-hover:opacity-100"
           sizes="(max-width: 640px) 70vw, (max-width: 1024px) 40vw, 28vw"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-ink/0 transition-colors duration-500 group-hover:bg-ink/5"
           aria-hidden
         />
       </div>
 
       <div className="flex flex-1 flex-col">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
           <div className="min-w-0">
             {badge ? (
               <p
@@ -91,7 +95,7 @@ export function ProductCard({
           </div>
           <Price
             amountPkr={price}
-            className="shrink-0 pt-0.5 text-[0.95rem] font-medium tabular-nums sm:text-[1rem]"
+            className="shrink-0 text-[0.95rem] font-medium tabular-nums sm:pt-0.5 sm:text-[1rem]"
           />
         </div>
 

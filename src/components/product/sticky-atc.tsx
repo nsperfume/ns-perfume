@@ -31,7 +31,7 @@ export function StickyAddToCart({
     if (!el) return;
     const obs = new IntersectionObserver(
       ([entry]) => setVisible(!entry.isIntersecting),
-      { threshold: 0 },
+      { threshold: 0, rootMargin: "0px 0px -20% 0px" },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -54,8 +54,8 @@ export function StickyAddToCart({
     <>
       <div ref={sentinelRef} className="h-px w-full" aria-hidden />
       {show ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper p-4 shadow-modal md:hidden">
-          <div className="flex items-center gap-4">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-modal md:hidden">
+          <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{product.name}</p>
               <p className="font-mono text-caption text-taupe">
@@ -66,7 +66,7 @@ export function StickyAddToCart({
             <Button
               onClick={onAdd}
               disabled={!product.inStock}
-              className="!w-auto shrink-0"
+              className="h-11! min-h-11! w-auto! shrink-0 px-0! [&>span:last-child]:px-4"
             >
               Add To Bag
             </Button>

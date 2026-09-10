@@ -163,16 +163,16 @@ export default function AdminCollectionsPage() {
         {/* List — left */}
         <div className="min-w-0">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="font-display text-base font-medium text-[var(--admin-ink)]">
+            <h2 className="font-display text-base font-medium text-admin-ink">
               All collections
-              <span className="ml-2 text-sm font-normal text-[var(--admin-muted)]">
+              <span className="ml-2 text-sm font-normal text-admin-muted">
                 {items.length}
               </span>
             </h2>
             <Tooltip content="Product membership is driven by tags and filters on each collection.">
               <button
                 type="button"
-                className="cursor-help font-display text-xs text-[var(--admin-muted)] underline-offset-2 hover:underline"
+                className="cursor-help font-display text-xs text-admin-muted underline-offset-2 hover:underline"
               >
                 How linking works
               </button>
@@ -188,10 +188,10 @@ export default function AdminCollectionsPage() {
             </thead>
             <tbody>
               {items.map((c) => (
-                <tr key={c.handle} className="hover:bg-[var(--admin-soft)]">
+                <tr key={c.handle} className="hover:bg-admin-soft">
                   <AdminTd>
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border border-[var(--admin-line)] bg-[var(--admin-soft)]">
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border border-admin-line bg-admin-soft">
                         {c.bannerImage ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -202,11 +202,11 @@ export default function AdminCollectionsPage() {
                         ) : null}
                       </div>
                       <div>
-                        <p className="font-semibold text-[var(--admin-ink)]">
+                        <p className="font-semibold text-admin-ink">
                           {c.title}
                         </p>
                         {c.description ? (
-                          <p className="line-clamp-1 text-xs text-[var(--admin-muted)]">
+                          <p className="line-clamp-1 text-xs text-admin-muted">
                             {richTextToPlain(c.description)}
                           </p>
                         ) : null}
@@ -214,7 +214,7 @@ export default function AdminCollectionsPage() {
                     </div>
                   </AdminTd>
                   <AdminTd>
-                    <span className="font-mono text-xs text-[var(--admin-muted)]">
+                    <span className="font-mono text-xs text-admin-muted">
                       {c.handle}
                     </span>
                   </AdminTd>
@@ -227,7 +227,7 @@ export default function AdminCollectionsPage() {
                 <tr>
                   <td
                     colSpan={3}
-                    className="px-4 py-14 text-center text-[var(--admin-muted)]"
+                    className="px-4 py-14 text-center text-admin-muted"
                   >
                     No collections yet. Use the form on the right to create one.
                   </td>
@@ -301,7 +301,7 @@ export default function AdminCollectionsPage() {
                   <p className="mt-1 text-sm text-rosewood">{errors.handle}</p>
                 ) : null}
                 {handle ? (
-                  <p className="mt-1 font-mono text-xs text-[var(--admin-faint)]">
+                  <p className="mt-1 font-mono text-xs text-admin-faint">
                     /collections/{handle}
                   </p>
                 ) : null}
@@ -359,8 +359,8 @@ export default function AdminCollectionsPage() {
             </Button>
           </form>
         ) : (
-          <div className="rounded-lg border border-dashed border-[var(--admin-line)] bg-[var(--admin-paper)] px-5 py-10 text-center lg:sticky lg:top-4">
-            <p className="text-sm text-[var(--admin-muted)]">
+          <div className="rounded-lg border border-dashed border-admin-line bg-admin-paper px-5 py-10 text-center lg:sticky lg:top-4">
+            <p className="text-sm text-admin-muted">
               Form hidden. Open it to create a collection.
             </p>
             <Button

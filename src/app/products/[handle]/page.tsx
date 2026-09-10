@@ -128,7 +128,7 @@ export default async function ProductPage({ params }: Props) {
             ]}
           />
 
-          <div className="mt-6 grid items-start gap-10 md:gap-12 lg:mt-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] lg:items-stretch lg:gap-14 xl:gap-16">
+          <div className="mt-6 grid items-start gap-8 md:gap-12 lg:mt-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] lg:items-stretch lg:gap-14 xl:gap-16">
             <ProductGallery images={product.gallery} name={product.name} />
             <div className="min-h-0 lg:h-full">
               <ProductPurchasePanel product={product} />
@@ -163,9 +163,9 @@ export default async function ProductPage({ params }: Props) {
         </div>
       </section>
 
-      {/* Atmosphere band — fixed 16:9 banner asset */}
+      {/* Atmosphere band */}
       <section className="relative isolate overflow-hidden border-b border-hairline">
-        <div className="relative aspect-video w-full">
+        <div className="relative min-h-[16rem] w-full sm:min-h-0 sm:aspect-video">
           <Image
             src={siteImages.productAtmosphere}
             alt="Perfume atmosphere for wearing NS Perfume"
@@ -175,19 +175,19 @@ export default async function ProductPage({ params }: Props) {
             className="object-cover object-center"
           />
           <div
-            className="absolute inset-0 bg-gradient-to-r from-ink/80 via-ink/55 to-ink/25"
+            className="absolute inset-0 bg-linear-to-r from-ink/80 via-ink/55 to-ink/25"
             aria-hidden
           />
           <div className="absolute inset-0 z-10 flex items-end">
-            <div className="container-ns w-full py-8 sm:py-10 md:py-14 lg:py-16">
+            <div className="container-ns w-full py-7 sm:py-10 md:py-14 lg:py-16">
               <div className="max-w-xl">
                 <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-paper/70">
                   Wear it in
                 </p>
-                <h2 className="mt-3 font-display text-[1.65rem] font-medium leading-tight text-paper sm:text-[2rem] md:text-[2.35rem]">
+                <h2 className="mt-2 font-display text-[1.35rem] font-medium leading-snug text-balance text-paper sm:mt-3 sm:text-[2rem] sm:leading-tight md:text-[2.35rem]">
                   {product.name} for rooms that hold a conversation
                 </h2>
-                <p className="mt-3 max-w-md font-serif text-[1.05rem] leading-relaxed text-paper/85 sm:mt-4 sm:text-[1.1rem]">
+                <p className="mt-2 line-clamp-3 max-w-md font-serif text-[0.98rem] leading-relaxed text-paper/85 sm:mt-4 sm:line-clamp-none sm:text-[1.1rem]">
                   {product.descriptor}. Built for Pakistani heat, layered
                   fabric, and evenings that run long.
                 </p>
@@ -301,6 +301,8 @@ export default async function ProductPage({ params }: Props) {
 
       <div className="container-ns">
         <ProductReviewsSection
+          productHandle={product.handle}
+          productName={product.name}
           rating={product.rating}
           reviewCount={product.reviewCount}
           reviews={productReviews}
@@ -322,7 +324,7 @@ export default async function ProductPage({ params }: Props) {
                 </Link>
               }
             />
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {fallbackRelated.map((p) => (
                 <ProductCard key={p.handle} product={p} showMeter />
               ))}

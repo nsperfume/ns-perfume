@@ -196,7 +196,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
   const dims = POSTER_FORMATS[format];
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-120 flex items-end justify-center sm:items-center">
       <button
         type="button"
         aria-label="Close poster studio"
@@ -207,20 +207,20 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="poster-studio-title"
-        className="relative z-[1] flex max-h-[min(92dvh,920px)] w-full max-w-5xl flex-col overflow-hidden rounded-t-xl border border-[var(--admin-line)] bg-[var(--admin-paper)] shadow-2xl sm:rounded-xl"
+        className="relative z-1 flex max-h-[min(92dvh,920px)] w-full max-w-5xl flex-col overflow-hidden rounded-t-xl border border-admin-line bg-admin-paper shadow-2xl sm:rounded-xl"
       >
-        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--admin-line)] px-5 py-4">
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-admin-line px-5 py-4">
           <div>
-            <p className="font-display text-xs font-semibold uppercase tracking-[0.14em] text-[var(--admin-muted)]">
+            <p className="font-display text-xs font-semibold uppercase tracking-[0.14em] text-admin-muted">
               Marketing poster
             </p>
             <h2
               id="poster-studio-title"
-              className="mt-1 font-display text-xl font-semibold text-[var(--admin-ink)]"
+              className="mt-1 font-display text-xl font-semibold text-admin-ink"
             >
               {coupon.code}
             </h2>
-            <p className="mt-0.5 text-sm text-[var(--admin-muted)]">
+            <p className="mt-0.5 text-sm text-admin-muted">
               Live preview matches the downloaded PNG.
             </p>
           </div>
@@ -231,10 +231,10 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
 
         <div className="grid min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
           {/* Preview */}
-          <div className="flex min-h-0 flex-col items-center gap-3 overflow-y-auto border-b border-[var(--admin-line)] bg-[var(--admin-soft-2)] p-5 lg:border-b-0 lg:border-r">
+          <div className="flex min-h-0 flex-col items-center gap-3 overflow-y-auto border-b border-admin-line bg-admin-soft-2 p-5 lg:border-b-0 lg:border-r">
             <div
               className={cn(
-                "relative mx-auto w-full max-w-[280px] overflow-hidden rounded-lg bg-[var(--admin-soft)] shadow-lg ring-1 ring-black/10 sm:max-w-[320px]",
+                "relative mx-auto w-full max-w-[280px] overflow-hidden rounded-lg bg-admin-soft shadow-lg ring-1 ring-black/10 sm:max-w-[320px]",
                 drawing && "opacity-80",
               )}
               style={{
@@ -247,7 +247,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
                 aria-label="Coupon poster preview"
               />
             </div>
-            <p className="text-center text-xs text-[var(--admin-faint)]">
+            <p className="text-center text-xs text-admin-faint">
               {dims.label}
               {drawing ? " · Updating…" : ""}
             </p>
@@ -274,7 +274,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
               <p className="text-center text-sm text-rosewood">{error}</p>
             ) : null}
             {note ? (
-              <p className="text-center text-sm text-[var(--admin-muted)]">
+              <p className="text-center text-sm text-admin-muted">
                 {note}
               </p>
             ) : null}
@@ -283,7 +283,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
           {/* Controls */}
           <div className="min-h-0 space-y-5 overflow-y-auto p-5">
             <div>
-              <p className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-[var(--admin-muted)]">
+              <p className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-admin-muted">
                 Format
               </p>
               <div className="mt-2">
@@ -300,14 +300,14 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
             </div>
 
             <div>
-              <p className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-[var(--admin-muted)]">
+              <p className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-admin-muted">
                 Background
               </p>
-              <div className="mt-2 inline-flex gap-1 rounded-md border border-[var(--admin-line)] p-0.5">
+              <div className="mt-2 inline-flex gap-1 rounded-md border border-admin-line p-0.5">
                 <Button
                   type="button"
                   variant={bgMode === "color" ? "primary" : "secondary"}
-                  className="!min-h-0 !px-3 !py-1.5 text-xs uppercase tracking-wide"
+                  className="min-h-0! px-3! py-1.5! text-xs uppercase tracking-wide"
                   onClick={() => setBgMode("color")}
                 >
                   Solid color
@@ -315,7 +315,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
                 <Button
                   type="button"
                   variant={bgMode === "image" ? "primary" : "secondary"}
-                  className="!min-h-0 !px-3 !py-1.5 text-xs uppercase tracking-wide"
+                  className="min-h-0! px-3! py-1.5! text-xs uppercase tracking-wide"
                   onClick={() => setBgMode("image")}
                 >
                   Image
@@ -334,7 +334,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
                         className={cn(
                           "h-9 w-9 cursor-pointer rounded-md border-2 transition-transform hover:scale-105",
                           bgColor.toLowerCase() === p.value.toLowerCase()
-                            ? "border-[var(--admin-ink)] ring-2 ring-[var(--admin-ink)]/20"
+                            ? "border-admin-ink ring-2 ring-admin-ink/20"
                             : "border-transparent ring-1 ring-black/10",
                         )}
                         style={{ backgroundColor: p.value }}
@@ -361,7 +361,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
                           : "#1c1917"
                       }
                       onChange={(e) => setBgColor(e.target.value)}
-                      className="mb-0.5 h-11 w-14 cursor-pointer rounded border border-[var(--admin-line)] bg-transparent p-1"
+                      className="mb-0.5 h-11 w-14 cursor-pointer rounded border border-admin-line bg-transparent p-1"
                       aria-label="Pick solid color"
                     />
                   </div>
@@ -412,7 +412,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
               </div>
             </div>
 
-            <p className="rounded-md border border-[var(--admin-line)] bg-[var(--admin-soft-2)] px-3 py-2.5 text-sm leading-relaxed text-[var(--admin-muted)]">
+            <p className="rounded-md border border-admin-line bg-admin-soft-2 px-3 py-2.5 text-sm leading-relaxed text-admin-muted">
               Code, offer, minimum order, expiry, and limit appear on the poster.
               Leave usage limit empty for unlimited redemptions. Checkout blocks
               the code once uses reach the limit.

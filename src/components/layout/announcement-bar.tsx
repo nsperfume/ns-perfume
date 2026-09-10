@@ -35,41 +35,55 @@ export function AnnouncementBar() {
   }, []);
 
   const showMessage = messageEnabled && Boolean(text);
+  /** Prefer the shipping clause on narrow screens so the bar stays readable. */
+  const mobileText = text.includes("·")
+    ? text.split("·")[0]!.trim()
+    : text;
 
   return (
     <div className="bg-brass text-ink">
-      <div className="container-ns grid h-9 grid-cols-[auto_1fr_auto] items-center gap-3 sm:h-10 sm:gap-4">
+      {/* Mobile: shipping line only. Utility links live in the menu. */}
+      <div className="container-ns flex h-9 items-center justify-center sm:hidden">
+        <p
+          className={
+            showMessage
+              ? "min-w-0 truncate text-center font-serif text-[11px] font-semibold uppercase tracking-[0.08em] text-ink/90"
+              : "min-w-0 truncate text-center font-serif text-[11px] opacity-0"
+          }
+          aria-hidden={!showMessage}
+        >
+          {mobileText || "\u00a0"}
+        </p>
+      </div>
+
+      <div className="container-ns hidden h-10 grid-cols-[auto_1fr_auto] items-center gap-4 sm:grid">
         <nav
-          className="flex items-center gap-3 sm:gap-4"
+          className="flex items-center gap-4"
           aria-label="Utility"
         >
           {utilityLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="font-serif text-[12px] font-semibold uppercase tracking-[0.12em] text-ink/90 transition-colors hover:text-ink cursor-pointer sm:text-[13px]"
+              className="cursor-pointer font-serif text-[13px] font-semibold uppercase tracking-[0.12em] text-ink/90 transition-colors hover:text-ink"
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        {/* Always render the same child type to keep markup stable */}
         <p
           className={
             showMessage
-              ? "min-w-0 truncate text-center font-serif text-[12px] font-semibold uppercase tracking-[0.1em] text-ink/90 sm:text-[13px] sm:tracking-[0.12em]"
-              : "min-w-0 truncate text-center font-serif text-[12px] opacity-0 sm:text-[13px]"
+              ? "min-w-0 truncate text-center font-serif text-[13px] font-semibold uppercase tracking-[0.12em] text-ink/90"
+              : "min-w-0 truncate text-center font-serif text-[13px] opacity-0"
           }
           aria-hidden={!showMessage}
         >
           {text || "\u00a0"}
         </p>
 
-        <span
-          className="hidden w-[5.5rem] sm:block sm:w-[6.5rem]"
-          aria-hidden
-        />
+        <span className="block w-[6.5rem]" aria-hidden />
       </div>
     </div>
   );

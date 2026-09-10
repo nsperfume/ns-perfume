@@ -260,7 +260,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
           <button
             type="button"
             onClick={resetFilters}
-            className="cursor-pointer font-serif text-[13px] font-bold uppercase tracking-[0.1em] text-ink/60 underline-offset-4 hover:text-ink hover:underline"
+            className="cursor-pointer font-serif text-[13px] font-bold uppercase tracking-widest text-ink/60 underline-offset-4 hover:text-ink hover:underline"
           >
             Clear All
           </button>
@@ -382,7 +382,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10 xl:gap-12">
         {/* Desktop sidebar */}
         <aside className="hidden w-full shrink-0 lg:block lg:w-60 xl:w-64">
-          <div className="sticky top-28 rounded-md border border-hairline bg-paper p-5 xl:p-6">
+          <div className="sticky top-[calc(var(--spacing-chrome-height)+1rem)] rounded-md border border-hairline bg-paper p-5 xl:p-6">
             {filtersPanel}
           </div>
         </aside>
@@ -391,13 +391,14 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
         <div className="min-w-0 flex-1">
           <div
             ref={gridTopRef}
-            className="mb-5 flex scroll-mt-[calc(var(--chrome-height)+1rem)] flex-col gap-3 border-b border-hairline pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+            className="mb-5 flex scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] flex-col gap-3 border-b border-hairline pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
           >
-            <p className="font-serif text-[15px] font-medium text-ink/65">
+            <p className="min-w-0 font-serif text-[15px] font-medium text-ink/65">
               {filtered.length} product{filtered.length === 1 ? "" : "s"}
               {activeCount > 0 ? " · filtered" : ""}
             </p>
             <SelectInline
+              className="min-w-0 sm:shrink-0"
               value={sort}
               onValueChange={(v) => {
                 setSort(v);
@@ -430,7 +431,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
               {pageItems.map((p) => (
                 <ProductCard key={p.handle} product={p} />
               ))}

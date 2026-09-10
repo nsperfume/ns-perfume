@@ -84,30 +84,30 @@ export default function AdminProductsPage() {
           {filtered.map((p) => (
             <tr
               key={p.handle}
-              className="hover:bg-[var(--admin-soft)]"
+              className="hover:bg-admin-soft"
             >
               <AdminTd>
-                <p className="font-semibold text-[var(--admin-ink)]">
+                <p className="font-semibold text-admin-ink">
                   {p.name}
                 </p>
-                <p className="font-mono text-xs text-[var(--admin-muted)]">
+                <p className="font-mono text-xs text-admin-muted">
                   {p.handle}
                 </p>
               </AdminTd>
               <AdminTd>
                 <AdminStatusBadge status={p.status || "active"} />
               </AdminTd>
-              <AdminTd className="text-[var(--admin-muted)]">
+              <AdminTd className="text-admin-muted">
                 {p.inStock ? "In stock" : "Out of stock"}
               </AdminTd>
-              <AdminTd className="text-right font-medium tabular-nums text-[var(--admin-ink)]">
+              <AdminTd className="text-right font-medium tabular-nums text-admin-ink">
                 {formatPkr(p.prices[0]?.price ?? 0)}
               </AdminTd>
               <AdminTd className="text-right">
                 <Button
                   href={`/admin/products/${p.handle}`}
                   variant="secondary"
-                  className="!h-10 !min-h-10 !w-auto !px-4"
+                  className="h-10! min-h-10! w-auto! px-4!"
                 >
                   Edit
                 </Button>
@@ -118,7 +118,7 @@ export default function AdminProductsPage() {
             <tr>
               <td
                 colSpan={5}
-                className="px-4 py-14 text-center text-[var(--admin-muted)]"
+                className="px-4 py-14 text-center text-admin-muted"
               >
                 No products match.
               </td>

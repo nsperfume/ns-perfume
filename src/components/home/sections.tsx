@@ -59,14 +59,14 @@ function SectionLead({
   return (
     <div
       className={cn(
-        "mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between md:mb-10",
-        className,
+        "flex flex-col gap-2 md:flex-row md:items-end md:justify-between md:gap-3",
+        className ?? "mb-4 sm:mb-8 md:mb-10",
       )}
     >
       <div className="max-w-xl">
         <p
           className={cn(
-            "mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em]",
+            "mb-1.5 font-display text-[11px] font-medium uppercase tracking-[0.16em] sm:mb-2",
             light ? "text-paper/65" : "text-taupe",
           )}
         >
@@ -83,7 +83,7 @@ function SectionLead({
         {description ? (
           <p
             className={cn(
-              "mt-2 text-pretty font-serif text-[1.05rem] leading-relaxed",
+              "mt-1.5 text-pretty font-serif text-[0.95rem] leading-relaxed sm:mt-2 sm:text-[1.05rem]",
               light ? "text-white/85" : "text-taupe",
             )}
           >
@@ -100,7 +100,7 @@ function SectionLead({
 
 export function HomeHero() {
   return (
-    <section className="section-hero relative -mt-[var(--chrome-height)] overflow-hidden border-b border-hairline">
+    <section className="section-hero relative -mt-chrome-height overflow-hidden border-b border-hairline">
       <Image
         src={siteImages.homeHero}
         alt="Amber perfume bottle on travertine stone with dried citrus and evening light"
@@ -112,26 +112,35 @@ export function HomeHero() {
         sizes="100vw"
       />
       <div
-        className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/15 sm:via-black/40 sm:to-transparent"
+        className="absolute inset-0 bg-linear-to-r from-black/70 via-black/45 to-black/15 sm:via-black/40 sm:to-transparent"
         aria-hidden
       />
-      <div className="container-ns relative z-10 flex flex-1 flex-col justify-end pb-12 pt-[calc(var(--chrome-height)+1.5rem)] sm:justify-center sm:pb-16 lg:pb-20">
+      <div className="container-ns relative z-10 flex flex-1 flex-col justify-end pb-10 pt-[calc(var(--spacing-chrome-height)+1rem)] sm:justify-center sm:pb-16 sm:pt-[calc(var(--spacing-chrome-height)+1.5rem)] lg:pb-20">
         <div className="max-w-xl fade-up lg:max-w-2xl">
-          <p className="mb-4 font-display text-[11px] font-medium uppercase tracking-[0.18em] text-paper/70">
+          <p className="mb-2 font-display text-[10px] font-medium uppercase tracking-[0.16em] text-paper/70 sm:mb-4 sm:text-[11px] sm:tracking-[0.18em]">
             NS Perfume
           </p>
-          <h1 className="text-display-xl text-paper">
+          <h1 className="text-display-lg text-balance text-paper sm:text-display-xl">
             Written for heat, stillness, and the hours after work
           </h1>
-          <p className="mt-5 max-w-lg font-serif text-body-lg text-white/90">
-            {pageCopy.homeHero}
+          <p className="mt-3 max-w-lg text-pretty font-serif text-[0.98rem] leading-snug text-white/90 sm:mt-5 sm:text-body-lg sm:leading-relaxed">
+            <span className="sm:hidden">
+              Amber Noir opens with bergamot and pink pepper, then settles into
+              oud and amber that stay close through dinner.
+            </span>
+            <span className="hidden sm:inline">{pageCopy.homeHero}</span>
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button href="/products/amber-noir-edp">Shop Amber Noir</Button>
+          <div className="mt-5 flex flex-col gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-3">
+            <Button
+              href="/products/amber-noir-edp"
+              className="min-h-11 w-full justify-center py-2.5 sm:min-h-12 sm:w-auto"
+            >
+              Shop Amber Noir
+            </Button>
             <Button
               href="/products"
               variant="secondary"
-              className="border-paper/75 bg-transparent text-paper hover:border-brass focus-visible:ring-offset-ink"
+              className="min-h-11 w-full justify-center border-paper/75 bg-transparent py-2.5 text-paper hover:border-brass focus-visible:ring-offset-ink sm:min-h-12 sm:w-auto"
             >
               Shop All
             </Button>
@@ -175,7 +184,7 @@ const trustPromises = [
  */
 export function HomeTrustSection() {
   return (
-    <section className="border-b border-hairline bg-muted/60 section-y md:section-viewport">
+    <section className="border-b border-hairline bg-muted/60 section-y lg:section-viewport">
       <div className="container-ns flex flex-col justify-center">
         <SectionLead
           eyebrow="Ordering with us"
@@ -219,25 +228,29 @@ export const HomeTrustBanner = HomeTrustSection;
  */
 export function ShopByCollection() {
   return (
-    <section className="border-b border-hairline bg-canvas section-y md:section-viewport">
+    <section className="border-b border-hairline bg-canvas py-10 sm:section-y lg:section-viewport">
       <div className="container-ns flex flex-col justify-center">
         <SectionLead
           eyebrow="Start here"
           title="Shop by collection"
           description={pageCopy.shopByCollection}
           action={
-            <Button href="/collections" variant="ghost">
+            <Button
+              href="/collections"
+              variant="ghost"
+              className="min-h-0! px-0! py-1!"
+            >
               All collections
             </Button>
           }
         />
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:gap-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
           {collectionTiles.map((tile) => (
             <Link
               key={tile.href}
               href={tile.href}
-              className="group relative aspect-[5/4] overflow-hidden bg-muted sm:aspect-[4/3] lg:aspect-[16/11]"
+              className="group relative aspect-4/5 overflow-hidden bg-muted sm:aspect-4/3 lg:aspect-16/11"
             >
               <Image
                 src={tile.image}
@@ -245,18 +258,18 @@ export function ShopByCollection() {
                 fill
                 loading="lazy"
                 quality={80}
-                className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.04]"
-                sizes="(max-width: 640px) 100vw, 50vw"
+                className="object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-105"
+                sizes="(max-width: 640px) 50vw, 50vw"
               />
               <div
-                className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent"
+                className="absolute inset-0 bg-linear-to-t from-black/75 via-black/20 to-transparent transition-opacity duration-500 group-hover:from-black/85"
                 aria-hidden
               />
-              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 md:p-6">
-                <span className="font-display text-[1.2rem] font-medium tracking-wide text-paper md:text-[1.35rem]">
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 sm:gap-3 sm:p-5 md:p-6">
+                <span className="font-display text-[0.95rem] font-medium tracking-wide text-paper transition-transform duration-500 group-hover:-translate-y-0.5 sm:text-[1.2rem] md:text-[1.35rem]">
                   {tile.title}
                 </span>
-                <span className="font-display text-[11px] uppercase tracking-[0.14em] text-paper/70 transition-colors group-hover:text-brass">
+                <span className="hidden font-display text-[11px] uppercase tracking-[0.14em] text-paper/70 transition-colors duration-300 group-hover:text-brass min-[380px]:inline">
                   Shop
                 </span>
               </div>
@@ -271,14 +284,19 @@ export function ShopByCollection() {
 export function BestsellersSection({ products }: { products: StoreProduct[] }) {
   const items = products.slice(0, 8);
   return (
-    <section className="border-b border-hairline bg-muted/50 section-y md:section-viewport">
-      <div className="container-ns flex flex-col justify-center">
+    <section className="border-b border-hairline bg-muted/50 py-8 sm:section-y lg:section-viewport">
+      <div className="container-ns flex flex-col justify-center gap-0">
         <SectionLead
+          className="mb-3 sm:mb-8 md:mb-10"
           eyebrow="Most reached for"
           title="Bestsellers"
           description={pageCopy.bestsellers}
           action={
-            <Button href="/collections/bestsellers" variant="ghost">
+            <Button
+              href="/collections/bestsellers"
+              variant="ghost"
+              className="min-h-0! px-0! py-1!"
+            >
               View all
             </Button>
           }
@@ -307,7 +325,7 @@ export function HomePromoBanner() {
           sizes="100vw"
         />
         <div
-          className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/20 sm:via-black/40 sm:to-transparent"
+          className="absolute inset-0 bg-linear-to-r from-black/75 via-black/45 to-black/20 sm:via-black/40 sm:to-transparent"
           aria-hidden
         />
         <div className="container-ns relative z-10 flex min-h-[min(72dvh,36rem)] items-center py-14 md:min-h-[min(70dvh,40rem)] md:py-16">
@@ -367,7 +385,7 @@ export function BrandStoryBand() {
               {pageCopy.brandStory}
             </p>
 
-            <div className="mt-10 grid gap-0 sm:grid-cols-3 sm:gap-0">
+            <div className="mt-10 grid gap-0 lg:grid-cols-3 lg:gap-0">
               {[
                 {
                   label: "Top",
@@ -388,11 +406,11 @@ export function BrandStoryBand() {
                 <div
                   key={row.label}
                   className={cn(
-                    "border-t border-hairline py-5 sm:border-t-0 sm:px-4 sm:py-0",
-                    i === 0 && "sm:pl-0 sm:pr-5",
-                    i === 1 && "sm:border-x sm:border-hairline sm:px-5",
-                    i === 2 && "sm:pl-5 sm:pr-0",
-                    i > 0 && "sm:border-t-0",
+                    "border-t border-hairline py-5 lg:border-t-0 lg:px-4 lg:py-0",
+                    i === 0 && "lg:pl-0 lg:pr-5",
+                    i === 1 && "lg:border-x lg:border-hairline lg:px-5",
+                    i === 2 && "lg:pl-5 lg:pr-0",
+                    i > 0 && "lg:border-t-0",
                   )}
                 >
                   <p className="font-display text-[10px] font-medium uppercase tracking-[0.16em] text-ink/45">
@@ -401,7 +419,7 @@ export function BrandStoryBand() {
                   <p className="mt-2 font-serif text-[1.05rem] leading-snug text-ink">
                     {row.notes}
                   </p>
-                  <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-taupe">
+                  <p className="mt-1.5 font-mono text-[10px] uppercase tracking-widest text-taupe">
                     {row.hint}
                   </p>
                 </div>
@@ -431,7 +449,7 @@ export function FindYourScentTeaser() {
         sizes="100vw"
       />
       <div
-        className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/20"
+        className="absolute inset-0 bg-linear-to-r from-black/80 via-black/50 to-black/20"
         aria-hidden
       />
       <div className="container-ns relative z-10 flex min-h-[min(70dvh,34rem)] flex-col justify-center py-14 md:min-h-[min(75dvh,38rem)]">
@@ -459,7 +477,7 @@ export function TestimonialsSection({
 }) {
   const shown = items.slice(0, 8);
   return (
-    <section className="border-b border-hairline bg-canvas section-y md:section-viewport">
+    <section className="border-b border-hairline bg-canvas section-y lg:section-viewport">
       <div className="container-ns flex flex-col justify-center">
         <SectionLead
           eyebrow="From wearers"
@@ -502,7 +520,7 @@ export function JournalPreview({
   const [feature, ...rest] = shown;
 
   return (
-    <section className="border-b border-hairline bg-muted/40 section-y md:section-viewport">
+    <section className="border-b border-hairline bg-muted/40 section-y lg:section-viewport">
       <div className="container-ns flex flex-col justify-center">
         <SectionLead
           eyebrow="Journal"
@@ -515,62 +533,51 @@ export function JournalPreview({
           }
         />
 
-        <div className="grid gap-8 lg:grid-cols-12 lg:gap-8">
+        <div className="grid gap-x-8 gap-y-5 lg:grid-cols-12 lg:items-stretch">
           <Link
             href={`/journal/${feature.slug}`}
-            className="group flex flex-col lg:col-span-7"
+            className="group relative order-1 aspect-16/11 overflow-hidden bg-muted lg:col-span-7 lg:row-start-1"
           >
-            <div className="relative mb-5 aspect-[16/11] overflow-hidden bg-muted">
-              {feature.imageUrl ? (
-                <Image
-                  src={feature.imageUrl}
-                  alt={`Cover for ${feature.title}`}
-                  fill
-                  loading="lazy"
-                  quality={85}
-                  className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]"
-                  sizes="(max-width: 1024px) 100vw, 58vw"
-                />
-              ) : (
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundColor: feature.imageTone || "#F3EDE3",
-                  }}
-                />
-              )}
-              <div
-                className="absolute inset-0 bg-linear-to-t from-black/55 via-transparent to-transparent opacity-80"
-                aria-hidden
+            {feature.imageUrl ? (
+              <Image
+                src={feature.imageUrl}
+                alt={`Cover for ${feature.title}`}
+                fill
+                loading="lazy"
+                quality={85}
+                className="object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-105"
+                sizes="(max-width: 1024px) 100vw, 58vw"
               />
-              <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
-                {feature.category ? (
-                  <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-paper/70">
-                    {feature.category}
-                  </p>
-                ) : null}
-                <h3 className="font-display text-[1.35rem] font-medium leading-snug text-paper md:text-[1.55rem]">
-                  {feature.title}
-                </h3>
-              </div>
+            ) : (
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundColor: feature.imageTone || "#F3EDE3",
+                }}
+              />
+            )}
+            <div
+              className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent transition-opacity duration-500 group-hover:from-black/70"
+              aria-hidden
+            />
+            <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+              {feature.category ? (
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-paper/70">
+                  {feature.category}
+                </p>
+              ) : null}
+              <h3 className="font-display text-[1.35rem] font-medium leading-snug text-paper transition-transform duration-500 group-hover:-translate-y-0.5 md:text-[1.55rem]">
+                {feature.title}
+              </h3>
             </div>
-            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-taupe">
-              {formatDate(feature.date)} · {feature.readTime}
-            </p>
-            <p className="max-w-xl font-serif text-[1.05rem] leading-relaxed text-taupe">
-              {feature.excerpt}
-            </p>
-            <span className="mt-4 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors group-hover:text-brass">
-              Read article
-            </span>
           </Link>
 
-          <div className="flex flex-col divide-y divide-hairline lg:col-span-5 lg:border-l lg:border-hairline lg:pl-8">
+          <div className="order-3 flex min-h-0 flex-col divide-y divide-hairline lg:order-0 lg:col-span-5 lg:row-start-1 lg:border-l lg:border-hairline lg:pl-8">
             {rest.map((post) => (
               <Link
                 key={post.slug}
                 href={`/journal/${post.slug}`}
-                className="group grid grid-cols-[5.5rem_1fr] gap-4 py-5 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr] sm:py-6"
+                className="group grid min-h-0 flex-1 grid-cols-[5.5rem_1fr] items-center gap-4 py-4 first:pt-0 last:pb-0 sm:grid-cols-[7.5rem_1fr] sm:py-5"
               >
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   {post.imageUrl ? (
@@ -580,8 +587,8 @@ export function JournalPreview({
                       fill
                       loading="lazy"
                       quality={80}
-                      className="object-cover transition-transform duration-700 group-hover:scale-[1.05]"
-                      sizes="112px"
+                      className="object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-110"
+                      sizes="120px"
                     />
                   ) : (
                     <div
@@ -591,12 +598,16 @@ export function JournalPreview({
                       }}
                     />
                   )}
+                  <div
+                    className="pointer-events-none absolute inset-0 bg-ink/0 transition-colors duration-500 group-hover:bg-ink/10"
+                    aria-hidden
+                  />
                 </div>
-                <div className="min-w-0 self-center">
+                <div className="min-w-0">
                   <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.12em] text-taupe">
                     {formatDate(post.date)} · {post.readTime}
                   </p>
-                  <h3 className="font-display text-[1.05rem] font-medium leading-snug text-ink transition-colors group-hover:text-brass sm:text-[1.15rem]">
+                  <h3 className="font-display text-[1.05rem] font-medium leading-snug text-ink transition-colors duration-300 group-hover:text-brass sm:text-[1.15rem]">
                     {post.title}
                   </h3>
                   <p className="mt-1 line-clamp-2 font-serif text-[0.95rem] text-taupe">
@@ -605,6 +616,23 @@ export function JournalPreview({
                 </div>
               </Link>
             ))}
+          </div>
+
+          <div className="order-2 lg:order-0 lg:col-span-7 lg:row-start-2">
+            <Link
+              href={`/journal/${feature.slug}`}
+              className="group block max-w-xl"
+            >
+              <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-taupe">
+                {formatDate(feature.date)} · {feature.readTime}
+              </p>
+              <p className="font-serif text-[1.05rem] leading-relaxed text-taupe">
+                {feature.excerpt}
+              </p>
+              <span className="mt-4 inline-block font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors duration-300 group-hover:text-brass">
+                Read article
+              </span>
+            </Link>
           </div>
         </div>
       </div>

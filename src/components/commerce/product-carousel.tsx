@@ -15,11 +15,11 @@ export function ProductCarousel({
 
   return (
     <EmblaCarousel
-      gap="lg"
+      gap="md"
       align="start"
       loop
       autoplayDelay={4200}
-      slideClassName="min-w-0 flex-[0_0_72%] sm:flex-[0_0_42%] md:flex-[0_0_32%] lg:flex-[0_0_26%]"
+      slideClassName="min-w-0 flex-[0_0_78%] sm:flex-[0_0_42%] md:flex-[0_0_32%] lg:flex-[0_0_26%]"
       showDots
       showArrows
     >
@@ -29,6 +29,7 @@ export function ProductCarousel({
           product={product}
           showMeter={showMeter}
           priority={i < 2}
+          className="h-auto"
         />
       ))}
     </EmblaCarousel>

@@ -344,7 +344,7 @@ function OrderStatusView({
                 href={order.trackingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-flex min-h-10 items-center rounded-md bg-ink px-4 font-display text-sm font-medium uppercase tracking-[0.1em] text-paper hover:opacity-90"
+                className="mt-3 inline-flex min-h-10 items-center rounded-md bg-ink px-4 font-display text-sm font-medium uppercase tracking-widest text-paper hover:opacity-90"
               >
                 Track shipment
               </a>

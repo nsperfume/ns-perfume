@@ -180,26 +180,26 @@ export default function AdminTestimonialsPage() {
           {items.map((t) => (
             <li
               key={t._id}
-              className="rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] p-5"
+              className="rounded-lg border border-admin-line bg-admin-paper p-5"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-[var(--admin-ink)]">
+                    <p className="font-semibold text-admin-ink">
                       {t.author}
                     </p>
                     {t.city ? (
-                      <span className="text-sm text-[var(--admin-muted)]">
+                      <span className="text-sm text-admin-muted">
                         · {t.city}
                       </span>
                     ) : null}
                     <AdminStatusBadge status={t.status || "published"} />
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--admin-muted)]">
+                  <p className="mt-2 text-sm leading-relaxed text-admin-muted">
                     “{richTextToPlain(t.quote)}”
                   </p>
                   {t.productName ? (
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[var(--admin-faint)]">
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-admin-faint">
                       {t.productName}
                     </p>
                   ) : null}
@@ -207,7 +207,7 @@ export default function AdminTestimonialsPage() {
                 {canDelete ? (
                   <Button
                     variant="danger"
-                    className="!h-10 !min-h-10 shrink-0 !w-auto !px-4"
+                    className="h-10! min-h-10! shrink-0 w-auto! px-4!"
                     onClick={() => setDeleteId(t._id)}
                   >
                     Delete
@@ -217,7 +217,7 @@ export default function AdminTestimonialsPage() {
             </li>
           ))}
           {items.length === 0 ? (
-            <li className="rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] px-5 py-12 text-center text-sm text-[var(--admin-muted)]">
+            <li className="rounded-lg border border-admin-line bg-admin-paper px-5 py-12 text-center text-sm text-admin-muted">
               No testimonials yet.
             </li>
           ) : null}

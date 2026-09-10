@@ -26,19 +26,19 @@ export function AdminFormSection({
     <section
       id={id}
       className={cn(
-        "scroll-mt-6 rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] shadow-[var(--admin-shadow)]",
+        "scroll-mt-6 rounded-lg border border-admin-line bg-admin-paper shadow-admin",
         className,
       )}
     >
-      <header className="border-b border-[var(--admin-line)] px-5 py-4 sm:px-6">
+      <header className="border-b border-admin-line px-5 py-4 sm:px-6">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-display text-lg font-semibold tracking-tight text-[var(--admin-ink)] sm:text-xl">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-admin-ink sm:text-xl">
             {title}
           </h2>
           {tip ? <FieldHint content={tip} /> : null}
         </div>
         {description ? (
-          <p className="mt-1 text-[15px] leading-relaxed text-[var(--admin-muted)]">
+          <p className="mt-1 text-[15px] leading-relaxed text-admin-muted">
             {description}
           </p>
         ) : null}
@@ -63,7 +63,7 @@ export function AdminFieldLabel({
     <div className="mb-2 flex items-center gap-1.5">
       <label
         htmlFor={htmlFor}
-        className="font-display text-[13px] font-semibold text-[var(--admin-ink)]"
+        className="font-display text-[13px] font-semibold text-admin-ink"
       >
         {children}
         {required ? (
@@ -79,4 +79,4 @@ export function AdminFieldLabel({
 }
 
 export const adminFieldClass =
-  "w-full rounded-md border border-[var(--admin-input-border)] bg-[var(--admin-soft-2)] px-3.5 py-3 text-base text-[var(--admin-ink)] outline-none transition-colors placeholder:text-[var(--admin-faint)] focus:border-brass focus:ring-2 focus:ring-brass/20 disabled:cursor-not-allowed disabled:bg-[var(--admin-soft)] disabled:text-[var(--admin-muted)] disabled:opacity-100";
+  "w-full rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 py-3 text-base text-admin-ink outline-none transition-colors placeholder:text-admin-faint focus:border-brass focus:ring-2 focus:ring-brass/20 disabled:cursor-not-allowed disabled:bg-admin-soft disabled:text-admin-muted disabled:opacity-100";

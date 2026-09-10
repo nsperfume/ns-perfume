@@ -74,8 +74,8 @@ function AppearancePicker() {
             className={cn(
               "flex cursor-pointer flex-col items-start gap-3 rounded-lg border p-4 text-left transition-colors",
               selected
-                ? "border-[var(--admin-ink)] bg-[var(--admin-ink)] text-[var(--admin-paper)]"
-                : "border-[var(--admin-line)] bg-[var(--admin-soft-2)] text-[var(--admin-ink)] hover:border-[var(--admin-muted)]",
+                ? "border-admin-ink bg-admin-ink text-admin-paper"
+                : "border-admin-line bg-admin-soft-2 text-admin-ink hover:border-admin-muted",
             )}
           >
             <span className="inline-flex items-center gap-2 font-display text-sm font-medium">
@@ -86,8 +86,8 @@ function AppearancePicker() {
               className={cn(
                 "text-sm leading-snug",
                 selected
-                  ? "text-[var(--admin-paper)]/70"
-                  : "text-[var(--admin-muted)]",
+                  ? "text-admin-paper/70"
+                  : "text-admin-muted",
               )}
             >
               {hint}
@@ -259,34 +259,34 @@ export default function AdminSettingsPage() {
       <div className="grid max-w-3xl gap-5">
         <AdminCard title="Profile">
           <div id="profile" className="scroll-mt-24">
-          <dl className="divide-y divide-[var(--admin-line)] px-5">
+          <dl className="divide-y divide-admin-line px-5">
             <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <dt className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-[var(--admin-muted)]">
+              <dt className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-admin-muted">
                 Name
               </dt>
-              <dd className="text-base text-[var(--admin-ink)]">
+              <dd className="text-base text-admin-ink">
                 {user?.name || "—"}
               </dd>
             </div>
             <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <dt className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-[var(--admin-muted)]">
+              <dt className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-admin-muted">
                 Email
               </dt>
-              <dd className="text-base text-[var(--admin-ink)]">
+              <dd className="text-base text-admin-ink">
                 {user?.email || "—"}
               </dd>
             </div>
             <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <dt className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-[var(--admin-muted)]">
+              <dt className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-admin-muted">
                 Role
               </dt>
-              <dd className="text-base text-[var(--admin-ink)]">
+              <dd className="text-base text-admin-ink">
                 {isSuper ? "Super admin" : "Admin"}
               </dd>
             </div>
           </dl>
-          <div className="border-t border-[var(--admin-line)] px-5 py-4">
-            <p className="text-sm text-[var(--admin-muted)]">
+          <div className="border-t border-admin-line px-5 py-4">
+            <p className="text-sm text-admin-muted">
               Use Log out in the sidebar when you finish work.
             </p>
           </div>
@@ -296,7 +296,7 @@ export default function AdminSettingsPage() {
         <div id="appearance" className="scroll-mt-24">
         <AdminCard title="Appearance">
           <div className="space-y-3 px-5 py-5">
-            <p className="text-sm leading-relaxed text-[var(--admin-muted)]">
+            <p className="text-sm leading-relaxed text-admin-muted">
               Console theme only. Storefront branding stays the same.
             </p>
             <AppearancePicker />
@@ -315,10 +315,10 @@ export default function AdminSettingsPage() {
               maxLength={220}
               required
             />
-            <p className="text-xs tabular-nums text-[var(--admin-faint)]">
+            <p className="text-xs tabular-nums text-admin-faint">
               {topbarText.length}/220
             </p>
-            <label className="flex items-center gap-2 text-sm text-[var(--admin-ink)]">
+            <label className="flex items-center gap-2 text-sm text-admin-ink">
               <input
                 type="checkbox"
                 checked={topbarEnabled}
@@ -331,7 +331,7 @@ export default function AdminSettingsPage() {
               <p className="text-sm font-medium text-rosewood">{topbarError}</p>
             ) : null}
             {topbarMessage ? (
-              <p className="text-sm text-[var(--admin-muted)]">{topbarMessage}</p>
+              <p className="text-sm text-admin-muted">{topbarMessage}</p>
             ) : null}
             <Button type="submit" disabled={savingTopbar}>
               {savingTopbar ? "Saving…" : "Save announcement"}
@@ -345,10 +345,10 @@ export default function AdminSettingsPage() {
         </div>
 
         <AdminCard title="Store">
-          <ul className="space-y-2 px-5 py-5 text-sm text-[var(--admin-muted)]">
+          <ul className="space-y-2 px-5 py-5 text-sm text-admin-muted">
             <li>
               Default currency:{" "}
-              <strong className="text-[var(--admin-ink)]">PKR</strong>
+              <strong className="text-admin-ink">PKR</strong>
             </li>
             <li>Display: PKR, USD, AED, SAR, GBP, EUR</li>
             <li>
@@ -359,11 +359,11 @@ export default function AdminSettingsPage() {
             </li>
           </ul>
           {rates?.rates ? (
-            <div className="grid grid-cols-2 gap-2 border-t border-[var(--admin-line)] px-5 py-4 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 border-t border-admin-line px-5 py-4 sm:grid-cols-3">
               {["PKR", "USD", "AED", "SAR", "GBP", "EUR"].map((c) => (
                 <div
                   key={c}
-                  className="rounded-md border border-[var(--admin-line)] bg-[var(--admin-soft-2)] px-2 py-2 font-mono text-xs text-[var(--admin-ink)]"
+                  className="rounded-md border border-admin-line bg-admin-soft-2 px-2 py-2 font-mono text-xs text-admin-ink"
                 >
                   1 PKR → {c} {(rates.rates?.[c] ?? 0).toPrecision(4)}
                 </div>
@@ -376,10 +376,10 @@ export default function AdminSettingsPage() {
           <div id="team" className="scroll-mt-24">
           <AdminCard title="Team · admins">
             <form
-              className="space-y-4 border-b border-[var(--admin-line)] p-5"
+              className="space-y-4 border-b border-admin-line p-5"
               onSubmit={createAdmin}
             >
-              <p className="text-sm text-[var(--admin-muted)]">
+              <p className="text-sm text-admin-muted">
                 Admins can manage catalog and orders. They cannot delete
                 records or view revenue.
               </p>
@@ -417,17 +417,17 @@ export default function AdminSettingsPage() {
                 {teamSaving ? "Creating…" : "Add admin"}
               </Button>
             </form>
-            <ul className="divide-y divide-[var(--admin-line)]">
+            <ul className="divide-y divide-admin-line">
               {team.map((m) => (
                 <li
                   key={m.id}
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
                 >
                   <div>
-                    <p className="font-medium text-[var(--admin-ink)]">
+                    <p className="font-medium text-admin-ink">
                       {m.name}
                     </p>
-                    <p className="text-sm text-[var(--admin-muted)]">
+                    <p className="text-sm text-admin-muted">
                       {m.email}
                     </p>
                   </div>
@@ -437,14 +437,14 @@ export default function AdminSettingsPage() {
                         m.role === "super_admin" ? "published" : "draft"
                       }
                     />
-                    <span className="text-xs uppercase tracking-wide text-[var(--admin-muted)]">
+                    <span className="text-xs uppercase tracking-wide text-admin-muted">
                       {m.role === "super_admin" ? "Super admin" : "Admin"}
                     </span>
                     {m.role !== "super_admin" ? (
                       <Button
                         type="button"
                         variant="danger"
-                        className="!h-10 !min-h-10 !w-auto !px-3"
+                        className="h-10! min-h-10! w-auto! px-3!"
                         onClick={() => setRemoveTeamId(m.id)}
                       >
                         Remove

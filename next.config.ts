@@ -11,6 +11,8 @@ const useLocalDist = process.env.NS_LOCAL_NEXT_DIST === "1";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // Hide the floating Next.js "N" badge so it does not cover CTAs while developing.
+  devIndicators: false,
   distDir: useLocalDist
     ? path.join(os.tmpdir(), "ns-perfume-next")
     : ".next",

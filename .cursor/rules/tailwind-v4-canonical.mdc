@@ -1,0 +1,56 @@
+---
+description: Tailwind v4 canonical class syntax (avoid suggestCanonicalClasses)
+globs: "**/*.{tsx,ts,css}"
+alwaysApply: true
+---
+
+# Tailwind v4 canonical classes
+
+Never introduce classes that trigger `tailwindcss(suggestCanonicalClasses)`. Prefer theme tokens and suffix important.
+
+## Theme colors and shadows (preferred)
+
+Admin palette is registered in `@theme inline` (`globals.css`). Use theme utilities, not CSS-var arbitrary values:
+
+```tsx
+// BAD
+className="text-[var(--admin-ink)] bg-[var(--admin-paper)] border-[var(--admin-line)]"
+className="text-(--admin-ink) shadow-(--admin-shadow)"
+
+// GOOD
+className="text-admin-ink bg-admin-paper border-admin-line shadow-admin"
+```
+
+Storefront already uses theme names: `text-ink`, `bg-paper`, `border-hairline`, `shadow-card`, `text-brass`.
+
+Spacing tokens: `pt-chrome-height`, `-mt-chrome-height`, `top-chrome-height`, `pl-carousel-gap`.
+
+If you need a new shared color/spacing/shadow, add it to `@theme inline` first, then use the utility name.
+
+## Important modifier (suffix only)
+
+```tsx
+// BAD
+className="!w-auto !h-10 sm:!px-4"
+
+// GOOD
+className="w-auto! h-10! sm:px-4!"
+```
+
+Never rewrite TypeScript `!` (negation / non-null) when fixing classes. Only edit string literals / `className` values.
+
+## Common arbitrary → canonical maps
+
+| Avoid | Use |
+| --- | --- |
+| `tracking-[0.1em]` | `tracking-widest` |
+| `min-w-[640px]` | `min-w-160` |
+| `z-[80]` / `z-[40]` | `z-80` / `z-40` |
+| `supports-[backdrop-filter]:…` | `supports-backdrop-filter:…` |
+| `text-[var(--token)]` | theme utility, or `text-(--token)` only if no theme token exists |
+
+Keep true one-offs as arbitrary values when no theme/scale match exists (e.g. `text-[11px]`, `min-h-[17rem]`, `shadow-[0_24px_48px_…]`).
+
+## Before finishing UI work
+
+Scan new/edited `className` strings for `[var(--`, prefix `!utility`, and obvious scale equivalents. Do not leave Problems-panel canonical warnings behind.

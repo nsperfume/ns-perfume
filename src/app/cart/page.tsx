@@ -67,7 +67,7 @@ export default function CartPage() {
           ) : (
             <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-16 xl:grid-cols-[minmax(0,1fr)_22rem]">
               <div>
-                <div className="mb-8 flex items-end justify-between gap-4 border-b border-hairline pb-5">
+                <div className="mb-8 flex flex-col gap-3 border-b border-hairline pb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                   <div>
                     <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
                       Line items
@@ -203,7 +203,7 @@ export default function CartPage() {
                 </ul>
               </div>
 
-              <aside className="lg:sticky lg:top-[calc(var(--chrome-height)+1.25rem)]">
+              <aside className="lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.25rem)]">
                 <div className="border border-hairline bg-muted/40 p-6 sm:p-7">
                   <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
                     Order summary

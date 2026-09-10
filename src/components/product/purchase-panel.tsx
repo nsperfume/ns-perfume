@@ -228,7 +228,14 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
               {product.reviewCount} review{product.reviewCount === 1 ? "" : "s"}
             </span>
           </Link>
-        ) : null}
+        ) : (
+          <Link
+            href="#write-review"
+            className="mt-4 inline-block self-start font-display text-[11px] uppercase tracking-[0.12em] text-taupe underline-offset-4 hover:text-ink hover:underline"
+          >
+            Be the first to review
+          </Link>
+        )}
 
         {hasDescription ? (
           <div className="mt-8">
@@ -300,14 +307,14 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
       </div>
 
       {/*
-        Sits at the bottom of the stretched buy column (mt-auto) and sticks
-        to the viewport bottom while the gallery scrolls.
+        Desktop: sticks while the gallery scrolls.
+        Mobile: stays in flow; StickyAddToCart handles the floating bar.
       */}
       <div
         className={cn(
-          "sticky bottom-0 z-20 mt-auto",
-          "border-t border-hairline bg-canvas/95 py-4 backdrop-blur-sm",
-          "supports-[backdrop-filter]:bg-canvas/90",
+          "mt-auto border-t border-hairline bg-canvas/95 py-4",
+          "lg:sticky lg:bottom-0 lg:z-20 lg:backdrop-blur-sm",
+          "lg:supports-backdrop-filter:bg-canvas/90",
         )}
       >
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -352,7 +359,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
 
         <div className="mt-4 flex items-stretch gap-2">
           <Button
-            className="!h-12 min-h-12 flex-1 !rounded-none sm:!w-auto sm:flex-1"
+            className="h-12! min-h-12 flex-1 rounded-none! sm:w-auto! sm:flex-1"
             disabled={!product.inStock}
             onClick={addToBag}
           >
@@ -364,21 +371,40 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
             onClick={toggleWishlist}
             aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
             aria-pressed={saved}
-            className="!h-12 !min-h-12 !w-12 !max-w-12 shrink-0 !rounded-none !p-0 active:!scale-100 [&>span:last-child]:!gap-0 [&>span:last-child]:!px-0 [&>span:last-child]:!tracking-normal"
+            className="h-12! min-h-12! w-12! max-w-12! shrink-0 rounded-none! p-0! active:scale-100! [&>span:last-child]:gap-0! [&>span:last-child]:px-0! [&>span:last-child]:tracking-normal!"
           >
             <WishlistHeart filled={saved} />
           </Button>
         </div>
       </div>
 
+      <StickyAddToCart
+        product={product}
+        sizeMl={selected?.ml ?? sizeMl}
+        price={unitPrice}
+        sku={
+          isGift && giftWrap && selected
+            ? `${selected.sku}-GIFT`
+            : (selected?.sku ?? "")
+        }
+        quantity={qty}
+        isGift={isGift}
+        giftWrap={isGift && giftWrap}
+        giftMessage={isGift ? giftMessage : ""}
+        onAdd={addToBag}
+      />
+
       <ul className="mt-8 space-y-3.5">
         <li>
           <a
             href={`tel:${phoneTel}`}
-            className="inline-flex items-center gap-3 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:text-brass"
+            className="inline-flex max-w-full flex-wrap items-center gap-x-3 gap-y-1 font-display text-[11px] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-brass sm:tracking-[0.14em]"
           >
-            <LineIcon name="phone" className="h-4 w-4" />
-            Order by phone {siteConfig.phone}
+            <LineIcon name="phone" className="h-4 w-4 shrink-0" />
+            <span className="sm:hidden">Call {siteConfig.phone}</span>
+            <span className="hidden sm:inline">
+              Order by phone {siteConfig.phone}
+            </span>
           </a>
         </li>
         <li>
@@ -386,9 +412,9 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
             href={siteConfig.location.mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:text-brass"
+            className="inline-flex max-w-full flex-wrap items-center gap-x-3 gap-y-1 font-display text-[11px] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-brass sm:tracking-[0.14em]"
           >
-            <LineIcon name="pin" className="h-4 w-4" />
+            <LineIcon name="pin" className="h-4 w-4 shrink-0" />
             Find us · {siteConfig.location.label}
           </a>
         </li>
@@ -425,22 +451,6 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
           Ref. {selected?.sku || product.handle}
         </p>
       </div>
-
-      <StickyAddToCart
-        product={product}
-        sizeMl={selected?.ml ?? sizeMl}
-        price={unitPrice}
-        sku={
-          isGift && giftWrap && selected
-            ? `${selected.sku}-GIFT`
-            : (selected?.sku ?? "")
-        }
-        quantity={qty}
-        isGift={isGift}
-        giftWrap={isGift && giftWrap}
-        giftMessage={isGift ? giftMessage : ""}
-        onAdd={addToBag}
-      />
     </div>
   );
 }

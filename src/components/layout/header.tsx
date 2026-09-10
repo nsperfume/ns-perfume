@@ -38,7 +38,10 @@ const linkClass =
   "inline-flex min-h-11 cursor-pointer items-center rounded-xs px-2 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-paper/85 transition-colors duration-300 hover:text-white xl:text-[13px]";
 
 const iconBtn =
-  "relative inline-flex min-h-11 min-w-10 cursor-pointer items-center justify-center rounded-xs text-paper/85 transition-colors hover:text-white sm:min-w-11";
+  "relative inline-flex min-h-10 min-w-9 cursor-pointer items-center justify-center rounded-xs text-paper/85 transition-colors hover:text-white sm:min-h-11 sm:min-w-11";
+
+const iconBtnDesktop =
+  "relative hidden min-h-10 min-w-9 cursor-pointer items-center justify-center rounded-xs text-paper/85 transition-colors hover:text-white sm:inline-flex sm:min-h-11 sm:min-w-11";
 
 export function Header() {
   const { openCart, itemCount } = useCart();
@@ -82,11 +85,34 @@ export function Header() {
 
   useEffect(() => {
     if (!mobilePanelRef.current || !mobileOpen) return;
+    const el = mobilePanelRef.current;
     gsap.fromTo(
-      mobilePanelRef.current,
+      el,
       { height: 0, autoAlpha: 0 },
-      { height: "auto", autoAlpha: 1, duration: 0.4, ease: "power3.out" },
+      {
+        height: "auto",
+        autoAlpha: 1,
+        duration: 0.4,
+        ease: "power3.out",
+        // GSAP leaves a fixed pixel height after "auto"; clear it so the
+        // accordion can grow and the panel can scroll inside the viewport.
+        onComplete: () => {
+          gsap.set(el, { clearProps: "height,overflow" });
+        },
+      },
     );
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      setMobileShopOpen(false);
+      return;
+    }
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -115,7 +141,7 @@ export function Header() {
 
   return (
     <header ref={headerRef} className="nav-glass overflow-visible text-paper">
-      <div className="container-ns flex h-[4.25rem] items-center gap-2 sm:gap-3">
+      <div className="container-ns flex h-16 items-center gap-1.5 sm:h-[4.25rem] sm:gap-3">
         <button
           type="button"
           className={cn(iconBtn, "-ml-1 lg:hidden")}
@@ -131,7 +157,7 @@ export function Header() {
 
         <Link
           href="/"
-          className="shrink-0 cursor-pointer font-display text-[1.4rem] font-medium leading-none tracking-tight text-paper transition-colors hover:text-white sm:text-[1.55rem]"
+          className="shrink-0 cursor-pointer font-display text-[1.2rem] font-medium leading-none tracking-tight text-paper transition-colors hover:text-white sm:text-[1.55rem]"
         >
           {siteConfig.name}
         </Link>
@@ -161,7 +187,7 @@ export function Header() {
             </Link>
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-0 sm:gap-1">
           <CurrencyToggle className="hidden md:inline-flex" tone="dark" />
           <button
             type="button"
@@ -173,7 +199,7 @@ export function Header() {
           </button>
           <Link
             href="/wishlist"
-            className={iconBtn}
+            className={iconBtnDesktop}
             aria-label={
               ready && wishCount
                 ? `Wishlist, ${wishCount} items`
@@ -210,7 +236,7 @@ export function Header() {
           </button>
           <Link
             href="/account"
-            className={cn(iconBtn, "relative")}
+            className={cn(iconBtnDesktop, "relative")}
             aria-label={user ? "Your account" : "Sign in"}
           >
             <UserIcon size={20} color="currentColor" />
@@ -227,9 +253,9 @@ export function Header() {
       {mobileOpen ? (
         <div
           ref={mobilePanelRef}
-          className="nav-glass-panel overflow-hidden border-t border-white/10 text-paper lg:hidden"
+          className="nav-glass-panel max-h-[calc(100dvh-var(--chrome-height))] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-white/10 text-paper lg:hidden"
         >
-          <div className="space-y-1 px-5 py-5">
+          <div className="space-y-1 px-5 py-5 pb-8">
             <div className="mb-4">
               <CurrencyToggle tone="dark" />
             </div>

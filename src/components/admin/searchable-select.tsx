@@ -172,13 +172,13 @@ export function AdminSearchableSelect({
         }}
         onKeyDown={onKeyDown}
         className={cn(
-          "h-11 w-full rounded-md border border-[var(--admin-input-border)] bg-[var(--admin-soft-2)] px-3.5 text-sm text-[var(--admin-ink)] outline-none",
-          "placeholder:text-[var(--admin-faint)] focus:border-brass focus:ring-2 focus:ring-brass/20",
+          "h-11 w-full rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 text-sm text-admin-ink outline-none",
+          "placeholder:text-admin-faint focus:border-brass focus:ring-2 focus:ring-brass/20",
           error && "border-rosewood focus:ring-rosewood/20",
         )}
       />
       {value ? (
-        <p className="mt-1 font-mono text-[11px] text-[var(--admin-faint)]">
+        <p className="mt-1 font-mono text-[11px] text-admin-faint">
           {value}
           {selected?.hint ? ` · ${selected.hint}` : ""}
         </p>
@@ -187,7 +187,7 @@ export function AdminSearchableSelect({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-[70] mt-1 max-h-60 w-full overflow-auto rounded-md border border-[var(--admin-line)] bg-[var(--admin-paper)] py-1 shadow-lg"
+          className="absolute z-70 mt-1 max-h-60 w-full overflow-auto rounded-md border border-admin-line bg-admin-paper py-1 shadow-lg"
         >
           {filtered.length ? (
             filtered.map((option, index) => (
@@ -201,15 +201,15 @@ export function AdminSearchableSelect({
                   className={cn(
                     "flex w-full cursor-pointer flex-col items-start px-3 py-2 text-left text-sm transition-colors",
                     index === activeIndex || value === option.value
-                      ? "bg-[var(--admin-soft)] text-[var(--admin-ink)]"
-                      : "text-[var(--admin-ink)] hover:bg-[var(--admin-soft-2)]",
+                      ? "bg-admin-soft text-admin-ink"
+                      : "text-admin-ink hover:bg-admin-soft-2",
                   )}
                   onMouseDown={(e) => e.preventDefault()}
                   onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => choose(option)}
                 >
                   <span className="font-medium">{option.label}</span>
-                  <span className="font-mono text-[11px] text-[var(--admin-faint)]">
+                  <span className="font-mono text-[11px] text-admin-faint">
                     {option.value}
                     {option.hint ? ` · ${option.hint}` : ""}
                   </span>
@@ -217,7 +217,7 @@ export function AdminSearchableSelect({
               </li>
             ))
           ) : (
-            <li className="px-3 py-3 text-sm text-[var(--admin-muted)]">
+            <li className="px-3 py-3 text-sm text-admin-muted">
               {emptyLabel}
             </li>
           )}

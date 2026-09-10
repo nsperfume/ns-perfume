@@ -89,42 +89,42 @@ export default function AdminReviewsPage() {
         {items.map((r) => (
           <div
             key={r._id}
-            className="rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] p-5"
+            className="rounded-lg border border-admin-line bg-admin-paper p-5"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 max-w-2xl">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold text-[var(--admin-ink)]">
+                  <p className="font-semibold text-admin-ink">
                     {r.author}
                     {r.city ? (
-                      <span className="font-normal text-[var(--admin-muted)]">
+                      <span className="font-normal text-admin-muted">
                         {" "}
                         · {r.city}
                       </span>
                     ) : null}
                   </p>
-                  <span className="font-mono text-xs tabular-nums text-[var(--admin-muted)]">
+                  <span className="font-mono text-xs tabular-nums text-admin-muted">
                     {r.rating}/5
                   </span>
                   <AdminStatusBadge status={r.status} />
                 </div>
-                <p className="mt-1 font-mono text-xs text-[var(--admin-faint)]">
+                <p className="mt-1 font-mono text-xs text-admin-faint">
                   {r.productHandle}
                   {r.verified ? " · verified" : ""}
                 </p>
                 {r.title ? (
-                  <p className="mt-3 text-sm font-semibold text-[var(--admin-ink)]">
+                  <p className="mt-3 text-sm font-semibold text-admin-ink">
                     {r.title}
                   </p>
                 ) : null}
-                <p className="mt-1 text-sm leading-relaxed text-[var(--admin-muted)]">
+                <p className="mt-1 text-sm leading-relaxed text-admin-muted">
                   {r.body}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {r.status !== "published" ? (
                   <Button
-                    className="!h-10 !min-h-10 !w-auto !px-4"
+                    className="h-10! min-h-10! w-auto! px-4!"
                     onClick={() => setStatus(r._id, "published")}
                   >
                     Publish
@@ -133,7 +133,7 @@ export default function AdminReviewsPage() {
                 {r.status !== "hidden" ? (
                   <Button
                     variant="secondary"
-                    className="!h-10 !min-h-10 !w-auto !px-4"
+                    className="h-10! min-h-10! w-auto! px-4!"
                     onClick={() => setStatus(r._id, "hidden")}
                   >
                     Hide
@@ -142,7 +142,7 @@ export default function AdminReviewsPage() {
                 {canDelete ? (
                   <Button
                     variant="danger"
-                    className="!h-10 !min-h-10 !w-auto !px-4"
+                    className="h-10! min-h-10! w-auto! px-4!"
                     onClick={() => setDeleteId(r._id)}
                   >
                     Delete
@@ -153,7 +153,7 @@ export default function AdminReviewsPage() {
           </div>
         ))}
         {items.length === 0 ? (
-          <p className="rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] px-5 py-12 text-center text-sm text-[var(--admin-muted)]">
+          <p className="rounded-lg border border-admin-line bg-admin-paper px-5 py-12 text-center text-sm text-admin-muted">
             No reviews yet.
           </p>
         ) : null}

@@ -129,7 +129,7 @@ function AuthPanel() {
       </div>
 
       <div className="border border-hairline bg-paper p-6 sm:p-8">
-        <div className="mb-6 flex gap-2 border-b border-hairline pb-1">
+        <div className="mb-6 flex w-full gap-1 border-b border-hairline pb-1">
           {(
             [
               ["signin", "Sign in"],
@@ -144,7 +144,7 @@ function AuthPanel() {
                 setError("");
               }}
               className={cn(
-                "cursor-pointer border-b-2 px-3 pb-3 font-display text-[12px] font-medium uppercase tracking-[0.12em] transition-colors",
+                "flex-1 cursor-pointer border-b-2 px-2 pb-3 text-center font-display text-[11px] font-medium uppercase tracking-[0.08em] transition-colors sm:px-3 sm:text-[12px] sm:tracking-[0.12em]",
                 mode === id
                   ? "border-ink text-ink"
                   : "border-transparent text-taupe hover:text-ink",

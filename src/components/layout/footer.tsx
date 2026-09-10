@@ -127,8 +127,8 @@ export function Footer() {
                   if (email.includes("@")) setDone(true);
                 }}
               >
-                {/* Fixed height row so field + Button share one flush bar */}
-                <div className="flex h-12 w-full overflow-hidden rounded-md border border-white/30 bg-white/10 focus-within:border-brass">
+                {/* Mobile: stacked. sm+: field + Subscribe share one flush bar */}
+                <div className="flex w-full flex-col overflow-hidden rounded-md border border-white/30 bg-white/10 focus-within:border-brass sm:h-12 sm:flex-row">
                   <Input
                     type="email"
                     name="email"
@@ -136,17 +136,17 @@ export function Footer() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="!h-full !min-h-0 flex-1 rounded-none border-0 bg-transparent px-4 py-0 font-serif text-[1.05rem] leading-none text-paper shadow-none placeholder:text-paper/50 focus:border-transparent focus:bg-transparent focus:outline-none focus:ring-0"
+                    className="h-12! min-h-0! flex-1 rounded-none border-0 bg-transparent px-4 py-0 font-serif text-[1.05rem] leading-none text-paper shadow-none placeholder:text-paper/50 focus:border-transparent focus:bg-transparent focus:outline-none focus:ring-0 sm:h-full!"
                     aria-label="Email for newsletter"
                   />
                   <Button
                     type="submit"
                     variant="secondary"
                     className={cn(
-                      "!h-full !min-h-0 !w-auto !max-w-none shrink-0 self-stretch",
-                      "!rounded-none border-0 border-l border-white/25",
-                      "bg-paper !ring-0 !ring-offset-0 focus-visible:!ring-0 focus-visible:!ring-offset-0",
-                      "px-0 sm:!min-w-[9.5rem]",
+                      "h-11! min-h-0! w-full! max-w-none! shrink-0 self-stretch sm:h-full! sm:w-auto!",
+                      "rounded-none! border-0 border-t border-white/25 sm:border-t-0 sm:border-l",
+                      "bg-paper ring-0! ring-offset-0! focus-visible:ring-0! focus-visible:ring-offset-0!",
+                      "px-0 sm:min-w-[9.5rem]!",
                       "[&>span:last-child]:px-6",
                     )}
                   >

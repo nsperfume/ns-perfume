@@ -37,13 +37,13 @@ export default function GiftCardsPage() {
           </div>
           <div>
             <p className="mb-2 text-caption text-taupe">Amount</p>
-            <div className="mb-8 flex flex-wrap gap-2">
+            <div className="mb-8 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               {amounts.map((a) => (
                 <button
                   key={a}
                   type="button"
                   onClick={() => setAmount(a)}
-                  className={`min-h-11 rounded-xs border px-4 font-mono text-sm ${
+                  className={`min-h-11 w-full rounded-xs border px-3 font-mono text-sm tabular-nums sm:w-auto sm:px-4 ${
                     amount === a
                       ? "border-ink bg-ink text-paper"
                       : "border-hairline text-taupe"

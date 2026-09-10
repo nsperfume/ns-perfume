@@ -93,13 +93,13 @@ export function EmblaCarousel({
         style={{ ["--carousel-gap" as string]: gapMap[gap] }}
       >
         <div
-          className="flex touch-pan-y"
+          className="flex items-start touch-pan-y"
           style={{ marginLeft: "calc(var(--carousel-gap) * -1)" }}
         >
           {slides.map((child, i) => (
             <div
               key={i}
-              className={cn("pl-[var(--carousel-gap)]", slideClassName)}
+              className={cn("pl-carousel-gap", slideClassName)}
             >
               {child}
             </div>
@@ -108,7 +108,7 @@ export function EmblaCarousel({
       </div>
 
       {(showArrows || showDots) && (
-        <div className="mt-6 flex items-center justify-between gap-4">
+        <div className="mt-4 flex items-center justify-between gap-3 sm:mt-6 sm:gap-4">
           {showDots ? (
             <div className="flex flex-wrap items-center gap-2">
               {scrollSnaps.map((_, i) => (

@@ -34,7 +34,7 @@ export function ProductCharacterWear({ product }: { product: StoreProduct }) {
           />
         </div>
 
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-hairline pt-6">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-5 border-t border-hairline pt-6 sm:grid-cols-2">
           <div>
             <dt className="font-display text-[10px] font-medium uppercase tracking-[0.14em] text-taupe">
               Opens with
@@ -51,7 +51,7 @@ export function ProductCharacterWear({ product }: { product: StoreProduct }) {
               {product.heartNotes.join(", ")}
             </dd>
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <dt className="font-display text-[10px] font-medium uppercase tracking-[0.14em] text-taupe">
               Settles into
             </dt>

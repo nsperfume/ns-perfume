@@ -46,8 +46,8 @@ function ToolbarButton({
       className={cn(
         "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded transition-colors",
         active
-          ? "bg-[var(--admin-ink)] text-[var(--admin-paper)]"
-          : "text-[var(--admin-muted)] hover:bg-[var(--admin-soft)] hover:text-[var(--admin-ink)]",
+          ? "bg-admin-ink text-admin-paper"
+          : "text-admin-muted hover:bg-admin-soft hover:text-admin-ink",
         disabled && "cursor-not-allowed opacity-40",
       )}
     >
@@ -194,6 +194,10 @@ export function AdminRichTextEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
+        // TipTap v3 StarterKit already ships link + underline.
+        // Disable them here so the dedicated extensions below are not duplicated.
+        link: false,
+        underline: false,
       }),
       Underline,
       Placeholder.configure({ placeholder }),
@@ -210,7 +214,7 @@ export function AdminRichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          "admin-rich-editor prose-ns max-w-none px-3.5 py-3 text-base text-[var(--admin-ink)] outline-none",
+          "admin-rich-editor prose-ns max-w-none px-3.5 py-3 text-base text-admin-ink outline-none",
           minHeightClass,
         ),
       },
@@ -254,12 +258,12 @@ export function AdminRichTextEditor({
       </AdminFieldLabel>
       <div
         className={cn(
-          "admin-rte-shell overflow-hidden rounded-md border border-[var(--admin-input-border)] bg-[var(--admin-soft-2)]",
+          "admin-rte-shell overflow-hidden rounded-md border border-admin-input-border bg-admin-soft-2",
           "focus-within:border-brass focus-within:ring-2 focus-within:ring-brass/20",
           error && "border-rosewood focus-within:ring-rosewood/20",
         )}
       >
-        <div className="flex flex-wrap items-center gap-0.5 border-b border-[var(--admin-line)] px-1.5 py-1.5">
+        <div className="flex flex-wrap items-center gap-0.5 border-b border-admin-line px-1.5 py-1.5">
           <ToolbarButton
             label="Bold"
             active={editor?.isActive("bold")}
@@ -284,7 +288,7 @@ export function AdminRichTextEditor({
           >
             <IconUnderline />
           </ToolbarButton>
-          <span className="mx-1 h-5 w-px bg-[var(--admin-line)]" aria-hidden />
+          <span className="mx-1 h-5 w-px bg-admin-line" aria-hidden />
           <ToolbarButton
             label="Heading 2"
             active={editor?.isActive("heading", { level: 2 })}
@@ -305,7 +309,7 @@ export function AdminRichTextEditor({
           >
             <IconH3 />
           </ToolbarButton>
-          <span className="mx-1 h-5 w-px bg-[var(--admin-line)]" aria-hidden />
+          <span className="mx-1 h-5 w-px bg-admin-line" aria-hidden />
           <ToolbarButton
             label="Bullet list"
             active={editor?.isActive("bulletList")}
@@ -338,7 +342,7 @@ export function AdminRichTextEditor({
           >
             <IconSeparator />
           </ToolbarButton>
-          <span className="mx-1 h-5 w-px bg-[var(--admin-line)]" aria-hidden />
+          <span className="mx-1 h-5 w-px bg-admin-line" aria-hidden />
           <ToolbarButton
             label="Link"
             active={editor?.isActive("link")}

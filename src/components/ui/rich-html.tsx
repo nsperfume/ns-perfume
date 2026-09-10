@@ -11,7 +11,12 @@ type Props = {
  * Sanitized rich-text render for storefront descriptive copy.
  */
 export function RichHtml({ html, className, as: Tag = "div" }: Props) {
-  const clean = sanitizeRichHtml(html || "");
+  let clean = "";
+  try {
+    clean = sanitizeRichHtml(html || "");
+  } catch {
+    clean = "";
+  }
   if (!clean) return null;
 
   if (!isRichHtml(clean)) {

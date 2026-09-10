@@ -151,7 +151,7 @@ function MarqueeRow({
   return (
     <div
       ref={viewportRef}
-      className="cursor-grab touch-pan-y select-none py-2.5 md:py-3"
+      className="cursor-grab touch-pan-y select-none overflow-hidden py-2.5 md:py-3"
       role="presentation"
     >
       <div ref={trackRef} className="flex w-max will-change-transform">
@@ -160,7 +160,7 @@ function MarqueeRow({
             key={`${text}-${i}`}
             className="inline-flex shrink-0 items-center gap-5 px-5 md:gap-7 md:px-7"
           >
-            <span className="font-serif text-[0.95rem] leading-snug text-paper/90 md:text-[1.05rem]">
+            <span className="whitespace-nowrap font-serif text-[0.9rem] leading-none text-paper/90 md:text-[1.05rem]">
               {text}
             </span>
             <span
@@ -179,7 +179,7 @@ export function PerfumeMarquee({ className }: { className?: string }) {
     <section
       aria-label="Notes on wearing perfume"
       className={cn(
-        "relative overflow-hidden border-b border-white/10 bg-ink",
+        "relative overflow-x-clip overflow-y-hidden border-b border-white/10 bg-ink",
         className,
       )}
     >

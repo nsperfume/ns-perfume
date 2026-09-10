@@ -28,19 +28,54 @@ export async function POST(req: Request) {
     await connectDB();
     const body = await req.json();
     const admin = await requireAdmin();
-    // Public can submit as pending; admin publishes immediately
-    if (!body.productHandle || !body.author || !body.body || !body.rating) {
+
+    const productHandle = String(body.productHandle || "").trim();
+    const author = String(body.author || "").trim();
+    const reviewBody = String(body.body || "").trim();
+    const rating = Number(body.rating);
+    const city = String(body.city || "").trim().slice(0, 80);
+    const title = String(body.title || "").trim().slice(0, 120);
+
+    if (!productHandle || !author || !reviewBody || !rating) {
       return jsonError("productHandle, author, body, rating required");
     }
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+      return jsonError("Rating must be between 1 and 5");
+    }
+    if (reviewBody.length < 20) {
+      return jsonError("Review is too short");
+    }
+
+    const product = await ProductModel.findOne({ handle: productHandle })
+      .select("_id")
+      .lean();
+    if (!product) return jsonError("Product not found", 404);
+
     const created = await ReviewModel.create({
-      ...body,
-      status: admin ? body.status || "published" : "pending",
+      productHandle,
+      author: author.slice(0, 80),
+      city,
+      title,
+      body: reviewBody.slice(0, 4000),
+      rating: Math.round(rating),
+      verified: false,
+      status: admin ? (body.status === "published" ? "published" : "pending") : "pending",
     });
 
     if (created.status === "published") {
-      await recomputeProductRating(body.productHandle);
+      await recomputeProductRating(productHandle);
     }
-    return jsonOk(created, { status: 201 });
+    return jsonOk(
+      {
+        id: created._id,
+        status: created.status,
+        message:
+          created.status === "pending"
+            ? "Review submitted for moderation"
+            : "Review published",
+      },
+      { status: 201 },
+    );
   } catch (e) {
     console.error(e);
     return jsonError("Failed to create review", 500);

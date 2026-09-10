@@ -198,7 +198,7 @@ export function SearchSheet() {
   return (
     <div
       ref={rootRef}
-      className="fixed inset-x-0 bottom-0 top-[var(--chrome-height)] z-40 flex flex-col opacity-0"
+      className="fixed inset-x-0 bottom-0 top-chrome-height z-40 flex flex-col opacity-0"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -351,8 +351,8 @@ export function SearchSheet() {
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-baseline gap-x-2">
-                          <p className="font-display text-[1.05rem] font-medium text-ink group-hover:text-brass">
+                        <div className="flex flex-col gap-0.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2">
+                          <p className="truncate font-display text-[1.05rem] font-medium text-ink group-hover:text-brass">
                             {p.name}
                           </p>
                           <span className="font-mono text-[11px] uppercase tracking-wide text-taupe">
@@ -362,10 +362,14 @@ export function SearchSheet() {
                         <p className="mt-0.5 truncate font-serif text-[0.9rem] text-taupe">
                           {p.descriptor}
                         </p>
+                        <Price
+                          amountPkr={p.prices[0]?.price ?? 0}
+                          className="mt-1 text-[0.95rem] sm:hidden"
+                        />
                       </div>
                       <Price
                         amountPkr={p.prices[0]?.price ?? 0}
-                        className="shrink-0 text-[0.95rem] sm:text-[1.05rem]"
+                        className="hidden shrink-0 text-[0.95rem] sm:block sm:text-[1.05rem]"
                       />
                     </Link>
                   </li>

@@ -81,11 +81,11 @@ export function AdminDatePickerField({
           <button
             type="button"
             className={cn(
-              "flex h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-md border bg-[var(--admin-soft-2)] px-3.5 text-left text-sm outline-none transition-colors",
-              "border-[var(--admin-input-border)] text-[var(--admin-ink)]",
-              "hover:border-[var(--admin-muted)] focus-visible:border-brass focus-visible:ring-2 focus-visible:ring-brass/20",
+              "flex h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-md border bg-admin-soft-2 px-3.5 text-left text-sm outline-none transition-colors",
+              "border-admin-input-border text-admin-ink",
+              "hover:border-admin-muted focus-visible:border-brass focus-visible:ring-2 focus-visible:ring-brass/20",
               error && "border-rosewood focus-visible:ring-rosewood/20",
-              !selected && "text-[var(--admin-faint)]",
+              !selected && "text-admin-faint",
             )}
           >
             <span className="truncate">{display}</span>
@@ -95,7 +95,7 @@ export function AdminDatePickerField({
 
         {open ? (
           <div
-            className="fixed inset-0 z-[190]"
+            className="fixed inset-0 z-190"
             style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
             aria-hidden
             onClick={() => setOpen(false)}
@@ -110,8 +110,8 @@ export function AdminDatePickerField({
             collisionPadding={20}
             avoidCollisions
             className={cn(
-              "admin-date-popover z-[200] w-[min(100vw-2rem,19.5rem)] rounded-lg border p-3 outline-none",
-              "border-[var(--admin-line)] text-[var(--admin-ink)]",
+              "admin-date-popover z-200 w-[min(100vw-2rem,19.5rem)] rounded-lg border p-3 outline-none",
+              "border-admin-line text-admin-ink",
               "shadow-[0_16px_48px_rgba(0,0,0,0.45)]",
             )}
             style={{
@@ -135,32 +135,32 @@ export function AdminDatePickerField({
                 month_caption:
                   "relative flex h-10 items-center justify-center px-10",
                 caption_label:
-                  "font-display text-sm font-semibold tracking-wide text-[var(--admin-ink)]",
+                  "font-display text-sm font-semibold tracking-wide text-admin-ink",
                 nav: "absolute inset-x-0 top-0 flex h-10 items-center justify-between",
                 button_previous:
-                  "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[var(--admin-ink)] hover:bg-[var(--admin-soft)]",
+                  "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-admin-ink hover:bg-admin-soft",
                 button_next:
-                  "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[var(--admin-ink)] hover:bg-[var(--admin-soft)]",
+                  "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-admin-ink hover:bg-admin-soft",
                 month_grid: "w-full border-collapse",
                 weekdays: "grid w-full grid-cols-7",
                 weekday:
-                  "h-8 text-center font-display text-[10px] font-medium uppercase tracking-wide text-[var(--admin-faint)]",
+                  "h-8 text-center font-display text-[10px] font-medium uppercase tracking-wide text-admin-faint",
                 weeks: "w-full",
                 week: "mt-1 grid w-full grid-cols-7",
                 day: "relative flex items-center justify-center p-0 text-center",
                 day_button: cn(
                   "inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md",
-                  "font-serif text-sm text-[var(--admin-ink)]",
-                  "hover:bg-[var(--admin-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/50",
+                  "font-serif text-sm text-admin-ink",
+                  "hover:bg-admin-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/50",
                 ),
                 selected:
                   "[&>button]:bg-brass [&>button]:font-semibold [&>button]:text-white [&>button]:hover:bg-brass [&>button]:hover:text-white",
                 today: "[&>button]:font-semibold [&>button]:text-brass",
                 outside:
-                  "[&>button]:text-[var(--admin-faint)] [&>button]:opacity-40",
+                  "[&>button]:text-admin-faint [&>button]:opacity-40",
                 disabled: "[&>button]:opacity-25 [&>button]:cursor-not-allowed",
                 hidden: "invisible",
-                chevron: "fill-[var(--admin-ink)]",
+                chevron: "fill-admin-ink",
               }}
             />
           </Popover.Content>
