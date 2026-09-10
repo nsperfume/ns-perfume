@@ -86,7 +86,7 @@ export default function ContactPage() {
       />
 
       <section className="border-b border-hairline bg-muted/50">
-        <div className="container-ns grid gap-8 py-10 sm:grid-cols-3 sm:gap-6 md:py-12">
+        <div className="container-ns grid gap-8 py-10 md:grid-cols-3 md:gap-6 md:py-12">
           {trustPoints.map((item) => (
             <div key={item.title} className="border-t border-hairline pt-5">
               <h2 className="font-display text-[1.05rem] font-medium text-ink">
@@ -158,7 +158,7 @@ export default function ContactPage() {
                         href={siteConfig.location.mapsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-1 inline-flex h-8 items-center gap-2 font-display text-[1rem] font-medium text-ink transition-colors hover:text-brass"
+                        className="mt-1 inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 font-display text-[1rem] font-medium text-ink transition-colors hover:text-brass"
                       >
                         <span>{siteConfig.location.label}</span>
                         <span
@@ -289,7 +289,7 @@ export default function ContactPage() {
                         type="button"
                         onClick={() => setTopic(t.value)}
                         className={cn(
-                          "cursor-pointer border px-3 py-2 font-display text-[11px] font-medium uppercase tracking-[0.1em] transition-colors",
+                          "cursor-pointer border px-3 py-2 font-display text-[11px] font-medium uppercase tracking-widest transition-colors",
                           topic === t.value
                             ? "border-ink bg-ink text-paper"
                             : "border-hairline bg-canvas text-ink hover:border-ink/40",

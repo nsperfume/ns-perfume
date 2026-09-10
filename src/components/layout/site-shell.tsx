@@ -62,7 +62,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                     <Header />
                   </div>
                 </div>
-                <main className="flex-1 pt-[var(--chrome-height)]">{children}</main>
+                <main className="flex-1 pt-chrome-height">{children}</main>
                 <Footer />
                 <CartDrawer />
                 <SearchSheet />

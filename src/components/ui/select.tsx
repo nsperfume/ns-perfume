@@ -88,7 +88,7 @@ export function Select({
             sideOffset={6}
             collisionPadding={12}
             className={cn(
-              "scrollbar-panel z-[80] max-h-[min(18rem,70vh)] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-hairline bg-paper text-ink shadow-modal",
+              "scrollbar-panel z-80 max-h-[min(18rem,70vh)] min-w-(--radix-select-trigger-width) overflow-hidden rounded-md border border-hairline bg-paper text-ink shadow-modal",
             )}
           >
             <SelectPrimitive.Viewport
@@ -145,7 +145,7 @@ export function SelectInline({
         onValueChange={onValueChange}
         options={options}
         aria-label={ariaLabel}
-        triggerClassName="min-w-[11rem] sm:min-w-[13rem]"
+        triggerClassName="min-w-0 w-full sm:min-w-[11rem] sm:w-auto md:min-w-[13rem]"
       />
     </div>
   );

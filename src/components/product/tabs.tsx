@@ -20,7 +20,7 @@ export function ProductTabs({ product }: { product: StoreProduct }) {
       <div
         role="tablist"
         aria-label="Product details"
-        className="mb-8 flex flex-wrap gap-1 border-b border-hairline"
+        className="mb-8 flex gap-1 overflow-x-auto border-b border-hairline scrollbar-panel"
       >
         {tabs.map((t) => (
           <button
@@ -31,7 +31,7 @@ export function ProductTabs({ product }: { product: StoreProduct }) {
             id={`tab-${t.id}`}
             onClick={() => setTab(t.id)}
             className={cn(
-              "min-h-12 cursor-pointer border-b-2 px-3 pb-3 font-display text-[12px] font-medium uppercase tracking-[0.12em] transition-colors duration-300",
+              "min-h-12 shrink-0 cursor-pointer border-b-2 px-2.5 pb-3 font-display text-[11px] font-medium uppercase tracking-[0.08em] transition-colors duration-300 sm:px-3 sm:text-[12px] sm:tracking-[0.12em]",
               tab === t.id
                 ? "border-ink text-ink"
                 : "border-transparent text-taupe hover:text-ink",

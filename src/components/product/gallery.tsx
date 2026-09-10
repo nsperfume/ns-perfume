@@ -125,7 +125,7 @@ export function ProductGallery({
 
       {/* Same width as hero — exactly 2 per row */}
       {list.length > 1 ? (
-        <ul className="mt-2 grid w-full grid-cols-2 gap-2 sm:mt-3 sm:gap-3">
+        <ul className="mt-2 grid w-full grid-cols-2 gap-2 overflow-hidden sm:mt-3 sm:gap-3">
           {list.map((src, i) => (
             <li key={`${src}-cell-${i}`} className="min-w-0">
               <button
@@ -135,7 +135,7 @@ export function ProductGallery({
                   "relative aspect-square w-full cursor-pointer overflow-hidden bg-[#f5f5f5] transition-opacity duration-300",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
                   i === active
-                    ? "ring-1 ring-ink ring-offset-2 ring-offset-canvas"
+                    ? "ring-1 ring-ink max-md:ring-offset-0 ring-offset-2 ring-offset-canvas"
                     : "hover:opacity-90",
                 )}
                 aria-label={`Show image ${i + 1}`}

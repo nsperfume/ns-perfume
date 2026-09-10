@@ -1,0 +1,13 @@
+---
+description: Keep SSR free of jsdom/DOMPurify packages that break Vercel
+globs: "**/package.json,**/rich-text.ts,**/rich-html.tsx"
+alwaysApply: true
+---
+
+# SSR-safe HTML sanitization
+
+Never add `isomorphic-dompurify`, `jsdom`, or server-side `dompurify` imports. They pull ESM-only deps (`@exodus/bytes`) that crash Next.js on Vercel with `ERR_REQUIRE_ESM` 500s.
+
+Use `@/lib/rich-text` (`sanitize-html`) for all HTML sanitize / plain-text conversion.
+
+`pnpm prebuild` runs `scripts/check-banned-deps.mjs` and fails the build if those packages return.

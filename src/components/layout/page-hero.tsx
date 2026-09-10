@@ -28,7 +28,7 @@ export function PageHero({
   return (
     <section
       className={cn(
-        "relative isolate -mt-[var(--chrome-height)] overflow-hidden border-b border-hairline",
+        "relative isolate -mt-chrome-height overflow-hidden border-b border-hairline",
         className,
       )}
     >
@@ -44,13 +44,13 @@ export function PageHero({
           style={{ objectPosition }}
         />
         <div
-          className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/20"
+          className="absolute inset-0 bg-linear-to-r from-black/75 via-black/50 to-black/20"
           aria-hidden
         />
-        <div className="container-ns relative z-10 flex min-h-[17rem] flex-col justify-end pb-8 pt-[calc(var(--chrome-height)+1.5rem)] sm:min-h-[20rem] sm:pb-10 md:min-h-[22rem] lg:min-h-[24rem] lg:pb-12 xl:min-h-[26rem]">
-          <h1 className="text-display-lg max-w-2xl text-paper">{title}</h1>
+        <div className="container-ns relative z-10 flex min-h-[17rem] flex-col justify-end pb-8 pt-[calc(var(--spacing-chrome-height)+1.5rem)] sm:min-h-[20rem] sm:pb-10 md:min-h-[22rem] lg:min-h-[24rem] lg:pb-12 xl:min-h-[26rem]">
+          <h1 className="text-display-lg max-w-2xl text-balance text-paper">{title}</h1>
           {description ? (
-            <p className="measure mt-4 max-w-xl font-serif text-[1.0625rem] font-medium leading-relaxed text-white/95 sm:text-[1.2rem] sm:leading-relaxed">
+            <p className="measure mt-3 line-clamp-3 max-w-xl font-serif text-[1.02rem] font-medium leading-relaxed text-white/95 sm:mt-4 sm:line-clamp-4 sm:text-[1.2rem] sm:leading-relaxed md:line-clamp-none">
               {description}
             </p>
           ) : null}

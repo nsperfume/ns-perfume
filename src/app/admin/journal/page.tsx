@@ -322,7 +322,7 @@ export default function AdminJournalPage() {
                   value={form.category}
                   onValueChange={(category) => setForm({ ...form, category })}
                   options={categoryOptions}
-                  triggerClassName="border-[var(--admin-input-border)] bg-[var(--admin-soft-2)] text-[var(--admin-ink)] hover:border-[var(--admin-muted)] data-[state=open]:border-brass"
+                  triggerClassName="border-admin-input-border bg-admin-soft-2 text-admin-ink hover:border-admin-muted data-[state=open]:border-brass"
                 />
                 {errors.category ? (
                   <p className="mt-1.5 text-sm text-rosewood">
@@ -340,7 +340,7 @@ export default function AdminJournalPage() {
                   })
                 }
                 options={statusOptions}
-                triggerClassName="border-[var(--admin-input-border)] bg-[var(--admin-soft-2)] text-[var(--admin-ink)] hover:border-[var(--admin-muted)] data-[state=open]:border-brass"
+                triggerClassName="border-admin-input-border bg-admin-soft-2 text-admin-ink hover:border-admin-muted data-[state=open]:border-brass"
               />
             </div>
             <Textarea
@@ -416,23 +416,23 @@ export default function AdminJournalPage() {
           {items.map((post) => (
             <li
               key={post.id}
-              className="rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] p-5"
+              className="rounded-lg border border-admin-line bg-admin-paper p-5"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-[var(--admin-ink)]">
+                    <p className="font-semibold text-admin-ink">
                       {post.title}
                     </p>
                     <AdminStatusBadge status={post.status} />
-                    <span className="text-xs uppercase tracking-wide text-[var(--admin-faint)]">
+                    <span className="text-xs uppercase tracking-wide text-admin-faint">
                       {post.category}
                     </span>
                   </div>
-                  <p className="mt-1 font-mono text-xs text-[var(--admin-muted)]">
+                  <p className="mt-1 font-mono text-xs text-admin-muted">
                     /journal/{post.slug} · {post.date} · {post.readTime}
                   </p>
-                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--admin-muted)]">
+                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-admin-muted">
                     {post.excerpt}
                   </p>
                 </div>
@@ -440,7 +440,7 @@ export default function AdminJournalPage() {
                   <button
                     type="button"
                     onClick={() => startEdit(post)}
-                    className="cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--admin-muted)] transition-colors hover:text-[var(--admin-ink)]"
+                    className="cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.12em] text-admin-muted transition-colors hover:text-admin-ink"
                   >
                     Edit
                   </button>
@@ -448,7 +448,7 @@ export default function AdminJournalPage() {
                     <button
                       type="button"
                       onClick={() => setDeleteId(post.id)}
-                      className="cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--admin-muted)] transition-colors hover:text-[var(--admin-danger)]"
+                      className="cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.12em] text-admin-muted transition-colors hover:text-admin-danger"
                     >
                       Delete
                     </button>
@@ -458,7 +458,7 @@ export default function AdminJournalPage() {
             </li>
           ))}
           {!items.length ? (
-            <li className="rounded-lg border border-dashed border-[var(--admin-line)] p-8 text-center text-sm text-[var(--admin-muted)]">
+            <li className="rounded-lg border border-dashed border-admin-line p-8 text-center text-sm text-admin-muted">
               No journal posts yet. Write the first note on the left.
             </li>
           ) : null}

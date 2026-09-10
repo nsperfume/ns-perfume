@@ -80,7 +80,7 @@ export function CollectionFilters({
     <>
       <div
         ref={topRef}
-        className="mb-8 grid scroll-mt-[calc(var(--chrome-height)+1rem)] gap-4 border-b border-hairline pb-6 sm:grid-cols-2 lg:grid-cols-5"
+        className="mb-8 grid scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] gap-4 border-b border-hairline pb-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5"
       >
         <Select
           label="Family"

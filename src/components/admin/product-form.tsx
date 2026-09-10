@@ -121,9 +121,9 @@ function buildTags(form: {
 }
 
 const selectTrigger =
-  "!border-[var(--admin-input-border)] !bg-[var(--admin-soft-2)] !text-[var(--admin-ink)] hover:!border-brass data-[state=open]:!border-brass";
+  "border-admin-input-border! bg-admin-soft-2! text-admin-ink! hover:border-brass! data-[state=open]:border-brass!";
 const selectClass =
-  "[&_label]:!text-[13px] [&_label]:!font-semibold [&_label]:!text-[var(--admin-ink)]";
+  "[&_label]:text-[13px]! [&_label]:font-semibold! [&_label]:text-admin-ink!";
 
 export function ProductForm({
   initial,
@@ -400,10 +400,10 @@ export function ProductForm({
           >
             <div className="mb-3 flex items-center justify-between gap-2">
               <div>
-                <p className="font-display text-base font-semibold text-[var(--admin-ink)]">
+                <p className="font-display text-base font-semibold text-admin-ink">
                   Gallery
                 </p>
-                <p className="text-[13px] text-[var(--admin-muted)]">
+                <p className="text-[13px] text-admin-muted">
                   1st = primary · 2nd = hover · rest = product page
                 </p>
               </div>
@@ -411,7 +411,7 @@ export function ProductForm({
                 type="button"
                 variant="secondary"
                 onClick={() => setField("gallery", [...form.gallery, ""])}
-                className="!h-9 !min-h-9 !w-auto !px-3 text-sm"
+                className="h-9! min-h-9! w-auto! px-3! text-sm"
               >
                 + Add
               </Button>
@@ -444,7 +444,7 @@ export function ProductForm({
                 ))}
               </div>
             ) : (
-              <p className="rounded-md border border-dashed border-[var(--admin-line)] bg-[var(--admin-soft-2)] px-3 py-4 text-center text-sm text-[var(--admin-muted)]">
+              <p className="rounded-md border border-dashed border-admin-line bg-admin-soft-2 px-3 py-4 text-center text-sm text-admin-muted">
                 Add a gallery image to publish this bottle.
               </p>
             )}
@@ -481,10 +481,10 @@ export function ProductForm({
             {form.prices.map((size, i) => (
               <div
                 key={i}
-                className="rounded-md border border-[var(--admin-line)] bg-[var(--admin-soft-2)] p-3"
+                className="rounded-md border border-admin-line bg-admin-soft-2 p-3"
               >
                 <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="font-display text-sm font-semibold text-[var(--admin-ink)]">
+                  <p className="font-display text-sm font-semibold text-admin-ink">
                     Size {i + 1}
                   </p>
                   <button
@@ -499,8 +499,8 @@ export function ProductForm({
                     className={cn(
                       "cursor-pointer font-display text-[11px] font-medium uppercase tracking-wide transition-colors",
                       form.prices.length <= 1
-                        ? "cursor-not-allowed text-[var(--admin-faint)] opacity-50"
-                        : "text-[var(--admin-muted)] hover:text-rosewood",
+                        ? "cursor-not-allowed text-admin-faint opacity-50"
+                        : "text-admin-muted hover:text-rosewood",
                     )}
                   >
                     Remove
@@ -593,7 +593,7 @@ export function ProductForm({
               <AdminFieldLabel tip="Uncheck to show Out of stock on the storefront.">
                 Stock
               </AdminFieldLabel>
-              <label className="mt-1 flex min-h-12 cursor-pointer items-center gap-2.5 rounded-md border border-[var(--admin-input-border)] bg-[var(--admin-soft-2)] px-3.5 text-base text-[var(--admin-ink)]">
+              <label className="mt-1 flex min-h-12 cursor-pointer items-center gap-2.5 rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 text-base text-admin-ink">
                 <input
                   type="checkbox"
                   checked={form.inStock}
@@ -611,7 +611,7 @@ export function ProductForm({
             tip="Tick any collection. Gender and family collections also pick products up from scent profile tags."
           >
             {collections.length === 0 ? (
-              <p className="text-sm text-[var(--admin-muted)]">
+              <p className="text-sm text-admin-muted">
                 No collections yet. Create one under Collections first.
               </p>
             ) : (
@@ -624,8 +624,8 @@ export function ProductForm({
                         className={cn(
                           "flex cursor-pointer items-start gap-2.5 rounded-md border px-3 py-2.5 text-[15px] transition-colors",
                           checked
-                            ? "border-[var(--admin-ink)] bg-[var(--admin-soft)]"
-                            : "border-[var(--admin-line)] bg-[var(--admin-soft-2)] hover:border-[var(--admin-muted)]",
+                            ? "border-admin-ink bg-admin-soft"
+                            : "border-admin-line bg-admin-soft-2 hover:border-admin-muted",
                         )}
                       >
                         <input
@@ -635,10 +635,10 @@ export function ProductForm({
                           className="mt-0.5 h-4 w-4 shrink-0 accent-brass"
                         />
                         <span className="min-w-0">
-                          <span className="block font-medium text-[var(--admin-ink)]">
+                          <span className="block font-medium text-admin-ink">
                             {c.title}
                           </span>
-                          <span className="block font-mono text-xs text-[var(--admin-faint)]">
+                          <span className="block font-mono text-xs text-admin-faint">
                             /collections/{c.handle}
                             {c.status === "draft" ? " · draft" : ""}
                           </span>
@@ -650,7 +650,7 @@ export function ProductForm({
               </ul>
             )}
             {form.collectionHandles.length > 0 ? (
-              <p className="text-[13px] text-[var(--admin-muted)]">
+              <p className="text-[13px] text-admin-muted">
                 {form.collectionHandles.length} selected
               </p>
             ) : null}
@@ -783,7 +783,7 @@ export function ProductForm({
               <AdminFieldLabel tip="Uncheck for oil or attar formulas with no alcohol carrier. Storefront will label them alcohol-free.">
                 Alcohol
               </AdminFieldLabel>
-              <label className="mt-1 flex min-h-12 cursor-pointer items-center gap-2.5 rounded-md border border-[var(--admin-input-border)] bg-[var(--admin-soft-2)] px-3.5 text-base text-[var(--admin-ink)]">
+              <label className="mt-1 flex min-h-12 cursor-pointer items-center gap-2.5 rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 text-base text-admin-ink">
                 <input
                   type="checkbox"
                   checked={form.containsAlcohol}
@@ -821,9 +821,9 @@ export function ProductForm({
         <p className="mb-3 text-base text-rosewood">{error}</p>
       ) : null}
 
-      <div className="sticky bottom-0 z-10 -mx-1 border-t border-[var(--admin-line)] bg-[var(--admin-page)]/95 px-1 py-3 backdrop-blur-sm supports-[backdrop-filter]:bg-[var(--admin-page)]/85">
+      <div className="sticky bottom-0 z-10 -mx-1 border-t border-admin-line bg-admin-page/95 px-1 py-3 backdrop-blur-sm supports-backdrop-filter:bg-admin-page/85">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[15px] text-[var(--admin-muted)]">
+          <p className="text-[15px] text-admin-muted">
             {form.status === "active"
               ? "Will be live when saved."
               : form.status === "draft"

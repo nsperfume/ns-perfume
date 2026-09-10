@@ -21,9 +21,9 @@ export const pageCopy = {
   findYourScent: {
     title: "Find Your Scent",
     description:
-      "Three short questions. Three bottles chosen from how you actually live, not from slogans.",
+      "Five short questions. Three bottles scored from gender, family, sillage, and how long they stay on skin.",
     metaDescription:
-      "Answer three questions and get NS Perfume recommendations matched to climate, family, and sillage.",
+      "Find NS Perfume bottles with a short guide scored on gender, scent family, sillage, and longevity. No AI ranking.",
   },
   cart: {
     title: "Your Bag",
@@ -71,7 +71,7 @@ export const pageCopy = {
   brandStory:
     "We list real top, heart, and base notes plus sillage and longevity so you can match a bottle to office air, outdoor heat, or a late table. Less guessing. More certainty on skin.",
   findYourScentHome:
-    "Tell us about climate, family, and how far you want a trail to travel. Leave with three bottles you can try first, not a list of empty adjectives.",
+    "Answer five short questions on climate, family, and trail. Leave with three bottles scored from the catalog, each with a plain reason.",
   testimonials:
     "Wear notes from people who already own the bottle, not from a script.",
   wornInWild: "How fragrance sits on fabric, wrist, and the walk home.",

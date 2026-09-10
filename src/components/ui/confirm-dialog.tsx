@@ -34,10 +34,10 @@ export function ConfirmDialog({
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
-        <AlertDialog.Overlay className="fixed inset-0 z-[100] bg-ink/45 backdrop-blur-[1px] data-[state=open]:animate-in data-[state=closed]:animate-out" />
+        <AlertDialog.Overlay className="fixed inset-0 z-100 bg-ink/45 backdrop-blur-[1px] data-[state=open]:animate-in data-[state=closed]:animate-out" />
         <AlertDialog.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-[101] w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2",
+            "fixed left-1/2 top-1/2 z-101 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2",
             "rounded-lg border border-[#e4e6ea] bg-paper p-6 shadow-modal outline-none",
           )}
         >

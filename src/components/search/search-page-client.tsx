@@ -77,7 +77,7 @@ export function SearchPageClient() {
                 No results for “{query}”. Try a note name, or start with these
                 bestsellers.
               </p>
-              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
                 {bestsellers.map((p) => (
                   <ProductCard key={p.handle} product={p} />
                 ))}
@@ -86,7 +86,7 @@ export function SearchPageClient() {
           ) : null}
 
           {results.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
               {results.map((p) => (
                 <ProductCard key={p.handle} product={p} />
               ))}

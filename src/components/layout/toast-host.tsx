@@ -62,7 +62,7 @@ export function ToastHost() {
   if (!toasts.length) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[90] flex flex-col items-center gap-2 px-4 sm:bottom-8">
+    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-90 flex flex-col items-center gap-2 px-4 sm:bottom-8">
       {toasts.map((t) => (
         <ToastCard key={t.id} toast={t} onDismiss={() => dismissToast(t.id)} />
       ))}

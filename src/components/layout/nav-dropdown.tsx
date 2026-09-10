@@ -133,7 +133,7 @@ export function NavDropdown({
                   key={link.href}
                   href={link.href}
                   variant={i === 0 ? "primary" : "secondary"}
-                  className="!h-10 !min-h-10 w-auto max-w-none px-4"
+                  className="h-10! min-h-10! w-auto max-w-none px-4"
                   onClick={closeNow}
                 >
                   {link.label}
@@ -278,7 +278,7 @@ export function NavDropdown({
               aria-label={label}
               aria-hidden={!open}
               className={cn(
-                "fixed inset-x-0 z-[60] transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none",
+                "fixed inset-x-0 z-60 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none",
                 wide ? "px-3 sm:px-5 lg:px-6" : "flex justify-center px-3",
                 open
                   ? "pointer-events-auto visible translate-y-0 opacity-100"

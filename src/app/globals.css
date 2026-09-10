@@ -17,8 +17,14 @@
   --color-hairline-dark: #333333;
   --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
   --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.14);
-  /* Announcement (~2.5rem) + sticky header (4.25rem) */
-  --chrome-height: 6.75rem;
+  /* Announcement (2.25rem) + header (4rem) on mobile; sm+ uses taller chrome */
+  --chrome-height: 6.25rem;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --chrome-height: 6.75rem;
+  }
 }
 
 @theme inline {
@@ -36,6 +42,25 @@
   --color-canvas-deep: var(--color-canvas-deep);
   --color-hairline-dark: var(--color-hairline-dark);
 
+  /* Admin palette (values cascade from .admin-app / [data-theme=dark]) */
+  --color-admin-page: var(--admin-page);
+  --color-admin-paper: var(--admin-paper);
+  --color-admin-ink: var(--admin-ink);
+  --color-admin-muted: var(--admin-muted);
+  --color-admin-faint: var(--admin-faint);
+  --color-admin-line: var(--admin-line);
+  --color-admin-soft: var(--admin-soft);
+  --color-admin-soft-2: var(--admin-soft-2);
+  --color-admin-sidebar: var(--admin-sidebar);
+  --color-admin-sidebar-text: var(--admin-sidebar-text);
+  --color-admin-sidebar-muted: var(--admin-sidebar-muted);
+  --color-admin-sidebar-hover: var(--admin-sidebar-hover);
+  --color-admin-sidebar-active-bg: var(--admin-sidebar-active-bg);
+  --color-admin-sidebar-active-text: var(--admin-sidebar-active-text);
+  --color-admin-danger: var(--admin-danger);
+  --color-admin-danger-hover: var(--admin-danger-hover);
+  --color-admin-input-border: var(--admin-input-border);
+
   --font-sans: var(--font-ubuntu);
   --font-display: var(--font-ubuntu);
   --font-mono: var(--font-ibm-plex-mono);
@@ -47,12 +72,20 @@
 
   --shadow-card: var(--shadow-card);
   --shadow-modal: var(--shadow-modal);
+  --shadow-admin: var(--admin-shadow);
+
+  --spacing-chrome-height: var(--chrome-height);
+  --spacing-carousel-gap: var(--carousel-gap);
 }
 
 @layer base {
   ::selection {
     background: #000000;
     color: #ffffff;
+  }
+
+  html {
+    overflow-x: clip;
   }
 
   * {
@@ -121,6 +154,7 @@
     line-height: 1.65;
     font-weight: 500;
     -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
   }
 
   /* Interactive controls: pointer by default sitewide */
@@ -191,15 +225,16 @@
 
   .text-display-xl {
     font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
-    font-size: clamp(2.75rem, 6vw, 4rem);
-    line-height: 1.08;
+    /* ~1.875rem at 320px, scales to 4rem on large screens */
+    font-size: clamp(1.875rem, 1.05rem + 3.6vw, 4rem);
+    line-height: 1.1;
     font-weight: 500;
     letter-spacing: -0.02em;
   }
 
   .text-display-lg {
     font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
-    font-size: clamp(2.125rem, 3.8vw, 2.875rem);
+    font-size: clamp(1.75rem, 1.2rem + 2.4vw, 2.875rem);
     line-height: 1.12;
     font-weight: 500;
     letter-spacing: -0.015em;
@@ -284,7 +319,7 @@
     width: 100%;
     max-width: 1280px;
     margin-inline: auto;
-    padding-inline: clamp(1rem, 2.5vw, 1.5rem);
+    padding-inline: clamp(1.125rem, 4vw, 1.5rem);
   }
 
   .measure {
@@ -296,7 +331,7 @@
   }
 
   .section-y {
-    padding-block: clamp(3.5rem, 8vw, 6rem);
+    padding-block: clamp(2.75rem, 7vw, 6rem);
   }
 
   /**

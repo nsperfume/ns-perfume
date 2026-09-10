@@ -21,6 +21,9 @@ type Dash = {
   orders: number;
   collections: number;
   pendingReviews: number;
+  customers: number;
+  registeredAccounts: number;
+  newContacts: number;
   revenuePkr: number | null;
   prevRevenuePkr: number | null;
   revenueChange: number | null;
@@ -69,7 +72,7 @@ function RevenueChart({ series }: { series: Dash["revenueSeries"] }) {
   return (
     <div className="px-3 py-4 sm:px-5">
       {!hasData ? (
-        <p className="py-10 text-center text-base text-[var(--admin-muted)]">
+        <p className="py-10 text-center text-base text-admin-muted">
           No revenue in this window yet. New paid orders will fill the chart.
         </p>
       ) : null}
@@ -131,7 +134,7 @@ function StatusBars({ data }: { data: Record<string, number> }) {
   const max = Math.max(1, ...entries.map(([, n]) => n));
   if (!entries.length) {
     return (
-      <p className="px-5 py-10 text-center text-base text-[var(--admin-muted)]">
+      <p className="px-5 py-10 text-center text-base text-admin-muted">
         No orders yet.
       </p>
     );
@@ -141,16 +144,16 @@ function StatusBars({ data }: { data: Record<string, number> }) {
       {entries.map(([status, count]) => (
         <li key={status}>
           <div className="mb-1.5 flex items-center justify-between text-sm">
-            <span className="font-medium capitalize text-[var(--admin-ink)]">
+            <span className="font-medium capitalize text-admin-ink">
               {status}
             </span>
-            <span className="tabular-nums text-[var(--admin-muted)]">
+            <span className="tabular-nums text-admin-muted">
               {count}
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-sm bg-[var(--admin-soft)]">
+          <div className="h-2 overflow-hidden rounded-sm bg-admin-soft">
             <div
-              className="h-full rounded-sm bg-[var(--admin-ink)] transition-[width]"
+              className="h-full rounded-sm bg-admin-ink transition-[width]"
               style={{ width: `${Math.round((count / max) * 100)}%` }}
             />
           </div>
@@ -211,6 +214,11 @@ export default function AdminHomePage() {
         meta: `${data.orders} all-time`,
       },
       {
+        label: "Customers",
+        value: String(data.customers ?? 0),
+        meta: `${data.registeredAccounts ?? 0} registered · ${(data.newContacts ?? 0) > 0 ? `${data.newContacts} new messages` : "guests + contacts"}`,
+      },
+      {
         label: "Products live",
         value: String(data.products),
         meta: data.draftProducts
@@ -244,6 +252,13 @@ export default function AdminHomePage() {
             >
               Orders
             </Button>
+            <Button
+              href="/admin/customers"
+              variant="secondary"
+              className="flex-1 sm:flex-none"
+            >
+              Customers
+            </Button>
             <Button href="/admin/products/new" className="flex-1 sm:flex-none">
               Add product
             </Button>
@@ -252,9 +267,9 @@ export default function AdminHomePage() {
       />
 
       {loading ? (
-        <p className="text-base text-[var(--admin-muted)]">Loading dashboard…</p>
+        <p className="text-base text-admin-muted">Loading dashboard…</p>
       ) : error ? (
-        <p className="rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] px-4 py-3 text-base text-[var(--admin-ink)]">
+        <p className="rounded-lg border border-admin-line bg-admin-paper px-4 py-3 text-base text-admin-ink">
           {error}
         </p>
       ) : data ? (
@@ -263,10 +278,10 @@ export default function AdminHomePage() {
           <section className="mb-6">
             <div className="mb-3 flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="font-display text-base font-medium text-[var(--admin-ink)]">
+                <h2 className="font-display text-base font-medium text-admin-ink">
                   Quick actions
                 </h2>
-                <p className="mt-0.5 text-sm text-[var(--admin-muted)]">
+                <p className="mt-0.5 text-sm text-admin-muted">
                   Jump into everyday admin work. Swipe or use the arrows.
                 </p>
               </div>
@@ -327,15 +342,15 @@ export default function AdminHomePage() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group flex h-full min-h-[9.5rem] flex-col rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] px-4 py-3.5 shadow-[var(--admin-shadow)] transition-colors hover:border-[var(--admin-ink)]"
+                  className="group flex h-full min-h-[9.5rem] flex-col rounded-lg border border-admin-line bg-admin-paper px-4 py-3.5 shadow-admin transition-colors hover:border-admin-ink"
                 >
-                  <p className="font-display text-[15px] font-medium text-[var(--admin-ink)] group-hover:text-brass">
+                  <p className="font-display text-[15px] font-medium text-admin-ink group-hover:text-brass">
                     {item.title}
                   </p>
-                  <p className="mt-1.5 flex-1 text-sm leading-snug text-[var(--admin-muted)]">
+                  <p className="mt-1.5 flex-1 text-sm leading-snug text-admin-muted">
                     {item.desc}
                   </p>
-                  <p className="mt-3 font-display text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--admin-faint)] group-hover:text-brass">
+                  <p className="mt-3 font-display text-[11px] font-semibold uppercase tracking-[0.12em] text-admin-faint group-hover:text-brass">
                     Go →
                   </p>
                 </Link>
@@ -352,15 +367,15 @@ export default function AdminHomePage() {
             {kpis.map((k) => (
               <div
                 key={k.label}
-                className="rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] px-5 py-5 shadow-[var(--admin-shadow)]"
+                className="rounded-lg border border-admin-line bg-admin-paper px-5 py-5 shadow-admin"
               >
-                <p className="font-display text-xs font-medium uppercase tracking-[0.12em] text-[var(--admin-muted)] sm:text-[13px]">
+                <p className="font-display text-xs font-medium uppercase tracking-[0.12em] text-admin-muted sm:text-[13px]">
                   {k.label}
                 </p>
-                <p className="mt-2 font-display text-2xl font-medium tabular-nums tracking-tight text-[var(--admin-ink)] sm:text-3xl">
+                <p className="mt-2 font-display text-2xl font-medium tabular-nums tracking-tight text-admin-ink sm:text-3xl">
                   {k.value}
                 </p>
-                <p className="mt-1.5 text-sm text-[var(--admin-muted)]">
+                <p className="mt-1.5 text-sm text-admin-muted">
                   {k.meta}
                 </p>
               </div>
@@ -379,7 +394,7 @@ export default function AdminHomePage() {
               <AdminCard
                 title="Revenue · last 14 days"
                 action={
-                  <span className="text-sm font-medium tabular-nums text-[var(--admin-muted)]">
+                  <span className="text-sm font-medium tabular-nums text-admin-muted">
                     {formatPkr(data.revenuePkr || 0)}
                   </span>
                 }
@@ -398,24 +413,24 @@ export default function AdminHomePage() {
               action={
                 <Link
                   href="/admin/orders"
-                  className="font-display text-xs font-medium uppercase tracking-[0.1em] text-brass hover:underline"
+                  className="font-display text-xs font-medium uppercase tracking-widest text-brass hover:underline"
                 >
                   View all
                 </Link>
               }
             >
-              <ul className="divide-y divide-[var(--admin-line)]">
+              <ul className="divide-y divide-admin-line">
                 {data.recentOrders.map((o) => (
                   <li key={o.orderNumber}>
                     <Link
-                      href="/admin/orders"
-                      className="flex items-start justify-between gap-3 px-4 py-4 transition-colors hover:bg-[var(--admin-soft)] sm:px-5"
+                      href={`/admin/orders/${encodeURIComponent(o.orderNumber)}`}
+                      className="flex items-start justify-between gap-3 px-4 py-4 transition-colors hover:bg-admin-soft sm:px-5"
                     >
                       <div className="min-w-0">
-                        <p className="font-display text-base font-medium text-[var(--admin-ink)]">
+                        <p className="font-display text-base font-medium text-admin-ink">
                           {formatOrderNumber(o.orderNumber)}
                         </p>
-                        <p className="mt-0.5 truncate text-sm text-[var(--admin-muted)]">
+                        <p className="mt-0.5 truncate text-sm text-admin-muted">
                           {o.customerName || o.email || "—"}
                           {o.createdAt
                             ? ` · ${new Date(o.createdAt).toLocaleDateString("en-GB", {
@@ -428,7 +443,7 @@ export default function AdminHomePage() {
                       <div className="flex shrink-0 flex-col items-end gap-1.5">
                         <AdminStatusBadge status={o.status} />
                         {showRevenue && typeof o.totalPkr === "number" ? (
-                          <span className="text-sm font-medium tabular-nums text-[var(--admin-ink)]">
+                          <span className="text-sm font-medium tabular-nums text-admin-ink">
                             {formatPkr(o.totalPkr)}
                           </span>
                         ) : null}
@@ -437,7 +452,7 @@ export default function AdminHomePage() {
                   </li>
                 ))}
                 {data.recentOrders.length === 0 ? (
-                  <li className="px-5 py-10 text-center text-base text-[var(--admin-muted)]">
+                  <li className="px-5 py-10 text-center text-base text-admin-muted">
                     No orders yet.
                   </li>
                 ) : null}
@@ -449,20 +464,20 @@ export default function AdminHomePage() {
               action={
                 <Link
                   href="/admin/products"
-                  className="font-display text-xs font-medium uppercase tracking-[0.1em] text-brass hover:underline"
+                  className="font-display text-xs font-medium uppercase tracking-widest text-brass hover:underline"
                 >
                   Manage
                 </Link>
               }
             >
-              <ul className="divide-y divide-[var(--admin-line)]">
+              <ul className="divide-y divide-admin-line">
                 {data.recentProducts.map((p) => (
                   <li key={p.handle}>
                     <Link
                       href={`/admin/products/${p.handle}`}
-                      className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-[var(--admin-soft)] sm:px-5"
+                      className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-admin-soft sm:px-5"
                     >
-                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-[var(--admin-line)] bg-[var(--admin-soft)]">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-admin-line bg-admin-soft">
                         {p.image ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -473,17 +488,17 @@ export default function AdminHomePage() {
                         ) : null}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-display text-base font-medium text-[var(--admin-ink)]">
+                        <p className="truncate font-display text-base font-medium text-admin-ink">
                           {p.name}
                         </p>
-                        <p className="mt-0.5 font-mono text-xs text-[var(--admin-muted)]">
+                        <p className="mt-0.5 font-mono text-xs text-admin-muted">
                           {p.handle}
                         </p>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1.5">
                         <AdminStatusBadge status={p.status} />
                         {showRevenue && typeof p.price === "number" ? (
-                          <span className="text-sm font-medium tabular-nums text-[var(--admin-ink)]">
+                          <span className="text-sm font-medium tabular-nums text-admin-ink">
                             {formatPkr(p.price)}
                           </span>
                         ) : null}
@@ -492,7 +507,7 @@ export default function AdminHomePage() {
                   </li>
                 ))}
                 {data.recentProducts.length === 0 ? (
-                  <li className="px-5 py-10 text-center text-base text-[var(--admin-muted)]">
+                  <li className="px-5 py-10 text-center text-base text-admin-muted">
                     No products yet.
                   </li>
                 ) : null}

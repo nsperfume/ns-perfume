@@ -1,4 +1,5 @@
 import { StarRating } from "@/components/ui/star-rating";
+import { ProductReviewForm } from "@/components/product/review-form";
 import { cn } from "@/lib/cn";
 
 type ReviewDoc = {
@@ -12,10 +13,14 @@ type ReviewDoc = {
 };
 
 export function ProductReviewsSection({
+  productHandle,
+  productName,
   rating,
   reviewCount,
   reviews,
 }: {
+  productHandle: string;
+  productName: string;
   rating: number;
   reviewCount: number;
   reviews: ReviewDoc[];
@@ -23,7 +28,7 @@ export function ProductReviewsSection({
   return (
     <section
       id="reviews"
-      className="scroll-mt-[calc(var(--chrome-height)+1rem)] border-t border-hairline section-y"
+      className="scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] border-t border-hairline section-y"
     >
       <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -34,8 +39,14 @@ export function ProductReviewsSection({
           <p className="mt-2 font-serif text-[1.05rem] text-taupe">
             {reviewCount > 0
               ? `${reviewCount} review${reviewCount === 1 ? "" : "s"} for this bottle`
-              : "No written reviews yet for this bottle."}
+              : "No published reviews yet. Be the first to write about this bottle."}
           </p>
+          <a
+            href="#write-review"
+            className="mt-3 inline-block font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+          >
+            Write a review
+          </a>
         </div>
         {rating > 0 ? (
           <div className="flex items-center gap-3">
@@ -49,11 +60,12 @@ export function ProductReviewsSection({
       </div>
 
       {reviews.length === 0 ? (
-        <p className="font-serif text-body text-taupe">
-          Reviews appear here after verified purchases are published.
+        <p className="mb-10 font-serif text-body text-taupe">
+          Published reviews show here after we check them. You can still leave
+          yours below.
         </p>
       ) : (
-        <ul className="grid gap-0 md:grid-cols-2 md:gap-x-0 md:divide-x md:divide-hairline">
+        <ul className="mb-12 grid gap-0 md:grid-cols-2 md:gap-x-0 md:divide-x md:divide-hairline">
           {reviews.map((r, i) => (
             <li
               key={String(r._id || `${r.author}-${r.title}`)}
@@ -88,6 +100,11 @@ export function ProductReviewsSection({
           ))}
         </ul>
       )}
+
+      <ProductReviewForm
+        productHandle={productHandle}
+        productName={productName}
+      />
     </section>
   );
 }

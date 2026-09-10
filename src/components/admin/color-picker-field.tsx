@@ -54,7 +54,7 @@ export function AdminColorPickerField({
               type="button"
               aria-label="Open color picker"
               className={cn(
-                "h-11 w-12 shrink-0 cursor-pointer rounded-md border border-[var(--admin-input-border)] shadow-inner outline-none",
+                "h-11 w-12 shrink-0 cursor-pointer rounded-md border border-admin-input-border shadow-inner outline-none",
                 "focus-visible:border-brass focus-visible:ring-2 focus-visible:ring-brass/20",
               )}
               style={{ backgroundColor: safe }}
@@ -64,13 +64,13 @@ export function AdminColorPickerField({
             <Popover.Content
               align="start"
               sideOffset={6}
-              className="z-[80] rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] p-3 shadow-lg outline-none"
+              className="z-80 rounded-lg border border-admin-line bg-admin-paper p-3 shadow-lg outline-none"
             >
               <HexColorPicker
                 color={safe}
                 onChange={(hex) => onChange(hex.toUpperCase())}
               />
-              <p className="mt-3 font-mono text-[11px] uppercase tracking-wide text-[var(--admin-muted)]">
+              <p className="mt-3 font-mono text-[11px] uppercase tracking-wide text-admin-muted">
                 {safe}
               </p>
             </Popover.Content>
@@ -90,7 +90,7 @@ export function AdminColorPickerField({
           }}
           spellCheck={false}
           className={cn(
-            "h-11 min-w-0 flex-1 rounded-md border border-[var(--admin-input-border)] bg-[var(--admin-soft-2)] px-3.5 font-mono text-sm text-[var(--admin-ink)] outline-none",
+            "h-11 min-w-0 flex-1 rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 font-mono text-sm text-admin-ink outline-none",
             "focus:border-brass focus:ring-2 focus:ring-brass/20",
             error && "border-rosewood focus:ring-rosewood/20",
           )}

@@ -12,11 +12,13 @@ import {
   LayersIcon,
   LayoutDashboardIcon,
   LogOutIcon,
+  MailIcon,
   MenuIcon,
   MessageCircleIcon,
   SettingsIcon,
   ShoppingBagIcon,
   StarIcon,
+  UserIcon,
   XIcon,
 } from "@animateicons/react/lucide";
 import { cn } from "@/lib/cn";
@@ -73,6 +75,8 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Sales",
     items: [
       { href: "/admin/orders", label: "Orders", Icon: ShoppingBagIcon },
+      { href: "/admin/customers", label: "Customers", Icon: UserIcon },
+      { href: "/admin/contacts", label: "Contacts", Icon: MailIcon },
     ],
   },
   {
@@ -278,8 +282,8 @@ function AdminShellInner({
                         "flex items-center gap-3 rounded-md font-display text-[14px] font-medium transition-colors",
                         collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",
                         active
-                          ? "bg-[var(--admin-sidebar-active-bg)] text-[var(--admin-sidebar-active-text)]"
-                          : "text-[var(--admin-sidebar-text)] hover:bg-[var(--admin-sidebar-hover)] hover:text-white",
+                          ? "bg-admin-sidebar-active-bg text-admin-sidebar-active-text"
+                          : "text-admin-sidebar-text hover:bg-admin-sidebar-hover hover:text-white",
                       )}
                     >
                       <Icon
@@ -306,7 +310,7 @@ function AdminShellInner({
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
-            "inline-flex w-full items-center justify-center gap-2 rounded-md px-2 py-2.5 font-display text-xs font-medium uppercase tracking-[0.1em] text-white/45 transition-colors hover:bg-white/10 hover:text-white",
+            "inline-flex w-full items-center justify-center gap-2 rounded-md px-2 py-2.5 font-display text-xs font-medium uppercase tracking-widest text-white/45 transition-colors hover:bg-white/10 hover:text-white",
           )}
           title="Open storefront"
         >
@@ -318,8 +322,8 @@ function AdminShellInner({
           variant="secondary"
           onClick={logout}
           className={cn(
-            "w-full gap-2 !border-white/15 !bg-transparent !text-white/55 hover:!bg-white/10 hover:!text-white sm:w-full",
-            collapsed && "!px-2",
+            "w-full gap-2 border-white/15! bg-transparent! text-white/55! hover:bg-white/10! hover:text-white! sm:w-full",
+            collapsed && "px-2!",
           )}
         >
           <LogOutIcon size={16} color="currentColor" isAnimated={false} />
@@ -331,12 +335,12 @@ function AdminShellInner({
 
   return (
     <div
-      className="admin-app fixed inset-0 z-[40] flex overflow-hidden"
+      className="admin-app fixed inset-0 z-40 flex overflow-hidden"
       data-theme={theme}
     >
       <aside
         className={cn(
-          "hidden h-full shrink-0 border-r border-black/20 bg-[var(--admin-sidebar)] transition-[width] duration-200 md:flex md:flex-col",
+          "hidden h-full shrink-0 border-r border-black/20 bg-admin-sidebar transition-[width] duration-200 md:flex md:flex-col",
           collapsed ? "w-[4.5rem]" : "w-60",
         )}
         onWheel={redirectWheelToMain}
@@ -345,14 +349,14 @@ function AdminShellInner({
       </aside>
 
       {mobileOpen ? (
-        <div className="fixed inset-0 z-[70] md:hidden">
+        <div className="fixed inset-0 z-70 md:hidden">
           <button
             type="button"
             className="absolute inset-0 bg-black/50"
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="absolute left-0 top-0 flex h-full w-[min(18rem,88vw)] flex-col bg-[var(--admin-sidebar)] shadow-modal">
+          <aside className="absolute left-0 top-0 flex h-full w-[min(18rem,88vw)] flex-col bg-admin-sidebar shadow-modal">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5">
               <p className="font-display text-base font-medium text-white">
                 Menu
@@ -371,23 +375,23 @@ function AdminShellInner({
         </div>
       ) : null}
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--admin-page)]">
-        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-[var(--admin-line)] bg-[var(--admin-paper)] px-3 md:hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-admin-page">
+        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-admin-line bg-admin-paper px-3 md:hidden">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 font-display text-sm font-medium text-[var(--admin-ink)]"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 font-display text-sm font-medium text-admin-ink"
           >
             <MenuIcon size={18} color="currentColor" isAnimated={false} />
             Menu
           </button>
-          <span className="font-display text-base font-medium text-[var(--admin-ink)]">
+          <span className="font-display text-base font-medium text-admin-ink">
             NS Admin
           </span>
           <Button
             variant="secondary"
             onClick={logout}
-            className="!h-9 !min-h-9 !w-auto !px-3"
+            className="h-9! min-h-9! w-auto! px-3!"
           >
             <LogOutIcon size={14} color="currentColor" isAnimated={false} />
           </Button>

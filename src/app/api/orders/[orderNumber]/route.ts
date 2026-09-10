@@ -20,6 +20,26 @@ const patchSchema = z.object({
 
 type Params = { params: Promise<{ orderNumber: string }> };
 
+export async function GET(_req: Request, { params }: Params) {
+  try {
+    const admin = await requireAdmin();
+    if (!admin) return jsonError("Unauthorized", 401);
+
+    const { orderNumber: raw } = await params;
+    const orderNumber = decodeURIComponent(raw).trim();
+    if (!orderNumber) return jsonError("Order number required");
+
+    await connectDB();
+    const order = await OrderModel.findOne({ orderNumber }).lean();
+    if (!order) return jsonError("Order not found", 404);
+
+    return jsonOk(order);
+  } catch (e) {
+    console.error(e);
+    return jsonError("Failed to load order", 500);
+  }
+}
+
 export async function PATCH(req: Request, { params }: Params) {
   try {
     const admin = await requireAdmin();

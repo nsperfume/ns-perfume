@@ -21,7 +21,7 @@ export function AdminBackLink({
   return (
     <Link
       href={href}
-      className="mb-4 inline-flex items-center gap-1.5 font-display text-sm font-medium text-[var(--admin-muted)] transition-colors hover:text-[var(--admin-ink)]"
+      className="mb-4 inline-flex items-center gap-1.5 font-display text-sm font-medium text-admin-muted transition-colors hover:text-admin-ink"
     >
       <ChevronsLeftIcon size={16} color="currentColor" isAnimated={false} />
       {label}
@@ -43,17 +43,17 @@ export function AdminPageHeader({
   backLabel?: string;
 }) {
   return (
-    <div className="mb-6 border-b border-[var(--admin-line)] pb-5 sm:mb-8">
+    <div className="mb-6 border-b border-admin-line pb-5 sm:mb-8">
       {backHref ? (
         <AdminBackLink href={backHref} label={backLabel || "Back"} />
       ) : null}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="font-display text-2xl font-medium tracking-tight text-[var(--admin-ink)] sm:text-3xl">
+          <h1 className="font-display text-2xl font-medium tracking-tight text-admin-ink sm:text-3xl">
             {title}
           </h1>
           {description ? (
-            <p className="mt-2 max-w-2xl text-base leading-relaxed text-[var(--admin-muted)]">
+            <p className="mt-2 max-w-2xl text-base leading-relaxed text-admin-muted">
               {description}
             </p>
           ) : null}
@@ -82,13 +82,13 @@ export function AdminCard({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] shadow-[var(--admin-shadow)]",
+        "overflow-hidden rounded-lg border border-admin-line bg-admin-paper shadow-admin",
         className,
       )}
     >
       {title ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--admin-line)] px-4 py-3.5 sm:px-5">
-          <h2 className="font-display text-base font-medium text-[var(--admin-ink)] sm:text-lg">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-admin-line px-4 py-3.5 sm:px-5">
+          <h2 className="font-display text-base font-medium text-admin-ink sm:text-lg">
             {title}
           </h2>
           {action}
@@ -106,23 +106,26 @@ export function AdminStatusBadge({ status }: { status: string }) {
     s === "published" ||
     s === "delivered" ||
     s === "confirmed" ||
-    s === "shipped";
-  const draft = s === "draft" || s === "pending" || s === "hidden";
+    s === "shipped" ||
+    s === "closed" ||
+    s === "read";
+  const draft =
+    s === "draft" || s === "pending" || s === "hidden" || s === "new";
   const danger = s === "cancelled" || s === "archived" || s === "rejected";
 
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-sm border px-2.5 py-1 font-display text-[11px] font-medium uppercase tracking-[0.1em] sm:text-xs",
+        "inline-flex items-center rounded-sm border px-2.5 py-1 font-display text-[11px] font-medium uppercase tracking-widest sm:text-xs",
         published &&
-          "border-[var(--admin-ink)] bg-[var(--admin-ink)] text-[var(--admin-paper)]",
+          "border-admin-ink bg-admin-ink text-admin-paper",
         draft &&
-          "border-[var(--admin-line)] bg-[var(--admin-soft)] text-[var(--admin-muted)]",
+          "border-admin-line bg-admin-soft text-admin-muted",
         danger && "border-rosewood/40 bg-rosewood/10 text-rosewood",
         !published &&
           !draft &&
           !danger &&
-          "border-[var(--admin-line)] text-[var(--admin-muted)]",
+          "border-admin-line text-admin-muted",
       )}
     >
       {status === "active" ? "Published" : status}
@@ -143,7 +146,7 @@ export function AdminTable({
   return (
     <div
       className={cn(
-        "overflow-x-auto rounded-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] shadow-[var(--admin-shadow)]",
+        "overflow-x-auto rounded-lg border border-admin-line bg-admin-paper shadow-admin",
         compact && "overflow-x-visible shadow-none",
         className,
       )}
@@ -151,7 +154,7 @@ export function AdminTable({
       <table
         className={cn(
           "w-full text-left text-[15px]",
-          !compact && "min-w-[640px]",
+          !compact && "min-w-160",
         )}
       >
         {children}
@@ -170,7 +173,7 @@ export function AdminTh({
   return (
     <th
       className={cn(
-        "border-b border-[var(--admin-line)] bg-[var(--admin-soft)] px-3 py-3.5 font-display text-xs font-medium uppercase tracking-[0.1em] text-[var(--admin-muted)] sm:px-4",
+        "border-b border-admin-line bg-admin-soft px-3 py-3.5 font-display text-xs font-medium uppercase tracking-widest text-admin-muted sm:px-4",
         className,
       )}
     >
@@ -189,7 +192,7 @@ export function AdminTd({
   return (
     <td
       className={cn(
-        "border-b border-[var(--admin-line)] px-3 py-3.5 align-middle text-[var(--admin-ink)] sm:px-4",
+        "border-b border-admin-line px-3 py-3.5 align-middle text-admin-ink sm:px-4",
         className,
       )}
     >
@@ -213,7 +216,7 @@ export function AdminModal({
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center sm:p-6">
+    <div className="fixed inset-0 z-90 flex items-end justify-center sm:items-center sm:p-6">
       <button
         type="button"
         className="absolute inset-0 cursor-pointer bg-black/45 backdrop-blur-[1px]"
@@ -225,24 +228,24 @@ export function AdminModal({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "relative z-10 flex max-h-[90dvh] w-full flex-col rounded-t-lg border border-[var(--admin-line)] bg-[var(--admin-paper)] shadow-modal sm:max-h-[85dvh] sm:rounded-lg",
+          "relative z-10 flex max-h-[90dvh] w-full flex-col rounded-t-lg border border-admin-line bg-admin-paper shadow-modal sm:max-h-[85dvh] sm:rounded-lg",
           wide ? "sm:max-w-2xl" : "sm:max-w-lg",
         )}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-[var(--admin-line)] px-5 py-4">
-          <h2 className="font-display text-lg font-medium text-[var(--admin-ink)] sm:text-xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-admin-line px-5 py-4">
+          <h2 className="font-display text-lg font-medium text-admin-ink sm:text-xl">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-xl text-[var(--admin-muted)] transition-colors hover:bg-[var(--admin-soft)] hover:text-[var(--admin-ink)]"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-xl text-admin-muted transition-colors hover:bg-admin-soft hover:text-admin-ink"
             aria-label="Close"
           >
             ×
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 text-base text-[var(--admin-ink)]">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 text-base text-admin-ink">
           {children}
         </div>
       </div>

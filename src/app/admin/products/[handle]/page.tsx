@@ -46,7 +46,7 @@ export default function AdminProductEditPage() {
         backLabel="Back to products"
       />
       {loading ? (
-        <p className="text-base text-[var(--admin-muted)]">Loading…</p>
+        <p className="text-base text-admin-muted">Loading…</p>
       ) : (
         <ProductForm
           initial={product}

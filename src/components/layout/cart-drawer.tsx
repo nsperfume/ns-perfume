@@ -120,7 +120,7 @@ export function CartDrawer() {
   return (
     <div
       ref={rootRef}
-      className="fixed inset-0 z-[80] flex justify-end opacity-0"
+      className="fixed inset-0 z-80 flex justify-end opacity-0"
       role="dialog"
       aria-modal="true"
       aria-label="Your bag"
@@ -230,7 +230,7 @@ export function CartDrawer() {
                         <Link
                           href={`/products/${line.productHandle}`}
                           onClick={closeCart}
-                          className="font-display text-[0.95rem] font-medium leading-snug text-ink transition-colors hover:text-brass"
+                          className="line-clamp-2 font-display text-[0.95rem] font-medium leading-snug text-ink transition-colors hover:text-brass"
                         >
                           {line.name}
                           {line.isGift ? " (Gift)" : ""}
@@ -283,7 +283,7 @@ export function CartDrawer() {
                       </div>
                       <button
                         type="button"
-                        className="cursor-pointer font-display text-[11px] uppercase tracking-[0.1em] text-taupe transition-colors hover:text-ink"
+                        className="cursor-pointer font-display text-[11px] uppercase tracking-widest text-taupe transition-colors hover:text-ink"
                         onClick={() => removeItem(line.sku)}
                       >
                         Remove

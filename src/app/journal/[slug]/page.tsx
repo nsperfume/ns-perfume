@@ -148,7 +148,7 @@ export default async function JournalArticlePage({ params }: Props) {
                 View all
               </Button>
             </div>
-            <div className="grid gap-8 sm:grid-cols-3">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((item) => (
                 <Link
                   key={item.slug}
@@ -173,7 +173,7 @@ export default async function JournalArticlePage({ params }: Props) {
                       />
                     )}
                   </div>
-                  <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-taupe">
+                  <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-taupe">
                     {formatDate(item.date)} · {item.readTime}
                   </p>
                   <h3 className="font-display text-[1.1rem] font-medium leading-snug text-ink transition-colors group-hover:text-brass">

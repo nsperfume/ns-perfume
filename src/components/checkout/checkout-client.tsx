@@ -454,7 +454,7 @@ export function CheckoutClient() {
           {step === "information" ? (
             <div className="space-y-6">
               <section>
-                <div className="mb-3 flex items-end justify-between gap-3">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
                   <h2 className="font-display text-xl font-medium text-ink">
                     Contact
                   </h2>
@@ -550,8 +550,8 @@ export function CheckoutClient() {
                       setAddr(setAddress)("address2", e.target.value)
                     }
                   />
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="min-w-0">
                       <CheckoutField
                         id="city"
                         label="City"
@@ -563,7 +563,7 @@ export function CheckoutClient() {
                       />
                       <CheckoutError message={errors.city} />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <CheckoutSelect
                         id="province"
                         label="Province"
@@ -581,15 +581,17 @@ export function CheckoutClient() {
                       </CheckoutSelect>
                       <CheckoutError message={errors.province} />
                     </div>
-                    <CheckoutField
-                      id="postalCode"
-                      label="Postal code (optional)"
-                      autoComplete="postal-code"
-                      value={address.postalCode}
-                      onChange={(e) =>
-                        setAddr(setAddress)("postalCode", e.target.value)
-                      }
-                    />
+                    <div className="min-w-0">
+                      <CheckoutField
+                        id="postalCode"
+                        label="Postal code (optional)"
+                        autoComplete="postal-code"
+                        value={address.postalCode}
+                        onChange={(e) =>
+                          setAddr(setAddress)("postalCode", e.target.value)
+                        }
+                      />
+                    </div>
                   </div>
                   <div>
                     <CheckoutField
@@ -1051,14 +1053,28 @@ export function CheckoutClient() {
                   type="button"
                   disabled={submitting}
                   onClick={submitOrder}
-                  className="min-h-14 cursor-pointer rounded-md bg-ink px-8 font-display text-sm font-medium uppercase tracking-[0.12em] text-paper transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
+                  className="min-h-12 cursor-pointer rounded-md bg-ink px-6 font-display text-sm font-medium uppercase tracking-[0.08em] text-paper transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 sm:min-h-14 sm:px-8 sm:tracking-[0.12em]"
                 >
                   {submitting
                     ? "Processing…"
                     : paymentMethod === "cod"
-                      ? "Complete order · COD"
+                      ? (
+                          <>
+                            <span className="sm:hidden">Complete order</span>
+                            <span className="hidden sm:inline">
+                              Complete order · COD
+                            </span>
+                          </>
+                        )
                       : paymentMethod === "bank"
-                        ? "Place order · Bank transfer"
+                        ? (
+                            <>
+                              <span className="sm:hidden">Place order</span>
+                              <span className="hidden sm:inline">
+                                Place order · Bank transfer
+                              </span>
+                            </>
+                          )
                         : "Pay now"}
                 </button>
               </div>

@@ -134,10 +134,10 @@ export function CouponManager({ canDelete }: Props) {
     <>
       <AdminCard title="Coupon codes">
         <form
-          className="space-y-4 border-b border-[var(--admin-line)] p-5"
+          className="space-y-4 border-b border-admin-line p-5"
           onSubmit={createCoupon}
         >
-          <p className="text-sm leading-relaxed text-[var(--admin-muted)]">
+          <p className="text-sm leading-relaxed text-admin-muted">
             Codes for checkout and ad campaigns. Set a usage limit for limited
             runs. After create, open the poster studio to design and download
             PNG creatives.
@@ -241,7 +241,7 @@ export function CouponManager({ canDelete }: Props) {
           </Button>
         </form>
 
-        <ul className="divide-y divide-[var(--admin-line)]">
+        <ul className="divide-y divide-admin-line">
           {coupons.map((c) => {
             const exhausted =
               c.usageLimit != null &&
@@ -254,7 +254,7 @@ export function CouponManager({ canDelete }: Props) {
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-display text-base font-medium text-[var(--admin-ink)]">
+                    <p className="font-display text-base font-medium text-admin-ink">
                       {c.code}
                     </p>
                     {exhausted ? (
@@ -263,7 +263,7 @@ export function CouponManager({ canDelete }: Props) {
                       </span>
                     ) : null}
                   </div>
-                  <p className="mt-0.5 text-sm text-[var(--admin-muted)]">
+                  <p className="mt-0.5 text-sm text-admin-muted">
                     {c.label || typeLabel(c.type)}
                     {" · "}
                     {c.type === "percent"
@@ -280,7 +280,7 @@ export function CouponManager({ canDelete }: Props) {
                       "mt-0.5 font-display text-xs tabular-nums",
                       exhausted
                         ? "text-rosewood"
-                        : "text-[var(--admin-faint)]",
+                        : "text-admin-faint",
                     )}
                   >
                     {usageLabel(c)}
@@ -296,7 +296,7 @@ export function CouponManager({ canDelete }: Props) {
                   <Button
                     type="button"
                     variant="secondary"
-                    className="!h-10 !min-h-10 !w-auto !px-3"
+                    className="h-10! min-h-10! w-auto! px-3!"
                     onClick={() => setPosterCoupon(c)}
                   >
                     Poster
@@ -304,7 +304,7 @@ export function CouponManager({ canDelete }: Props) {
                   <Button
                     type="button"
                     variant="secondary"
-                    className="!h-10 !min-h-10 !w-auto !px-3"
+                    className="h-10! min-h-10! w-auto! px-3!"
                     onClick={() => toggleCoupon(c)}
                   >
                     {c.active ? "Disable" : "Enable"}
@@ -313,7 +313,7 @@ export function CouponManager({ canDelete }: Props) {
                     <Button
                       type="button"
                       variant="danger"
-                      className="!h-10 !min-h-10 !w-auto !px-3"
+                      className="h-10! min-h-10! w-auto! px-3!"
                       onClick={() => setDeleteCouponId(c.id)}
                     >
                       Delete
@@ -324,12 +324,12 @@ export function CouponManager({ canDelete }: Props) {
             );
           })}
           {!loading && coupons.length === 0 ? (
-            <li className="px-5 py-8 text-center text-sm text-[var(--admin-muted)]">
+            <li className="px-5 py-8 text-center text-sm text-admin-muted">
               No coupons yet.
             </li>
           ) : null}
           {loading && coupons.length === 0 ? (
-            <li className="px-5 py-8 text-center text-sm text-[var(--admin-muted)]">
+            <li className="px-5 py-8 text-center text-sm text-admin-muted">
               Loading coupons…
             </li>
           ) : null}
