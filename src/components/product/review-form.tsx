@@ -76,8 +76,7 @@ export function ProductReviewForm({
   if (sent) {
     return (
       <div
-        id="write-review"
-        className="scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] border border-hairline bg-muted/40 px-5 py-6 sm:px-6"
+        className="border border-hairline bg-muted/40 px-5 py-6 sm:px-6"
       >
         <p className="text-eyebrow text-taupe">
           Review received
@@ -102,9 +101,8 @@ export function ProductReviewForm({
 
   return (
     <form
-      id="write-review"
       onSubmit={onSubmit}
-      className="scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] border border-hairline bg-paper px-5 py-6 sm:px-6 md:px-8 md:py-8"
+      className="border border-hairline bg-paper px-5 py-6 sm:px-6 md:px-8 md:py-8"
       noValidate
     >
       <p className="text-eyebrow text-taupe">

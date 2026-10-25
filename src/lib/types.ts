@@ -79,7 +79,6 @@ export type CartLine = {
 };
 
 /** Fixed gift-wrap add-on in PKR (included in line price when selected). */
-export const GIFT_WRAP_FEE_PKR = 800;
 
 export type Review = {
   id: string;

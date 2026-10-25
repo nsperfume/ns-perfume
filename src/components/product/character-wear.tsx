@@ -7,7 +7,7 @@ import type { StoreProduct } from "@/lib/mappers";
  */
 export function ProductCharacterWear({ product }: { product: StoreProduct }) {
   return (
-    <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-20">
+    <div className="grid gap-10">
       <article>
         <h3 className="text-display-sm text-ink">
           Why {product.name} exists
@@ -18,7 +18,7 @@ export function ProductCharacterWear({ product }: { product: StoreProduct }) {
         />
       </article>
 
-      <article className="border-t border-hairline pt-10 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0 xl:pl-16">
+      <article className="border-t border-hairline pt-10">
         <h3 className="text-display-sm text-ink">Placement and timing</h3>
         <RichHtml
           html={product.howToWear}

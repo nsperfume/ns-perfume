@@ -4,18 +4,28 @@ import { useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { animate } from "@/lib/animate";
 import { SizeSelector } from "@/components/commerce/size-selector";
+import { PerformanceMini } from "@/components/commerce/performance-meter";
+import { DeliveryEstimate } from "@/components/product/delivery-estimate";
+import {
+  BanknoteIcon,
+  CircleCheckIcon,
+  MapPinIcon,
+  PhoneIcon,
+  ShieldCheckIcon,
+  TruckIcon,
+  XIcon,
+} from "@/components/ui/icons";
+import { useCheckoutConfig } from "@/context/checkout-config";
 import { Button } from "@/components/ui/button";
-import { TrustedHtml as RichHtml } from "@/components/ui/trusted-html";
 import { StickyAddToCart } from "@/components/product/sticky-atc";
 import { Price } from "@/components/commerce/price";
 import { StarRating } from "@/components/ui/star-rating";
 import { useCart } from "@/context/cart";
+import { useCurrency } from "@/context/currency";
 import { useWishlist } from "@/context/wishlist";
 import { useUi } from "@/context/ui";
 import { siteConfig } from "@/data/site";
 import type { StoreProduct } from "@/lib/mappers";
-import { GIFT_WRAP_FEE_PKR } from "@/lib/types";
-import { htmlToPlain as richTextToPlain } from "@/lib/plain-text";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { whatsappUrl } from "@/lib/whatsapp";
 
@@ -44,49 +54,24 @@ function WishlistHeart({ filled }: { filled?: boolean }) {
   );
 }
 
-function LineIcon({
-  name,
-  className,
-}: {
-  name: "phone" | "pin" | "chat" | "truck";
-  className?: string;
-}) {
-  const paths: Record<typeof name, string> = {
-    phone:
-      "M6.5 4.5h2.2l1.1 3.2-1.4 1.4a12 12 0 0 0 5.5 5.5l1.4-1.4 3.2 1.1v2.2a1.5 1.5 0 0 1-1.6 1.5A14.5 14.5 0 0 1 5 6.1a1.5 1.5 0 0 1 1.5-1.6z",
-    pin: "M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10zm0-8.2a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6z",
-    chat: "M5 6.5h14v9H12l-4 3v-3H5v-9zm3.5 3h7M8.5 12.5h4.5",
-    truck:
-      "M3 7.5h11v8H3v-8zm11 2h3.2L20 13v2.5h-1.2a1.8 1.8 0 1 1-3.5 0H9.5a1.8 1.8 0 1 1-3.5 0H4.5",
-  };
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <path d={paths[name]} />
-    </svg>
-  );
-}
-
 /**
- * Buy column: details scroll above, purchase rail sticks to the bottom.
+ * Buy box: identity, decision support (notes, performance, sizes with prices,
+ * stock and delivery), purchase controls, one trust row, then service links.
  */
 export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
   const { addItem } = useCart();
   const { isSaved, toggleItem } = useWishlist();
   const { showToast } = useUi();
+  const { format } = useCurrency();
   const sizes = product.prices.map((p) => p.ml);
   const [sizeMl, setSizeMl] = useState(product.prices[0]?.ml ?? 50);
   const [qty, setQty] = useState(1);
   const [isGift, setIsGift] = useState(false);
-  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftWrapPicked, setGiftWrap] = useState(false);
+  const config = useCheckoutConfig();
+  const wrapFee = config.giftWrap.feePkr;
+  // Gift wrap only counts while the owner offers it.
+  const giftWrap = config.giftWrap.enabled && giftWrapPicked;
   const [giftMessage, setGiftMessage] = useState("");
   const selected =
     product.prices.find((p) => p.ml === sizeMl) ?? product.prices[0];
@@ -94,10 +79,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
   const phoneTel = siteConfig.phone.replace(/\s/g, "");
 
   const unitPrice =
-    (selected?.price ?? 0) + (isGift && giftWrap ? GIFT_WRAP_FEE_PKR : 0);
-
-  const descriptionPlain = richTextToPlain(product.description || "").trim();
-  const hasDescription = Boolean(descriptionPlain);
+    (selected?.price ?? 0) + (isGift && giftWrap ? wrapFee : 0);
 
   useEffect(() => {
     try {
@@ -133,7 +115,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         productHandle: product.handle,
         name: wrap ? `${product.name} (Gift Wrap)` : product.name,
         sizeMl: selected.ml,
-        price: selected.price + (wrap ? GIFT_WRAP_FEE_PKR : 0),
+        price: selected.price + (wrap ? wrapFee : 0),
         sku,
         image: product.imagePrimary,
         isGift: isGift || undefined,
@@ -199,7 +181,15 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
     .join(" · ");
 
   const serviceLink =
-    "inline-flex min-h-11 items-center gap-3 text-label text-ink transition-colors hover:text-brass-ink";
+    "inline-flex min-h-10 items-center gap-2.5 text-caption font-semibold text-ink transition-colors hover:text-brass-ink";
+
+  const keyNotes = [
+    product.topNotes[0],
+    product.heartNotes[0],
+    product.baseNotes[0],
+  ].filter((n): n is string => Boolean(n));
+
+  const sizeOptions = product.prices.map((p) => ({ ml: p.ml, price: p.price }));
 
   return (
     <div className="flex flex-col">
@@ -211,55 +201,99 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
 
       <h1 className="mt-3 text-display-lg text-ink">{product.name}</h1>
 
-      {product.reviewCount > 0 ? (
-        <Link
-          href="#reviews"
-          className="mt-4 inline-flex min-h-8 items-center gap-2.5 self-start transition-opacity hover:opacity-80"
-        >
-          <StarRating rating={product.rating} size="sm" />
-          <span className="text-caption text-taupe underline decoration-hairline underline-offset-4">
-            {product.reviewCount} review{product.reviewCount === 1 ? "" : "s"}
-          </span>
-        </Link>
-      ) : (
-        <Link
-          href="#write-review"
-          className="mt-4 inline-flex min-h-8 items-center self-start text-caption text-taupe underline decoration-hairline underline-offset-4 hover:text-ink"
-        >
-          Be the first to review
-        </Link>
-      )}
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
+        {product.reviewCount > 0 ? (
+          <Link
+            href="#reviews"
+            className="inline-flex min-h-8 items-center gap-2.5 transition-opacity hover:opacity-80"
+          >
+            <StarRating rating={product.rating} size="sm" />
+            <span className="text-caption text-taupe underline decoration-hairline underline-offset-4">
+              {product.rating.toFixed(1)} · {product.reviewCount} review
+              {product.reviewCount === 1 ? "" : "s"}
+            </span>
+          </Link>
+        ) : (
+          <Link
+            href="#write-review"
+            className="inline-flex min-h-8 items-center text-caption text-taupe underline decoration-hairline underline-offset-4 hover:text-ink"
+          >
+            Be the first to review
+          </Link>
+        )}
+      </div>
 
-      <p className="mt-5 max-w-[34rem] text-pretty text-body-lg text-ink/80">
+      <p className="mt-4 max-w-[34rem] text-pretty text-body-lg text-ink/80">
         {product.descriptor}
       </p>
 
-      <div className="mt-6 flex items-baseline gap-3">
-        <Price
-          amountPkr={unitPrice}
-          className="text-2xl text-ink"
-        />
-        {selected?.ml ? (
-          <span className="font-mono text-sm text-taupe">
-            {selected.ml} ml
+      {keyNotes.length ? (
+        <Link
+          href="#notes"
+          className="group mt-4 flex flex-wrap items-center gap-2 self-start"
+          aria-label={`Key notes: ${keyNotes.join(", ")}. See all notes`}
+        >
+          {keyNotes.map((note) => (
+            <span
+              key={note}
+              className="inline-flex min-h-8 items-center rounded-full border border-[#e2d6bd] bg-canvas-deep/50 px-3 text-caption text-ink transition-colors group-hover:border-brass"
+            >
+              {note}
+            </span>
+          ))}
+          <span className="text-caption text-taupe underline decoration-hairline underline-offset-4 group-hover:text-ink">
+            All notes
           </span>
+        </Link>
+      ) : null}
+
+      <PerformanceMini
+        sillage={product.sillage}
+        longevity={product.longevity}
+        className="mt-4"
+      />
+
+      <div className="mt-6 flex items-baseline gap-3 border-t border-hairline pt-5">
+        <Price amountPkr={unitPrice} className="text-2xl text-ink" />
+        {selected?.ml ? (
+          <span className="font-mono text-sm text-taupe">{selected.ml} ml</span>
+        ) : null}
+        {isGift && giftWrap ? (
+          <span className="text-caption text-taupe">incl. gift wrap</span>
         ) : null}
       </div>
-      {isGift && giftWrap ? (
-        <p className="mt-1 text-caption text-taupe">Includes gift wrap</p>
-      ) : null}
-      {!product.inStock ? (
-        <p className="mt-2 text-body-sm font-medium text-rosewood">
-          Currently out of stock.
-        </p>
-      ) : null}
 
-      <div className="mt-7 border-t border-hairline pt-6">
-        <p className="mb-3 text-eyebrow text-ink">Size</p>
-        <SizeSelector sizes={sizes} value={sizeMl} onChange={setSizeMl} />
+      <div className="mt-4">
+        <p className="mb-1 text-eyebrow text-ink">Size</p>
+        <SizeSelector
+          sizes={sizes}
+          prices={sizeOptions}
+          value={sizeMl}
+          onChange={setSizeMl}
+        />
       </div>
 
-      <div className="mt-6">
+      <ul className="mt-5 space-y-1.5 text-body-sm">
+        {product.inStock ? (
+          <li className="flex items-start gap-2.5 text-ink">
+            <CircleCheckIcon size={18} className="mt-0.5 shrink-0 text-brass-ink" />
+            In stock, ships in 1 to 2 business days
+          </li>
+        ) : (
+          <li className="flex items-start gap-2.5 font-medium text-rosewood">
+            <XIcon size={18} className="mt-0.5 shrink-0" />
+            Out of stock. Message us on WhatsApp to hear when it is back.
+          </li>
+        )}
+        {product.inStock ? (
+          <li className="flex items-start gap-2.5 text-taupe">
+            <TruckIcon size={18} className="mt-0.5 shrink-0 text-brass-ink" />
+            <DeliveryEstimate />
+          </li>
+        ) : null}
+      </ul>
+
+      <div className="mt-4">
         <label className="inline-flex min-h-11 cursor-pointer items-center gap-3">
           <input
             type="checkbox"
@@ -273,21 +307,30 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         </label>
         {isGift ? (
           <div className="mt-2 space-y-4 border border-hairline bg-canvas-deep/40 p-4">
-            <label className="flex min-h-11 cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                checked={giftWrap}
-                onChange={(e) => setGiftWrap(e.target.checked)}
-                className="h-4 w-4 shrink-0 accent-ink"
-              />
-              <span className="text-body-sm text-ink">
-                Gift wrap{" "}
-                <Price
-                  amountPkr={GIFT_WRAP_FEE_PKR}
-                  className="inline text-sm text-taupe"
+            {config.giftWrap.enabled ? (
+              <label className="flex min-h-11 cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={giftWrapPicked}
+                  onChange={(e) => setGiftWrap(e.target.checked)}
+                  className="h-4 w-4 shrink-0 accent-ink"
                 />
-              </span>
-            </label>
+                <span className="text-body-sm text-ink">
+                  Gift wrap
+                  {wrapFee > 0 ? (
+                    <>
+                      {" "}
+                      <Price
+                        amountPkr={wrapFee}
+                        className="inline text-sm text-taupe"
+                      />
+                    </>
+                  ) : (
+                    " (free)"
+                  )}
+                </span>
+              </label>
+            ) : null}
             <label className="block">
               <span className="mb-2 block text-eyebrow text-ink">
                 Gift message (optional)
@@ -305,7 +348,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         ) : null}
       </div>
 
-      <div className="mt-6 flex items-stretch gap-2">
+      <div className="mt-3 flex items-stretch gap-2">
         <div
           className="inline-flex h-12 shrink-0 items-stretch rounded-xs border border-ink/70"
           role="group"
@@ -313,8 +356,9 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         >
           <button
             type="button"
-            className="flex w-11 cursor-pointer items-center justify-center text-lg transition-colors hover:bg-muted"
+            className="flex w-11 cursor-pointer items-center justify-center text-lg transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
+            disabled={!product.inStock}
             aria-label="Decrease quantity"
           >
             −
@@ -327,8 +371,9 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
           </span>
           <button
             type="button"
-            className="flex w-11 cursor-pointer items-center justify-center text-lg transition-colors hover:bg-muted"
+            className="flex w-11 cursor-pointer items-center justify-center text-lg transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => setQty((q) => Math.min(6, q + 1))}
+            disabled={!product.inStock}
             aria-label="Increase quantity"
           >
             +
@@ -369,27 +414,24 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         onAdd={addToBag}
       />
 
-      <ul className="mt-6 grid gap-x-6 border-y border-hairline py-3 sm:grid-cols-2">
-        <li>
-          <a href={`tel:${phoneTel}`} className={serviceLink}>
-            <LineIcon name="phone" className="h-5 w-5 shrink-0" />
-            <span>
-              Order by phone{" "}
-              <span className="font-mono tracking-normal">{siteConfig.phone}</span>
-            </span>
-          </a>
+      <ul className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xs bg-canvas-deep/60 px-4 py-3 text-caption text-ink">
+        <li className="inline-flex items-center gap-2">
+          <BanknoteIcon size={18} className="shrink-0 text-brass-ink" />
+          Cash on delivery
         </li>
-        <li>
-          <a
-            href={siteConfig.location.mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={serviceLink}
-          >
-            <LineIcon name="pin" className="h-5 w-5 shrink-0" />
-            Find us: {siteConfig.location.label}
-          </a>
+        {config.freeShippingThresholdPkr > 0 ? (
+          <li className="inline-flex items-center gap-2">
+            <TruckIcon size={18} className="shrink-0 text-brass-ink" />
+            Free delivery over {format(config.freeShippingThresholdPkr)}
+          </li>
+        ) : null}
+        <li className="inline-flex items-center gap-2">
+          <ShieldCheckIcon size={18} className="shrink-0 text-brass-ink" />
+          100% authentic
         </li>
+      </ul>
+
+      <ul className="mt-4 grid grid-cols-2 gap-x-4 border-b border-hairline pb-3">
         <li>
           <a
             href={whatsappUrl(
@@ -400,37 +442,45 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
             rel="noopener noreferrer"
             className={serviceLink}
           >
-            <BrandIcon name="whatsapp" size={20} />
+            <BrandIcon name="whatsapp" size={18} />
             Order on WhatsApp
           </a>
         </li>
         <li>
+          <a href={`tel:${phoneTel}`} className={serviceLink}>
+            <PhoneIcon size={18} className="shrink-0" />
+            <span>
+              Call <span className="font-mono font-normal">{siteConfig.phone}</span>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a
+            href={siteConfig.location.mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={serviceLink}
+          >
+            <MapPinIcon size={18} className="shrink-0" />
+            Find us: {siteConfig.location.label}
+          </a>
+        </li>
+        <li>
           <Link href="/track-order" className={serviceLink}>
-            <LineIcon name="truck" className="h-5 w-5 shrink-0" />
+            <TruckIcon size={18} className="shrink-0" />
             Track an order
           </Link>
         </li>
       </ul>
 
-      {hasDescription ? (
-        <div className="mt-8">
-          <p className="text-eyebrow text-ink">Product description</p>
-          <RichHtml
-            html={product.description}
-            className="mt-3 max-w-[38rem] text-body text-ink/80 [&_li]:my-1 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
-          />
-        </div>
-      ) : null}
-
-      <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
         <button
           type="button"
           onClick={shareProduct}
-          className="inline-flex min-h-11 cursor-pointer items-center text-label text-ink transition-colors hover:text-brass-ink"
+          className="inline-flex min-h-10 cursor-pointer items-center text-caption font-semibold text-ink underline decoration-hairline underline-offset-4 transition-colors hover:text-brass-ink"
         >
           Share
         </button>
-        <span className="hidden h-4 w-px bg-hairline sm:block" aria-hidden />
         <p className="font-mono text-xs text-taupe">
           Ref. {selected?.sku || product.handle}
         </p>

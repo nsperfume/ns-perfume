@@ -34,13 +34,9 @@ export function RecentlyViewed({
   if (!items.length) return null;
 
   return (
-    <section className="border-t border-hairline bg-canvas section-y">
+    <section className="border-t border-hairline bg-canvas py-14 lg:py-20">
       <div className="container-ns">
-        <StoreSectionHeader
-          eyebrow="Continue"
-          title="Recently viewed"
-          description="Bottles you opened in this browser."
-        />
+        <StoreSectionHeader title="Recently viewed" />
         <div className="grid grid-cols-2 gap-x-3 gap-y-10 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4 2xl:gap-x-6">
           {items.map((p) => (
             <ProductCard key={p.handle} product={p} />

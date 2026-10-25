@@ -99,7 +99,7 @@ function MeterRow({
               <span
                 className={cn(
                   "block w-full max-w-none rounded-sm transition-colors",
-                  on ? "bg-ink" : "bg-hairline",
+                  on ? "bg-brass" : "bg-hairline",
                   step.n === 1 && "h-3",
                   step.n === 2 && "h-4",
                   step.n === 3 && "h-5",
@@ -107,14 +107,7 @@ function MeterRow({
                   step.n === 5 && "h-7",
                 )}
               />
-              <span
-                className={cn(
-                  "text-eyebrow",
-                  on ? "text-ink/75" : "text-taupe/70",
-                )}
-              >
-                {step.n}
-              </span>
+
             </div>
           );
         })}
@@ -167,6 +160,62 @@ export function PerformanceMeter({
         value={longevity}
         compact={compact}
       />
+    </div>
+  );
+}
+
+/**
+ * One-line meter for the buy box: label, five brass segments, score.
+ * Same data and scale as PerformanceMeter.
+ */
+export function PerformanceMini({
+  sillage,
+  longevity,
+  className,
+}: {
+  sillage: number;
+  longevity: number;
+  className?: string;
+}) {
+  const rows = [
+    { label: "Sillage", value: sillage },
+    { label: "Longevity", value: longevity },
+  ];
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-x-6 gap-y-2",
+        className,
+      )}
+    >
+      {rows.map((row) => {
+        const clamped = Math.min(5, Math.max(1, Math.round(row.value)));
+        const word = SCALE[clamped - 1]?.label ?? "";
+        return (
+          <div
+            key={row.label}
+            className="inline-flex items-center gap-2.5"
+            role="img"
+            aria-label={`${row.label}: ${clamped} out of 5, ${word}`}
+          >
+            <span className="min-w-[4.25rem] text-caption text-taupe">{row.label}</span>
+            <span className="flex gap-0.5" aria-hidden>
+              {SCALE.map((step) => (
+                <span
+                  key={step.n}
+                  className={cn(
+                    "h-2 w-3.5 rounded-[1px]",
+                    step.n <= clamped ? "bg-brass" : "bg-hairline",
+                  )}
+                />
+              ))}
+            </span>
+            <span className="font-mono text-xs font-medium tabular-nums text-ink">
+              {clamped}/5
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
