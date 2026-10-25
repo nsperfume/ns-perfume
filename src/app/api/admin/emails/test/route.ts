@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   if (result.status !== "sent") {
     return jsonError(
       result.status === "skipped"
-        ? "Email is not configured. Set SMTP_USER and SMTP_PASS (or APP_PASSWORD)."
+        ? "Email sending is not set up yet. Ask your developer to connect the store email account."
         : `Send failed: ${result.error}`,
       502,
     );

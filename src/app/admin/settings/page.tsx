@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { MoonIcon, SunIcon } from "@animateicons/react/lucide";
@@ -8,14 +8,22 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { CouponManager } from "@/components/admin/coupon-manager";
 import {
   AdminCard,
-  AdminNotice,
+  AdminModal,
   AdminPageHeader,
   AdminStatusBadge,
   readAdminJson,
 } from "@/components/admin/ui";
-import { Button } from "@/components/ui/button";
-import { Input, Textarea } from "@/components/ui/input";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Button } from "@/components/admin/button";
+import { Input, Textarea } from "@/components/admin/input";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { AdminFieldLabel } from "@/components/admin/form-section";
+import {
+  AdminFieldError,
+  AdminFormError,
+  useFormValidation,
+} from "@/components/admin/form-validation";
+import { useUnsavedChangesGuard } from "@/components/admin/unsaved-changes";
+import { toast } from "@/components/admin/toast";
 import { useAdminTheme, type AdminTheme } from "@/context/admin-theme";
 import { cn } from "@/lib/cn";
 
@@ -33,71 +41,123 @@ type TeamMember = {
   role: string;
 };
 
-const topbarSchema = z.object({
+/* Mirrors PUT /api/admin/settings */
+const announcementSchema = z.object({
   topbarText: z
     .string()
     .trim()
-    .min(4, "Message is too short")
-    .max(220, "Keep under 220 characters"),
+    .min(1, "Enter a message")
+    .max(220, "Use 220 characters or fewer"),
   topbarEnabled: z.boolean(),
 });
 
+/* Mirrors POST /api/admin/team */
+const teamSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Enter their name")
+    .max(80, "Use 80 characters or fewer"),
+  email: z.string().trim().min(1, "Enter their email").email("Enter a valid email"),
+  password: z
+    .string()
+    .min(8, "Use at least 8 characters")
+    .max(120, "Use 120 characters or fewer"),
+});
+
+type TeamForm = z.infer<typeof teamSchema>;
+const EMPTY_TEAM: TeamForm = { name: "", email: "", password: "" };
+
+const SECTIONS = [
+  { id: "announcement", label: "Announcement bar" },
+  { id: "coupons", label: "Coupons" },
+  { id: "team", label: "Team", superOnly: true },
+  { id: "currency", label: "Currency" },
+  { id: "appearance", label: "Appearance" },
+  { id: "profile", label: "Your account" },
+] as const;
+
+const DISPLAY_CURRENCIES = ["USD", "AED", "SAR", "GBP", "EUR"] as const;
+
+function Switch({
+  checked,
+  onChange,
+  id,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  id?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40 focus-visible:ring-offset-2 focus-visible:ring-offset-admin-paper",
+        checked ? "border-brass bg-brass" : "border-admin-input-border bg-admin-soft",
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "inline-block h-4.5 w-4.5 rounded-full bg-white shadow-sm transition-transform",
+          checked ? "translate-x-5.5" : "translate-x-0.5",
+        )}
+      />
+    </button>
+  );
+}
+
+function Section({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-6">
+      {children}
+    </section>
+  );
+}
+
 function AppearancePicker() {
   const { theme, setTheme } = useAdminTheme();
-  const options: {
-    id: AdminTheme;
-    label: string;
-    hint: string;
-    Icon: typeof SunIcon;
-  }[] = [
-    {
-      id: "light",
-      label: "Light",
-      hint: "Soft stone background, white panels",
-      Icon: SunIcon,
-    },
-    {
-      id: "dark",
-      label: "Dark",
-      hint: "Dim charcoal panels for night work",
-      Icon: MoonIcon,
-    },
+  const options: { id: AdminTheme; label: string; Icon: typeof SunIcon }[] = [
+    { id: "light", label: "Light", Icon: SunIcon },
+    { id: "dark", label: "Dark", Icon: MoonIcon },
   ];
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {options.map(({ id, label, hint, Icon }) => {
+    <div role="radiogroup" aria-label="Admin theme" className="grid gap-3 sm:grid-cols-2">
+      {options.map(({ id, label, Icon }) => {
         const selected = theme === id;
         return (
           <button
             key={id}
             type="button"
+            role="radio"
+            aria-checked={selected}
             onClick={() => setTheme(id)}
             className={cn(
-              "flex cursor-pointer flex-col items-start gap-3 rounded-lg border p-4 text-left transition-colors",
+              "flex min-h-14 cursor-pointer items-center gap-3 rounded-lg border px-4 text-left text-[0.9375rem] font-semibold transition-colors",
               selected
-                ? "border-admin-ink bg-admin-ink text-admin-paper"
-                : "border-admin-line bg-admin-soft-2 text-admin-ink hover:border-admin-muted",
+                ? "border-brass bg-admin-soft-2 text-admin-ink ring-1 ring-brass"
+                : "border-admin-line bg-admin-paper text-admin-muted hover:border-admin-faint hover:text-admin-ink",
             )}
           >
-            <span className="inline-flex items-center gap-2 font-display text-sm font-medium">
-              <Icon size={16} color="currentColor" isAnimated={false} />
-              {label}
-            </span>
-            <span
-              className={cn(
-                "text-sm leading-snug",
-                selected
-                  ? "text-admin-paper/70"
-                  : "text-admin-muted",
-              )}
-            >
-              {hint}
-            </span>
+            <Icon size={18} color="currentColor" isAnimated={false} />
+            <span className="flex-1">{label}</span>
             {selected ? (
-              <span className="font-display text-[10px] font-semibold uppercase tracking-[0.14em] text-brass">
-                Active
-              </span>
+              <span className="text-xs font-semibold text-admin-accent">In use</span>
             ) : null}
           </button>
         );
@@ -106,45 +166,210 @@ function AppearancePicker() {
   );
 }
 
+function AddAdminModal({
+  open,
+  onClose,
+  onAdded,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onAdded: () => void;
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [form, setForm] = useState<TeamForm>(EMPTY_TEAM);
+  const [saving, setSaving] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const v = useFormValidation(teamSchema);
+  const dirty = JSON.stringify(form) !== JSON.stringify(EMPTY_TEAM);
+
+  useEffect(() => {
+    if (!open) return;
+    setForm(EMPTY_TEAM);
+    setServerError(null);
+    v.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  function update(patch: Partial<TeamForm>) {
+    const next = { ...form, ...patch };
+    setForm(next);
+    if (v.submitted) v.revalidate(next);
+  }
+
+  function requestClose() {
+    if (saving) return;
+    if (dirty) setConfirmDiscard(true);
+    else onClose();
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setServerError(null);
+    if (!v.validate(form, formRef.current)) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          password: form.password,
+        }),
+      });
+      const j = await readAdminJson(res);
+      if (!j.ok) {
+        const message = j.error || "Could not add this admin";
+        if (res.status === 409) v.setErrors({ email: message });
+        else setServerError(message);
+        toast.error(message);
+        return;
+      }
+      toast.success(`${form.name.trim()} can now sign in`);
+      onAdded();
+    } catch {
+      setServerError("Network error. The admin was not added.");
+      toast.error("Network error. The admin was not added.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <AdminModal open={open} onClose={requestClose} title="Add admin">
+        <form ref={formRef} onSubmit={submit} noValidate className="space-y-5">
+          <p className="text-[0.9375rem] text-admin-muted">
+            Admins manage products and orders. Only you can delete records or see revenue.
+          </p>
+          <div data-field="name">
+            <AdminFieldLabel htmlFor="team-name" required>
+              Name
+            </AdminFieldLabel>
+            <Input
+              id="team-name"
+              name="name"
+              value={form.name}
+              autoComplete="off"
+              aria-invalid={v.errors.name ? true : undefined}
+              onChange={(e) => update({ name: e.target.value })}
+              onBlur={() => v.revalidate(form)}
+            />
+            <AdminFieldError message={v.errors.name} />
+          </div>
+          <div data-field="email">
+            <AdminFieldLabel htmlFor="team-email" required>
+              Email
+            </AdminFieldLabel>
+            <Input
+              id="team-email"
+              name="email"
+              type="email"
+              autoComplete="off"
+              value={form.email}
+              aria-invalid={v.errors.email ? true : undefined}
+              onChange={(e) => update({ email: e.target.value })}
+              onBlur={() => v.revalidate(form)}
+            />
+            <AdminFieldError message={v.errors.email} />
+          </div>
+          <div data-field="password">
+            <AdminFieldLabel htmlFor="team-password" required>
+              Password
+            </AdminFieldLabel>
+            <Input
+              id="team-password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              value={form.password}
+              aria-invalid={v.errors.password ? true : undefined}
+              onChange={(e) => update({ password: e.target.value })}
+              onBlur={() => v.revalidate(form)}
+            />
+            {v.errors.password ? (
+              <AdminFieldError message={v.errors.password} />
+            ) : (
+              <p className="mt-1.5 text-[0.8125rem] text-admin-muted">
+                At least 8 characters. Share it with them privately.
+              </p>
+            )}
+          </div>
+          <AdminFormError>{serverError}</AdminFormError>
+          <div className="flex flex-col-reverse gap-2 border-t border-admin-line pt-5 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={requestClose}
+              disabled={saving}
+              className="sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving} className="sm:w-auto">
+              {saving ? "Adding…" : "Add admin"}
+            </Button>
+          </div>
+        </form>
+      </AdminModal>
+      <ConfirmDialog
+        open={confirmDiscard}
+        onOpenChange={setConfirmDiscard}
+        title="Discard this admin?"
+        description="The details you entered will be lost."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        onConfirm={() => {
+          setConfirmDiscard(false);
+          onClose();
+        }}
+      />
+    </>
+  );
+}
+
 export default function AdminSettingsPage() {
   const router = useRouter();
+  const announcementRef = useRef<HTMLFormElement>(null);
   const [user, setUser] = useState<AdminUser | null>(null);
   const [rates, setRates] = useState<{
     updatedAt?: string;
-    source?: string;
     rates?: Record<string, number>;
   } | null>(null);
 
-  const [topbarText, setTopbarText] = useState("");
-  const [topbarEnabled, setTopbarEnabled] = useState(true);
+  const [announcement, setAnnouncement] = useState({
+    topbarText: "",
+    topbarEnabled: true,
+  });
+  const [savedAnnouncement, setSavedAnnouncement] = useState(announcement);
+  const [announcementLoaded, setAnnouncementLoaded] = useState(false);
   const [savingTopbar, setSavingTopbar] = useState(false);
-  const [topbarMessage, setTopbarMessage] = useState<string | null>(null);
-  const [topbarError, setTopbarError] = useState<string | null>(null);
+  const [topbarServerError, setTopbarServerError] = useState<string | null>(null);
+  const av = useFormValidation(announcementSchema);
 
   const [team, setTeam] = useState<TeamMember[]>([]);
-  const [teamForm, setTeamForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
-  const [teamError, setTeamError] = useState<string | null>(null);
-  const [teamSaving, setTeamSaving] = useState(false);
-  const [removeTeamId, setRemoveTeamId] = useState<string | null>(null);
+  const [teamLoading, setTeamLoading] = useState(true);
+  const [addOpen, setAddOpen] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<TeamMember | null>(null);
   const [removingTeam, setRemovingTeam] = useState(false);
-  const [teamNotice, setTeamNotice] = useState<{
-    text: string;
-    tone: "info" | "error";
-  } | null>(null);
 
   const isSuper = Boolean(user?.isSuperAdmin || user?.role === "super_admin");
+  const announcementDirty =
+    announcementLoaded &&
+    (announcement.topbarText !== savedAnnouncement.topbarText ||
+      announcement.topbarEnabled !== savedAnnouncement.topbarEnabled);
+
+  const leaveGuard = useUnsavedChangesGuard(announcementDirty && !savingTopbar);
 
   function loadTeam() {
-    if (!isSuper && user) return;
+    setTeamLoading(true);
     fetch("/api/admin/team")
-      .then((r) => r.json())
+      .then((r) => readAdminJson<TeamMember[]>(r))
       .then((j) => {
-        if (j.ok) setTeam(j.data);
-      });
+        if (j.ok && j.data) setTeam(j.data);
+      })
+      .finally(() => setTeamLoading(false));
   }
 
   useEffect(() => {
@@ -163,15 +388,19 @@ export default function AdminSettingsPage() {
       .then((r) => r.json())
       .then((j) => {
         if (j.ok && j.data) {
-          setTopbarText(j.data.topbarText || "");
-          setTopbarEnabled(Boolean(j.data.topbarEnabled));
+          const next = {
+            topbarText: j.data.topbarText || "",
+            topbarEnabled: Boolean(j.data.topbarEnabled),
+          };
+          setAnnouncement(next);
+          setSavedAnnouncement(next);
         }
-      });
+      })
+      .finally(() => setAnnouncementLoaded(true));
   }, [router]);
 
   useEffect(() => {
     if (isSuper) loadTeam();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuper]);
 
   // Deep-link from dashboard: /admin/settings#coupons etc.
@@ -187,327 +416,336 @@ export default function AdminSettingsPage() {
     return () => window.clearTimeout(t);
   }, [user, isSuper]);
 
+  function updateAnnouncement(patch: Partial<typeof announcement>) {
+    const next = { ...announcement, ...patch };
+    setAnnouncement(next);
+    if (av.submitted) av.revalidate(next);
+  }
+
   async function saveTopbar(e: React.FormEvent) {
     e.preventDefault();
+    setTopbarServerError(null);
+    if (!av.validate(announcement, announcementRef.current)) return;
     setSavingTopbar(true);
-    setTopbarMessage(null);
-    setTopbarError(null);
-    const parsed = topbarSchema.safeParse({ topbarText, topbarEnabled });
-    if (!parsed.success) {
-      setTopbarError(parsed.error.issues[0]?.message || "Invalid form");
-      setSavingTopbar(false);
-      return;
-    }
     try {
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
+        body: JSON.stringify({
+          topbarText: announcement.topbarText.trim(),
+          topbarEnabled: announcement.topbarEnabled,
+        }),
       });
-      const j = await res.json();
-      if (!j.ok) {
-        setTopbarError(j.error || "Could not save.");
+      const j = await readAdminJson<{ topbarText: string; topbarEnabled: boolean }>(res);
+      if (!j.ok || !j.data) {
+        const message = j.error || "Could not save the announcement";
+        setTopbarServerError(message);
+        toast.error(message);
         return;
       }
-      setTopbarText(j.data.topbarText);
-      setTopbarEnabled(j.data.topbarEnabled);
-      setTopbarMessage("Announcement bar saved.");
+      const next = {
+        topbarText: j.data.topbarText,
+        topbarEnabled: j.data.topbarEnabled,
+      };
+      setAnnouncement(next);
+      setSavedAnnouncement(next);
+      toast.success("Announcement bar saved");
     } catch {
-      setTopbarError("Network error while saving.");
+      setTopbarServerError("Network error. The announcement was not saved.");
+      toast.error("Network error. The announcement was not saved.");
     } finally {
       setSavingTopbar(false);
     }
   }
 
-  async function createAdmin(e: React.FormEvent) {
-    e.preventDefault();
-    setTeamSaving(true);
-    setTeamError(null);
-    try {
-      const res = await fetch("/api/admin/team", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(teamForm),
-      });
-      const j = await res.json();
-      if (!j.ok) {
-        setTeamError(j.error || "Could not create admin");
-        return;
-      }
-      setTeamForm({ name: "", email: "", password: "" });
-      loadTeam();
-    } catch {
-      setTeamError("Network error");
-    } finally {
-      setTeamSaving(false);
-    }
-  }
-
   async function confirmRemoveTeam() {
-    if (!removeTeamId) return;
+    if (!removeTarget) return;
     setRemovingTeam(true);
-    setTeamNotice(null);
-    const member = team.find((m) => m.id === removeTeamId);
     try {
-      const res = await fetch(`/api/admin/team/${removeTeamId}`, {
+      const res = await fetch(`/api/admin/team/${removeTarget.id}`, {
         method: "DELETE",
       });
       const j = await readAdminJson(res);
       if (!j.ok) {
-        setTeamNotice({
-          text: j.error || "Could not remove admin",
-          tone: "error",
-        });
+        toast.error(j.error || "Could not remove this admin");
         return;
       }
-      setTeamNotice({
-        text: `${member?.name || member?.email || "Admin"} removed`,
-        tone: "info",
-      });
-      loadTeam();
+      setTeam((prev) => prev.filter((m) => m.id !== removeTarget.id));
+      toast.success(`${removeTarget.name || removeTarget.email} removed`);
     } catch {
-      setTeamNotice({
-        text: "Network error. The admin was not removed.",
-        tone: "error",
-      });
+      toast.error("Network error. The admin was not removed.");
     } finally {
-      setRemoveTeamId(null);
+      setRemoveTarget(null);
       setRemovingTeam(false);
     }
   }
 
+  const sections = SECTIONS.filter((s) => !("superOnly" in s) || isSuper);
+
   return (
     <AdminShell user={user}>
-      <AdminPageHeader
-        title="Settings"
-        description="Announcement, coupons, account, appearance, and team."
-      />
+      <AdminPageHeader title="Settings" />
 
-      <div className="grid max-w-3xl gap-5">
-        <AdminCard title="Profile">
-          <div id="profile" className="scroll-mt-24">
-          <dl className="divide-y divide-admin-line px-5">
-            <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <dt className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-admin-muted">
-                Name
-              </dt>
-              <dd className="text-base text-admin-ink">
-                {user?.name || "—"}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <dt className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-admin-muted">
-                Email
-              </dt>
-              <dd className="text-base text-admin-ink">
-                {user?.email || "—"}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <dt className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-admin-muted">
-                Role
-              </dt>
-              <dd className="text-base text-admin-ink">
-                {isSuper ? "Super admin" : "Admin"}
-              </dd>
-            </div>
-          </dl>
-          <div className="border-t border-admin-line px-5 py-4">
-            <p className="text-sm text-admin-muted">
-              Use Log out in the sidebar when you finish work.
-            </p>
-          </div>
-          </div>
-        </AdminCard>
-
-        <div id="appearance" className="scroll-mt-24">
-        <AdminCard title="Appearance">
-          <div className="space-y-3 px-5 py-5">
-            <p className="text-sm leading-relaxed text-admin-muted">
-              Console theme only. Storefront branding stays the same.
-            </p>
-            <AppearancePicker />
-          </div>
-        </AdminCard>
-        </div>
-
-        <div id="announcement" className="scroll-mt-24">
-        <AdminCard title="Announcement bar">
-          <form className="space-y-4 p-5" onSubmit={saveTopbar} noValidate>
-            <Textarea
-              label="Message"
-              value={topbarText}
-              onChange={(e) => setTopbarText(e.target.value)}
-              rows={3}
-              maxLength={220}
-              required
-            />
-            <p className="text-xs tabular-nums text-admin-faint">
-              {topbarText.length}/220
-            </p>
-            <label className="flex items-center gap-2 text-sm text-admin-ink">
-              <input
-                type="checkbox"
-                checked={topbarEnabled}
-                onChange={(e) => setTopbarEnabled(e.target.checked)}
-                className="h-4 w-4 accent-brass"
-              />
-              Show on storefront
-            </label>
-            {topbarError ? (
-              <p className="text-sm font-medium text-rosewood">{topbarError}</p>
-            ) : null}
-            {topbarMessage ? (
-              <p className="text-sm text-admin-muted">{topbarMessage}</p>
-            ) : null}
-            <Button type="submit" disabled={savingTopbar}>
-              {savingTopbar ? "Saving…" : "Save announcement"}
-            </Button>
-          </form>
-        </AdminCard>
-        </div>
-
-        <div id="coupons" className="scroll-mt-24">
-          <CouponManager canDelete={isSuper} />
-        </div>
-
-        <AdminCard title="Store">
-          <ul className="space-y-2 px-5 py-5 text-sm text-admin-muted">
-            <li>
-              Default currency:{" "}
-              <strong className="text-admin-ink">PKR</strong>
-            </li>
-            <li>Display: PKR, USD, AED, SAR, GBP, EUR</li>
-            <li>
-              Rates: {rates?.source || "…"} ·{" "}
-              {rates?.updatedAt
-                ? new Date(rates.updatedAt).toLocaleString()
-                : "—"}
-            </li>
+      <div className="xl:grid xl:grid-cols-[12.5rem_minmax(0,1fr)] xl:gap-10">
+        <nav aria-label="Settings sections" className="hidden xl:block">
+          <ul className="sticky top-6 space-y-0.5">
+            {sections.map((s) => (
+              <li key={s.id}>
+                <a
+                  href={`#${s.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById(s.id)?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                    history.replaceState(null, "", `#${s.id}`);
+                  }}
+                  className="flex min-h-10 items-center rounded-md px-3 text-[0.9375rem] font-medium text-admin-muted transition-colors hover:bg-admin-soft hover:text-admin-ink"
+                >
+                  {s.label}
+                </a>
+              </li>
+            ))}
           </ul>
-          {rates?.rates ? (
-            <div className="grid grid-cols-2 gap-2 border-t border-admin-line px-5 py-4 sm:grid-cols-3">
-              {["PKR", "USD", "AED", "SAR", "GBP", "EUR"].map((c) => (
-                <div
-                  key={c}
-                  className="rounded-md border border-admin-line bg-admin-soft-2 px-2 py-2 font-mono text-xs text-admin-ink"
-                >
-                  1 PKR → {c} {(rates.rates?.[c] ?? 0).toPrecision(4)}
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </AdminCard>
+        </nav>
 
-        {isSuper ? (
-          <div id="team" className="scroll-mt-24">
-          <AdminCard title="Team · admins">
-            <form
-              className="space-y-4 border-b border-admin-line p-5"
-              onSubmit={createAdmin}
-            >
-              <p className="text-sm text-admin-muted">
-                Admins can manage catalog and orders. They cannot delete
-                records or view revenue.
-              </p>
-              <Input
-                label="Name"
-                required
-                value={teamForm.name}
-                onChange={(e) =>
-                  setTeamForm({ ...teamForm, name: e.target.value })
-                }
-              />
-              <Input
-                label="Email"
-                type="email"
-                required
-                value={teamForm.email}
-                onChange={(e) =>
-                  setTeamForm({ ...teamForm, email: e.target.value })
-                }
-              />
-              <Input
-                label="Password"
-                type="password"
-                required
-                minLength={8}
-                value={teamForm.password}
-                onChange={(e) =>
-                  setTeamForm({ ...teamForm, password: e.target.value })
-                }
-              />
-              {teamError ? (
-                <p className="text-sm font-medium text-rosewood">{teamError}</p>
-              ) : null}
-              <Button type="submit" disabled={teamSaving}>
-                {teamSaving ? "Creating…" : "Add admin"}
-              </Button>
-            </form>
-            {teamNotice ? (
-              <div className="px-5 pt-4">
-                <AdminNotice
-                  tone={teamNotice.tone}
-                  onDismiss={() => setTeamNotice(null)}
-                  className="mb-0"
-                >
-                  {teamNotice.text}
-                </AdminNotice>
-              </div>
-            ) : null}
-            <ul className="divide-y divide-admin-line">
-              {team.map((m) => (
-                <li
-                  key={m.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
-                >
-                  <div>
-                    <p className="font-medium text-admin-ink">
-                      {m.name}
-                    </p>
-                    <p className="text-sm text-admin-muted">
-                      {m.email}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <AdminStatusBadge
-                      status={
-                        m.role === "super_admin" ? "published" : "draft"
-                      }
-                    />
-                    <span className="text-xs uppercase tracking-wide text-admin-muted">
-                      {m.role === "super_admin" ? "Super admin" : "Admin"}
+        <div className="grid min-w-0 max-w-5xl gap-6">
+          <Section id="announcement">
+            <AdminCard title="Announcement bar">
+              <form
+                ref={announcementRef}
+                className="space-y-5 px-5 py-5 sm:px-6"
+                onSubmit={saveTopbar}
+                noValidate
+              >
+                <div data-field="topbarText">
+                  <div className="flex items-end justify-between gap-3">
+                    <AdminFieldLabel htmlFor="topbar-text" required>
+                      Message
+                    </AdminFieldLabel>
+                    <span
+                      className={cn(
+                        "mb-2 font-mono text-xs tabular-nums",
+                        announcement.topbarText.length > 220
+                          ? "text-admin-danger"
+                          : "text-admin-muted",
+                      )}
+                    >
+                      {announcement.topbarText.length}/220
                     </span>
-                    {m.role !== "super_admin" ? (
-                      <Button
-                        type="button"
-                        variant="danger"
-                        className="h-10! min-h-10! w-auto! px-3!"
-                        onClick={() => setRemoveTeamId(m.id)}
-                      >
-                        Remove
-                      </Button>
-                    ) : null}
                   </div>
-                </li>
-              ))}
-            </ul>
-          </AdminCard>
-          </div>
-        ) : null}
+                  <Textarea
+                    id="topbar-text"
+                    name="topbarText"
+                    value={announcement.topbarText}
+                    onChange={(e) => updateAnnouncement({ topbarText: e.target.value })}
+                    onBlur={() => av.revalidate(announcement)}
+                    rows={2}
+                    maxLength={220}
+                    placeholder="Free delivery across Pakistan on orders over Rs 5,000"
+                    aria-invalid={av.errors.topbarText ? true : undefined}
+                    disabled={!announcementLoaded}
+                  />
+                  <AdminFieldError message={av.errors.topbarText} />
+                </div>
+                <div className="flex items-center justify-between gap-4 rounded-md border border-admin-line bg-admin-soft-2 px-4 py-3">
+                  <label
+                    htmlFor="topbar-enabled"
+                    className="cursor-pointer text-[0.9375rem] font-medium text-admin-ink"
+                  >
+                    Show on the store
+                  </label>
+                  <Switch
+                    id="topbar-enabled"
+                    checked={announcement.topbarEnabled}
+                    disabled={!announcementLoaded}
+                    onChange={(next) => updateAnnouncement({ topbarEnabled: next })}
+                  />
+                </div>
+                <AdminFormError>{topbarServerError}</AdminFormError>
+                <div className="flex justify-end">
+                  <Button
+                    type="submit"
+                    disabled={savingTopbar || !announcementDirty}
+                    className="sm:w-auto"
+                  >
+                    {savingTopbar ? "Saving…" : "Save"}
+                  </Button>
+                </div>
+              </form>
+            </AdminCard>
+          </Section>
+
+          <Section id="coupons">
+            <CouponManager canDelete={isSuper} />
+          </Section>
+
+          {isSuper ? (
+            <Section id="team">
+              <AdminCard
+                title="Team"
+                action={
+                  <Button size="sm" className="w-auto!" onClick={() => setAddOpen(true)}>
+                    Add admin
+                  </Button>
+                }
+              >
+                {teamLoading && team.length === 0 ? (
+                  <p className="px-6 py-10 text-center text-[0.9375rem] text-admin-muted">
+                    Loading team…
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-admin-line">
+                    {team.map((m) => {
+                      const owner = m.role === "super_admin";
+                      return (
+                        <li
+                          key={m.id}
+                          className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-semibold text-admin-ink">
+                              {m.name || m.email}
+                            </p>
+                            <p className="truncate text-[0.8125rem] text-admin-muted">
+                              {m.email}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <AdminStatusBadge
+                              status={owner ? "active" : "staff"}
+                              label={owner ? "Owner" : "Admin"}
+                              tone={owner ? "brass" : "neutral"}
+                            />
+                            {!owner ? (
+                              <Button
+                                variant="danger-outline"
+                                size="sm"
+                                className="w-auto!"
+                                onClick={() => setRemoveTarget(m)}
+                              >
+                                Remove
+                              </Button>
+                            ) : null}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </AdminCard>
+            </Section>
+          ) : null}
+
+          <Section id="currency">
+            <AdminCard title="Currency">
+              <div className="space-y-4 px-5 py-5 sm:px-6">
+                <p className="text-[0.9375rem] text-admin-ink">
+                  Prices are set in <strong className="font-semibold">PKR</strong>.
+                  Shoppers can also view them in USD, AED, SAR, GBP and EUR.
+                </p>
+                {rates?.rates ? (
+                  <>
+                    <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                      {DISPLAY_CURRENCIES.map((c) => {
+                        const r = rates.rates?.[c];
+                        const pkrPerUnit = r ? 1 / r : 0;
+                        return (
+                          <div
+                            key={c}
+                            className="rounded-md border border-admin-line bg-admin-soft-2 px-3 py-2.5"
+                          >
+                            <dt className="text-xs font-semibold text-admin-muted">
+                              1 {c}
+                            </dt>
+                            <dd className="mt-0.5 font-mono text-sm tabular-nums text-admin-ink">
+                              {pkrPerUnit
+                                ? `Rs ${pkrPerUnit.toLocaleString("en-PK", {
+                                    maximumFractionDigits: 0,
+                                  })}`
+                                : "Not available"}
+                            </dd>
+                          </div>
+                        );
+                      })}
+                    </dl>
+                    {rates.updatedAt ? (
+                      <p className="text-[0.8125rem] text-admin-muted">
+                        Rates updated{" "}
+                        {new Date(rates.updatedAt).toLocaleString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="text-[0.8125rem] text-admin-muted">Loading rates…</p>
+                )}
+              </div>
+            </AdminCard>
+          </Section>
+
+          <Section id="appearance">
+            <AdminCard title="Appearance">
+              <div className="px-5 py-5 sm:px-6">
+                <AppearancePicker />
+                <p className="mt-3 text-[0.8125rem] text-admin-muted">
+                  Changes this admin only. Your store looks the same.
+                </p>
+              </div>
+            </AdminCard>
+          </Section>
+
+          <Section id="profile">
+            <AdminCard title="Your account">
+              <dl className="divide-y divide-admin-line px-5 sm:px-6">
+                {[
+                  ["Name", user?.name],
+                  ["Email", user?.email],
+                  ["Role", user ? (isSuper ? "Owner" : "Admin") : undefined],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex flex-col gap-0.5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                  >
+                    <dt className="text-sm font-semibold text-admin-muted">{label}</dt>
+                    <dd className="min-w-0 wrap-break-word text-[0.9375rem] text-admin-ink">
+                      {value || "Not set"}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </AdminCard>
+          </Section>
+        </div>
       </div>
 
-      <ConfirmDialog
-        open={Boolean(removeTeamId)}
-        onOpenChange={(o) => {
-          if (!o && !removingTeam) setRemoveTeamId(null);
+      <AddAdminModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onAdded={() => {
+          setAddOpen(false);
+          loadTeam();
         }}
-        title="Remove this admin?"
-        description="They will lose access to the admin console immediately."
+      />
+
+      <ConfirmDialog
+        open={Boolean(removeTarget)}
+        onOpenChange={(o) => {
+          if (!o && !removingTeam) setRemoveTarget(null);
+        }}
+        title={`Remove ${removeTarget?.name || "this admin"}?`}
+        description="They will lose access to the admin right away."
         confirmLabel="Remove admin"
         loading={removingTeam}
         onConfirm={confirmRemoveTeam}
       />
+
+      {leaveGuard}
     </AdminShell>
   );
 }

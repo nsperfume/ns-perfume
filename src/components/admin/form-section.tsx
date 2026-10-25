@@ -32,13 +32,13 @@ export function AdminFormSection({
     >
       <header className="border-b border-admin-line px-5 py-4 sm:px-6">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-display text-lg font-semibold tracking-tight text-admin-ink sm:text-xl">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-admin-ink">
             {title}
           </h2>
           {tip ? <FieldHint content={tip} /> : null}
         </div>
         {description ? (
-          <p className="mt-1 text-[15px] leading-relaxed text-admin-muted">
+          <p className="mt-1 max-w-3xl text-[0.9375rem] leading-relaxed text-admin-muted">
             {description}
           </p>
         ) : null}
@@ -63,7 +63,7 @@ export function AdminFieldLabel({
     <div className="mb-2 flex items-center gap-1.5">
       <label
         htmlFor={htmlFor}
-        className="font-display text-[13px] font-semibold text-admin-ink"
+        className="text-sm font-semibold text-admin-ink"
       >
         {children}
         {required ? (
@@ -79,4 +79,4 @@ export function AdminFieldLabel({
 }
 
 export const adminFieldClass =
-  "w-full rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 py-3 text-base text-admin-ink outline-none transition-colors placeholder:text-admin-faint focus:border-brass focus:ring-2 focus:ring-brass/20 disabled:cursor-not-allowed disabled:bg-admin-soft disabled:text-admin-muted disabled:opacity-100";
+  "min-h-11 w-full rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 py-2.5 text-base text-admin-ink outline-none transition-colors placeholder:text-admin-faint focus:border-brass focus:ring-2 focus:ring-brass/20 disabled:cursor-not-allowed disabled:bg-admin-soft disabled:text-admin-muted disabled:opacity-100";

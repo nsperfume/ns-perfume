@@ -10,8 +10,7 @@ import {
   AdminStatusBadge,
   formatPkr,
 } from "@/components/admin/ui";
-import { Button } from "@/components/ui/button";
-import { EmblaCarousel } from "@/components/ui/embla-carousel";
+import { Button } from "@/components/admin/button";
 import { formatOrderNumber } from "@/lib/order-number";
 import { cn } from "@/lib/cn";
 
@@ -57,74 +56,132 @@ type Dash = {
   canViewRevenue?: boolean;
 };
 
+const QUICK_ACTIONS = [
+  {
+    href: "/admin/settings#coupons",
+    title: "Create a coupon",
+    desc: "Percent off, amount off or free shipping.",
+  },
+  {
+    href: "/admin/settings#announcement",
+    title: "Edit the announcement bar",
+    desc: "The message at the top of the store.",
+  },
+  {
+    href: "/admin/journal",
+    title: "Write a journal post",
+    desc: "Share news, launches and scent guides.",
+  },
+  {
+    href: "/admin/settings#appearance",
+    title: "Switch light or dark",
+    desc: "Changes this admin only, not the store.",
+  },
+] as const;
+
+/** Round the axis top to 1 / 2 / 2.5 / 5 × 10ⁿ so gridlines land on clean values. */
+function niceCeil(v: number) {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const m = v / p;
+  const nice = m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10;
+  return nice * p;
+}
+
+function compactPkr(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
+  if (n >= 1000) return `${Math.round(n / 1000)}k`;
+  return String(Math.round(n));
+}
+
+const TICKS = [1, 0.75, 0.5, 0.25, 0];
+
+/**
+ * HTML bar chart (not a scaled SVG) so it fills the card at any width and the
+ * axis labels stay a true 12px. Hover a bar for the exact day total.
+ */
 function RevenueChart({ series }: { series: Dash["revenueSeries"] }) {
-  const max = Math.max(1, ...series.map((d) => d.revenue));
   const hasData = series.some((d) => d.revenue > 0);
-  const W = 640;
-  const H = 200;
-  const pad = { t: 16, r: 8, b: 32, l: 8 };
-  const chartW = W - pad.l - pad.r;
-  const chartH = H - pad.t - pad.b;
-  const slot = chartW / Math.max(1, series.length);
-  const gap = Math.min(6, slot * 0.28);
-  const barW = Math.max(6, slot - gap);
+  const top = niceCeil(Math.max(0, ...series.map((d) => d.revenue)));
 
   return (
-    <div className="px-3 py-4 sm:px-5">
+    <div className="px-4 pb-5 pt-5 sm:px-6">
       {!hasData ? (
-        <p className="py-10 text-center text-base text-admin-muted">
-          No revenue in this window yet. New paid orders will fill the chart.
+        <p className="mb-4 text-[0.9375rem] text-admin-muted">
+          No sales in the last 14 days yet.
         </p>
       ) : null}
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="h-44 w-full sm:h-48"
-        role="img"
-        aria-label="Revenue last 14 days"
-      >
-        <line
-          x1={pad.l}
-          x2={W - pad.r}
-          y1={pad.t + chartH}
-          y2={pad.t + chartH}
-          stroke="var(--admin-line)"
-          strokeWidth="1"
-        />
-        {series.map((d, i) => {
-          const h =
-            d.revenue > 0 ? Math.max(6, (d.revenue / max) * chartH) : 3;
-          const x = pad.l + i * slot + (slot - barW) / 2;
-          const y = pad.t + chartH - h;
-          return (
-            <g key={d.date}>
-              <title>
-                {d.date}: {formatPkr(d.revenue)} · {d.orders} order
-                {d.orders === 1 ? "" : "s"}
-              </title>
-              <rect
-                x={x}
-                y={y}
-                width={barW}
-                height={h}
-                rx={2}
-                fill={d.revenue > 0 ? "var(--admin-ink)" : "var(--admin-line)"}
+      <div className="flex gap-3" role="img" aria-label="Revenue per day, last 14 days">
+        <div className="relative h-56 w-12 shrink-0 2xl:h-64" aria-hidden>
+          {TICKS.map((t) => (
+            <span
+              key={t}
+              className="absolute right-0 -translate-y-1/2 font-mono text-xs tabular-nums text-admin-muted"
+              style={{ top: `${(1 - t) * 100}%` }}
+            >
+              {t === 0 ? "0" : compactPkr(top * t)}
+            </span>
+          ))}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="relative h-56 2xl:h-64">
+            {TICKS.map((t) => (
+              <div
+                key={t}
+                aria-hidden
+                className={cn(
+                  "absolute inset-x-0 border-t",
+                  t === 0 ? "border-admin-faint/60" : "border-dashed border-admin-line",
+                )}
+                style={{ top: `${(1 - t) * 100}%` }}
               />
-              {(i % 2 === 0 || series.length <= 8) && (
-                <text
-                  x={x + barW / 2}
-                  y={H - 10}
-                  textAnchor="middle"
-                  fill="var(--admin-muted)"
-                  fontSize="11"
-                  fontFamily="system-ui, sans-serif"
-                >
-                  {d.label}
-                </text>
-              )}
-            </g>
-          );
-        })}
-      </svg>
+            ))}
+            <ol className="absolute inset-0 flex items-end gap-1 sm:gap-2">
+              {series.map((d) => {
+                const pct = d.revenue > 0 ? Math.max(1.5, (d.revenue / top) * 100) : 0;
+                return (
+                  <li
+                    key={d.date}
+                    className="group relative flex h-full min-w-0 flex-1 items-end justify-center"
+                  >
+                    <div
+                      className="relative w-full max-w-11 rounded-t-[3px] bg-admin-ink transition-colors group-hover:bg-brass"
+                      style={{ height: `${pct}%` }}
+                    >
+                      <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-admin-ink px-2.5 py-1.5 text-xs font-medium text-admin-paper shadow-modal group-hover:block">
+                        {d.date}
+                        <span className="ml-2 font-mono tabular-nums">
+                          {formatPkr(d.revenue)}
+                        </span>
+                        <span className="ml-2 opacity-70">
+                          {d.orders} order{d.orders === 1 ? "" : "s"}
+                        </span>
+                      </span>
+                    </div>
+                    <span className="sr-only">
+                      {d.date}: {formatPkr(d.revenue)}, {d.orders} order
+                      {d.orders === 1 ? "" : "s"}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+          <ol className="mt-2 flex gap-1 sm:gap-2" aria-hidden>
+            {series.map((d, i) => (
+              <li
+                key={d.date}
+                className={cn(
+                  "min-w-0 flex-1 text-center font-mono text-xs tabular-nums text-admin-muted",
+                  i % 2 === 1 && "max-2xl:invisible",
+                )}
+              >
+                {d.label}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
     </div>
   );
 }
@@ -132,28 +189,30 @@ function RevenueChart({ series }: { series: Dash["revenueSeries"] }) {
 function StatusBars({ data }: { data: Record<string, number> }) {
   const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
   const max = Math.max(1, ...entries.map(([, n]) => n));
+  const total = entries.reduce((sum, [, n]) => sum + n, 0);
   if (!entries.length) {
     return (
-      <p className="px-5 py-10 text-center text-base text-admin-muted">
+      <p className="px-6 py-10 text-center text-[0.9375rem] text-admin-muted">
         No orders yet.
       </p>
     );
   }
   return (
-    <ul className="space-y-4 px-5 py-5">
+    <ul className="space-y-5 px-5 py-5 sm:px-6">
       {entries.map(([status, count]) => (
         <li key={status}>
-          <div className="mb-1.5 flex items-center justify-between text-sm">
-            <span className="font-medium capitalize text-admin-ink">
-              {status}
-            </span>
-            <span className="tabular-nums text-admin-muted">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <AdminStatusBadge status={status} />
+            <span className="font-mono text-sm tabular-nums text-admin-ink">
               {count}
+              <span className="ml-2 text-admin-muted">
+                {Math.round((count / Math.max(1, total)) * 100)}%
+              </span>
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-sm bg-admin-soft">
+          <div className="h-2 overflow-hidden rounded-full bg-admin-soft">
             <div
-              className="h-full rounded-sm bg-admin-ink transition-[width]"
+              className="h-full rounded-full bg-admin-ink transition-[width]"
               style={{ width: `${Math.round((count / max) * 100)}%` }}
             />
           </div>
@@ -196,74 +255,88 @@ export default function AdminHomePage() {
 
   const kpis = useMemo(() => {
     if (!data) return [];
-    const items: { label: string; value: string; meta: string }[] = [];
+    const items: { label: string; value: string; meta: string; href: string }[] =
+      [];
+    const change = data.revenueChange ?? 0;
     if (showRevenue && data.revenuePkr != null) {
       items.push({
-        label: "Revenue (14d)",
+        label: "Sales, 14 days",
         value: formatPkr(data.revenuePkr),
         meta:
-          data.revenueChange === 0
-            ? "vs prior 14d"
-            : `${(data.revenueChange ?? 0) > 0 ? "+" : ""}${data.revenueChange}% vs prior`,
+          change === 0
+            ? "Same as the 14 days before"
+            : `${change > 0 ? "Up" : "Down"} ${Math.abs(change)}% on the 14 days before`,
+        href: "/admin/orders",
+      });
+    }
+    items.push({
+      label: "Orders, 14 days",
+      value: String(data.orderCountPeriod),
+      meta: `${data.orders} in total`,
+      href: "/admin/orders",
+    });
+    if (showRevenue && data.revenuePkr != null) {
+      items.push({
+        label: "Average order",
+        value: data.orderCountPeriod
+          ? formatPkr(data.revenuePkr / data.orderCountPeriod)
+          : formatPkr(0),
+        meta: "Last 14 days",
+        href: "/admin/orders",
       });
     }
     items.push(
       {
-        label: "Orders (14d)",
-        value: String(data.orderCountPeriod),
-        meta: `${data.orders} all-time`,
-      },
-      {
         label: "Customers",
         value: String(data.customers ?? 0),
-        meta: `${data.registeredAccounts ?? 0} registered · ${(data.newContacts ?? 0) > 0 ? `${data.newContacts} new messages` : "guests + contacts"}`,
+        meta: `${data.registeredAccounts ?? 0} with an account`,
+        href: "/admin/customers",
       },
       {
-        label: "Products live",
+        label: "Live products",
         value: String(data.products),
         meta: data.draftProducts
-          ? `${data.draftProducts} draft`
-          : "Published",
-      },
-      {
-        label: "Pending reviews",
-        value: String(data.pendingReviews),
-        meta: `${data.collections} collections`,
+          ? `${data.draftProducts} in draft`
+          : "None in draft",
+        href: "/admin/products",
       },
     );
     return items;
   }, [data, showRevenue]);
 
+  const attention = useMemo(() => {
+    if (!data) return [];
+    const pending = data.ordersByStatus?.pending ?? 0;
+    const confirmed = data.ordersByStatus?.confirmed ?? 0;
+    return [
+      {
+        count: pending,
+        label: pending === 1 ? "order to confirm" : "orders to confirm",
+        href: "/admin/orders?status=pending",
+      },
+      {
+        count: confirmed,
+        label: confirmed === 1 ? "order to ship" : "orders to ship",
+        href: "/admin/orders?status=confirmed",
+      },
+      {
+        count: data.pendingReviews ?? 0,
+        label: data.pendingReviews === 1 ? "review to approve" : "reviews to approve",
+        href: "/admin/reviews",
+      },
+      {
+        count: data.newContacts ?? 0,
+        label: data.newContacts === 1 ? "new message" : "new messages",
+        href: "/admin/contacts?status=new",
+      },
+    ].filter((a) => a.count > 0);
+  }, [data]);
+
   return (
     <AdminShell user={user}>
       <AdminPageHeader
-        title="Dashboard"
-        description={
-          showRevenue
-            ? "Revenue, fulfillment health, and catalog at a glance."
-            : "Orders, catalog health, and reviews at a glance."
-        }
-        action={
-          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-            <Button
-              href="/admin/orders"
-              variant="secondary"
-              className="flex-1 sm:flex-none"
-            >
-              Orders
-            </Button>
-            <Button
-              href="/admin/customers"
-              variant="secondary"
-              className="flex-1 sm:flex-none"
-            >
-              Customers
-            </Button>
-            <Button href="/admin/products/new" className="flex-1 sm:flex-none">
-              Add product
-            </Button>
-          </div>
-        }
+        title={user?.name ? `Welcome back, ${user.name.split(" ")[0]}` : "Dashboard"}
+        action={<Button href="/admin/products/new">Add product</Button>}
       />
 
       {loading ? (
@@ -274,127 +347,42 @@ export default function AdminHomePage() {
         </p>
       ) : data ? (
         <>
-          {/* Quick actions — horizontal carousel to save vertical space */}
-          <section className="mb-6">
-            <div className="mb-3 flex items-end justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="font-display text-base font-medium text-admin-ink">
-                  Quick actions
-                </h2>
-                <p className="mt-0.5 text-sm text-admin-muted">
-                  Jump into everyday admin work. Swipe or use the arrows.
-                </p>
-              </div>
-            </div>
-            <EmblaCarousel
-              gap="sm"
-              align="start"
-              loop={false}
-              showDots
-              showArrows
-              className="[&>div:last-child]:mt-3"
-              slideClassName="min-w-0 flex-[0_0_82%] sm:flex-[0_0_48%] md:flex-[0_0_38%] lg:flex-[0_0_30%]"
-            >
-              {(
-                [
-                  {
-                    href: "/admin/settings#coupons",
-                    title: "Add coupon",
-                    desc: "Create discount codes for checkout: percent off, fixed PKR off, or free standard shipping. Enable or pause anytime.",
-                  },
-                  {
-                    href: "/admin/settings#appearance",
-                    title: "Change appearance",
-                    desc: "Switch the admin console between light and dark. This only affects the back office, not the public site.",
-                  },
-                  {
-                    href: "/admin/settings#announcement",
-                    title: "Edit announcement bar",
-                    desc: "Update or hide the storefront top message for shipping notes, promos, or seasonal lines.",
-                  },
-                  {
-                    href: "/admin/products/new",
-                    title: "Add a product",
-                    desc: "Create a new bottle: name, photos, scent notes, sizes, and PKR prices. Draft it first if you are not ready to publish.",
-                  },
-                  {
-                    href: "/admin/collections",
-                    title: "Manage collections",
-                    desc: "Build shop groups customers browse by occasion or audience. Set the banner image and publish when the list is ready.",
-                  },
-                  {
-                    href: "/admin/orders",
-                    title: "Review orders",
-                    desc: "Open recent orders, update fulfillment status, and check customer and line details.",
-                  },
-                  {
-                    href: "/admin/reviews",
-                    title: "Moderate reviews",
-                    desc: "Publish helpful product reviews on the PDP or hide ones that should not show.",
-                  },
-                  {
-                    href: "/admin/settings#profile",
-                    title: "Account and profile",
-                    desc: "See who is signed in, your role, and sign out securely from the console.",
-                  },
-                ] as const
-              ).map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="group flex h-full min-h-[9.5rem] flex-col rounded-lg border border-admin-line bg-admin-paper px-4 py-3.5 shadow-admin transition-colors hover:border-admin-ink"
-                >
-                  <p className="font-display text-[15px] font-medium text-admin-ink group-hover:text-brass">
-                    {item.title}
-                  </p>
-                  <p className="mt-1.5 flex-1 text-sm leading-snug text-admin-muted">
-                    {item.desc}
-                  </p>
-                  <p className="mt-3 font-display text-[11px] font-semibold uppercase tracking-[0.12em] text-admin-faint group-hover:text-brass">
-                    Go →
-                  </p>
-                </Link>
-              ))}
-            </EmblaCarousel>
-          </section>
-
           <div
             className={cn(
-              "grid gap-3 sm:grid-cols-2",
-              showRevenue ? "xl:grid-cols-4" : "xl:grid-cols-3",
+              "grid gap-4 sm:grid-cols-2 lg:grid-cols-3",
+              kpis.length >= 5 ? "xl:grid-cols-5" : "xl:grid-cols-4",
             )}
           >
             {kpis.map((k) => (
-              <div
+              <Link
                 key={k.label}
-                className="rounded-lg border border-admin-line bg-admin-paper px-5 py-5 shadow-admin"
+                href={k.href}
+                className="group rounded-lg border border-admin-line bg-admin-paper px-5 py-5 shadow-admin transition-colors hover:border-admin-faint"
               >
-                <p className="font-display text-xs font-medium uppercase tracking-[0.12em] text-admin-muted sm:text-[13px]">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-admin-muted">
                   {k.label}
                 </p>
-                <p className="mt-2 font-display text-2xl font-medium tabular-nums tracking-tight text-admin-ink sm:text-3xl">
+                <p className="mt-2.5 break-words text-[1.75rem] font-semibold leading-tight tracking-[-0.015em] tabular-nums text-admin-ink 2xl:text-[2rem]">
                   {k.value}
                 </p>
-                <p className="mt-1.5 text-sm text-admin-muted">
-                  {k.meta}
-                </p>
-              </div>
+                <p className="mt-1.5 text-sm text-admin-muted">{k.meta}</p>
+              </Link>
             ))}
           </div>
 
           <div
             className={cn(
-              "mt-6 grid gap-4",
+              "mt-6 grid gap-4 lg:gap-6",
               showRevenue
-                ? "lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.85fr)]"
+                ? "lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
                 : "",
             )}
           >
             {showRevenue ? (
               <AdminCard
-                title="Revenue · last 14 days"
+                title="Sales, last 14 days"
                 action={
-                  <span className="text-sm font-medium tabular-nums text-admin-muted">
+                  <span className="font-mono text-sm font-medium tabular-nums text-admin-ink">
                     {formatPkr(data.revenuePkr || 0)}
                   </span>
                 }
@@ -402,18 +390,48 @@ export default function AdminHomePage() {
                 <RevenueChart series={data.revenueSeries || []} />
               </AdminCard>
             ) : null}
-            <AdminCard title="Orders by status">
-              <StatusBars data={data.ordersByStatus || {}} />
-            </AdminCard>
+            <div className="grid gap-4 lg:gap-6">
+              <AdminCard title="Needs attention">
+                {attention.length ? (
+                  <ul className="divide-y divide-admin-line">
+                    {attention.map((a) => (
+                      <li key={a.href}>
+                        <Link
+                          href={a.href}
+                          className="flex min-h-14 items-center gap-3 px-5 py-3 transition-colors hover:bg-admin-soft-2 sm:px-6"
+                        >
+                          <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-(--admin-tone-amber-bg) px-2 font-mono text-sm font-medium tabular-nums text-(--admin-tone-amber-text)">
+                            {a.count}
+                          </span>
+                          <span className="flex-1 text-[0.9375rem] font-medium text-admin-ink">
+                            {a.label}
+                          </span>
+                          <span aria-hidden className="text-admin-faint">
+                            →
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="px-5 py-6 text-[0.9375rem] text-admin-muted sm:px-6">
+                    All caught up. Nothing needs your attention.
+                  </p>
+                )}
+              </AdminCard>
+              <AdminCard title="Orders by status">
+                <StatusBars data={data.ordersByStatus || {}} />
+              </AdminCard>
+            </div>
           </div>
 
-          <div className="mt-6 grid gap-4 xl:grid-cols-2">
+          <div className="mt-6 grid gap-4 lg:gap-6 xl:grid-cols-2">
             <AdminCard
               title="Recent orders"
               action={
                 <Link
                   href="/admin/orders"
-                  className="font-display text-xs font-medium uppercase tracking-widest text-brass hover:underline"
+                  className="text-sm font-semibold text-admin-accent hover:underline"
                 >
                   View all
                 </Link>
@@ -424,14 +442,14 @@ export default function AdminHomePage() {
                   <li key={o.orderNumber}>
                     <Link
                       href={`/admin/orders/${encodeURIComponent(o.orderNumber)}`}
-                      className="flex items-start justify-between gap-3 px-4 py-4 transition-colors hover:bg-admin-soft sm:px-5"
+                      className="flex min-h-16 items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-admin-soft-2 sm:px-6"
                     >
                       <div className="min-w-0">
-                        <p className="font-display text-base font-medium text-admin-ink">
+                        <p className="font-mono text-[0.9375rem] font-medium text-admin-ink">
                           {formatOrderNumber(o.orderNumber)}
                         </p>
-                        <p className="mt-0.5 truncate text-sm text-admin-muted">
-                          {o.customerName || o.email || "—"}
+                        <p className="mt-0.5 truncate text-[0.8125rem] text-admin-muted">
+                          {o.customerName || o.email}
                           {o.createdAt
                             ? ` · ${new Date(o.createdAt).toLocaleDateString("en-GB", {
                                 day: "numeric",
@@ -440,19 +458,19 @@ export default function AdminHomePage() {
                             : ""}
                         </p>
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1.5">
-                        <AdminStatusBadge status={o.status} />
+                      <div className="flex shrink-0 items-center gap-4">
                         {showRevenue && typeof o.totalPkr === "number" ? (
-                          <span className="text-sm font-medium tabular-nums text-admin-ink">
+                          <span className="hidden font-mono text-sm font-medium tabular-nums text-admin-ink sm:inline">
                             {formatPkr(o.totalPkr)}
                           </span>
                         ) : null}
+                        <AdminStatusBadge status={o.status} />
                       </div>
                     </Link>
                   </li>
                 ))}
                 {data.recentOrders.length === 0 ? (
-                  <li className="px-5 py-10 text-center text-base text-admin-muted">
+                  <li className="px-6 py-10 text-center text-[0.9375rem] text-admin-muted">
                     No orders yet.
                   </li>
                 ) : null}
@@ -460,13 +478,13 @@ export default function AdminHomePage() {
             </AdminCard>
 
             <AdminCard
-              title="Products"
+              title="Latest products"
               action={
                 <Link
                   href="/admin/products"
-                  className="font-display text-xs font-medium uppercase tracking-widest text-brass hover:underline"
+                  className="text-sm font-semibold text-admin-accent hover:underline"
                 >
-                  Manage
+                  View all
                 </Link>
               }
             >
@@ -475,9 +493,9 @@ export default function AdminHomePage() {
                   <li key={p.handle}>
                     <Link
                       href={`/admin/products/${p.handle}`}
-                      className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-admin-soft sm:px-5"
+                      className="flex min-h-16 items-center gap-3.5 px-5 py-3 transition-colors hover:bg-admin-soft-2 sm:px-6"
                     >
-                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-admin-line bg-admin-soft">
+                      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-md border border-admin-line bg-admin-soft">
                         {p.image ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -488,32 +506,60 @@ export default function AdminHomePage() {
                         ) : null}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-display text-base font-medium text-admin-ink">
+                        <p className="truncate text-[0.9375rem] font-semibold text-admin-ink">
                           {p.name}
                         </p>
-                        <p className="mt-0.5 font-mono text-xs text-admin-muted">
-                          {p.handle}
+                        <p className="mt-0.5 text-[0.8125rem] text-admin-muted">
+                          {p.inStock ? "In stock" : "Out of stock"}
                         </p>
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1.5">
-                        <AdminStatusBadge status={p.status} />
+                      <div className="flex shrink-0 items-center gap-4">
                         {showRevenue && typeof p.price === "number" ? (
-                          <span className="text-sm font-medium tabular-nums text-admin-ink">
+                          <span className="hidden font-mono text-sm font-medium tabular-nums text-admin-ink sm:inline">
                             {formatPkr(p.price)}
                           </span>
                         ) : null}
+                        <AdminStatusBadge status={p.status} />
                       </div>
                     </Link>
                   </li>
                 ))}
                 {data.recentProducts.length === 0 ? (
-                  <li className="px-5 py-10 text-center text-base text-admin-muted">
+                  <li className="px-6 py-10 text-center text-[0.9375rem] text-admin-muted">
                     No products yet.
                   </li>
                 ) : null}
               </ul>
             </AdminCard>
           </div>
+
+          {/* Shortcuts below the numbers so the dashboard opens on data */}
+          <section className="mt-8" aria-labelledby="quick-actions-title">
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <h2
+                  id="quick-actions-title"
+                  className="text-base font-semibold text-admin-ink sm:text-[1.0625rem]"
+                >
+                  Shortcuts
+                </h2>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {QUICK_ACTIONS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="group flex flex-col rounded-lg border border-admin-line bg-admin-paper px-5 py-4 shadow-admin transition-colors hover:border-admin-faint"
+                >
+                  <p className="text-[0.9375rem] font-semibold text-admin-ink group-hover:text-admin-accent">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-sm text-admin-muted">{item.desc}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
         </>
       ) : null}
     </AdminShell>

@@ -23,13 +23,14 @@ import {
   XIcon,
 } from "@animateicons/react/lucide";
 import { cn } from "@/lib/cn";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/admin/button";
 import { Logo, LogoMark } from "@/components/brand/logo";
 import {
   AdminThemeProvider,
   useAdminTheme,
 } from "@/context/admin-theme";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AdminToaster } from "@/components/admin/toast";
 
 type IconProps = {
   size?: number;
@@ -78,7 +79,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/orders", label: "Orders", Icon: ShoppingBagIcon },
       { href: "/admin/customers", label: "Customers", Icon: UserIcon },
-      { href: "/admin/contacts", label: "Contacts", Icon: MailIcon },
+      { href: "/admin/contacts", label: "Messages", Icon: MailIcon },
     ],
   },
   {
@@ -141,6 +142,16 @@ function AdminShellInner({
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  // Portalled layers (select menus, tooltips, confirm dialogs) live on <body>;
+  // mirror the console theme on <html> so globals.css can theme them too.
+  useEffect(() => {
+    const html = document.documentElement;
+    html.dataset.adminTheme = theme;
+    return () => {
+      delete html.dataset.adminTheme;
+    };
+  }, [theme]);
 
   // One scroll surface only: lock document so body/html never compete with main.
   useEffect(() => {
@@ -221,13 +232,13 @@ function AdminShellInner({
           "flex shrink-0 items-center border-b border-white/10",
           collapsed
             ? "justify-center px-2 py-5"
-            : "justify-between gap-2 px-4 py-5",
+            : "justify-between gap-2 px-5 py-5",
         )}
       >
         {!collapsed ? (
           <Link href="/admin" className="block min-w-0 text-white">
             <Logo className="h-6 max-w-full" title="NS Perfume admin" />
-            <p className="mt-2 font-display text-[11px] uppercase tracking-[0.16em] text-white/40">
+            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
               Admin console
             </p>
           </Link>
@@ -243,7 +254,7 @@ function AdminShellInner({
         <button
           type="button"
           onClick={toggleCollapse}
-          className="hidden h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/10 hover:text-white md:flex"
+          className="hidden h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/55 transition-colors hover:bg-white/10 hover:text-white md:flex"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand" : "Collapse"}
         >
@@ -256,13 +267,13 @@ function AdminShellInner({
       </div>
 
       <nav
-        className="admin-sidebar-nav min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-y-contain px-2.5 py-4"
+        className="admin-sidebar-nav min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-y-contain px-3 py-5"
         aria-label="Admin navigation"
       >
         {NAV_GROUPS.map((group) => (
           <div key={group.id}>
             {!collapsed ? (
-              <p className="mb-1.5 px-3 font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">
+              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-admin-sidebar-muted">
                 {group.label}
               </p>
             ) : (
@@ -281,15 +292,15 @@ function AdminShellInner({
                       href={item.href}
                       title={item.label}
                       className={cn(
-                        "flex items-center gap-3 rounded-md font-display text-[14px] font-medium transition-colors",
-                        collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",
+                        "flex min-h-11 items-center gap-3 rounded-md text-[0.9375rem] font-medium transition-colors",
+                        collapsed ? "justify-center px-2" : "px-3",
                         active
                           ? "bg-admin-sidebar-active-bg text-admin-sidebar-active-text"
                           : "text-admin-sidebar-text hover:bg-admin-sidebar-hover hover:text-white",
                       )}
                     >
                       <Icon
-                        size={17}
+                        size={18}
                         color="currentColor"
                         isAnimated={false}
                         className="shrink-0"
@@ -312,19 +323,19 @@ function AdminShellInner({
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
-            "inline-flex w-full items-center justify-center gap-2 rounded-md px-2 py-2.5 font-display text-xs font-medium uppercase tracking-widest text-white/45 transition-colors hover:bg-white/10 hover:text-white",
+            "inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md px-2 text-sm font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white",
           )}
           title="Open storefront"
         >
-          <ExternalLinkIcon size={14} color="currentColor" isAnimated={false} />
-          {!collapsed ? "Storefront" : null}
+          <ExternalLinkIcon size={16} color="currentColor" isAnimated={false} />
+          {!collapsed ? "View storefront" : null}
         </Link>
         <Button
           type="button"
           variant="secondary"
           onClick={logout}
           className={cn(
-            "w-full gap-2 border-white/15! bg-transparent! text-white/55! hover:bg-white/10! hover:text-white! sm:w-full",
+            "w-full gap-2 border-white/20! bg-transparent! text-white/70! hover:text-white! sm:w-full",
             collapsed && "px-2!",
           )}
         >
@@ -343,7 +354,7 @@ function AdminShellInner({
       <aside
         className={cn(
           "hidden h-full shrink-0 border-r border-black/20 bg-admin-sidebar transition-[width] duration-200 md:flex md:flex-col",
-          collapsed ? "w-[4.5rem]" : "w-60",
+          collapsed ? "w-[4.5rem]" : "w-66",
         )}
         onWheel={redirectWheelToMain}
       >
@@ -360,12 +371,12 @@ function AdminShellInner({
           />
           <aside className="absolute left-0 top-0 flex h-full w-[min(18rem,88vw)] flex-col bg-admin-sidebar shadow-modal">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5">
-              <p className="font-display text-base font-medium text-white">
+              <p className="text-base font-semibold text-white">
                 Menu
               </p>
               <button
                 type="button"
-                className="inline-flex cursor-pointer items-center gap-1 px-2 py-1 font-display text-sm text-white/60"
+                className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-md px-3 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white"
                 onClick={() => setMobileOpen(false)}
               >
                 <XIcon size={16} color="currentColor" isAnimated={false} />
@@ -382,7 +393,7 @@ function AdminShellInner({
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 font-display text-sm font-medium text-admin-ink"
+            className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-md px-2.5 text-[0.9375rem] font-semibold text-admin-ink hover:bg-admin-soft"
           >
             <MenuIcon size={18} color="currentColor" isAnimated={false} />
             Menu
@@ -392,10 +403,12 @@ function AdminShellInner({
           </Link>
           <Button
             variant="secondary"
+            size="sm"
             onClick={logout}
-            className="h-9! min-h-9! w-auto! px-3!"
+            className="w-auto! [&>span:last-child]:px-3!"
+            aria-label="Log out"
           >
-            <LogOutIcon size={14} color="currentColor" isAnimated={false} />
+            <LogOutIcon size={16} color="currentColor" isAnimated={false} />
           </Button>
         </header>
 
@@ -404,11 +417,12 @@ function AdminShellInner({
           ref={mainScrollRef}
           className="admin-main-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain"
         >
-          <div className="mx-auto w-full max-w-[1280px] px-4 py-5 sm:px-6 sm:py-6 md:px-8">
+          <div className="mx-auto w-full max-w-[1600px] px-4 pb-10 pt-5 sm:px-6 sm:pt-7 lg:px-8 2xl:px-10">
             {children}
           </div>
         </main>
       </div>
+      <AdminToaster theme={theme} />
     </div>
   );
 }

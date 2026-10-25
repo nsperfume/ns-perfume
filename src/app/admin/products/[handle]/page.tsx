@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ExternalLinkIcon } from "@animateicons/react/lucide";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { ProductForm } from "@/components/admin/product-form";
-import { AdminCard, AdminPageHeader } from "@/components/admin/ui";
-import { Button } from "@/components/ui/button";
+import {
+  AdminCard,
+  AdminEmptyState,
+  AdminPageHeader,
+} from "@/components/admin/ui";
+import { Button } from "@/components/admin/button";
 import type { StoreProduct } from "@/lib/mappers";
 
 export default function AdminProductEditPage() {
@@ -47,7 +52,7 @@ export default function AdminProductEditPage() {
         })
         .catch(() =>
           setLoadError({
-            message: "Network error while loading this product.",
+            message: "Check your connection and try again.",
             notFound: false,
           }),
         )
@@ -55,34 +60,45 @@ export default function AdminProductEditPage() {
     }
   }, [handle, isNew, router]);
 
+  const live = product?.status === "active" || product?.status === undefined;
+
   return (
     <AdminShell user={user}>
       <AdminPageHeader
-        title={isNew ? "Add product" : `Edit ${product?.name || handle}`}
-        description="Status draft hides the bottle on the storefront. Publish when ready."
+        title={isNew ? "Add product" : product?.name || "Product"}
         backHref="/admin/products"
-        backLabel="Back to products"
+        backLabel="Products"
+        action={
+          !isNew && product && live ? (
+            <a
+              href={`/products/${encodeURIComponent(product.handle)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center gap-2 rounded-md border border-admin-ink bg-admin-paper px-5 text-sm font-semibold text-admin-ink transition-colors hover:border-brass"
+            >
+              View in store
+              <ExternalLinkIcon size={16} color="currentColor" isAnimated={false} />
+            </a>
+          ) : undefined
+        }
       />
       {loading ? (
-        <p className="text-base text-admin-muted">Loading…</p>
+        <p className="text-[0.9375rem] text-admin-muted">Loading product…</p>
       ) : !isNew && (loadError || !product) ? (
         <AdminCard>
-          <div className="px-5 py-10 text-center">
-            <p className="font-display text-lg font-medium text-admin-ink">
-              {loadError?.notFound !== false
+          <AdminEmptyState
+            title={
+              loadError?.notFound !== false
                 ? "Product not found"
-                : "Could not load product"}
-            </p>
-            <p className="mt-2 text-base text-admin-muted">
-              {loadError?.notFound !== false
-                ? `No product with the handle “${handle}”. It may have been deleted or renamed.`
-                : loadError.message}
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
-              <Button href="/admin/products" className="w-auto!">
-                Back to products
-              </Button>
-              {loadError && !loadError.notFound ? (
+                : "Could not load this product"
+            }
+            description={
+              loadError?.notFound !== false
+                ? "It may have been deleted."
+                : loadError.message
+            }
+            action={
+              loadError && !loadError.notFound ? (
                 <Button
                   variant="secondary"
                   className="w-auto!"
@@ -90,9 +106,13 @@ export default function AdminProductEditPage() {
                 >
                   Try again
                 </Button>
-              ) : null}
-            </div>
-          </div>
+              ) : (
+                <Button href="/admin/products" className="w-auto!">
+                  Back to products
+                </Button>
+              )
+            }
+          />
         </AdminCard>
       ) : (
         <ProductForm
@@ -101,7 +121,13 @@ export default function AdminProductEditPage() {
           canDelete={Boolean(
             user?.isSuperAdmin || user?.role === "super_admin",
           )}
-          onSaved={() => router.push("/admin/products")}
+          onSaved={(saved, meta) => {
+            if (meta.created || meta.deleted) {
+              router.push("/admin/products");
+              return;
+            }
+            if (saved) setProduct(saved);
+          }}
         />
       )}
     </AdminShell>

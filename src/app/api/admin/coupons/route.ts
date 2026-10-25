@@ -72,9 +72,14 @@ const createSchema = z.object({
   code: z
     .string()
     .trim()
-    .min(2)
-    .max(32)
-    .transform((s) => s.toUpperCase().replace(/\s+/g, "")),
+    .transform((s) => s.toUpperCase().replace(/\s+/g, ""))
+    .pipe(
+      z
+        .string()
+        .min(3, "Code must be at least 3 characters")
+        .max(20, "Code must be 20 characters or fewer")
+        .regex(/^[A-Z0-9]+$/, "Use letters and numbers only"),
+    ),
   label: z.string().trim().max(80).optional().default(""),
   type: z.enum(["percent", "fixed", "free_shipping"]),
   value: z.number().min(0).max(1000000).optional().default(0),
@@ -104,15 +109,11 @@ export async function POST(req: Request) {
     const raw = await req.json();
     const parsed = createSchema.safeParse(raw);
     if (!parsed.success) {
-      return jsonError("Invalid coupon", 400, parsed.error.flatten());
+      return jsonError(parsed.error.issues[0]?.message || "Check the coupon details", 400, parsed.error.flatten());
     }
     const data = parsed.data;
-    if (data.type === "percent" && (data.value < 1 || data.value > 100)) {
-      return jsonError("Percent discounts must be between 1 and 100", 400);
-    }
-    if (data.type === "fixed" && data.value < 1) {
-      return jsonError("Fixed discount must be at least 1 PKR", 400);
-    }
+    const valueError = couponValueError(data.type, data.value);
+    if (valueError) return jsonError(valueError, 400);
     if (data.type === "free_shipping") data.value = 0;
     if (data.posterBgMode === "image" && !data.posterImageUrl) {
       // allow save without image yet; studio can assign later
@@ -150,6 +151,15 @@ export async function POST(req: Request) {
   }
 }
 
+/** Same rules as the admin form: percent 1 to 90, fixed at least Rs 1, whole numbers. */
+function couponValueError(type: string, value: number): string | null {
+  if (type === "free_shipping") return null;
+  if (!Number.isInteger(value)) return "Use a whole number";
+  if (type === "percent" && (value < 1 || value > 90)) return "Percent discounts must be between 1 and 90";
+  if (type === "fixed" && value < 1) return "Fixed discounts must be at least Rs 1";
+  return null;
+}
+
 export async function PUT(req: Request) {
   const admin = await requireAdmin();
   if (!admin) return jsonError("Unauthorized", 401);
@@ -161,9 +171,19 @@ export async function PUT(req: Request) {
     const updates: Record<string, unknown> = {};
     if (typeof body.label === "string") updates.label = body.label.trim();
     if (typeof body.active === "boolean") updates.active = body.active;
-    if (typeof body.value === "number") updates.value = body.value;
-    if (typeof body.minSubtotalPkr === "number")
-      updates.minSubtotalPkr = body.minSubtotalPkr;
+    if (body.value !== undefined) {
+      const existing = await CouponModel.findById(id).select("type").lean<{ type?: string }>();
+      if (!existing) return jsonError("Coupon not found", 404);
+      const value = Number(body.value);
+      const valueError = couponValueError(String(existing.type), value);
+      if (valueError) return jsonError(valueError, 400);
+      updates.value = value;
+    }
+    if (body.minSubtotalPkr !== undefined) {
+      const min = Number(body.minSubtotalPkr);
+      if (!Number.isInteger(min) || min < 0) return jsonError("Minimum order must be a whole rupee amount", 400);
+      updates.minSubtotalPkr = min;
+    }
     if (body.usageLimit === null) updates.usageLimit = null;
     else if (typeof body.usageLimit === "number" && body.usageLimit > 0)
       updates.usageLimit = Math.floor(body.usageLimit);

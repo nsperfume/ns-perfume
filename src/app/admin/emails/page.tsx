@@ -1,11 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { z } from "zod";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   AdminCard,
-  AdminNotice,
+  AdminEmptyState,
+  AdminFilterChips,
   AdminPageHeader,
   AdminStatusBadge,
   AdminTable,
@@ -13,9 +16,15 @@ import {
   AdminTh,
   readAdminJson,
 } from "@/components/admin/ui";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { Button } from "@/components/admin/button";
+import { Input } from "@/components/admin/input";
+import { AdminFieldLabel } from "@/components/admin/form-section";
+import {
+  AdminFieldError,
+  useFormValidation,
+} from "@/components/admin/form-validation";
+import { toast } from "@/components/admin/toast";
+import { formatOrderNumber } from "@/lib/order-number";
 import { cn } from "@/lib/cn";
 
 type Template = {
@@ -64,25 +73,78 @@ function formatDate(iso: string) {
   });
 }
 
+function sentence(s: string) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/[-_]/g, " ") : "";
+}
+
 const LOG_FILTERS = [
-  { value: "all", label: "All emails" },
+  { value: "all", label: "All" },
   { value: "sent", label: "Sent" },
   { value: "failed", label: "Failed" },
-  { value: "skipped", label: "Skipped (not configured)" },
+  { value: "skipped", label: "Not sent" },
 ] as const;
+
+const NOT_SET_UP = "Email sending is not set up yet. Contact your developer.";
+
+/* Mirrors POST /api/admin/emails/test */
+const testSchema = z.object({
+  to: z
+    .string()
+    .trim()
+    .min(1, "Enter an email address")
+    .email("Enter a valid email")
+    .max(200, "Use 200 characters or fewer"),
+});
+
+function friendlySendError(message?: string) {
+  if (!message) return "The test email could not be sent";
+  if (/not configured|SMTP|APP_PASSWORD/i.test(message)) return NOT_SET_UP;
+  if (/^Send failed/i.test(message))
+    return "The test email could not be sent. Try again later.";
+  return message;
+}
+
+function LoadingCards() {
+  return (
+    <div className="grid gap-6" aria-busy="true">
+      <p className="sr-only" role="status">
+        Loading emails…
+      </p>
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="overflow-hidden rounded-lg border border-admin-line bg-admin-paper shadow-admin"
+        >
+          <div className="flex h-14 items-center border-b border-admin-line px-6">
+            <div className="h-5 w-40 animate-pulse rounded bg-admin-soft" />
+          </div>
+          <div className="space-y-3 px-6 py-6">
+            <div className="h-4 w-3/4 animate-pulse rounded bg-admin-soft" />
+            <div className="h-4 w-1/2 animate-pulse rounded bg-admin-soft" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AdminEmailsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ email?: string; name?: string; isSuperAdmin?: boolean } | null>(null);
+  const testFormRef = useRef<HTMLFormElement>(null);
+  const [user, setUser] = useState<{
+    email?: string;
+    name?: string;
+    isSuperAdmin?: boolean;
+  } | null>(null);
   const [data, setData] = useState<Overview | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [logLoading, setLogLoading] = useState(false);
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState(0);
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [view, setView] = useState<"html" | "text">("html");
   const [testTo, setTestTo] = useState("");
   const [sending, setSending] = useState(false);
-  const [notice, setNotice] = useState<{ tone: "info" | "error"; text: string } | null>(null);
+  const tv = useFormValidation(testSchema);
 
   useEffect(() => {
     fetch("/api/admin/auth")
@@ -96,14 +158,23 @@ export default function AdminEmailsPage() {
 
   const load = useCallback(async () => {
     setLoadError(null);
-    const params = filter === "all" ? "" : `?status=${filter}`;
-    const res = await readAdminJson<Overview>(await fetch(`/api/admin/emails${params}`));
-    if (!res.ok || !res.data) {
-      setLoadError(res.error || "Could not load emails");
-      return;
+    setLogLoading(true);
+    try {
+      const params = filter === "all" ? "" : `?status=${filter}`;
+      const res = await readAdminJson<Overview>(
+        await fetch(`/api/admin/emails${params}`),
+      );
+      if (!res.ok || !res.data) {
+        setLoadError(res.error || "Could not load emails");
+        return;
+      }
+      setData(res.data);
+      setTestTo((prev) => prev || res.data!.adminRecipients[0] || "");
+    } catch {
+      setLoadError("Network error while loading emails");
+    } finally {
+      setLogLoading(false);
     }
-    setData(res.data);
-    setTestTo((prev) => prev || res.data!.adminRecipients[0] || "");
   }, [filter]);
 
   useEffect(() => {
@@ -112,6 +183,7 @@ export default function AdminEmailsPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setPreview(null);
     fetch(`/api/admin/emails/preview?i=${selected}`)
       .then((r) => readAdminJson<Preview>(r))
       .then((res) => {
@@ -124,24 +196,26 @@ export default function AdminEmailsPage() {
 
   async function sendTest(e: React.FormEvent) {
     e.preventDefault();
+    if (!tv.validate({ to: testTo }, testFormRef.current)) return;
     setSending(true);
-    setNotice(null);
     try {
       const res = await readAdminJson(
         await fetch("/api/admin/emails/test", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ index: selected, to: testTo }),
+          body: JSON.stringify({ index: selected, to: testTo.trim() }),
         }),
       );
-      setNotice(
-        res.ok
-          ? { tone: "info", text: `Test sent to ${testTo}. Check the inbox and spam folder.` }
-          : { tone: "error", text: res.error || "Test failed" },
-      );
+      if (res.ok) {
+        toast.success(`Test sent to ${testTo.trim()}`, {
+          description: "Check the inbox and the spam folder.",
+        });
+      } else {
+        toast.error(friendlySendError(res.error));
+      }
       void load();
     } catch {
-      setNotice({ tone: "error", text: "Network error" });
+      toast.error("Network error. The test was not sent.");
     } finally {
       setSending(false);
     }
@@ -151,231 +225,307 @@ export default function AdminEmailsPage() {
 
   return (
     <AdminShell user={user}>
-      <AdminPageHeader
-        title="Emails"
-        description="Order, account and contact emails the store sends automatically. Preview every template, send yourself a test, and check what was delivered."
-      />
+      <AdminPageHeader title="Emails" />
 
-      {loadError ? <AdminNotice tone="error">{loadError}</AdminNotice> : null}
+      {!data && !loadError ? <LoadingCards /> : null}
 
-      {data ? (
-        <AdminCard title="Delivery settings" className="mb-6">
-          <div className="grid gap-4 px-4 py-4 text-sm sm:grid-cols-2 sm:px-5 lg:grid-cols-4">
-            <div>
-              <p className="text-admin-muted">Status</p>
-              <p className={cn("mt-1 font-medium", data.configured ? "text-admin-ink" : "text-rosewood")}>
-                {data.configured ? "Connected" : "Not configured"}
-              </p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-admin-muted">Sends from</p>
-              <p className="mt-1 break-words font-medium text-admin-ink">{data.from || "Not set"}</p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-admin-muted">Customer replies go to</p>
-              <p className="mt-1 break-words font-medium text-admin-ink">{data.replyTo || "Not set"}</p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-admin-muted">Store alerts go to</p>
-              <p className="mt-1 break-words font-medium text-admin-ink">
-                {data.adminRecipients.join(", ") || "Not set"}
-              </p>
-            </div>
-          </div>
-          {!data.configured ? (
-            <p className="border-t border-admin-line px-4 py-3 text-sm leading-relaxed text-admin-muted sm:px-5">
-              Add <code className="font-mono">SMTP_USER</code> (the Gmail address the app password belongs to) and{" "}
-              <code className="font-mono">APP_PASSWORD</code> to the environment, then redeploy. Until then emails are
-              recorded below as skipped and orders still go through.
-            </p>
-          ) : null}
+      {!data && loadError ? (
+        <AdminCard>
+          <AdminEmptyState
+            title="Emails could not be loaded"
+            description={loadError}
+            action={
+              <Button
+                variant="secondary"
+                className="w-auto!"
+                onClick={() => void load()}
+              >
+                Try again
+              </Button>
+            }
+          />
         </AdminCard>
       ) : null}
 
       {data ? (
-        <AdminCard title="Templates" className="mb-6">
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,20rem)_1fr]">
-            <ul className="max-h-[44rem] overflow-y-auto border-b border-admin-line lg:border-b-0 lg:border-r">
-              {data.templates.map((t) => (
-                <li key={t.index}>
-                  <button
-                    type="button"
-                    onClick={() => setSelected(t.index)}
-                    className={cn(
-                      "w-full cursor-pointer border-b border-admin-line px-4 py-3 text-left transition-colors sm:px-5",
-                      selected === t.index ? "bg-admin-soft" : "hover:bg-admin-soft/60",
-                    )}
-                  >
-                    <span className="block text-sm font-medium text-admin-ink">{t.label}</span>
-                    <span className="mt-0.5 block text-xs text-admin-muted">
-                      {t.audience} · {t.trigger}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+        <div className="grid gap-6">
+          <AdminCard
+            title="Sending"
+            action={
+              <AdminStatusBadge
+                status={data.configured ? "sent" : "pending"}
+                label={data.configured ? "Connected" : "Not set up"}
+              />
+            }
+          >
+            {data.configured ? (
+              <dl className="grid gap-x-6 gap-y-4 px-5 py-5 sm:grid-cols-3 sm:px-6">
+                {[
+                  ["Sends from", data.from],
+                  ["Customer replies go to", data.replyTo],
+                  ["Store alerts go to", data.adminRecipients.join(", ")],
+                ].map(([label, value]) => (
+                  <div key={label} className="min-w-0">
+                    <dt className="text-sm font-semibold text-admin-muted">
+                      {label}
+                    </dt>
+                    <dd className="mt-1 wrap-break-word text-[0.9375rem] text-admin-ink">
+                      {value || "Not set"}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="px-5 py-5 text-[0.9375rem] text-admin-ink sm:px-6">
+                {NOT_SET_UP} Orders still go through.
+              </p>
+            )}
+          </AdminCard>
 
-            <div className="min-w-0 p-4 sm:p-5">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs uppercase tracking-wider text-admin-muted">Subject</p>
-                  <p className="truncate text-sm font-medium text-admin-ink">{preview?.subject || "Loading…"}</p>
-                </div>
-                <div className="flex gap-1 rounded-md border border-admin-line p-0.5 text-xs">
-                  {(["html", "text"] as const).map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setView(v)}
-                      className={cn(
-                        "cursor-pointer rounded px-3 py-1.5",
-                        view === v ? "bg-admin-ink text-admin-paper" : "text-admin-muted hover:text-admin-ink",
-                      )}
-                    >
-                      {v === "html" ? "Email" : "Plain text"}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <AdminCard title="Templates">
+            <div className="grid lg:grid-cols-[minmax(0,20rem)_1fr]">
+              <ul
+                className="max-h-88 overflow-y-auto border-b border-admin-line lg:max-h-184 lg:border-b-0 lg:border-r"
+                aria-label="Email templates"
+              >
+                {data.templates.map((t) => {
+                  const on = selected === t.index;
+                  return (
+                    <li key={t.index}>
+                      <button
+                        type="button"
+                        onClick={() => setSelected(t.index)}
+                        aria-current={on ? "true" : undefined}
+                        className={cn(
+                          "relative w-full cursor-pointer border-b border-admin-line px-5 py-3 text-left transition-colors sm:px-6",
+                          on ? "bg-admin-soft" : "hover:bg-admin-soft-2",
+                        )}
+                      >
+                        {on ? (
+                          <span
+                            aria-hidden
+                            className="absolute inset-y-0 left-0 w-0.75 bg-brass"
+                          />
+                        ) : null}
+                        <span className="block text-[0.9375rem] font-semibold text-admin-ink">
+                          {t.label}
+                        </span>
+                        <span className="mt-0.5 block text-[0.8125rem] text-admin-muted">
+                          To {t.audience === "Customer" ? "customer" : "store team"}{" "}
+                          · {t.trigger}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
 
-              {preview ? (
-                view === "html" ? (
+              <div className="min-w-0 p-5 sm:p-6">
+                <div className="mb-4 min-w-0">
+                  <p className="text-sm font-semibold text-admin-muted">Subject</p>
+                  <p className="mt-0.5 truncate text-[0.9375rem] font-semibold text-admin-ink">
+                    {preview?.subject || "Loading…"}
+                  </p>
+                </div>
+
+                {preview ? (
                   <iframe
                     title={`Preview: ${current?.label || "email"}`}
                     srcDoc={preview.html}
                     sandbox=""
-                    className="h-[38rem] w-full rounded-md border border-admin-line bg-white"
+                    className="h-128 w-full rounded-md border border-admin-line bg-white lg:h-152"
                   />
                 ) : (
-                  <pre className="h-[38rem] overflow-auto whitespace-pre-wrap rounded-md border border-admin-line bg-admin-soft p-4 font-mono text-xs leading-relaxed text-admin-ink">
-                    {preview.text}
-                  </pre>
-                )
-              ) : (
-                <div className="h-[38rem] rounded-md border border-admin-line bg-admin-soft" />
-              )}
+                  <div className="h-128 animate-pulse rounded-md border border-admin-line bg-admin-soft lg:h-152" />
+                )}
 
-              {user?.isSuperAdmin ? (
-                <form onSubmit={sendTest} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-                  <div className="min-w-0 flex-1">
-                    <Input
-                      label="Send a test of this template to"
-                      type="email"
-                      value={testTo}
-                      onChange={(e) => setTestTo(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" disabled={sending || !testTo}>
-                    {sending ? "Sending…" : "Send test"}
-                  </Button>
-                </form>
-              ) : null}
-              {notice ? (
-                <AdminNotice tone={notice.tone} onDismiss={() => setNotice(null)} className="mt-3">
-                  {notice.text}
-                </AdminNotice>
-              ) : null}
+                {user?.isSuperAdmin && data.configured ? (
+                  <form
+                    ref={testFormRef}
+                    onSubmit={sendTest}
+                    noValidate
+                    className="mt-5 flex flex-col gap-3 border-t border-admin-line pt-5 sm:flex-row sm:items-start"
+                  >
+                    <div className="min-w-0 flex-1" data-field="to">
+                      <AdminFieldLabel htmlFor="email-test-to" required>
+                        Send a test to
+                      </AdminFieldLabel>
+                      <Input
+                        id="email-test-to"
+                        name="to"
+                        type="email"
+                        value={testTo}
+                        aria-invalid={tv.errors.to ? true : undefined}
+                        onChange={(e) => {
+                          setTestTo(e.target.value);
+                          if (tv.submitted) tv.revalidate({ to: e.target.value });
+                        }}
+                        onBlur={() => tv.revalidate({ to: testTo })}
+                      />
+                      <AdminFieldError message={tv.errors.to} />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={sending}
+                      className="sm:mt-7 sm:w-auto"
+                    >
+                      {sending ? "Sending…" : "Send test"}
+                    </Button>
+                  </form>
+                ) : null}
+              </div>
             </div>
-          </div>
-        </AdminCard>
-      ) : null}
+          </AdminCard>
 
-      {data ? (
-        <AdminCard
-          title="Delivery log"
-          className="mb-6"
-          action={
-            <div className="w-full sm:w-56">
-              <Select
+          <AdminCard title="Sent emails">
+            <div className="border-b border-admin-line px-5 py-3.5 sm:px-6">
+              <AdminFilterChips
+                label="Filter sent emails"
                 value={filter}
-                onValueChange={setFilter}
+                onChange={setFilter}
                 options={LOG_FILTERS}
-                aria-label="Filter delivery log"
               />
             </div>
-          }
-        >
-          {data.logs.length ? (
-            <AdminTable>
-              <thead>
-                <tr>
-                  <AdminTh>When</AdminTh>
-                  <AdminTh>Template</AdminTh>
-                  <AdminTh>To</AdminTh>
-                  <AdminTh>Status</AdminTh>
-                  <AdminTh>Reference</AdminTh>
-                </tr>
-              </thead>
-              <tbody>
-                {data.logs.map((l) => (
-                  <tr key={l.id}>
-                    <AdminTd className="whitespace-nowrap">{formatDate(l.createdAt)}</AdminTd>
-                    <AdminTd>
-                      <span className="block font-medium">{l.template}</span>
-                      <span className="block max-w-xs truncate text-xs text-admin-muted" title={l.subject}>
-                        {l.subject}
-                      </span>
-                    </AdminTd>
-                    <AdminTd className="break-all">{l.to}</AdminTd>
-                    <AdminTd>
-                      <AdminStatusBadge status={l.status === "sent" ? "delivered" : l.status} />
-                      {l.error ? (
-                        <span className="mt-1 block max-w-xs text-xs text-rosewood" title={l.error}>
-                          {l.error.slice(0, 80)}
+            {data.logs.length ? (
+              <AdminTable
+                flush
+                className={cn(logLoading && "opacity-60 transition-opacity")}
+              >
+                <thead>
+                  <tr>
+                    <AdminTh>Email</AdminTh>
+                    <AdminTh>To</AdminTh>
+                    <AdminTh>Status</AdminTh>
+                    <AdminTh>Order</AdminTh>
+                    <AdminTh>Sent</AdminTh>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.logs.map((l) => (
+                    <tr
+                      key={l.id}
+                      className="transition-colors hover:bg-admin-soft-2"
+                    >
+                      <AdminTd className="max-w-88">
+                        <span className="block font-medium">
+                          {sentence(l.template)}
                         </span>
-                      ) : null}
-                    </AdminTd>
-                    <AdminTd className="font-mono text-xs">{l.ref || ""}</AdminTd>
-                  </tr>
-                ))}
-              </tbody>
-            </AdminTable>
-          ) : (
-            <p className="px-4 py-6 text-sm text-admin-muted sm:px-5">No emails recorded yet.</p>
-          )}
-        </AdminCard>
-      ) : null}
+                        <span
+                          className="block truncate text-[0.8125rem] text-admin-muted"
+                          title={l.subject}
+                        >
+                          {l.subject}
+                        </span>
+                      </AdminTd>
+                      <AdminTd className="max-w-64">
+                        <span className="block truncate" title={l.to}>
+                          {l.to}
+                        </span>
+                      </AdminTd>
+                      <AdminTd>
+                        <span title={l.error || undefined}>
+                          <AdminStatusBadge status={l.status} />
+                        </span>
+                      </AdminTd>
+                      <AdminTd className="whitespace-nowrap">
+                        {l.ref === "test" ? (
+                          <span className="text-admin-muted">Test</span>
+                        ) : l.ref ? (
+                          <Link
+                            href={`/admin/orders/${encodeURIComponent(l.ref)}`}
+                            className="font-mono text-[0.875rem] font-semibold text-admin-accent hover:underline"
+                          >
+                            {formatOrderNumber(l.ref)}
+                          </Link>
+                        ) : (
+                          <span className="text-admin-faint">None</span>
+                        )}
+                      </AdminTd>
+                      <AdminTd className="whitespace-nowrap text-admin-muted">
+                        {formatDate(l.createdAt)}
+                      </AdminTd>
+                    </tr>
+                  ))}
+                </tbody>
+              </AdminTable>
+            ) : (
+              <AdminEmptyState
+                title={filter === "all" ? "No emails sent yet" : "Nothing here"}
+                description={
+                  filter === "all"
+                    ? "Order and contact emails appear here once they go out."
+                    : undefined
+                }
+              />
+            )}
+          </AdminCard>
 
-      {data ? (
-        <AdminCard title="Newsletter subscribers">
-          <div className="flex flex-wrap gap-8 border-b border-admin-line px-4 py-4 text-sm sm:px-5">
-            <div>
-              <p className="text-admin-muted">Subscribed</p>
-              <p className="mt-1 font-display text-2xl text-admin-ink">{data.subscribers.subscribed}</p>
-            </div>
-            <div>
-              <p className="text-admin-muted">Unsubscribed</p>
-              <p className="mt-1 font-display text-2xl text-admin-ink">{data.subscribers.unsubscribed}</p>
-            </div>
-          </div>
-          {data.subscribers.recent.length ? (
-            <AdminTable>
-              <thead>
-                <tr>
-                  <AdminTh>Email</AdminTh>
-                  <AdminTh>Status</AdminTh>
-                  <AdminTh>Source</AdminTh>
-                  <AdminTh>Joined</AdminTh>
-                </tr>
-              </thead>
-              <tbody>
-                {data.subscribers.recent.map((s) => (
-                  <tr key={s.email}>
-                    <AdminTd className="break-all">{s.email}</AdminTd>
-                    <AdminTd>
-                      <AdminStatusBadge status={s.status === "subscribed" ? "active" : "archived"} />
-                    </AdminTd>
-                    <AdminTd>{s.source}</AdminTd>
-                    <AdminTd className="whitespace-nowrap">{formatDate(s.createdAt)}</AdminTd>
+          <AdminCard title="Newsletter subscribers">
+            <dl className="grid grid-cols-2 gap-px border-b border-admin-line bg-admin-line">
+              {(
+                [
+                  ["Subscribed", data.subscribers.subscribed],
+                  ["Unsubscribed", data.subscribers.unsubscribed],
+                ] as const
+              ).map(([label, n]) => (
+                <div key={label} className="bg-admin-paper px-5 py-4 sm:px-6">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-admin-muted">
+                    {label}
+                  </dt>
+                  <dd className="mt-1 text-[1.75rem] font-semibold leading-tight tabular-nums text-admin-ink">
+                    {n}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {data.subscribers.recent.length ? (
+              <AdminTable flush>
+                <thead>
+                  <tr>
+                    <AdminTh>Email</AdminTh>
+                    <AdminTh>Status</AdminTh>
+                    <AdminTh>Signed up from</AdminTh>
+                    <AdminTh>Joined</AdminTh>
                   </tr>
-                ))}
-              </tbody>
-            </AdminTable>
-          ) : (
-            <p className="px-4 py-6 text-sm text-admin-muted sm:px-5">No subscribers yet.</p>
-          )}
-        </AdminCard>
+                </thead>
+                <tbody>
+                  {data.subscribers.recent.map((s) => {
+                    const on = s.status === "subscribed";
+                    return (
+                      <tr
+                        key={s.email}
+                        className="transition-colors hover:bg-admin-soft-2"
+                      >
+                        <AdminTd className="max-w-72">
+                          <span className="block truncate" title={s.email}>
+                            {s.email}
+                          </span>
+                        </AdminTd>
+                        <AdminTd>
+                          <AdminStatusBadge
+                            status={on ? "subscribed" : "unsubscribed"}
+                            label={on ? "Subscribed" : "Unsubscribed"}
+                          />
+                        </AdminTd>
+                        <AdminTd className="text-admin-muted">
+                          {sentence(s.source) || "Store"}
+                        </AdminTd>
+                        <AdminTd className="whitespace-nowrap text-admin-muted">
+                          {formatDate(s.createdAt)}
+                        </AdminTd>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </AdminTable>
+            ) : (
+              <AdminEmptyState
+                title="No subscribers yet"
+                description="People who join the newsletter appear here."
+              />
+            )}
+          </AdminCard>
+        </div>
       ) : null}
     </AdminShell>
   );

@@ -94,7 +94,7 @@ export function paymentLabel(method?: string) {
     case "card":
       return "Card";
     default:
-      return method || "—";
+      return method || "";
   }
 }
 
@@ -107,12 +107,12 @@ export function paymentShort(method?: string) {
     case "card":
       return "Card";
     default:
-      return method?.toUpperCase() || "—";
+      return method?.toUpperCase() || "";
   }
 }
 
 export function formatOrderDate(iso?: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "";
   return new Date(iso).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
@@ -121,7 +121,7 @@ export function formatOrderDate(iso?: string | null) {
 }
 
 export function formatOrderDateTime(iso?: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "";
   return new Date(iso).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
@@ -132,7 +132,7 @@ export function formatOrderDateTime(iso?: string | null) {
 }
 
 export function formatOrderAddress(a?: AdminOrderAddress) {
-  if (!a) return "—";
+  if (!a) return "";
   return (
     [
       [a.firstName, a.lastName].filter(Boolean).join(" "),
@@ -145,7 +145,7 @@ export function formatOrderAddress(a?: AdminOrderAddress) {
       a.phone,
     ]
       .filter(Boolean)
-      .join("\n") || "—"
+      .join("\n") || ""
   );
 }
 

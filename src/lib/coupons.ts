@@ -266,7 +266,7 @@ export async function ensureDefaultCoupons() {
         active: true,
         usageLimit: null,
         posterBgMode: "color",
-        posterBgColor: "#1a2a24",
+        posterBgColor: "#2a1d14",
       },
     ]);
   } catch {

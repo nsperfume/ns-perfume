@@ -1,21 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
-  AdminCard,
+  AdminFieldLabel,
+  adminFieldClass,
+} from "@/components/admin/form-section";
+import {
+  AdminEmptyState,
+  AdminFilterChips,
+  AdminModal,
   AdminNotice,
   AdminPageHeader,
   AdminStatusBadge,
-  readAdminJson,
 } from "@/components/admin/ui";
-import { AdminRichTextEditor } from "@/components/admin/rich-text-editor";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { richTextToPlain, sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
+import { Button } from "@/components/admin/button";
+import { Select } from "@/components/admin/select";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { toast } from "@/components/admin/toast";
+import {
+  AdminFieldError,
+  AdminFormError,
+  useFormValidation,
+  type FieldErrors,
+} from "@/components/admin/form-validation";
+import { useUnsavedChangesGuard } from "@/components/admin/unsaved-changes";
+import { richTextToPlain } from "@/lib/rich-text";
 
 type T = {
   _id: string;
@@ -26,15 +38,69 @@ type T = {
   status?: string;
 };
 
-const schema = z.object({
-  author: z.string().trim().min(2, "Name is required"),
-  city: z.string().trim().max(80).optional(),
-  productName: z.string().trim().max(120).optional(),
-  quote: z.string().trim().min(1, "Quote is required"),
+type FormState = {
+  author: string;
+  city: string;
+  productName: string;
+  quote: string;
+  status: "published" | "draft";
+};
+
+const EMPTY_FORM: FormState = {
+  author: "",
+  city: "Karachi",
+  productName: "",
+  quote: "",
+  status: "published",
+};
+
+/** Mirrors testimonialSchema in src/lib/validation/catalog.ts */
+const testimonialFormSchema = z.object({
+  author: z
+    .string()
+    .trim()
+    .min(2, "Enter the customer's name")
+    .max(80, "Keep the name under 80 characters"),
+  city: z.string().trim().max(60, "Keep the city under 60 characters"),
+  productName: z
+    .string()
+    .trim()
+    .max(80, "Keep the product name under 80 characters"),
+  quote: z
+    .string()
+    .trim()
+    .min(1, "Write the quote")
+    .min(10, "Write at least 10 characters")
+    .max(600, "Keep the quote under 600 characters"),
 });
+
+/** Storefront wraps plain quotes in curly marks, so drop any typed ones. */
+function cleanQuote(text: string) {
+  return text
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^["“”']+|["“”']+$/g, "")
+    .trim();
+}
+
+async function readResult(res: Response) {
+  const json = (await res.json().catch(() => null)) as {
+    ok?: boolean;
+    error?: string;
+    details?: { fieldErrors?: FieldErrors };
+  } | null;
+  return {
+    ok: Boolean(json?.ok),
+    error:
+      json?.error ||
+      (res.ok ? "Unexpected response" : `Request failed (${res.status})`),
+    fieldErrors: json?.details?.fieldErrors,
+  };
+}
 
 export default function AdminTestimonialsPage() {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [user, setUser] = useState<{
     email?: string;
     name?: string;
@@ -42,44 +108,38 @@ export default function AdminTestimonialsPage() {
     isSuperAdmin?: boolean;
   } | null>(null);
   const [items, setItems] = useState<T[]>([]);
-  const [form, setForm] = useState({
-    author: "",
-    city: "Karachi",
-    quote: "",
-    productName: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [notice, setNotice] = useState<{
-    text: string;
-    tone: "info" | "error";
-  } | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [filter, setFilter] = useState("all");
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<T | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [baseline, setBaseline] = useState<FormState>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const v = useFormValidation(testimonialFormSchema);
 
   const canDelete = Boolean(
     user?.isSuperAdmin || user?.role === "super_admin",
   );
+  const dirty = open && JSON.stringify(form) !== JSON.stringify(baseline);
+  const leaveGuard = useUnsavedChangesGuard(dirty && !saving);
 
   function load() {
     setLoading(true);
     fetch("/api/testimonials?all=1")
       .then((r) => r.json())
       .then((j) => {
-        if (j.ok) setItems(j.data);
-        else
-          setNotice({
-            text: j.error || "Could not load testimonials",
-            tone: "error",
-          });
+        if (j.ok) {
+          setItems(j.data);
+          setLoadError("");
+        } else setLoadError(j.error || "Could not load testimonials");
       })
-      .catch(() =>
-        setNotice({
-          text: "Network error while loading testimonials",
-          tone: "error",
-        }),
-      )
+      .catch(() => setLoadError("Network error while loading testimonials"))
       .finally(() => setLoading(false));
   }
 
@@ -93,209 +153,365 @@ export default function AdminTestimonialsPage() {
     load();
   }, [router]);
 
-  async function create(e: React.FormEvent) {
+  const counts = useMemo(
+    () => ({
+      all: items.length,
+      published: items.filter((t) => (t.status || "published") === "published")
+        .length,
+      draft: items.filter((t) => t.status === "draft").length,
+    }),
+    [items],
+  );
+
+  const visible = useMemo(
+    () =>
+      items.filter(
+        (t) => filter === "all" || (t.status || "published") === filter,
+      ),
+    [items, filter],
+  );
+
+  function openForm(t: T | null) {
+    const next: FormState = t
+      ? {
+          author: t.author,
+          city: t.city || "",
+          productName: t.productName || "",
+          quote: cleanQuote(richTextToPlain(t.quote)),
+          status: t.status === "draft" ? "draft" : "published",
+        }
+      : EMPTY_FORM;
+    setEditing(t);
+    setForm(next);
+    setBaseline(next);
+    setFormError("");
+    v.reset();
+    setOpen(true);
+  }
+
+  function closeForm() {
+    setOpen(false);
+    setDiscardOpen(false);
+    setEditing(null);
+  }
+
+  function requestClose() {
+    if (saving) return;
+    if (dirty) setDiscardOpen(true);
+    else closeForm();
+  }
+
+  function update(patch: Partial<FormState>) {
+    const next = { ...form, ...patch };
+    setForm(next);
+    v.revalidate(next);
+  }
+
+  async function save(e: React.FormEvent) {
     e.preventDefault();
-    setErrors({});
-    const plainQuote = richTextToPlain(form.quote);
-    if (plainQuote.length < 12) {
-      setErrors({ quote: "Quote needs at least 12 characters" });
-      return;
-    }
-    const parsed = schema.safeParse({
-      ...form,
-      quote: sanitizeRichHtml(toRichHtml(form.quote)),
-    });
-    if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const k = String(issue.path[0] || "form");
-        if (!next[k]) next[k] = issue.message;
-      }
-      setErrors(next);
-      return;
-    }
+    setFormError("");
+    if (!v.validate(form, formRef.current)) return;
+    const payload = {
+      author: form.author.trim(),
+      city: form.city.trim(),
+      productName: form.productName.trim(),
+      quote: cleanQuote(form.quote),
+      status: form.status,
+    };
     setSaving(true);
-    setNotice(null);
     try {
-      const res = await fetch("/api/testimonials", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...parsed.data,
-          featured: true,
-          status: "published",
-          rating: 5,
-        }),
-      });
-      const json = await readAdminJson(res);
-      if (!json.ok) {
-        setErrors({ form: json.error || "Could not publish testimonial" });
+      const res = editing
+        ? await fetch(`/api/testimonials/${editing._id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        : await fetch("/api/testimonials", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, featured: true, rating: 5 }),
+          });
+      const result = await readResult(res);
+      if (!result.ok) {
+        if (result.fieldErrors) v.setErrors(result.fieldErrors);
+        setFormError(result.error);
+        toast.error(result.error);
         return;
       }
-      setForm({ author: "", city: "Karachi", quote: "", productName: "" });
-      setNotice({ text: "Testimonial published", tone: "info" });
+      toast.success(editing ? "Testimonial saved" : "Testimonial added");
+      setBaseline(form);
+      closeForm();
       load();
     } catch {
-      setErrors({
-        form: "Network error. The testimonial was not saved, try again.",
-      });
+      setFormError("Network error. Nothing was saved, try again.");
+      toast.error("Network error. The testimonial was not saved.");
     } finally {
       setSaving(false);
     }
   }
 
   async function confirmDelete() {
-    if (!deleteId) return;
+    if (!editing) return;
     setDeleting(true);
-    setNotice(null);
     try {
-      const res = await fetch(`/api/testimonials/${deleteId}`, {
+      const res = await fetch(`/api/testimonials/${editing._id}`, {
         method: "DELETE",
       });
-      const json = await readAdminJson(res);
-      if (!json.ok) {
-        setNotice({
-          text: json.error || "Could not delete testimonial",
-          tone: "error",
-        });
+      const result = await readResult(res);
+      if (!result.ok) {
+        toast.error(result.error || "Could not delete the testimonial");
         return;
       }
-      setNotice({ text: "Testimonial deleted", tone: "info" });
+      toast.success("Testimonial deleted");
+      setDeleteOpen(false);
+      setBaseline(form);
+      closeForm();
       load();
     } catch {
-      setNotice({
-        text: "Network error. The testimonial was not deleted.",
-        tone: "error",
-      });
+      toast.error("Network error. The testimonial was not deleted.");
     } finally {
-      setDeleteId(null);
       setDeleting(false);
     }
   }
-
-  const pending = items.find((t) => t._id === deleteId);
 
   return (
     <AdminShell user={user}>
       <AdminPageHeader
         title="Testimonials"
-        description="Homepage quotes. Separate from product-page reviews."
+        action={
+          <Button type="button" onClick={() => openForm(null)}>
+            Add testimonial
+          </Button>
+        }
       />
 
-      {notice ? (
-        <AdminNotice tone={notice.tone} onDismiss={() => setNotice(null)}>
-          {notice.text}
+      {loadError ? (
+        <AdminNotice tone="error" onDismiss={() => setLoadError("")}>
+          {loadError}
         </AdminNotice>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
-        <AdminCard title="Add testimonial">
-          <form className="space-y-4 p-5" onSubmit={create} noValidate>
-            {errors.form ? (
-              <p role="alert" className="text-sm font-medium text-rosewood">
-                {errors.form}
-              </p>
-            ) : null}
-            <Input
-              label="Author"
-              required
-              value={form.author}
-              error={errors.author}
-              onChange={(e) => setForm({ ...form, author: e.target.value })}
-            />
-            <Input
-              label="City"
-              value={form.city}
-              error={errors.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
-            />
-            <Input
-              label="Product mentioned"
-              value={form.productName}
-              error={errors.productName}
-              onChange={(e) =>
-                setForm({ ...form, productName: e.target.value })
-              }
-            />
-            <AdminRichTextEditor
-              label="Quote"
-              required
-              tip="Keep it specific. One or two sentences work best on the homepage."
-              value={form.quote}
-              error={errors.quote}
-              minHeightClass="min-h-28"
-              onChange={(quote) => setForm({ ...form, quote })}
-            />
-            <Button type="submit" disabled={saving} className="w-full">
-              {saving ? "Saving…" : "Publish"}
-            </Button>
-          </form>
-        </AdminCard>
+      <AdminFilterChips
+        className="mb-4"
+        label="Filter testimonials"
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { value: "all", label: "All", count: counts.all },
+          { value: "published", label: "On homepage", count: counts.published },
+          { value: "draft", label: "Hidden", count: counts.draft },
+        ]}
+      />
 
-        <ul className="space-y-3">
-          {items.map((t) => (
-            <li
-              key={t._id}
-              className="rounded-lg border border-admin-line bg-admin-paper p-5"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-admin-ink">
-                      {t.author}
+      {visible.length ? (
+        <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+          {visible.map((t) => (
+            <li key={t._id}>
+              <button
+                type="button"
+                onClick={() => openForm(t)}
+                className="flex h-full w-full cursor-pointer flex-col rounded-lg border border-admin-line bg-admin-paper p-5 text-left shadow-admin transition-colors hover:border-admin-faint"
+                aria-label={`Edit testimonial from ${t.author}`}
+              >
+                <p className="flex-1 text-[0.9375rem] leading-relaxed text-admin-ink">
+                  “{cleanQuote(richTextToPlain(t.quote))}”
+                </p>
+                <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-admin-line pt-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-admin-ink">{t.author}</p>
+                    <p className="text-[0.8125rem] text-admin-muted">
+                      {[t.city, t.productName].filter(Boolean).join(" · ")}
                     </p>
-                    {t.city ? (
-                      <span className="text-sm text-admin-muted">
-                        · {t.city}
-                      </span>
-                    ) : null}
-                    <AdminStatusBadge status={t.status || "published"} />
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed text-admin-muted">
-                    “{richTextToPlain(t.quote)}”
-                  </p>
-                  {t.productName ? (
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-admin-faint">
-                      {t.productName}
-                    </p>
-                  ) : null}
+                  <AdminStatusBadge
+                    status={t.status || "published"}
+                    label={t.status === "draft" ? "Hidden" : "On homepage"}
+                  />
                 </div>
-                {canDelete ? (
-                  <Button
-                    variant="danger"
-                    className="h-10! min-h-10! shrink-0 w-auto! px-4!"
-                    onClick={() => setDeleteId(t._id)}
-                  >
-                    Delete
-                  </Button>
-                ) : null}
-              </div>
+              </button>
             </li>
           ))}
-          {items.length === 0 ? (
-            <li className="rounded-lg border border-admin-line bg-admin-paper px-5 py-12 text-center text-sm text-admin-muted">
-              {loading ? "Loading testimonials…" : "No testimonials yet."}
-            </li>
-          ) : null}
         </ul>
-      </div>
+      ) : (
+        <div className="rounded-lg border border-admin-line bg-admin-paper shadow-admin">
+          {loading ? (
+            <p className="px-6 py-14 text-center text-admin-muted">
+              Loading testimonials…
+            </p>
+          ) : items.length ? (
+            <AdminEmptyState
+              title="Nothing in this filter"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="w-auto!"
+                  onClick={() => setFilter("all")}
+                >
+                  Show all
+                </Button>
+              }
+            />
+          ) : (
+            <AdminEmptyState
+              title="No testimonials yet"
+              description="Add a few kind words from customers for the homepage."
+              action={
+                <Button type="button" onClick={() => openForm(null)}>
+                  Add testimonial
+                </Button>
+              }
+            />
+          )}
+        </div>
+      )}
+
+      <AdminModal
+        open={open}
+        onClose={requestClose}
+        title={editing ? "Edit testimonial" : "Add testimonial"}
+        size="lg"
+      >
+        <form ref={formRef} onSubmit={save} noValidate className="space-y-5">
+          {formError ? <AdminFormError>{formError}</AdminFormError> : null}
+          <div>
+            <AdminFieldLabel htmlFor="t-quote" required>
+              Quote
+            </AdminFieldLabel>
+            <textarea
+              id="t-quote"
+              name="quote"
+              rows={4}
+              className={`${adminFieldClass} min-h-28 resize-y leading-relaxed`}
+              value={form.quote}
+              aria-invalid={v.errors.quote ? true : undefined}
+              onChange={(e) => update({ quote: e.target.value })}
+              onBlur={() => v.revalidate(form)}
+              placeholder="Lasts all day in the heat. Everyone asks what I am wearing."
+              maxLength={620}
+            />
+            <AdminFieldError message={v.errors.quote} />
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <AdminFieldLabel htmlFor="t-author" required>
+                Customer name
+              </AdminFieldLabel>
+              <input
+                id="t-author"
+                name="author"
+                className={adminFieldClass}
+                value={form.author}
+                aria-invalid={v.errors.author ? true : undefined}
+                onChange={(e) => update({ author: e.target.value })}
+                onBlur={() => v.revalidate(form)}
+                maxLength={80}
+              />
+              <AdminFieldError message={v.errors.author} />
+            </div>
+            <div>
+              <AdminFieldLabel htmlFor="t-city">City</AdminFieldLabel>
+              <input
+                id="t-city"
+                name="city"
+                className={adminFieldClass}
+                value={form.city}
+                aria-invalid={v.errors.city ? true : undefined}
+                onChange={(e) => update({ city: e.target.value })}
+                onBlur={() => v.revalidate(form)}
+                maxLength={60}
+              />
+              <AdminFieldError message={v.errors.city} />
+            </div>
+            <div>
+              <AdminFieldLabel htmlFor="t-product">Product</AdminFieldLabel>
+              <input
+                id="t-product"
+                name="productName"
+                className={adminFieldClass}
+                value={form.productName}
+                aria-invalid={v.errors.productName ? true : undefined}
+                onChange={(e) => update({ productName: e.target.value })}
+                onBlur={() => v.revalidate(form)}
+                placeholder="Amber Noir"
+                maxLength={80}
+              />
+              <AdminFieldError message={v.errors.productName} />
+            </div>
+            <Select
+              label="Visibility"
+              value={form.status}
+              onValueChange={(s) =>
+                update({ status: s as "published" | "draft" })
+              }
+              options={[
+                { value: "published", label: "On homepage" },
+                { value: "draft", label: "Hidden" },
+              ]}
+            />
+          </div>
+          <div className="flex flex-col-reverse gap-2 border-t border-admin-line pt-5 sm:flex-row sm:items-center sm:justify-between">
+            {editing && canDelete ? (
+              <Button
+                type="button"
+                variant="danger-outline"
+                size="sm"
+                className="sm:w-auto!"
+                disabled={saving}
+                onClick={() => setDeleteOpen(true)}
+              >
+                Delete
+              </Button>
+            ) : (
+              <span className="hidden sm:block" />
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={saving}
+                onClick={requestClose}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving || (Boolean(editing) && !dirty)}
+              >
+                {saving ? "Saving…" : editing ? "Save" : "Add testimonial"}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </AdminModal>
 
       <ConfirmDialog
-        open={Boolean(deleteId)}
-        onOpenChange={(open) => {
-          if (!open && !deleting) setDeleteId(null);
+        open={discardOpen}
+        onOpenChange={setDiscardOpen}
+        title="Discard unsaved changes?"
+        description="Your edits to this testimonial will be lost."
+        confirmLabel="Discard changes"
+        cancelLabel="Keep editing"
+        onConfirm={closeForm}
+      />
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={(o) => {
+          if (!o && !deleting) setDeleteOpen(false);
         }}
         title="Delete this testimonial?"
         description={
-          pending
-            ? `The quote from ${pending.author} will be permanently removed from the homepage.`
-            : "This testimonial will be permanently removed."
+          editing
+            ? `The quote from ${editing.author} will be removed for good.`
+            : "This testimonial will be removed for good."
         }
         confirmLabel="Delete testimonial"
         cancelLabel="Keep testimonial"
         loading={deleting}
         onConfirm={confirmDelete}
       />
+      {leaveGuard}
     </AdminShell>
   );
 }

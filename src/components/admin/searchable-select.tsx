@@ -9,6 +9,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { AdminFieldLabel } from "@/components/admin/form-section";
+import { AdminFieldError } from "@/components/admin/form-validation";
 import { cn } from "@/lib/cn";
 
 export type SearchableOption = {
@@ -27,6 +28,9 @@ type Props = {
   error?: string;
   emptyLabel?: string;
   className?: string;
+  /** Field key for validation focus */
+  name?: string;
+  required?: boolean;
 };
 
 /**
@@ -40,8 +44,10 @@ export function AdminSearchableSelect({
   placeholder = "Search or type…",
   tip,
   error,
-  emptyLabel = "No matches. Keep typing to use a custom value.",
+  emptyLabel = "No matches",
   className,
+  name,
+  required,
 }: Props) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -155,10 +161,14 @@ export function AdminSearchableSelect({
   }
 
   return (
-    <div ref={rootRef} className={cn("relative block", className)}>
-      <AdminFieldLabel tip={tip}>{label}</AdminFieldLabel>
+    <div ref={rootRef} className={cn("relative block", className)} data-field={name}>
+      <AdminFieldLabel tip={tip} required={required}>
+        {label}
+      </AdminFieldLabel>
       <input
         role="combobox"
+        aria-invalid={error ? true : undefined}
+        aria-label={label}
         aria-expanded={open}
         aria-controls={listId}
         aria-autocomplete="list"
@@ -174,22 +184,15 @@ export function AdminSearchableSelect({
         }}
         onKeyDown={onKeyDown}
         className={cn(
-          "h-11 w-full rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 text-sm text-admin-ink outline-none",
+          "h-11 w-full rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 text-base text-admin-ink outline-none",
           "placeholder:text-admin-faint focus:border-brass focus:ring-2 focus:ring-brass/20",
-          error && "border-rosewood focus:ring-rosewood/20",
         )}
       />
-      {value ? (
-        <p className="mt-1 font-mono text-[11px] text-admin-faint">
-          {value}
-          {selected?.hint ? ` · ${selected.hint}` : ""}
-        </p>
-      ) : null}
       {open ? (
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-70 mt-1 max-h-60 w-full overflow-auto rounded-md border border-admin-line bg-admin-paper py-1 shadow-lg"
+          className="absolute z-70 mt-1 max-h-64 w-full overflow-auto rounded-md border border-admin-line bg-admin-paper py-1 shadow-modal"
         >
           {filtered.length ? (
             filtered.map((option, index) => (
@@ -201,7 +204,7 @@ export function AdminSearchableSelect({
                 <button
                   type="button"
                   className={cn(
-                    "flex w-full cursor-pointer flex-col items-start px-3 py-2 text-left text-sm transition-colors",
+                    "flex min-h-10 w-full cursor-pointer flex-col items-start justify-center px-3 py-2 text-left text-[0.9375rem] transition-colors",
                     index === activeIndex || value === option.value
                       ? "bg-admin-soft text-admin-ink"
                       : "text-admin-ink hover:bg-admin-soft-2",
@@ -211,23 +214,22 @@ export function AdminSearchableSelect({
                   onClick={() => choose(option)}
                 >
                   <span className="font-medium">{option.label}</span>
-                  <span className="font-mono text-[11px] text-admin-faint">
-                    {option.value}
-                    {option.hint ? ` · ${option.hint}` : ""}
-                  </span>
+                  {option.hint ? (
+                    <span className="text-[0.8125rem] text-admin-muted">
+                      {option.hint}
+                    </span>
+                  ) : null}
                 </button>
               </li>
             ))
           ) : (
-            <li className="px-3 py-3 text-sm text-admin-muted">
+            <li className="px-3 py-3 text-[0.9375rem] text-admin-muted">
               {emptyLabel}
             </li>
           )}
         </ul>
       ) : null}
-      {error ? (
-        <p className="mt-1.5 text-sm text-rosewood">{error}</p>
-      ) : null}
+      <AdminFieldError message={error} />
     </div>
   );
 }

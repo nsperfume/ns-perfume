@@ -7,6 +7,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import { AdminFieldLabel } from "@/components/admin/form-section";
+import { AdminFieldError } from "@/components/admin/form-validation";
 import { cn } from "@/lib/cn";
 import { sanitizeRichHtml } from "@/lib/rich-text";
 
@@ -21,6 +22,9 @@ type Props = {
   className?: string;
   /** Tailwind min-height for the editing surface */
   minHeightClass?: string;
+  /** Field key for validation focus */
+  name?: string;
+  onBlur?: () => void;
 };
 
 function ToolbarButton({
@@ -44,7 +48,7 @@ function ToolbarButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded transition-colors",
+        "inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition-colors",
         active
           ? "bg-admin-ink text-admin-paper"
           : "text-admin-muted hover:bg-admin-soft hover:text-admin-ink",
@@ -94,12 +98,12 @@ function IconUnderline() {
 }
 function IconH2() {
   return (
-    <span className="font-display text-[11px] font-bold leading-none">H2</span>
+    <span className="text-xs font-bold leading-none">H2</span>
   );
 }
 function IconH3() {
   return (
-    <span className="font-display text-[10px] font-bold leading-none">H3</span>
+    <span className="text-xs font-bold leading-none">H3</span>
   );
 }
 function IconList() {
@@ -188,6 +192,8 @@ export function AdminRichTextEditor({
   required,
   className,
   minHeightClass = "min-h-52",
+  name,
+  onBlur,
 }: Props) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -214,13 +220,17 @@ export function AdminRichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          "admin-rich-editor prose-ns max-w-none px-3.5 py-3 text-base text-admin-ink outline-none",
+          // Console UI type (the storefront renders this copy in its own faces)
+          "admin-rich-editor prose-ns max-w-none px-3.5 py-3 text-base text-admin-ink outline-none font-sans! [&_h2]:font-sans! [&_h3]:font-sans! [&_h4]:font-sans!",
           minHeightClass,
         ),
       },
     },
     onUpdate: ({ editor: ed }) => {
       onChange(sanitizeRichHtml(ed.getHTML()));
+    },
+    onBlur: () => {
+      onBlur?.();
     },
   });
 
@@ -252,7 +262,7 @@ export function AdminRichTextEditor({
   }
 
   return (
-    <div className={cn("block", className)}>
+    <div className={cn("block", className)} data-field={name}>
       <AdminFieldLabel tip={tip} required={required}>
         {label}
       </AdminFieldLabel>
@@ -260,10 +270,10 @@ export function AdminRichTextEditor({
         className={cn(
           "admin-rte-shell overflow-hidden rounded-md border border-admin-input-border bg-admin-soft-2",
           "focus-within:border-brass focus-within:ring-2 focus-within:ring-brass/20",
-          error && "border-rosewood focus-within:ring-rosewood/20",
+          error && "border-admin-danger! focus-within:ring-admin-danger/20",
         )}
       >
-        <div className="flex flex-wrap items-center gap-0.5 border-b border-admin-line px-1.5 py-1.5">
+        <div className="flex flex-wrap items-center gap-0.5 border-b border-admin-line bg-admin-paper px-1.5 py-1">
           <ToolbarButton
             label="Bold"
             active={editor?.isActive("bold")}
@@ -363,9 +373,7 @@ export function AdminRichTextEditor({
         </div>
         <EditorContent editor={editor} className={cn("block", minHeightClass)} />
       </div>
-      {error ? (
-        <p className="mt-1.5 text-sm text-rosewood">{error}</p>
-      ) : null}
+      <AdminFieldError message={error} />
     </div>
   );
 }

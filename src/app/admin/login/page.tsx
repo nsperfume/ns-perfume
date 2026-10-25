@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { Logo } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/admin/button";
+import { Input } from "@/components/admin/input";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -41,6 +41,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Already signed in (DB-checked by the API): skip the form.
   useEffect(() => {
@@ -72,6 +73,11 @@ export default function AdminLoginPage() {
       }
       setFieldErrors(next);
       setLoading(false);
+      // Focus the first field with an error
+      requestAnimationFrame(() => {
+        const first = ["email", "password"].find((k) => next[k]);
+        if (first) formRef.current?.querySelector<HTMLInputElement>(`[name="${first}"]`)?.focus();
+      });
       return;
     }
     try {
@@ -95,48 +101,55 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-[#eef0f3] px-4 py-10">
+    <div className="admin-app flex min-h-dvh items-center justify-center px-4 py-10">
       <form
+        ref={formRef}
         onSubmit={onSubmit}
         noValidate
-        className="w-full max-w-md rounded-lg border border-[#e4e6ea] bg-paper p-8 shadow-[0_8px_30px_rgba(28,31,38,0.06)] sm:p-10"
+        className="w-full max-w-md rounded-xl border border-admin-line bg-admin-paper p-7 shadow-[0_12px_40px_rgba(28,26,23,0.08)] sm:p-10"
       >
-        <Logo className="h-7 text-ink" />
-        <h1 className="mt-6 font-display text-3xl font-medium tracking-tight text-ink">
-          Admin sign in
+        <Logo className="h-7 text-admin-ink" />
+        <h1 className="mt-7 text-[1.625rem] font-semibold tracking-[-0.015em] text-admin-ink">
+          Sign in to your store
         </h1>
-        <p className="mt-2 text-base leading-relaxed text-[#5c6370]">
-          First bootstrap login creates the owner account.
-        </p>
-        <div className="mt-8 space-y-5">
+        <div className="mt-7 space-y-5">
           <Input
             label="Email"
+            name="email"
             type="email"
             required
             value={email}
             error={fieldErrors.email}
+            aria-invalid={fieldErrors.email ? true : undefined}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="username"
           />
           <Input
             label="Password"
+            name="password"
             type="password"
             required
             value={password}
             error={fieldErrors.password}
+            aria-invalid={fieldErrors.password ? true : undefined}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
           />
         </div>
         {error ? (
-          <p className="mt-4 text-base font-medium text-rosewood">{error}</p>
+          <p
+            role="alert"
+            className="mt-5 rounded-md border border-(--admin-tone-rose-line) bg-(--admin-tone-rose-bg) px-4 py-3 text-[0.9375rem] font-medium text-(--admin-tone-rose-text)"
+          >
+            {error}
+          </p>
         ) : null}
-        <Button type="submit" disabled={loading} className="mt-8 w-full sm:w-full">
-          {loading ? "Signing in…" : "Log in"}
+        <Button type="submit" disabled={loading} className="mt-7 w-full sm:w-full">
+          {loading ? "Signing in…" : "Sign in"}
         </Button>
         <Link
           href="/"
-          className="mt-6 block text-center font-display text-sm font-medium text-brass underline-offset-4 hover:underline"
+          className="mt-5 block text-center text-sm font-semibold text-admin-accent underline-offset-4 hover:underline"
         >
           Back to store
         </Link>

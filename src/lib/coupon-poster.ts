@@ -29,7 +29,7 @@ export const POSTER_FORMATS: Record<
 export const POSTER_COLOR_PRESETS = [
   { label: "Ink", value: "#1c1917" },
   { label: "Brass night", value: "#2c2419" },
-  { label: "Forest", value: "#1a2a24" },
+  { label: "Oud", value: "#2a1d14" },
   { label: "Rosewood", value: "#3d221f" },
   { label: "Stone", value: "#3f3a34" },
   { label: "Paper", value: "#f3efe6" },
