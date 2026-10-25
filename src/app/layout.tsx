@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { EB_Garamond, IBM_Plex_Mono, Ubuntu } from "next/font/google";
 import { SiteShell } from "@/components/layout/site-shell";
 import { siteConfig } from "@/data/site";
@@ -38,7 +38,15 @@ export const metadata: Metadata = {
   openGraph: {
     siteName: siteConfig.name,
     type: "website",
+    locale: "en_PK",
   },
+  twitter: {
+    card: "summary_large_image",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b0b0b",
 };
 
 export default function RootLayout({
