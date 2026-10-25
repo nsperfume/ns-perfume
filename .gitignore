@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local data backups written by scripts
+/scripts/backups/
+
+# extra dev server build folders (NEXT_DIST_DIR)
+/.next-*/

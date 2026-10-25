@@ -10,6 +10,7 @@ import {
   statusSubcopy,
   type OrderStatus,
 } from "@/lib/order-status";
+import { invoicePath } from "@/lib/invoice/access";
 
 function normalizeOrderNumber(raw: string) {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
@@ -85,6 +86,7 @@ export async function POST(req: Request) {
 
     return jsonOk({
       orderNumber: order.orderNumber,
+      invoiceUrl: invoicePath(String(order.orderNumber)),
       status,
       headline: statusHeadline(status),
       subcopy: statusSubcopy(status),

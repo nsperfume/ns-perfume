@@ -1,8 +1,10 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { after } from "next/server";
+import { render } from "react-email";
 import { connectDB } from "@/lib/db";
 import { mailConfig, type MailConfig } from "@/lib/email/config";
 import type { EmailContent, EmailTemplateId } from "@/lib/email/types";
+import type { EmailDefinition } from "@/emails/types";
 import { EmailLogModel } from "@/models/EmailLog";
 
 /** "admin" sends to MAIL_ADMIN_TO (the store inbox). */
@@ -11,7 +13,8 @@ export type Recipient = string | "admin";
 export type OutgoingEmail = {
   template: EmailTemplateId;
   to: Recipient;
-  content: EmailContent;
+  /** React Email template; rendered to HTML + plain text at send time. */
+  email: EmailDefinition;
   replyTo?: string;
   /** Order number, contact id, etc. Stored in the log. */
   ref?: string;
@@ -58,11 +61,32 @@ async function log(entry: {
   }
 }
 
+/** Plain-text alternative: readable key/value tables, no image or logo-link noise. */
+const PLAIN_TEXT = {
+  wordwrap: 90,
+  selectors: [
+    { selector: "table.kv", format: "dataTable", options: { colSpacing: 3, uppercaseHeaderCells: false } },
+    { selector: "img", format: "skip" },
+    { selector: "a.logo", format: "skip" },
+    { selector: "h1", options: { uppercase: false } },
+    { selector: "a", options: { hideLinkHrefIfSameAsText: true } },
+  ],
+};
+
+/** Render a React Email definition to subject, HTML and plain text. */
+export async function renderEmail(email: EmailDefinition): Promise<EmailContent> {
+  const [html, text] = await Promise.all([
+    render(email.element),
+    render(email.element, { plainText: true, htmlToTextOptions: PLAIN_TEXT }),
+  ]);
+  return { subject: email.subject, html, text };
+}
+
 /** Send one email now. Never throws; failures are logged and returned. */
 export async function sendEmail(msg: OutgoingEmail): Promise<SendResult> {
   const cfg = mailConfig();
   const to = msg.to === "admin" ? (cfg?.adminRecipients ?? []).join(", ") : msg.to;
-  const base = { template: msg.template, to: to || String(msg.to), subject: msg.content.subject, ref: msg.ref || "" };
+  const base = { template: msg.template, to: to || String(msg.to), subject: msg.email.subject, ref: msg.ref || "" };
 
   if (!cfg || !to) {
     console.warn(`[email] skipped "${msg.template}": SMTP_USER and SMTP_PASS (or APP_PASSWORD) are not set`);
@@ -71,13 +95,14 @@ export async function sendEmail(msg: OutgoingEmail): Promise<SendResult> {
   }
 
   try {
+    const content = await renderEmail(msg.email);
     const info = await getTransport(cfg).sendMail({
       from: cfg.from,
       to,
       replyTo: msg.replyTo || cfg.replyTo,
-      subject: msg.content.subject,
-      html: msg.content.html,
-      text: msg.content.text,
+      subject: content.subject,
+      html: content.html,
+      text: content.text,
       headers: msg.headers,
     });
     await log({ ...base, status: "sent", messageId: info.messageId });

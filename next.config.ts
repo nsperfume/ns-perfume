@@ -1,13 +1,10 @@
 import type { NextConfig } from "next";
-import path from "node:path";
-import os from "node:os";
 
 /**
- * Slow filesystem warning: .next/dev on a network or throttled disk (e.g. D:)
- * can lag Turbopack. Optional local-temp dist when NS_LOCAL_NEXT_DIST=1.
- * @see https://nextjs.org/docs/app/guides/local-development
+ * NEXT_DIST_DIR runs a second dev server beside `pnpm dev` (each needs its own
+ * build folder). It must be relative: Turbopack only writes inside the project root.
  */
-const useLocalDist = process.env.NS_LOCAL_NEXT_DIST === "1";
+const distDir = process.env.NEXT_DIST_DIR?.trim() || ".next";
 const isDev = process.env.NODE_ENV !== "production";
 
 /**
@@ -47,14 +44,17 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   turbopack: { root: projectRoot },
   outputFileTracingRoot: projectRoot,
+  // react-pdf renders invoices on the server; keep it out of the bundle and ship its fonts.
+  serverExternalPackages: ["@react-pdf/renderer"],
+  outputFileTracingIncludes: {
+    "/api/orders/*/invoice": ["./src/lib/invoice/fonts/**/*"],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   // Hide the floating Next.js "N" badge so it does not cover CTAs while developing.
   devIndicators: false,
-  distDir: useLocalDist
-    ? path.join(os.tmpdir(), "ns-perfume-next")
-    : ".next",
+  distDir,
   // Keep fewer idle entries resident on cold disks
   onDemandEntries: {
     maxInactiveAge: 30 * 1000,

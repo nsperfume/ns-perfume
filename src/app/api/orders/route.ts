@@ -16,6 +16,7 @@ import {
 import { redeemCoupon, releaseCoupon, resolveDiscount } from "@/lib/coupons";
 import { estimateDeliveryRange } from "@/lib/order-status";
 import { generateOrderNumber } from "@/lib/order-number";
+import { invoicePath } from "@/lib/invoice/access";
 
 const field = (max = 200) => z.string().max(max);
 
@@ -299,6 +300,7 @@ export async function POST(req: Request) {
           phone: created.phone,
           createdAt: created.createdAt,
           confirmationEmail: emailConfigured(),
+          invoiceUrl: invoicePath(created.orderNumber),
         },
         { status: 201 },
       );

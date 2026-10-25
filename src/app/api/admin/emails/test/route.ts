@@ -22,11 +22,11 @@ export async function POST(req: Request) {
   const entry = catalogEntry(parsed.data.index);
   if (!entry) return jsonError("Unknown template", 404);
 
-  const content = entry.render();
+  const email = entry.render();
   const result = await sendEmail({
     template: entry.id,
     to: parsed.data.to,
-    content: { ...content, subject: `[Test] ${content.subject}` },
+    email: { ...email, subject: `[Test] ${email.subject}` },
     ref: "test",
   });
   if (result.status !== "sent") {

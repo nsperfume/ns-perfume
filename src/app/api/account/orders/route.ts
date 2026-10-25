@@ -3,6 +3,7 @@ import { jsonError, jsonOk } from "@/lib/api";
 import { requireCustomer } from "@/lib/customer-auth";
 import { OrderModel } from "@/models/Order";
 import { CustomerModel } from "@/models/Customer";
+import { invoicePath } from "@/lib/invoice/access";
 
 export async function GET() {
   try {
@@ -26,6 +27,7 @@ export async function GET() {
       orders.map((o) => ({
         id: String(o._id),
         orderNumber: o.orderNumber,
+        invoiceUrl: invoicePath(String(o.orderNumber)),
         status: o.status,
         totalPkr: o.totalPkr,
         currency: o.currency || "PKR",
