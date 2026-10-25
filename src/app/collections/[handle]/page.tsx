@@ -5,6 +5,7 @@ import { CollectionFilters } from "@/components/collection/filters";
 import { PageHero } from "@/components/layout/page-hero";
 import { JsonLd } from "@/components/seo/json-ld";
 import { siteImages } from "@/data/images";
+import { siteConfig } from "@/data/site";
 import { getCollectionWithProducts } from "@/lib/store-data";
 import { richTextToPlain } from "@/lib/rich-text";
 
@@ -36,18 +37,18 @@ export default async function CollectionPage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "/" },
+      { "@type": "ListItem", position: 1, name: "Home", item: siteConfig.url },
       {
         "@type": "ListItem",
         position: 2,
         name: "Collections",
-        item: "/collections",
+        item: `${siteConfig.url}/collections`,
       },
       {
         "@type": "ListItem",
         position: 3,
         name: collection.title,
-        item: `/collections/${handle}`,
+        item: `${siteConfig.url}/collections/${handle}`,
       },
     ],
   };

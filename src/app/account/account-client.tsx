@@ -37,7 +37,7 @@ type AccountOrder = {
 function authErrorMessage(code: string | null) {
   switch (code) {
     case "google_not_configured":
-      return "Google sign-in is ready in the product. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable it.";
+      return "Google sign-in is not available right now. Sign in with email instead.";
     case "google_state":
     case "google_token":
     case "google_profile":
@@ -114,9 +114,10 @@ function AuthPanel() {
         <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
           Account
         </p>
-        <h1 className="text-display-lg text-balance text-ink">
+        {/* Page H1 is server-rendered in app/account/page.tsx */}
+        <h2 className="text-display-lg text-balance text-ink">
           Sign in without the fuss
-        </h1>
+        </h2>
         <p className="mt-4 max-w-md font-serif text-[1.1rem] leading-relaxed text-taupe">
           One place for order history, repeat orders, and a saved profile.
           Guest checkout still works if you prefer.
@@ -155,26 +156,24 @@ function AuthPanel() {
           ))}
         </div>
 
-        <a
-          href="/api/auth/google"
-          className="mb-5 flex min-h-12 w-full items-center justify-center gap-3 border border-hairline bg-canvas px-4 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:border-ink/40"
-        >
-          <GoogleIcon className="h-6 w-6" />
-          Continue with Google
-        </a>
-        {!googleEnabled ? (
-          <p className="mb-5 font-serif text-[0.95rem] text-taupe">
-            Google button is live. Connect your Google OAuth keys when you are
-            ready.
-          </p>
-        ) : null}
+        {googleEnabled ? (
+          <>
+            <a
+              href="/api/auth/google"
+              className="mb-5 flex min-h-12 w-full items-center justify-center gap-3 border border-hairline bg-canvas px-4 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:border-ink/40"
+            >
+              <GoogleIcon className="h-6 w-6" />
+              Continue with Google
+            </a>
 
-        <div className="relative mb-5 text-center">
-          <span className="absolute inset-x-0 top-1/2 h-px bg-hairline" />
-          <span className="relative bg-paper px-3 font-display text-[10px] uppercase tracking-[0.14em] text-taupe">
-            Or email
-          </span>
-        </div>
+            <div className="relative mb-5 text-center">
+              <span className="absolute inset-x-0 top-1/2 h-px bg-hairline" />
+              <span className="relative bg-paper px-3 font-display text-[10px] uppercase tracking-[0.14em] text-taupe">
+                Or email
+              </span>
+            </div>
+          </>
+        ) : null}
 
         <form className="space-y-4" onSubmit={submit} noValidate>
           {mode === "register" ? (
@@ -304,7 +303,7 @@ function ProfilePanel() {
           <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
             Your account
           </p>
-          <h1 className="text-display-lg text-ink">Hello, {greeting}</h1>
+          <h2 className="text-display-lg text-ink">Hello, {greeting}</h2>
           <p className="mt-2 font-serif text-[1.05rem] text-taupe">
             {user?.email}
           </p>

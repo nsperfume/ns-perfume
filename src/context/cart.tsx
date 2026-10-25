@@ -39,7 +39,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setLines(JSON.parse(raw) as CartLine[]);
+      if (raw) {
+        // Gift cards were never issued; drop lines saved by the old gift card page.
+        const saved = (JSON.parse(raw) as CartLine[]).filter(
+          (l) => l.productHandle !== "gift-card",
+        );
+        setLines(saved);
+      }
     } catch {
       /* ignore */
     }

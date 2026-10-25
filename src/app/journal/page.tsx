@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "Journal - scent guides and notes",
   description:
     "NS Perfume journal on scent pyramids, heat, office wear, layering, and gifting in plain language.",
+  alternates: { canonical: "/journal" },
 };
 
 export const dynamic = "force-dynamic";

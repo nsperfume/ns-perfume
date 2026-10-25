@@ -18,6 +18,7 @@ import {
 } from "@/data/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/cn";
 
 const iconMap: Record<(typeof socialLinks)[number]["slug"], SimpleIcon> = {
@@ -60,6 +61,42 @@ const columnOrder = [
 export function Footer() {
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // No mailing-list service yet: signups land in the care inbox via the contact endpoint.
+  async function subscribe(e: React.FormEvent) {
+    e.preventDefault();
+    const value = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Newsletter signup",
+          email: value,
+          topic: "general",
+          message: `Newsletter signup. Please add ${value} to the list.`,
+        }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        setError(json?.error || "Could not sign you up. Try again in a moment.");
+        return;
+      }
+      setDone(true);
+    } catch {
+      setError("Network error. Try again in a moment.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <footer
@@ -79,9 +116,7 @@ export function Footer() {
           className="mb-12 grid gap-10 border-b border-white/10 pb-12 lg:grid-cols-12 lg:items-end lg:gap-12"
         >
           <div className="lg:col-span-5">
-            <p className="font-display text-2xl tracking-tight text-paper sm:text-3xl">
-              {siteConfig.name}
-            </p>
+            <Logo className="h-9 text-paper sm:h-10" />
             <p className="mt-3 max-w-md font-serif text-body-lg leading-relaxed text-paper/70">
               {siteConfig.description}
             </p>
@@ -120,13 +155,7 @@ export function Footer() {
                 Thanks. You are on the list.
               </p>
             ) : (
-              <form
-                className="mt-5"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (email.includes("@")) setDone(true);
-                }}
-              >
+              <form className="mt-5" onSubmit={subscribe} noValidate>
                 {/* Mobile: stacked. sm+: field + Subscribe share one flush bar */}
                 <div className="flex w-full flex-col overflow-hidden rounded-md border border-white/30 bg-white/10 focus-within:border-brass sm:h-12 sm:flex-row">
                   <Input
@@ -134,14 +163,20 @@ export function Footer() {
                     name="email"
                     placeholder="Email address"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setError(null);
+                    }}
                     required
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? "newsletter-error" : undefined}
                     className="h-12! min-h-0! flex-1 rounded-none border-0 bg-transparent px-4 py-0 font-serif text-[1.05rem] leading-none text-paper shadow-none placeholder:text-paper/50 focus:border-transparent focus:bg-transparent focus:outline-none focus:ring-0 sm:h-full!"
                     aria-label="Email for newsletter"
                   />
                   <Button
                     type="submit"
                     variant="secondary"
+                    disabled={sending}
                     className={cn(
                       "h-11! min-h-0! w-full! max-w-none! shrink-0 self-stretch sm:h-full! sm:w-auto!",
                       "rounded-none! border-0 border-t border-white/25 sm:border-t-0 sm:border-l",
@@ -150,9 +185,18 @@ export function Footer() {
                       "[&>span:last-child]:px-6",
                     )}
                   >
-                    Subscribe
+                    {sending ? "Sending…" : "Subscribe"}
                   </Button>
                 </div>
+                {error ? (
+                  <p
+                    id="newsletter-error"
+                    role="alert"
+                    className="mt-3 font-serif text-[0.95rem] text-[#ff8a80]"
+                  >
+                    {error}
+                  </p>
+                ) : null}
               </form>
             )}
           </div>
@@ -209,7 +253,7 @@ export function Footer() {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-8">
             <p className="font-mono text-[11px] tracking-wide text-paper/40">
-              Visa · Mastercard · Amex · PayPal
+              Cash on delivery · Bank transfer · JazzCash · Easypaisa
             </p>
             <p className="font-sans text-caption text-paper/45">
               © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.

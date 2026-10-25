@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "FAQ on shipping, notes, authenticity",
   description:
     "Answers on shipping, returns, authenticity, ingredients, concentration, and how to store perfume.",
+  alternates: { canonical: "/faq" },
 };
 
 export default function FaqPage() {

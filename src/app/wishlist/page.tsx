@@ -5,6 +5,7 @@ import { pageCopy } from "@/data/copy";
 export const metadata: Metadata = {
   title: "Wishlist",
   description: pageCopy.wishlist.description,
+  robots: { index: false },
 };
 
 export default function WishlistPage() {

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Button } from "@/components/ui/button";
 import { RichHtml } from "@/components/ui/rich-html";
+import { siteConfig } from "@/data/site";
 import {
   getJournalPost,
   getJournalPosts,
@@ -25,15 +26,25 @@ function formatDate(value: string) {
   });
 }
 
+/** Root layout appends " | NS Perfume"; keep the full title tag under 60 characters. */
+const MAX_TITLE = 59 - ` | ${siteConfig.name}`.length;
+
+function seoTitle(title: string) {
+  if (title.length <= MAX_TITLE) return title;
+  const cut = title.slice(0, MAX_TITLE - 1);
+  const space = cut.lastIndexOf(" ");
+  const trimmed = space > MAX_TITLE * 0.6 ? cut.slice(0, space) : cut;
+  return `${trimmed.replace(/[\s,:;.\-]+$/, "")}…`;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = await getJournalPost(slug);
   if (!post) return { title: "Journal" };
-  const title =
-    post.title.length > 50 ? `${post.title.slice(0, 47)}...` : post.title;
   return {
-    title: `${title} | Journal`,
+    title: seoTitle(post.title),
     description: post.excerpt.slice(0, 154),
+    alternates: { canonical: `/journal/${post.slug}` },
   };
 }
 

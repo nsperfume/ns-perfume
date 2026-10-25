@@ -17,6 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: policy.title,
     description: `${policy.title} for NS Perfume customers.`,
+    alternates: { canonical: `/policies/${slug}` },
   };
 }
 

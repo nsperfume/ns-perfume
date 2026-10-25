@@ -19,12 +19,13 @@ import {
   getStoreProducts,
   getTestimonials,
 } from "@/lib/store-data";
-import { siteConfig } from "@/data/site";
+import { siteConfig, socialLinks } from "@/data/site";
 
 export const metadata: Metadata = {
   title: "Perfume for heat, stillness, and evening",
   description:
     "NS Perfume with honest note pyramids and sillage ratings. Shop bottles you can match to work, heat, and the hours after dinner.",
+  alternates: { canonical: "/" },
 };
 
 export const dynamic = "force-dynamic";
@@ -42,7 +43,9 @@ export default async function HomePage() {
     "@type": "Organization",
     name: siteConfig.name,
     url: siteConfig.url,
+    logo: `${siteConfig.url}/brand/ns-perfume-logo.svg`,
     description: siteConfig.description,
+    sameAs: socialLinks.map((s) => s.href),
   };
 
   const bestsellerList =

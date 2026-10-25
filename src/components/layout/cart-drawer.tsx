@@ -211,6 +211,7 @@ export function CartDrawer() {
                   <Link
                     href={`/products/${line.productHandle}`}
                     onClick={closeCart}
+                    aria-label={`View ${line.name}`}
                     className="relative aspect-square overflow-hidden bg-muted"
                   >
                     <Image

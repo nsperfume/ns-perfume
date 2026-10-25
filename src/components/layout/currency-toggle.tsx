@@ -11,12 +11,12 @@ export function CurrencyToggle({
   className?: string;
   tone?: "light" | "dark";
 }) {
-  const { currency, setCurrency, currencies, loading } = useCurrency();
+  const { displayCurrency, setCurrency, currencies, loading } = useCurrency();
 
   return (
     <Select
-      value={currency}
-      onValueChange={(v) => setCurrency(v as typeof currency)}
+      value={displayCurrency}
+      onValueChange={(v) => setCurrency(v as typeof displayCurrency)}
       disabled={loading}
       tone={tone}
       aria-label="Select currency"

@@ -17,6 +17,7 @@ import {
   StoreSectionHeader,
 } from "@/components/layout/store-section";
 import { siteImages } from "@/data/images";
+import { siteConfig } from "@/data/site";
 import {
   getProductReviews,
   getStoreProduct,
@@ -60,7 +61,16 @@ export default async function ProductPage({ params }: Props) {
       ? related
       : all.filter((p) => p.handle !== product.handle).slice(0, 4);
   const productReviews = await getProductReviews(product.handle);
-  const price = product.prices[0]?.price ?? 0;
+
+  // Structured data needs absolute URLs; uploaded images may already be absolute.
+  const absoluteUrl = (path: string) =>
+    /^https?:\/\//i.test(path)
+      ? path
+      : `${siteConfig.url}${path.startsWith("/") ? "" : "/"}${path}`;
+  const productUrl = absoluteUrl(`/products/${product.handle}`);
+  const sizePrices = product.prices.map((p) => p.price).filter((p) => p > 0);
+  const lowPrice = sizePrices.length ? Math.min(...sizePrices) : 0;
+  const highPrice = sizePrices.length ? Math.max(...sizePrices) : 0;
 
   const productLd = {
     "@context": "https://schema.org",
@@ -69,12 +79,16 @@ export default async function ProductPage({ params }: Props) {
     description:
       richTextToPlain(product.description || "").trim() || product.descriptor,
     sku: product.prices[0]?.sku,
-    brand: { "@type": "Brand", name: "NS Perfume" },
-    image: product.gallery?.[0] || product.imagePrimary,
+    brand: { "@type": "Brand", name: siteConfig.name },
+    image: absoluteUrl(product.gallery?.[0] || product.imagePrimary),
+    url: productUrl,
     offers: {
-      "@type": "Offer",
+      "@type": "AggregateOffer",
       priceCurrency: "PKR",
-      price: String(price),
+      lowPrice: String(lowPrice),
+      highPrice: String(highPrice),
+      offerCount: product.prices.length,
+      url: productUrl,
       availability: product.inStock
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
@@ -93,18 +107,18 @@ export default async function ProductPage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "/" },
+      { "@type": "ListItem", position: 1, name: "Home", item: siteConfig.url },
       {
         "@type": "ListItem",
         position: 2,
         name: "Products",
-        item: "/products",
+        item: absoluteUrl("/products"),
       },
       {
         "@type": "ListItem",
         position: 3,
         name: product.name,
-        item: `/products/${product.handle}`,
+        item: productUrl,
       },
     ],
   };

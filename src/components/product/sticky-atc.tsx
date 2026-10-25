@@ -29,16 +29,20 @@ export function StickyAddToCart({
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
+    // The sentinel sits right after the main Add to bag button. Only show the bar once
+    // that button has scrolled up out of view, not while it is still below the fold.
     const obs = new IntersectionObserver(
-      ([entry]) => setVisible(!entry.isIntersecting),
-      { threshold: 0, rootMargin: "0px 0px -20% 0px" },
+      ([entry]) =>
+        setVisible(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 },
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
   useEffect(() => {
-    const footer = document.querySelector("footer");
+    const footer =
+      document.getElementById("site-footer") ?? document.querySelector("footer");
     if (!footer) return;
     const obs = new IntersectionObserver(
       ([entry]) => setFooterVisible(entry.isIntersecting),

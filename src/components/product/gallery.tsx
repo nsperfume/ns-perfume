@@ -53,6 +53,16 @@ export function ProductGallery({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      // Leave arrow keys alone while typing (reviews, gift note, search) or using a slider.
+      const t = e.target as HTMLElement | null;
+      if (
+        t?.closest(
+          "input, textarea, select, [contenteditable]:not([contenteditable='false']), [role='slider'], [role='listbox'], [role='menu']",
+        )
+      ) {
+        return;
+      }
       if (e.key === "ArrowLeft") go(-1);
       if (e.key === "ArrowRight") go(1);
     };

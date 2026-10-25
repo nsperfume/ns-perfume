@@ -11,6 +11,8 @@ import {
 import { useCurrency } from "@/context/currency";
 import { formatSize } from "@/lib/format";
 import { TransferDetails } from "@/components/commerce/transfer-details";
+import { PayableAmount } from "@/components/commerce/price";
+import { Logo } from "@/components/brand/logo";
 import { siteConfig } from "@/data/site";
 
 const paymentLabels: Record<PaymentMethodId, string> = {
@@ -20,7 +22,7 @@ const paymentLabels: Record<PaymentMethodId, string> = {
 };
 
 export function ThankYouClient() {
-  const { format } = useCurrency();
+  const { format, formatPkr } = useCurrency();
   const [order, setOrder] = useState<CompletedOrderSnapshot | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -64,9 +66,10 @@ export function ThankYouClient() {
         <div className="order-2 px-5 py-10 sm:px-8 lg:order-1 lg:px-12 xl:px-16">
           <Link
             href="/"
-            className="inline-block font-display text-2xl font-medium tracking-tight"
+            aria-label={`${siteConfig.name} home`}
+            className="inline-block text-ink"
           >
-            NS Perfume
+            <Logo className="h-7 sm:h-8" />
           </Link>
 
           <div className="mt-10 flex items-start gap-4">
@@ -95,12 +98,20 @@ export function ThankYouClient() {
           </div>
 
           <section className="mt-8 rounded-md border border-hairline p-5">
-            <h2 className="font-display text-lg font-medium">Your order is confirmed</h2>
+            <h2 className="font-display text-lg font-medium">What happens next</h2>
             <p className="mt-2 text-[14px] leading-relaxed text-taupe">
-              You’ll receive an email at{" "}
-              <span className="font-medium text-ink">{order.email}</span> when
-              your order is ready. You can also track status anytime with your
-              order number and email.
+              Our team will confirm the details with you by phone or WhatsApp
+              {order.phone ? (
+                <>
+                  {" "}
+                  on <span className="font-medium text-ink">{order.phone}</span>
+                </>
+              ) : null}{" "}
+              before dispatch. Keep your order number{" "}
+              <span className="font-mono font-medium text-ink">
+                {order.orderNumber}
+              </span>{" "}
+              to track status anytime with the email you used at checkout.
             </p>
             <Link
               href={`/track-order?orderNumber=${encodeURIComponent(order.orderNumber)}&email=${encodeURIComponent(order.email)}`}
@@ -115,9 +126,10 @@ export function ThankYouClient() {
               <h2 className="font-display text-lg font-medium">Cash on delivery</h2>
               <p className="mt-2 text-[14px] leading-relaxed text-taupe">
                 Pay{" "}
-                <span className="font-medium text-ink">
-                  {format(order.totalPkr)}
-                </span>{" "}
+                <PayableAmount
+                  amountPkr={order.totalPkr}
+                  className="font-medium text-ink"
+                />{" "}
                 in cash to the courier. Keep exact change if you can. We may call
                 the phone on your order before delivery.
               </p>
@@ -131,9 +143,10 @@ export function ThankYouClient() {
               </h2>
               <p className="mt-2 text-[14px] leading-relaxed text-taupe">
                 Transfer{" "}
-                <span className="font-medium text-ink">
-                  {format(order.totalPkr)}
-                </span>{" "}
+                <PayableAmount
+                  amountPkr={order.totalPkr}
+                  className="font-medium text-ink"
+                />{" "}
                 by bank, JazzCash, or Easypaisa. Use order number{" "}
                 <span className="font-mono font-medium text-ink">
                   {order.orderNumber}
@@ -166,7 +179,7 @@ export function ThankYouClient() {
                   Payment method
                 </h3>
                 <p className="mt-2 text-[14px]">
-                  {paymentLabels[order.paymentMethod]} · {format(order.totalPkr)}
+                  {paymentLabels[order.paymentMethod]} · {formatPkr(order.totalPkr)}
                 </p>
               </div>
               <div>
@@ -284,11 +297,13 @@ export function ThankYouClient() {
                 </span>
               </div>
             </div>
-            <div className="mt-4 flex items-end justify-between border-t border-hairline pt-4">
+            <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
               <span className="font-display text-base font-medium text-ink">Total</span>
-              <span className="font-display text-2xl font-medium tracking-tight text-ink">
-                {format(order.totalPkr)}
-              </span>
+              <PayableAmount
+                amountPkr={order.totalPkr}
+                variant="stacked"
+                className="items-end text-right font-display text-2xl font-medium tracking-tight text-ink"
+              />
             </div>
           </div>
         </aside>

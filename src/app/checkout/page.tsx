@@ -8,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function CheckoutPage() {
-  return <CheckoutClient />;
+  return (
+    <>
+      <h1 className="sr-only">Checkout</h1>
+      <CheckoutClient />
+    </>
+  );
 }

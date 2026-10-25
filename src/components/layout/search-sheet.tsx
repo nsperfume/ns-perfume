@@ -18,15 +18,20 @@ import type { StoreProduct } from "@/lib/mappers";
 import { Price } from "@/components/commerce/price";
 import { cn } from "@/lib/cn";
 
-const QUICK_SEARCHES = [
+/** Note chips fill the search box; `href` chips jump straight to a collection. */
+const QUICK_SEARCHES: { label: string; q?: string; href?: string }[] = [
   { label: "Oud", q: "oud" },
   { label: "Rose", q: "rose" },
   { label: "Vanilla", q: "vanilla" },
   { label: "Cedar", q: "cedar" },
   { label: "Citrus", q: "citrus" },
-  { label: "For Her", q: "iris" },
   { label: "Saffron", q: "saffron" },
-] as const;
+  { label: "For Her", href: "/collections/for-her" },
+  { label: "For Him", href: "/collections/for-him" },
+];
+
+const quickChipClass =
+  "cursor-pointer rounded-xs border border-hairline bg-[#FAF8F4] px-3 py-1.5 font-serif text-[0.95rem] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper";
 
 /**
  * Drops open from the bottom edge of the fixed chrome (topbar + nav).
@@ -265,19 +270,30 @@ export function SearchSheet() {
               <div className="space-y-5">
                 <div>
                   <p className="mb-2.5 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
-                    Try a note
+                    Try a note or collection
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {QUICK_SEARCHES.map((item) => (
-                      <button
-                        key={item.q}
-                        type="button"
-                        onClick={() => applyQuick(item.q)}
-                        className="cursor-pointer rounded-xs border border-hairline bg-[#FAF8F4] px-3 py-1.5 font-serif text-[0.95rem] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
-                      >
-                        {item.label}
-                      </button>
-                    ))}
+                    {QUICK_SEARCHES.map((item) =>
+                      item.href ? (
+                        <Link
+                          key={item.label}
+                          href={item.href}
+                          onClick={closeSearch}
+                          className={quickChipClass}
+                        >
+                          {item.label}
+                        </Link>
+                      ) : (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => applyQuick(item.q ?? item.label)}
+                          className={quickChipClass}
+                        >
+                          {item.label}
+                        </button>
+                      ),
+                    )}
                   </div>
                 </div>
 

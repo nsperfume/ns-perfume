@@ -11,14 +11,18 @@ export const metadata: Metadata = {
 
 export default function TrackOrderPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-canvas font-serif text-base text-taupe">
-          Loading…
-        </div>
-      }
-    >
-      <TrackOrderClient />
-    </Suspense>
+    <>
+      {/* The client view streams in behind Suspense, so the page H1 lives here. */}
+      <h1 className="sr-only">Track your order</h1>
+      <Suspense
+        fallback={
+          <div className="flex min-h-dvh items-center justify-center bg-canvas font-serif text-base text-taupe">
+            Loading…
+          </div>
+        }
+      >
+        <TrackOrderClient />
+      </Suspense>
+    </>
   );
 }

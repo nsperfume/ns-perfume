@@ -162,6 +162,9 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
       name: product.name,
       image: product.imagePrimary,
       pricePkr: selected?.price ?? product.prices[0]?.price ?? 0,
+      // Remember the exact size so the wishlist can move this bottle to the bag later.
+      sku: selected?.sku,
+      sizeMl: selected?.ml,
     });
     showToast(
       nextSaved
@@ -294,13 +297,19 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
                   />
                 </span>
               </label>
-              <textarea
-                value={giftMessage}
-                onChange={(e) => setGiftMessage(e.target.value.slice(0, 120))}
-                rows={2}
-                placeholder="Optional gift message"
-                className="w-full resize-none border border-hairline bg-paper px-3 py-2 font-serif text-[0.95rem] text-ink outline-none placeholder:text-taupe/60 focus:border-ink/40"
-              />
+              <label className="block">
+                <span className="mb-1.5 block font-display text-[11px] font-medium uppercase tracking-[0.12em] text-ink">
+                  Gift message (optional)
+                </span>
+                <textarea
+                  value={giftMessage}
+                  onChange={(e) => setGiftMessage(e.target.value.slice(0, 120))}
+                  rows={2}
+                  maxLength={120}
+                  placeholder="Up to 120 characters"
+                  className="w-full resize-none border border-hairline bg-paper px-3 py-2 font-serif text-[0.95rem] text-ink outline-none placeholder:text-taupe/60 focus:border-ink/40"
+                />
+              </label>
             </div>
           ) : null}
         </div>

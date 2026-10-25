@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DeliveryMap } from "@/components/track/delivery-map";
+import { PayableAmount } from "@/components/commerce/price";
+import { Logo } from "@/components/brand/logo";
 import { useCurrency } from "@/context/currency";
 import { formatSize } from "@/lib/format";
 import {
@@ -92,13 +94,15 @@ function TrackLookUpForm({
       <header className="mb-8 text-center">
         <Link
           href="/"
-          className="inline-block font-display text-xl font-medium tracking-tight text-ink"
+          aria-label={`${siteConfig.name} home`}
+          className="inline-block text-ink"
         >
-          {siteConfig.name}
+          <Logo className="h-7" />
         </Link>
-        <h1 className="mt-8 font-display text-3xl font-medium tracking-tight text-ink">
+        {/* Page H1 is server-rendered in app/track-order/page.tsx */}
+        <h2 className="mt-8 font-display text-3xl font-medium tracking-tight text-ink">
           Track your order
-        </h1>
+        </h2>
         <p className="mt-2 font-serif text-base leading-relaxed text-taupe">
           Enter the order number from your confirmation and the email used at
           checkout.
@@ -258,9 +262,10 @@ function OrderStatusView({
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/"
-            className="font-display text-xl font-medium tracking-tight text-ink"
+            aria-label={`${siteConfig.name} home`}
+            className="text-ink"
           >
-            {siteConfig.name}
+            <Logo className="h-7" />
           </Link>
           <button
             type="button"
@@ -274,14 +279,14 @@ function OrderStatusView({
         <p className="text-[13px] text-taupe">
           Order <span className="font-mono text-ink">#{order.orderNumber}</span>
         </p>
-        <h1 className="mt-1 font-display text-2xl font-medium leading-snug text-ink sm:text-3xl">
+        <h2 className="mt-1 font-display text-2xl font-medium leading-snug text-ink sm:text-3xl">
           {order.headline}
           {name ? (
             <span className="font-normal text-taupe">
               , {name.split(" ")[0]}
             </span>
           ) : null}
-        </h1>
+        </h2>
         <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-taupe">
           {order.subcopy}
         </p>
@@ -385,7 +390,7 @@ function OrderStatusView({
                   "—"}
               </p>
               <p className="text-[14px] text-taupe">
-                {format(order.totalPkr)}
+                <PayableAmount amountPkr={order.totalPkr} />
               </p>
             </div>
             <div>
@@ -508,11 +513,13 @@ function OrderStatusView({
               <span className="text-ink">{format(order.taxPkr || 0)}</span>
             </div>
           </div>
-          <div className="mt-4 flex items-end justify-between border-t border-hairline pt-4">
+          <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
             <span className="font-display text-base font-medium text-ink">Total</span>
-            <span className="font-display text-2xl font-medium tracking-tight text-ink">
-              {format(order.totalPkr)}
-            </span>
+            <PayableAmount
+              amountPkr={order.totalPkr}
+              variant="stacked"
+              className="items-end text-right font-display text-2xl font-medium tracking-tight text-ink"
+            />
           </div>
         </div>
       </aside>

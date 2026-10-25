@@ -21,6 +21,7 @@ import { useUi } from "@/context/ui";
 import { cn } from "@/lib/cn";
 import { CurrencyToggle } from "@/components/layout/currency-toggle";
 import { NavDropdown } from "@/components/layout/nav-dropdown";
+import { Logo } from "@/components/brand/logo";
 
 const shopColumns = [
   { title: "Gender", items: shopMegaMenu.gender },
@@ -54,6 +55,7 @@ export function Header() {
   const [ready, setReady] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const mobilePanelRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const cartBadgeRef = useRef<HTMLSpanElement>(null);
   const wishBadgeRef = useRef<HTMLSpanElement>(null);
   const prevCart = useRef(itemCount);
@@ -110,8 +112,15 @@ export function Header() {
     }
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setMobileOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
     };
   }, [mobileOpen]);
 
@@ -143,9 +152,12 @@ export function Header() {
     <header ref={headerRef} className="nav-glass overflow-visible text-paper">
       <div className="container-ns flex h-16 items-center gap-1.5 sm:h-[4.25rem] sm:gap-3">
         <button
+          ref={menuButtonRef}
           type="button"
           className={cn(iconBtn, "-ml-1 lg:hidden")}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-menu"
           onClick={() => setMobileOpen((v) => !v)}
         >
           {mobileOpen ? (
@@ -157,9 +169,10 @@ export function Header() {
 
         <Link
           href="/"
-          className="shrink-0 cursor-pointer font-display text-[1.2rem] font-medium leading-none tracking-tight text-paper transition-colors hover:text-white sm:text-[1.55rem]"
+          aria-label={`${siteConfig.name} home`}
+          className="shrink-0 cursor-pointer text-paper transition-colors hover:text-white"
         >
-          {siteConfig.name}
+          <Logo className="h-7 sm:h-8" />
         </Link>
 
         <nav
@@ -253,6 +266,7 @@ export function Header() {
       {mobileOpen ? (
         <div
           ref={mobilePanelRef}
+          id="mobile-menu"
           className="nav-glass-panel max-h-[calc(100dvh-var(--chrome-height))] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-white/10 text-paper lg:hidden"
         >
           <div className="space-y-1 px-5 py-5 pb-8">

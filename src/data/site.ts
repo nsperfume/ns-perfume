@@ -100,7 +100,6 @@ export const footerColumns = {
   company: [
     { label: "Our Story", href: "/about" },
     { label: "Ingredients & Sourcing", href: "/about#sourcing" },
-    { label: "Press", href: "/about#press" },
     { label: "Journal", href: "/journal" },
     { label: "Find Your Scent", href: "/find-your-scent" },
   ],
@@ -154,7 +153,7 @@ export const faqItems = [
   {
     question: "How long does shipping take?",
     answer:
-      "Domestic orders typically leave within two business days and arrive in three to seven days. International timelines vary by customs clearance.",
+      "We deliver within Pakistan only. In-stock orders usually leave within one business day. Standard delivery takes 3 to 5 business days and express takes 1 to 2 business days.",
   },
   {
     question: "What is your return policy?",
@@ -242,7 +241,7 @@ export const policies: Record<
       },
       {
         heading: "Rates",
-        body: "Standard domestic shipping is calculated at checkout. Orders over $75 qualify for complimentary standard shipping where available.",
+        body: "We deliver within Pakistan. Standard and express rates are shown at checkout, and orders over Rs 8,000 qualify for complimentary standard shipping. Standard delivery takes 3 to 5 business days and express takes 1 to 2.",
       },
       {
         heading: "Damage",
@@ -257,19 +256,4 @@ export const trustBadges = [
   "Complimentary shipping over Rs 8,000",
   "Easy returns on eligible sealed bottles",
   "Authenticity checked before dispatch",
-] as const;
-
-export const testimonials = [
-  {
-    quote: "Amber Noir lasts through dinner without turning heavy. That is rare.",
-    attribution: "Vogue Beauty Desk",
-  },
-  {
-    quote: "Finally a fragrance site that lists notes and sillage like it matters.",
-    attribution: "City Fragrance Weekly",
-  },
-  {
-    quote: "Iris Solstice is daylight powder without the grand-mère dust.",
-    attribution: "Scent Letter",
-  },
 ] as const;

@@ -7,6 +7,7 @@ import { formatSize } from "@/lib/format";
 import { useCurrency } from "@/context/currency";
 import { FREE_SHIPPING_THRESHOLD_PKR } from "@/lib/checkout";
 import { cn } from "@/lib/cn";
+import { PayableAmount } from "@/components/commerce/price";
 
 type SummaryProps = {
   lines: CartLine[];
@@ -32,7 +33,7 @@ export function CheckoutOrderSummary({
   onApplyDiscount,
   onRemoveDiscount,
 }: SummaryProps) {
-  const { format, currency } = useCurrency();
+  const { format, formatPkr } = useCurrency();
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState<string | null>(null);
   const [openMobile, setOpenMobile] = useState(false);
@@ -94,22 +95,27 @@ export function CheckoutOrderSummary({
       </ul>
 
       <div className="mt-5 flex gap-2">
-        <input
-          type="text"
-          value={codeInput}
-          onChange={(e) => {
-            setCodeInput(e.target.value);
-            setCodeError(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              apply();
-            }
-          }}
-          placeholder="Discount code or gift card"
-          className="min-h-12 flex-1 rounded-md border border-hairline bg-paper px-3 font-serif text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
-        />
+        {/* Summary renders twice (mobile + desktop), so wrap instead of id-based htmlFor. */}
+        <label className="flex min-w-0 flex-1">
+          <span className="sr-only">Discount code</span>
+          <input
+            type="text"
+            autoComplete="off"
+            value={codeInput}
+            onChange={(e) => {
+              setCodeInput(e.target.value);
+              setCodeError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                apply();
+              }
+            }}
+            placeholder="Discount code"
+            className="min-h-12 min-w-0 flex-1 rounded-md border border-hairline bg-paper px-3 font-serif text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+          />
+        </label>
         <button
           type="button"
           onClick={apply}
@@ -181,13 +187,15 @@ export function CheckoutOrderSummary({
         </div>
       </div>
 
-      <div className="mt-4 flex items-end justify-between border-t border-hairline pt-4">
+      <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
         <span className="font-display text-base font-medium text-ink">Total</span>
-        <div className="text-right">
-          <span className="mr-2 font-display text-xs text-taupe">{currency}</span>
-          <span className="font-display text-2xl font-medium tracking-tight text-ink">
-            {format(totalPkr)}
-          </span>
+        <div className="flex items-baseline text-right">
+          <span className="mr-2 font-display text-xs text-taupe">PKR</span>
+          <PayableAmount
+            amountPkr={totalPkr}
+            variant="stacked"
+            className="items-end font-display text-2xl font-medium tracking-tight text-ink"
+          />
         </div>
       </div>
     </>
@@ -209,7 +217,7 @@ export function CheckoutOrderSummary({
             </span>
           </span>
           <span className="font-display text-base font-medium text-ink">
-            {format(totalPkr)}
+            {formatPkr(totalPkr)}
           </span>
         </button>
         <div

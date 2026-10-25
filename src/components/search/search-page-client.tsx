@@ -1,28 +1,48 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ProductCard } from "@/components/commerce/product-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PageHero } from "@/components/layout/page-hero";
-import { pageCopy } from "@/data/copy";
-import { siteImages } from "@/data/images";
 import type { StoreProduct } from "@/lib/mappers";
+
+type CatalogStatus = "loading" | "ready" | "error";
 
 export function SearchPageClient() {
   const params = useSearchParams();
-  const initial = params.get("q") || "";
-  const [query, setQuery] = useState(initial);
+  const router = useRouter();
+  const urlQuery = params.get("q") || "";
+  const [query, setQuery] = useState(urlQuery);
+  const [syncedQuery, setSyncedQuery] = useState(urlQuery);
   const [catalog, setCatalog] = useState<StoreProduct[]>([]);
+  const [status, setStatus] = useState<CatalogStatus>("loading");
+
+  // Follow ?q= when it changes from outside (search sheet, back / forward, links).
+  if (urlQuery !== syncedQuery) {
+    setSyncedQuery(urlQuery);
+    setQuery(urlQuery);
+  }
 
   useEffect(() => {
+    let cancelled = false;
     fetch("/api/products")
       .then((r) => r.json())
       .then((j) => {
-        if (j.ok) setCatalog(j.data);
+        if (cancelled) return;
+        if (j.ok) {
+          setCatalog(j.data);
+          setStatus("ready");
+        } else {
+          setStatus("error");
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const results = useMemo(() => {
@@ -43,57 +63,69 @@ export function SearchPageClient() {
   const bestsellers = catalog
     .filter((p) => p.badges.includes("bestseller"))
     .slice(0, 4);
-  const empty = query.trim().length > 0 && results.length === 0;
+  const hasQuery = query.trim().length > 0;
+  const empty = status === "ready" && hasQuery && results.length === 0;
 
   return (
-    <>
-      <PageHero
-        title={pageCopy.search.title}
-        description={pageCopy.search.description}
-        image={siteImages.search}
-        alt="Fragrance notes and bottles for searching the NS Perfume line"
-        objectPosition="center 42%"
-      />
-      <section className="bg-canvas section-y">
-        <div className="container-ns max-w-4xl">
-          <form
-            className="mb-8 flex flex-col gap-3 sm:flex-row"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <Input
-              name="q"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search notes, names, families…"
-              aria-label="Search products"
-              className="flex-1"
-            />
-            <Button type="submit">Search</Button>
-          </form>
+    <section className="bg-canvas section-y">
+      <div className="container-ns max-w-4xl">
+        <form
+          role="search"
+          className="mb-8 flex flex-col gap-3 sm:flex-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const q = query.trim();
+            router.replace(q ? `/search?q=${encodeURIComponent(q)}` : "/search", {
+              scroll: false,
+            });
+          }}
+        >
+          <Input
+            name="q"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search notes, names, families…"
+            aria-label="Search products"
+            className="flex-1"
+          />
+          <Button type="submit">Search</Button>
+        </form>
 
-          {empty ? (
-            <div className="mb-24">
-              <p className="mb-4 text-body text-taupe">
-                No results for “{query}”. Try a note name, or start with these
-                bestsellers.
-              </p>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                {bestsellers.map((p) => (
-                  <ProductCard key={p.handle} product={p} />
-                ))}
-              </div>
-            </div>
-          ) : null}
+        {hasQuery && status === "loading" ? (
+          <p className="mb-24 text-body text-taupe" role="status">
+            Searching the line…
+          </p>
+        ) : null}
 
-          {results.length > 0 ? (
+        {hasQuery && status === "error" ? (
+          <p className="mb-24 text-body text-taupe" role="alert">
+            Could not load the catalog right now. Refresh the page or try again
+            shortly.
+          </p>
+        ) : null}
+
+        {empty ? (
+          <div className="mb-24">
+            <p className="mb-4 text-body text-taupe">
+              No results for “{query.trim()}”. Try a note name, or start with
+              these bestsellers.
+            </p>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              {results.map((p) => (
+              {bestsellers.map((p) => (
                 <ProductCard key={p.handle} product={p} />
               ))}
             </div>
-          ) : null}
-        </div>
-      </section>
-    </>
+          </div>
+        ) : null}
+
+        {results.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            {results.map((p) => (
+              <ProductCard key={p.handle} product={p} />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }

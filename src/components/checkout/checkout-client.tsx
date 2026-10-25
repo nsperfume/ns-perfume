@@ -27,6 +27,8 @@ import {
 } from "@/components/checkout/fields";
 import { CheckoutOrderSummary } from "@/components/checkout/order-summary";
 import { TransferDetails } from "@/components/commerce/transfer-details";
+import { PayableAmount } from "@/components/commerce/price";
+import { Logo } from "@/components/brand/logo";
 import { siteConfig } from "@/data/site";
 
 type Step = "information" | "shipping" | "payment";
@@ -92,7 +94,7 @@ function breadcrumbs(
 export function CheckoutClient() {
   const router = useRouter();
   const { lines, subtotal, clearCart, closeCart } = useCart();
-  const { currency } = useCurrency();
+  const { displayCurrency } = useCurrency();
   const { user } = useCustomer();
 
   const [hydrated, setHydrated] = useState(false);
@@ -198,7 +200,7 @@ export function CheckoutClient() {
       );
       const json = await res.json();
       if (!json.ok || !json.data) {
-        return json.error || "Enter a valid discount code or gift card";
+        return json.error || "Enter a valid discount code";
       }
       setDiscountCode(json.data.code);
       setDiscountPkr(json.data.amountPkr || 0);
@@ -292,7 +294,7 @@ export function CheckoutClient() {
           discountCode,
           marketingOptIn: marketing,
           notes,
-          currency,
+          currency: displayCurrency,
           cardLast4:
             paymentMethod === "card"
               ? card.number.replace(/\s/g, "").slice(-4)
@@ -398,9 +400,10 @@ export function CheckoutClient() {
           <header className="mb-8 text-center lg:text-left">
             <Link
               href="/"
-              className="inline-block font-display text-2xl font-medium tracking-tight text-ink"
+              aria-label={`${siteConfig.name} home`}
+              className="inline-block text-ink"
             >
-              NS Perfume
+              <Logo className="h-7 sm:h-8" />
             </Link>
           </header>
 
@@ -843,11 +846,12 @@ export function CheckoutClient() {
                             </p>
                             <ul className="list-disc space-y-1.5 pl-4">
                               <li>
-                                Pay the courier in cash for your order total (
-                                <span className="font-medium text-ink">
-                                  <PriceInline pkr={totalPkr} />
-                                </span>
-                                ).
+                                Pay the courier your order total of{" "}
+                                <PayableAmount
+                                  amountPkr={totalPkr}
+                                  className="font-medium text-ink"
+                                />{" "}
+                                in cash.
                               </li>
                               <li>
                                 Keep exact change ready when possible. The courier may call before delivery.
@@ -867,10 +871,13 @@ export function CheckoutClient() {
                             <TransferDetails />
                             <div className="rounded-md border border-hairline bg-paper px-3 py-2.5">
                               <p className="text-[11px] uppercase tracking-wide text-taupe">
-                                Amount to transfer
+                                Amount to transfer (PKR)
                               </p>
                               <p className="mt-0.5 text-[15px] font-semibold text-ink">
-                                <PriceInline pkr={totalPkr} />
+                                <PayableAmount
+                                  amountPkr={totalPkr}
+                                  variant="stacked"
+                                />
                               </p>
                             </div>
                             <ul className="list-disc space-y-1.5 pl-4">
@@ -1084,7 +1091,7 @@ export function CheckoutClient() {
           <footer className="mt-12 border-t border-hairline pt-5">
             <ul className="flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-brass">
               <li>
-                <Link href="/policies/refund-policy" className="hover:underline">
+                <Link href="/policies/refund" className="hover:underline">
                   Refund policy
                 </Link>
               </li>
@@ -1094,12 +1101,12 @@ export function CheckoutClient() {
                 </Link>
               </li>
               <li>
-                <Link href="/policies/privacy-policy" className="hover:underline">
+                <Link href="/policies/privacy" className="hover:underline">
                   Privacy policy
                 </Link>
               </li>
               <li>
-                <Link href="/policies/terms-of-service" className="hover:underline">
+                <Link href="/policies/terms" className="hover:underline">
                   Terms of service
                 </Link>
               </li>

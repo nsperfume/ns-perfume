@@ -94,6 +94,7 @@ export default function CartPage() {
                       <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-4 sm:grid-cols-[7rem_minmax(0,1fr)_auto] sm:gap-6">
                         <Link
                           href={`/products/${line.productHandle}`}
+                          aria-label={`View ${line.name}`}
                           className="relative aspect-square overflow-hidden bg-muted"
                         >
                           <Image

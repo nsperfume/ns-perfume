@@ -14,7 +14,11 @@ export type WishlistItem = {
   productHandle: string;
   name: string;
   image: string;
+  /** Price at save time. The wishlist page prefers the live catalog price. */
   pricePkr: number;
+  /** Size chosen when saved. Older saves have none and must pick a size on the product page. */
+  sku?: string;
+  sizeMl?: number;
 };
 
 type WishlistContextValue = {

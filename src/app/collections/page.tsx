@@ -9,7 +9,7 @@ import { getCollections } from "@/lib/store-data";
 import { richTextToPlain } from "@/lib/rich-text";
 
 export const metadata: Metadata = {
-  title: "Perfume collections | NS Perfume",
+  title: "Perfume collections",
   description: pageCopy.collections.metaDescription,
   alternates: { canonical: "/collections" },
 };
