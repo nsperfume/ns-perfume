@@ -16,13 +16,13 @@ export default async function UnsubscribedPage({
   return (
     <section className="bg-canvas section-y">
       <div className="container-ns max-w-lg">
-        <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+        <p className="mb-2 text-eyebrow text-taupe">
           Newsletter
         </p>
         <h1 className="text-display-lg text-balance text-ink">
           {invalid ? "This link has expired" : "You are unsubscribed"}
         </h1>
-        <p className="mt-4 font-serif text-[1.1rem] leading-relaxed text-taupe">
+        <p className="mt-4 text-body-lg text-taupe">
           {invalid
             ? "We could not find a subscription for this link. If you still receive our newsletter, reply to any issue and we will remove you by hand."
             : "You will not receive the newsletter again. Order and account emails still arrive as normal."}

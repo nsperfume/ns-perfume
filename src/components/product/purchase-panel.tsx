@@ -15,7 +15,6 @@ import { useUi } from "@/context/ui";
 import { siteConfig } from "@/data/site";
 import type { StoreProduct } from "@/lib/mappers";
 import { GIFT_WRAP_FEE_PKR } from "@/lib/types";
-import { cn } from "@/lib/cn";
 import { richTextToPlain } from "@/lib/rich-text";
 
 function pressFeedback(e: MouseEvent<HTMLElement>) {
@@ -191,200 +190,171 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
     }
   }
 
+  const badgeText = product.badges
+    .map((b) =>
+      b === "bestseller"
+        ? "Bestseller"
+        : b === "new"
+          ? "New"
+          : b === "limited"
+            ? "Limited"
+            : "Sale",
+    )
+    .join(" · ");
+
+  const serviceLink =
+    "inline-flex min-h-11 items-center gap-3 text-label text-ink transition-colors hover:text-brass-ink";
+
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex-1">
-        {product.badges.length ? (
-          <div className="mb-4 flex flex-wrap gap-2">
-            {product.badges.map((b) => (
-              <span
-                key={b}
-                className="font-display text-[10px] font-medium uppercase tracking-[0.16em] text-taupe"
-              >
-                {b === "bestseller"
-                  ? "Bestseller"
-                  : b === "new"
-                    ? "New"
-                    : b === "limited"
-                      ? "Limited"
-                      : "Sale"}
-              </span>
-            ))}
-          </div>
+    <div className="flex flex-col">
+      <p className="text-eyebrow text-brass-ink">
+        {[badgeText, product.concentration, product.family]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+
+      <h1 className="mt-3 text-display-lg text-ink">{product.name}</h1>
+
+      {product.reviewCount > 0 ? (
+        <Link
+          href="#reviews"
+          className="mt-4 inline-flex min-h-8 items-center gap-2.5 self-start transition-opacity hover:opacity-80"
+        >
+          <StarRating rating={product.rating} size="sm" />
+          <span className="text-caption text-taupe underline decoration-hairline underline-offset-4">
+            {product.reviewCount} review{product.reviewCount === 1 ? "" : "s"}
+          </span>
+        </Link>
+      ) : (
+        <Link
+          href="#write-review"
+          className="mt-4 inline-flex min-h-8 items-center self-start text-caption text-taupe underline decoration-hairline underline-offset-4 hover:text-ink"
+        >
+          Be the first to review
+        </Link>
+      )}
+
+      <p className="mt-5 max-w-[34rem] text-pretty text-body-lg text-ink/80">
+        {product.descriptor}
+      </p>
+
+      <div className="mt-6 flex items-baseline gap-3">
+        <Price
+          amountPkr={unitPrice}
+          className="text-2xl text-ink"
+        />
+        {selected?.ml ? (
+          <span className="font-mono text-sm text-taupe">
+            {selected.ml} ml
+          </span>
         ) : null}
-
-        <h1 className="font-display text-[1.65rem] font-medium uppercase leading-[1.15] tracking-[0.04em] text-ink sm:text-[1.85rem]">
-          {product.name}
-        </h1>
-
-        <p className="mt-5 max-w-md text-pretty font-serif text-[1.05rem] leading-relaxed text-ink/80">
-          {product.descriptor}
+      </div>
+      {isGift && giftWrap ? (
+        <p className="mt-1 text-caption text-taupe">Includes gift wrap</p>
+      ) : null}
+      {!product.inStock ? (
+        <p className="mt-2 text-body-sm font-medium text-rosewood">
+          Currently out of stock.
         </p>
+      ) : null}
 
-        {product.reviewCount > 0 ? (
-          <Link
-            href="#reviews"
-            className="mt-4 inline-flex items-center gap-2 self-start transition-opacity hover:opacity-80"
-          >
-            <StarRating rating={product.rating} size="sm" />
-            <span className="font-display text-[11px] uppercase tracking-[0.12em] text-taupe">
-              {product.reviewCount} review{product.reviewCount === 1 ? "" : "s"}
-            </span>
-          </Link>
-        ) : (
-          <Link
-            href="#write-review"
-            className="mt-4 inline-block self-start font-display text-[11px] uppercase tracking-[0.12em] text-taupe underline-offset-4 hover:text-ink hover:underline"
-          >
-            Be the first to review
-          </Link>
-        )}
-
-        {hasDescription ? (
-          <div className="mt-8">
-            <p className="font-display text-[12px] font-medium uppercase tracking-[0.14em] text-ink">
-              Product description
-            </p>
-            <RichHtml
-              html={product.description}
-              className="mt-3 max-w-md font-serif text-[1rem] leading-relaxed text-ink/80 [&_li]:my-1 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
-            />
-            {!product.inStock ? (
-              <p className="mt-3 font-serif text-sm italic text-rosewood">
-                Currently out of stock.
-              </p>
-            ) : null}
-          </div>
-        ) : !product.inStock ? (
-          <p className="mt-6 font-serif text-sm italic text-rosewood">
-            Currently out of stock.
-          </p>
-        ) : null}
-
-        <div className="mt-8">
-          <p className="mb-3 font-display text-[12px] font-medium uppercase tracking-[0.14em] text-ink">
-            Size
-          </p>
-          <SizeSelector sizes={sizes} value={sizeMl} onChange={setSizeMl} />
-        </div>
-
-        <div className="mt-5">
-          <label className="flex cursor-pointer items-center gap-2.5">
-            <input
-              type="checkbox"
-              checked={isGift}
-              onChange={(e) => setIsGift(e.target.checked)}
-              className="h-3.5 w-3.5 shrink-0 accent-ink"
-            />
-            <span className="font-display text-[11px] font-medium uppercase tracking-[0.12em] text-ink">
-              This is a gift
-            </span>
-          </label>
-          {isGift ? (
-            <div className="mt-3 space-y-3 border border-hairline bg-canvas-deep/40 p-3">
-              <label className="flex cursor-pointer items-center gap-2.5">
-                <input
-                  type="checkbox"
-                  checked={giftWrap}
-                  onChange={(e) => setGiftWrap(e.target.checked)}
-                  className="h-3.5 w-3.5 shrink-0 accent-ink"
-                />
-                <span className="font-serif text-[0.95rem] text-ink">
-                  Gift wrap{" "}
-                  <Price
-                    amountPkr={GIFT_WRAP_FEE_PKR}
-                    className="inline text-[0.95rem] text-taupe"
-                  />
-                </span>
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block font-display text-[11px] font-medium uppercase tracking-[0.12em] text-ink">
-                  Gift message (optional)
-                </span>
-                <textarea
-                  value={giftMessage}
-                  onChange={(e) => setGiftMessage(e.target.value.slice(0, 120))}
-                  rows={2}
-                  maxLength={120}
-                  placeholder="Up to 120 characters"
-                  className="w-full resize-none border border-hairline bg-paper px-3 py-2 font-serif text-[0.95rem] text-ink outline-none placeholder:text-taupe/60 focus:border-ink/40"
-                />
-              </label>
-            </div>
-          ) : null}
-        </div>
+      <div className="mt-7 border-t border-hairline pt-6">
+        <p className="mb-3 text-eyebrow text-ink">Size</p>
+        <SizeSelector sizes={sizes} value={sizeMl} onChange={setSizeMl} />
       </div>
 
-      {/*
-        Desktop: sticks while the gallery scrolls.
-        Mobile: stays in flow; StickyAddToCart handles the floating bar.
-      */}
-      <div
-        className={cn(
-          "mt-auto border-t border-hairline bg-canvas/95 py-4",
-          "lg:sticky lg:bottom-0 lg:z-20 lg:backdrop-blur-sm",
-          "lg:supports-backdrop-filter:bg-canvas/90",
-        )}
-      >
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <Price
-              amountPkr={unitPrice}
-              className="text-[1.35rem] font-medium text-ink"
-            />
-            {isGift && giftWrap ? (
-              <p className="mt-0.5 font-serif text-sm text-taupe">
-                Includes gift wrap
-              </p>
-            ) : null}
-          </div>
-          <div>
-            <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink">
-              Quantity
-            </p>
-            <div className="inline-flex h-11 items-stretch border border-ink/80">
-              <button
-                type="button"
-                className="flex w-11 cursor-pointer items-center justify-center text-sm transition-colors hover:bg-muted"
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <span className="flex min-w-11 items-center justify-center border-x border-ink/80 font-mono text-sm tabular-nums">
-                {qty}
+      <div className="mt-6">
+        <label className="inline-flex min-h-11 cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            checked={isGift}
+            onChange={(e) => setIsGift(e.target.checked)}
+            className="h-4 w-4 shrink-0 accent-ink"
+          />
+          <span className="text-body-sm font-medium text-ink">
+            This is a gift
+          </span>
+        </label>
+        {isGift ? (
+          <div className="mt-2 space-y-4 border border-hairline bg-canvas-deep/40 p-4">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                checked={giftWrap}
+                onChange={(e) => setGiftWrap(e.target.checked)}
+                className="h-4 w-4 shrink-0 accent-ink"
+              />
+              <span className="text-body-sm text-ink">
+                Gift wrap{" "}
+                <Price
+                  amountPkr={GIFT_WRAP_FEE_PKR}
+                  className="inline text-sm text-taupe"
+                />
               </span>
-              <button
-                type="button"
-                className="flex w-11 cursor-pointer items-center justify-center text-sm transition-colors hover:bg-muted"
-                onClick={() => setQty((q) => Math.min(6, q + 1))}
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-            </div>
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-eyebrow text-ink">
+                Gift message (optional)
+              </span>
+              <textarea
+                value={giftMessage}
+                onChange={(e) => setGiftMessage(e.target.value.slice(0, 120))}
+                rows={2}
+                maxLength={120}
+                placeholder="Up to 120 characters"
+                className="w-full resize-none rounded-xs border border-hairline bg-paper px-4 py-3 text-base text-ink outline-none placeholder:text-taupe/70 focus:border-brass focus:ring-2 focus:ring-brass/25"
+              />
+            </label>
           </div>
-        </div>
+        ) : null}
+      </div>
 
-        <div className="mt-4 flex items-stretch gap-2">
-          <Button
-            className="h-12! min-h-12 flex-1 rounded-none! sm:w-auto! sm:flex-1"
-            disabled={!product.inStock}
-            onClick={addToBag}
-          >
-            {product.inStock ? "Add to bag" : "Out of stock"}
-          </Button>
-          <Button
+      <div className="mt-6 flex items-stretch gap-2">
+        <div
+          className="inline-flex h-12 shrink-0 items-stretch rounded-xs border border-ink/70"
+          role="group"
+          aria-label="Quantity"
+        >
+          <button
             type="button"
-            variant="secondary"
-            onClick={toggleWishlist}
-            aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
-            aria-pressed={saved}
-            className="h-12! min-h-12! w-12! max-w-12! shrink-0 rounded-none! p-0! active:scale-100! [&>span:last-child]:gap-0! [&>span:last-child]:px-0! [&>span:last-child]:tracking-normal!"
+            className="flex w-11 cursor-pointer items-center justify-center text-lg transition-colors hover:bg-muted"
+            onClick={() => setQty((q) => Math.max(1, q - 1))}
+            aria-label="Decrease quantity"
           >
-            <WishlistHeart filled={saved} />
-          </Button>
+            −
+          </button>
+          <span
+            className="flex min-w-10 items-center justify-center font-mono text-base tabular-nums"
+            aria-live="polite"
+          >
+            {qty}
+          </span>
+          <button
+            type="button"
+            className="flex w-11 cursor-pointer items-center justify-center text-lg transition-colors hover:bg-muted"
+            onClick={() => setQty((q) => Math.min(6, q + 1))}
+            aria-label="Increase quantity"
+          >
+            +
+          </button>
         </div>
+        <Button
+          className="min-w-0 flex-1 sm:w-auto! sm:flex-1"
+          disabled={!product.inStock}
+          onClick={addToBag}
+        >
+          {product.inStock ? "Add to bag" : "Out of stock"}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={toggleWishlist}
+          aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
+          aria-pressed={saved}
+          className="w-12! max-w-12! shrink-0 p-0! active:scale-100! [&>span:last-child]:gap-0! [&>span:last-child]:px-0! [&>span:last-child]:tracking-normal!"
+        >
+          <WishlistHeart filled={saved} />
+        </Button>
       </div>
 
       <StickyAddToCart
@@ -403,16 +373,13 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         onAdd={addToBag}
       />
 
-      <ul className="mt-8 space-y-3.5">
+      <ul className="mt-6 grid gap-x-6 border-y border-hairline py-3 sm:grid-cols-2">
         <li>
-          <a
-            href={`tel:${phoneTel}`}
-            className="inline-flex max-w-full flex-wrap items-center gap-x-3 gap-y-1 font-display text-[11px] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-brass sm:tracking-[0.14em]"
-          >
-            <LineIcon name="phone" className="h-4 w-4 shrink-0" />
-            <span className="sm:hidden">Call {siteConfig.phone}</span>
-            <span className="hidden sm:inline">
-              Order by phone {siteConfig.phone}
+          <a href={`tel:${phoneTel}`} className={serviceLink}>
+            <LineIcon name="phone" className="h-5 w-5 shrink-0" />
+            <span>
+              Order by phone{" "}
+              <span className="font-mono tracking-normal">{siteConfig.phone}</span>
             </span>
           </a>
         </li>
@@ -421,42 +388,46 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
             href={siteConfig.location.mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex max-w-full flex-wrap items-center gap-x-3 gap-y-1 font-display text-[11px] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-brass sm:tracking-[0.14em]"
+            className={serviceLink}
           >
-            <LineIcon name="pin" className="h-4 w-4 shrink-0" />
-            Find us · {siteConfig.location.label}
+            <LineIcon name="pin" className="h-5 w-5 shrink-0" />
+            Find us: {siteConfig.location.label}
           </a>
         </li>
         <li>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-3 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:text-brass"
-          >
-            <LineIcon name="chat" className="h-4 w-4" />
+          <Link href="/contact" className={serviceLink}>
+            <LineIcon name="chat" className="h-5 w-5 shrink-0" />
             Contact care
           </Link>
         </li>
         <li>
-          <Link
-            href="/track-order"
-            className="inline-flex items-center gap-3 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:text-brass"
-          >
-            <LineIcon name="truck" className="h-4 w-4" />
+          <Link href="/track-order" className={serviceLink}>
+            <LineIcon name="truck" className="h-5 w-5 shrink-0" />
             Track an order
           </Link>
         </li>
       </ul>
 
-      <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-hairline pt-5">
+      {hasDescription ? (
+        <div className="mt-8">
+          <p className="text-eyebrow text-ink">Product description</p>
+          <RichHtml
+            html={product.description}
+            className="mt-3 max-w-[38rem] text-body text-ink/80 [&_li]:my-1 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
+          />
+        </div>
+      ) : null}
+
+      <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2">
         <button
           type="button"
           onClick={shareProduct}
-          className="cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:text-brass"
+          className="inline-flex min-h-11 cursor-pointer items-center text-label text-ink transition-colors hover:text-brass-ink"
         >
           Share
         </button>
-        <span className="hidden h-3 w-px bg-hairline sm:block" aria-hidden />
-        <p className="font-mono text-[11px] tabular-nums text-taupe">
+        <span className="hidden h-4 w-px bg-hairline sm:block" aria-hidden />
+        <p className="font-mono text-xs text-taupe">
           Ref. {selected?.sku || product.handle}
         </p>
       </div>

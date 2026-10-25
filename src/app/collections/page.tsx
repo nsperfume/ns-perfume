@@ -43,7 +43,7 @@ export default async function CollectionsIndexPage() {
             description="Gender, family, concentration, and gift formats. Open a lane and filter from there."
             className="mb-8 sm:mb-10"
           />
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-5">
             {collections.map((c) => {
               const image =
                 tileImage[c.handle] ?? siteImages.collectionsHero;
@@ -66,14 +66,14 @@ export default async function CollectionsIndexPage() {
                     className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"
                     aria-hidden
                   />
-                  <div className="relative z-10 p-5 md:p-6">
-                    <h2 className="font-display text-[1.25rem] font-medium tracking-wide text-paper md:text-[1.35rem]">
+                  <div className="relative z-10 p-5 md:p-7">
+                    <h2 className="text-display-sm text-paper md:text-display-md">
                       {c.title}
                     </h2>
-                    <p className="mt-1.5 line-clamp-2 font-serif text-[0.95rem] text-paper/80">
+                    <p className="mt-2 line-clamp-2 max-w-[34rem] text-body-sm text-paper/85">
                       {richTextToPlain(c.description || "")}
                     </p>
-                    <span className="mt-3 inline-block font-display text-[11px] uppercase tracking-[0.14em] text-paper/70 transition-colors group-hover:text-brass">
+                    <span className="mt-3 inline-block text-eyebrow text-paper/80 transition-colors group-hover:text-brass">
                       View collection
                     </span>
                   </div>

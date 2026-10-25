@@ -6,7 +6,7 @@ import { Select } from "@/components/ui/select";
 import type { StoreProduct } from "@/lib/mappers";
 import { pageCopy } from "@/data/copy";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 12;
 
 const CONCENTRATION_OPTIONS = [
   { value: "all", label: "All" },
@@ -24,9 +24,9 @@ const GENDER_OPTIONS = [
 
 const SORT_OPTIONS = [
   { value: "featured", label: "Featured" },
-  { value: "price-asc", label: "Price · Low to High" },
-  { value: "price-desc", label: "Price · High to Low" },
-  { value: "name", label: "Name · A–Z" },
+  { value: "price-asc", label: "Price: low to high" },
+  { value: "price-desc", label: "Price: high to low" },
+  { value: "name", label: "Name: A to Z" },
 ] as const;
 
 export function CollectionFilters({
@@ -121,7 +121,7 @@ export function CollectionFilters({
           onValueChange={setSort}
           options={[...SORT_OPTIONS]}
         />
-        <p className="flex items-end font-serif text-[15px] font-medium text-ink/65 lg:justify-end lg:pb-2">
+        <p className="flex items-end text-body-sm text-taupe lg:justify-end lg:pb-3">
           {filtered.length} product{filtered.length === 1 ? "" : "s"}
         </p>
       </div>
@@ -129,7 +129,7 @@ export function CollectionFilters({
       {pageItems.length === 0 ? (
         <p className="mb-24 text-body text-taupe">{pageCopy.emptyFilters}</p>
       ) : (
-        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-x-3 gap-y-10 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4 2xl:gap-x-6">
           {pageItems.map((p) => (
             <ProductCard key={p.handle} product={p} />
           ))}
@@ -141,18 +141,18 @@ export function CollectionFilters({
           <button
             type="button"
             disabled={safePage <= 1}
-            className="min-h-11 cursor-pointer border border-hairline px-4 text-eyebrow disabled:opacity-40"
+            className="min-h-11 cursor-pointer rounded-xs border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:opacity-40"
             onClick={() => goToPage(safePage - 1)}
           >
             Previous
           </button>
-          <span className="font-mono text-caption">
+          <span className="font-mono text-sm text-taupe">
             {safePage} / {totalPages}
           </span>
           <button
             type="button"
             disabled={safePage >= totalPages}
-            className="min-h-11 cursor-pointer border border-hairline px-4 text-eyebrow disabled:opacity-40"
+            className="min-h-11 cursor-pointer rounded-xs border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:opacity-40"
             onClick={() => goToPage(safePage + 1)}
           >
             Next
@@ -163,7 +163,7 @@ export function CollectionFilters({
       )}
 
       <div className="border-t border-hairline pt-8">
-        <h2 className="text-heading-sm mb-4">About This Collection</h2>
+        <h2 className="mb-4 text-heading-sm">About this collection</h2>
         <p className="measure text-body text-taupe">{seoCopy}</p>
       </div>
     </>

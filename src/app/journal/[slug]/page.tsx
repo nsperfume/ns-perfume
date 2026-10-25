@@ -77,23 +77,32 @@ export default async function JournalArticlePage({ params }: Props) {
       <JsonLd data={articleLd} />
 
       <header className="border-b border-hairline">
-        <div className="container-ns max-w-3xl section-y pb-10 pt-12 md:pb-12 md:pt-16">
-          <Link
-            href="/journal"
-            className="mb-6 inline-flex font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe transition-colors hover:text-brass"
-          >
-            Journal
-          </Link>
-          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-brass">
-            {post.category}
+        <div className="container-ns pb-12 pt-12 md:pb-16 md:pt-20">
+          <div className="mx-auto max-w-[46rem]">
+          <p className="mb-5 flex flex-wrap items-center gap-2.5 text-eyebrow">
+            <Link
+              href="/journal"
+              className="inline-flex min-h-8 items-center text-taupe transition-colors hover:text-brass-ink"
+            >
+              Journal
+            </Link>
+            {post.category ? (
+              <>
+                <span className="text-taupe/50" aria-hidden>
+                  /
+                </span>
+                <span className="text-brass-ink">{post.category}</span>
+              </>
+            ) : null}
           </p>
           <h1 className="text-display-lg text-balance text-ink">{post.title}</h1>
-          <p className="mt-5 max-w-2xl font-serif text-[1.15rem] leading-relaxed text-taupe">
+          <p className="mt-6 max-w-[40rem] text-body-lg text-taupe">
             {post.excerpt}
           </p>
-          <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.12em] text-taupe">
+          <p className="mt-6 text-caption text-taupe">
             {formatDate(post.date)} · {post.readTime}
           </p>
+          </div>
         </div>
 
         <div className="relative aspect-16/9 w-full overflow-hidden bg-muted md:aspect-[2.2/1]">
@@ -116,10 +125,11 @@ export default async function JournalArticlePage({ params }: Props) {
         </div>
       </header>
 
-      <div className="container-ns max-w-2xl py-12 md:py-16">
+      <div className="container-ns py-12 md:py-20">
+        <div className="mx-auto max-w-[42rem]">
         <RichHtml
           html={post.bodyHtml}
-          className="font-serif text-[1.15rem] leading-[1.75] text-ink/85"
+          className="text-body-lg text-ink/85"
         />
 
         <div className="mt-12 flex flex-col gap-3 border-t border-hairline pt-8 sm:flex-row sm:flex-wrap sm:items-center">
@@ -136,21 +146,24 @@ export default async function JournalArticlePage({ params }: Props) {
               Browse collection
             </Button>
           ) : null}
-          <Link
-            href="/journal"
-            className="font-display text-[12px] font-medium uppercase tracking-[0.12em] text-brass sm:ml-auto"
-          >
-            All articles
-          </Link>
+          {related.length ? null : (
+            <Link
+              href="/journal"
+              className="inline-flex min-h-11 items-center text-label text-brass-ink underline decoration-brass/40 underline-offset-[6px] sm:ml-auto"
+            >
+              All articles
+            </Link>
+          )}
+        </div>
         </div>
       </div>
 
       {related.length ? (
         <section className="border-t border-hairline bg-muted/40 section-y">
           <div className="container-ns">
-            <div className="mb-8 flex items-end justify-between gap-4">
+            <div className="mb-10 flex items-end justify-between gap-4">
               <div>
-                <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+                <p className="mb-3 text-eyebrow text-taupe">
                   Keep reading
                 </p>
                 <h2 className="text-display-md text-ink">More from the journal</h2>
@@ -159,14 +172,14 @@ export default async function JournalArticlePage({ params }: Props) {
                 View all
               </Button>
             </div>
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-10">
               {related.map((item) => (
                 <Link
                   key={item.slug}
                   href={`/journal/${item.slug}`}
                   className="group flex flex-col"
                 >
-                  <div className="relative mb-4 aspect-16/10 overflow-hidden bg-muted">
+                  <div className="relative mb-5 aspect-16/10 overflow-hidden bg-muted">
                     {item.imageUrl ? (
                       <Image
                         src={item.imageUrl}
@@ -184,10 +197,10 @@ export default async function JournalArticlePage({ params }: Props) {
                       />
                     )}
                   </div>
-                  <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-taupe">
+                  <p className="mb-2 text-caption text-taupe">
                     {formatDate(item.date)} · {item.readTime}
                   </p>
-                  <h3 className="font-display text-[1.1rem] font-medium leading-snug text-ink transition-colors group-hover:text-brass">
+                  <h3 className="text-display-sm text-ink transition-colors group-hover:text-brass-ink">
                     {item.title}
                   </h3>
                 </Link>

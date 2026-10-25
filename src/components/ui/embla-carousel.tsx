@@ -110,20 +110,25 @@ export function EmblaCarousel({
       {(showArrows || showDots) && (
         <div className="mt-4 flex items-center justify-between gap-3 sm:mt-6 sm:gap-4">
           {showDots ? (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center">
               {scrollSnaps.map((_, i) => (
                 <button
                   key={i}
                   type="button"
                   aria-label={`Go to slide ${i + 1}`}
+                  aria-current={i === selected ? "true" : undefined}
                   onClick={() => emblaApi?.scrollTo(i)}
-                  className={cn(
-                    "h-1.5 cursor-pointer rounded-full transition-all duration-300",
-                    i === selected
-                      ? "w-6 bg-ink"
-                      : "w-1.5 bg-hairline hover:bg-taupe/50",
-                  )}
-                />
+                  className="group/dot flex h-8 cursor-pointer items-center px-1"
+                >
+                  <span
+                    className={cn(
+                      "block h-1.5 rounded-full transition-all duration-300",
+                      i === selected
+                        ? "w-6 bg-ink"
+                        : "w-1.5 bg-[#d6cfbf] group-hover/dot:bg-taupe/60",
+                    )}
+                  />
+                </button>
               ))}
             </div>
           ) : (
@@ -137,7 +142,7 @@ export function EmblaCarousel({
                 aria-label="Previous"
                 disabled={!canPrev && !loop}
                 onClick={() => emblaApi?.scrollPrev()}
-                className="flex h-10 w-10 cursor-pointer items-center justify-center border border-hairline bg-paper font-display text-lg text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xs border border-[#d6cfbf] bg-paper font-sans text-lg text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-30"
               >
                 ‹
               </button>
@@ -146,7 +151,7 @@ export function EmblaCarousel({
                 aria-label="Next"
                 disabled={!canNext && !loop}
                 onClick={() => emblaApi?.scrollNext()}
-                className="flex h-10 w-10 cursor-pointer items-center justify-center border border-hairline bg-paper font-display text-lg text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xs border border-[#d6cfbf] bg-paper font-sans text-lg text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-30"
               >
                 ›
               </button>

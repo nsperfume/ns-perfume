@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { CartLine } from "@/lib/types";
-import { formatSize } from "@/lib/format";
 import { useCurrency } from "@/context/currency";
 import { FREE_SHIPPING_THRESHOLD_PKR } from "@/lib/checkout";
 import { cn } from "@/lib/cn";
@@ -58,7 +57,7 @@ export function CheckoutOrderSummary({
       <ul className="max-h-[40vh] space-y-5 overflow-y-auto pr-1 lg:max-h-none">
         {lines.map((line) => (
           <li key={line.sku} className="flex gap-3.5">
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-hairline bg-paper">
+            <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xs border border-hairline bg-paper">
               <Image
                 src={line.image}
                 alt=""
@@ -68,18 +67,14 @@ export function CheckoutOrderSummary({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-display text-base font-medium leading-snug text-ink">
+              <p className="text-base font-semibold leading-snug text-ink">
                 {line.name}
-                {line.isGift ? " (Gift)" : ""}
               </p>
               <p className="mt-0.5 text-sm text-taupe">
                 Qty {line.quantity}
-                {line.sizeMl > 0 ? ` · ${formatSize(line.sizeMl)}` : ` · ${line.sku}`}
+                {line.sizeMl > 0 ? ` · ${line.sizeMl} ml` : ` · ${line.sku}`}
                 {line.giftWrap ? " · Gift wrap" : line.isGift ? " · Gift" : ""}
               </p>
-              {line.giftWrap ? (
-                <p className="mt-1 text-sm text-taupe">Gift wrap included</p>
-              ) : null}
               {line.giftMessage ? (
                 <p className="mt-1 text-sm leading-snug text-taupe">
                   <span className="text-taupe">Gift note: </span>
@@ -87,7 +82,7 @@ export function CheckoutOrderSummary({
                 </p>
               ) : null}
             </div>
-            <p className="shrink-0 font-display text-base tabular-nums text-ink">
+            <p className="shrink-0 font-mono text-base font-medium tabular-nums text-ink">
               {format(line.price * line.quantity)}
             </p>
           </li>
@@ -113,23 +108,23 @@ export function CheckoutOrderSummary({
               }
             }}
             placeholder="Discount code"
-            className="min-h-12 min-w-0 flex-1 rounded-md border border-hairline bg-paper px-3 font-serif text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+            className="min-h-12 min-w-0 flex-1 rounded-xs border border-[#d6cfbf] bg-paper px-4 text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/25"
           />
         </label>
         <button
           type="button"
           onClick={apply}
-          className="min-h-12 cursor-pointer rounded-md border border-ink bg-ink px-5 font-display text-sm font-medium uppercase tracking-[0.12em] text-paper transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="min-h-12 cursor-pointer rounded-xs border border-ink bg-ink px-6 text-label text-paper transition-colors hover:border-brass hover:bg-brass hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
           disabled={!codeInput.trim() || applying}
         >
           {applying ? "…" : "Apply"}
         </button>
       </div>
       {codeError ? (
-        <p className="mt-2 font-display text-sm text-rosewood">{codeError}</p>
+        <p className="mt-2 font-sans text-sm text-rosewood">{codeError}</p>
       ) : null}
       {discountCode ? (
-        <div className="mt-3 flex items-center justify-between rounded-md bg-paper px-3 py-2 text-sm">
+        <div className="mt-3 flex items-center justify-between rounded-xs bg-paper px-3 py-2 text-sm">
           <span className="font-medium text-ink">
             {discountCode}
             <button
@@ -158,12 +153,12 @@ export function CheckoutOrderSummary({
       <div className="mt-5 space-y-2 border-t border-hairline pt-4 text-base">
         <div className="flex justify-between text-taupe">
           <span>Subtotal</span>
-          <span className="text-ink">{format(subtotalPkr)}</span>
+          <span className="font-mono text-ink">{format(subtotalPkr)}</span>
         </div>
         {discountPkr > 0 ? (
           <div className="flex justify-between text-taupe">
             <span>Discount</span>
-            <span className="text-ink">−{format(discountPkr)}</span>
+            <span className="font-mono text-ink">−{format(discountPkr)}</span>
           </div>
         ) : null}
         <div className="flex justify-between text-taupe">
@@ -183,18 +178,18 @@ export function CheckoutOrderSummary({
         </div>
         <div className="flex justify-between text-taupe">
           <span>Estimated taxes</span>
-          <span className="text-ink">{format(0)}</span>
+          <span className="font-mono text-ink">{format(0)}</span>
         </div>
       </div>
 
       <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
-        <span className="font-display text-base font-medium text-ink">Total</span>
+        <span className="text-base font-semibold text-ink">Total</span>
         <div className="flex items-baseline text-right">
-          <span className="mr-2 font-display text-xs text-taupe">PKR</span>
+          <span className="mr-2 font-mono text-xs text-taupe">PKR</span>
           <PayableAmount
             amountPkr={totalPkr}
             variant="stacked"
-            className="items-end font-display text-2xl font-medium tracking-tight text-ink"
+            className="items-end font-mono text-2xl font-medium tracking-tight text-ink"
           />
         </div>
       </div>
@@ -210,13 +205,13 @@ export function CheckoutOrderSummary({
           onClick={() => setOpenMobile((v) => !v)}
           aria-expanded={openMobile}
         >
-          <span className="font-display text-sm font-medium text-brass">
+          <span className="font-sans text-sm font-semibold text-brass-ink">
             {openMobile ? "Hide order summary" : "Show order summary"}
-            <span className="ml-1 inline-block text-[10px] opacity-80">
+            <span className="ml-1 inline-block text-xs opacity-80">
               {openMobile ? "▴" : "▾"}
             </span>
           </span>
-          <span className="font-display text-base font-medium text-ink">
+          <span className="font-sans text-base font-semibold text-ink">
             {formatPkr(totalPkr)}
           </span>
         </button>
@@ -232,7 +227,7 @@ export function CheckoutOrderSummary({
 
       {/* Desktop sticky summary */}
       <aside className="hidden h-full border-l border-hairline bg-canvas-deep lg:block">
-        <div className="sticky top-0 max-h-dvh overflow-y-auto px-10 py-10 xl:px-14">
+        <div className="sticky top-0 max-h-dvh overflow-y-auto py-12 pl-14 pr-[var(--gutter)] scrollbar-panel xl:pl-20">
           {body}
         </div>
       </aside>

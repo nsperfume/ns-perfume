@@ -1,3 +1,4 @@
+import { siteConfig } from "@/data/site";
 /** Order status presentation helpers (Shopify-style order status page). */
 
 export type OrderStatus =
@@ -116,7 +117,7 @@ export function statusSubcopy(status: OrderStatus): string {
     case "delivered":
       return "Thanks for shopping with NS Perfume. We hope the fragrance wears well.";
     case "cancelled":
-      return "This order was cancelled. Contact care@nsperfume.com if you have questions.";
+      return `This order was cancelled. Contact ${siteConfig.email} if you have questions.`;
     default:
       return "";
   }

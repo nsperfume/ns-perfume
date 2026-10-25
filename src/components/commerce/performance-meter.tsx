@@ -38,7 +38,7 @@ function MeterRow({
   if (compact) {
     return (
       <div className="flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-1.5 font-display text-[10px] font-medium uppercase tracking-[0.12em] text-taupe">
+        <span className="inline-flex items-center gap-1.5 text-eyebrow text-taupe">
           {label}
           <InfoTip content={tip} label={tipLabel} />
         </span>
@@ -54,7 +54,7 @@ function MeterRow({
               />
             ))}
           </div>
-          <span className="font-mono text-[10px] tabular-nums text-taupe">
+          <span className="font-mono text-xs tabular-nums text-taupe">
             {clamped}/5
           </span>
         </div>
@@ -70,19 +70,19 @@ function MeterRow({
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="inline-flex items-center gap-1.5 font-display text-[0.95rem] font-medium text-ink">
+          <p className="inline-flex items-center gap-1.5 text-heading-sm text-ink">
             {label}
             <InfoTip content={tip} label={tipLabel} />
           </p>
-          <p className="mt-0.5 font-serif text-[0.9rem] leading-snug text-taupe">
+          <p className="mt-0.5 text-body-sm leading-snug text-taupe">
             {hint}
           </p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="font-mono text-[1.05rem] font-medium tabular-nums text-ink">
+          <p className="font-mono text-lg font-medium tabular-nums text-ink">
             {clamped}/5
           </p>
-          <p className="mt-0.5 font-display text-[10px] font-medium uppercase tracking-[0.12em] text-taupe">
+          <p className="mt-0.5 text-eyebrow text-taupe">
             {word}
           </p>
         </div>
@@ -109,8 +109,8 @@ function MeterRow({
               />
               <span
                 className={cn(
-                  "font-display text-[9px] uppercase tracking-[0.08em]",
-                  on ? "text-ink/70" : "text-taupe/45",
+                  "text-eyebrow",
+                  on ? "text-ink/75" : "text-taupe/70",
                 )}
               >
                 {step.n}
@@ -143,10 +143,10 @@ export function PerformanceMeter({
     >
       {!compact ? (
         <div className="border-b border-hairline pb-3">
-          <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+          <p className="text-eyebrow text-taupe">
             Performance
           </p>
-          <p className="mt-1 font-serif text-[0.95rem] text-taupe">
+          <p className="mt-1 text-body-sm text-taupe">
             How far it projects, and how long it stays.
           </p>
         </div>

@@ -40,7 +40,7 @@ export function StarRating({
         })}
       </span>
       {showValue ? (
-        <span className="font-mono text-[13px] tabular-nums text-taupe">
+        <span className="font-mono text-[0.8125rem] tabular-nums text-taupe">
           {clamped.toFixed(1)}
         </span>
       ) : null}

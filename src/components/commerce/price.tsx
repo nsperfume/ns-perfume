@@ -11,7 +11,7 @@ export function Price({
   className?: string;
 }) {
   const { format } = useCurrency();
-  return <span className={cn("text-price text-brass", className)}>{format(amountPkr)}</span>;
+  return <span className={cn("text-price whitespace-nowrap text-ink", className)}>{format(amountPkr)}</span>;
 }
 
 /**
@@ -40,7 +40,7 @@ export function PayableAmount({
         {showApprox ? (
           <span
             className={cn(
-              "mt-0.5 font-serif text-[0.8rem] font-normal tracking-normal text-taupe",
+              "mt-0.5 font-sans text-caption font-normal tracking-normal text-taupe",
               approxClassName,
             )}
           >

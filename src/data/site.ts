@@ -1,12 +1,12 @@
 export const siteConfig = {
   name: "NS Perfume",
   tagline: "Apothecary restraint. Editorial clarity.",
-  url: "https://nsperfume.com",
+  url: "https://nsperfume.pk",
   announcement:
     "Complimentary shipping over Rs 8,000 · Free returns on eligible orders · New: Iris Solstice",
   description:
     "NS Perfume is a fragrance house with honest scent pyramids, clear sillage ratings, and prices that convert into the currency you choose.",
-  email: "care@nsperfume.com",
+  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "care@nsperfume.pk",
   /** Primary care line (JazzCash / Easypaisa / WhatsApp). No spaces for easy copy. */
   phone: "03067861412",
   contactName: "Asim Ali",
@@ -194,7 +194,7 @@ export const policies: Record<
       },
       {
         heading: "Contact",
-        body: "Privacy questions: privacy@nsperfume.com.",
+        body: "Privacy questions: privacy@nsperfume.pk.",
       },
     ],
   },
@@ -224,7 +224,7 @@ export const policies: Record<
       },
       {
         heading: "Opened products",
-        body: "Opened bottles are final sale unless there is a verified quality defect. Contact care@nsperfume.com within seven days of delivery for review.",
+        body: "Opened bottles are final sale unless there is a verified quality defect. Contact care@nsperfume.pk within seven days of delivery for review.",
       },
       {
         heading: "Process",

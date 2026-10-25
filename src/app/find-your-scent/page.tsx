@@ -28,7 +28,7 @@ export default function FindYourScentPage() {
       </section>
 
       <section className="bg-paper section-y">
-        <div className="container-ns grid gap-8 lg:grid-cols-3 lg:gap-10">
+        <div className="container-ns grid gap-10 lg:grid-cols-3 lg:gap-12">
           {[
             {
               title: "Five clear questions",
@@ -43,11 +43,11 @@ export default function FindYourScentPage() {
               body: "Open the product page for notes and sizes. The guide is a shortlist, not a substitute for a full wear.",
             },
           ].map((item) => (
-            <div key={item.title} className="border-t border-hairline pt-5">
-              <h2 className="font-display text-[1.05rem] font-medium text-ink">
+            <div key={item.title} className="border-t border-hairline pt-6">
+              <h2 className="text-heading-sm text-ink">
                 {item.title}
               </h2>
-              <p className="mt-2 font-serif text-[1.05rem] leading-relaxed text-taupe">
+              <p className="mt-2 max-w-md text-body text-taupe">
                 {item.body}
               </p>
             </div>

@@ -16,7 +16,7 @@ export default function TrackOrderPage() {
       <h1 className="sr-only">Track your order</h1>
       <Suspense
         fallback={
-          <div className="flex min-h-dvh items-center justify-center bg-canvas font-serif text-base text-taupe">
+          <div className="flex min-h-dvh items-center justify-center bg-canvas text-base text-taupe">
             Loading…
           </div>
         }

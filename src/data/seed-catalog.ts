@@ -78,7 +78,7 @@ export const seedProducts: SeedProduct[] = [
     reviewCount: 4,
     inStock: true,
     status: "active",
-    seoTitle: "Amber Noir EDP - Smoked Amber & Oud",
+    seoTitle: "Amber Noir EDP: Smoked Amber & Oud",
     seoDescription:
       "Buy Amber Noir eau de parfum. Smoked amber, oud, and rose for long evenings. 30ml, 50ml, and 100ml with clear performance meters.",
   },
@@ -1273,7 +1273,7 @@ export const seedJournal = [
     relatedProductHandle: "fig-verdure-edt",
     relatedCollectionHandle: "fresh",
     imageUrl: "/assets/find-your-scent.webp",
-    imageTone: "#D9E0D2",
+    imageTone: "#E4DDD2",
     status: "published",
   },
   {
@@ -1292,7 +1292,7 @@ export const seedJournal = [
     relatedProductHandle: "green-monsoon-edt",
     relatedCollectionHandle: "fresh",
     imageUrl: "/assets/homepage-story-band.webp",
-    imageTone: "#D2DFD8",
+    imageTone: "#E8DFC8",
     status: "published",
   },
   {
@@ -1349,7 +1349,7 @@ export const seedJournal = [
     relatedProductHandle: "fig-verdure-edt",
     relatedCollectionHandle: "fresh",
     imageUrl: "/assets/worn-in-wild-1.webp",
-    imageTone: "#D9E0D2",
+    imageTone: "#E4DDD2",
     status: "published",
   },
   {

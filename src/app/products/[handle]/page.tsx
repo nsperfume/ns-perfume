@@ -129,7 +129,7 @@ export default async function ProductPage({ params }: Props) {
 
       {/* Hero: gallery + buy */}
       <section className="border-b border-hairline bg-canvas">
-        <div className="container-ns pb-10 pt-6 md:pb-14 md:pt-8 lg:pb-16">
+        <div className="container-ns pb-12 pt-6 md:pb-16 md:pt-8 lg:pb-20">
           <StoreBreadcrumb
             items={[
               { label: "Home", href: "/" },
@@ -142,9 +142,9 @@ export default async function ProductPage({ params }: Props) {
             ]}
           />
 
-          <div className="mt-6 grid items-start gap-8 md:gap-12 lg:mt-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] lg:items-stretch lg:gap-14 xl:gap-16">
+          <div className="mt-2 grid items-start gap-8 md:gap-12 lg:mt-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:gap-14 xl:gap-20">
             <ProductGallery images={product.gallery} name={product.name} />
-            <div className="min-h-0 lg:h-full">
+            <div className="min-w-0 lg:pt-2">
               <ProductPurchasePanel product={product} />
             </div>
           </div>
@@ -153,16 +153,16 @@ export default async function ProductPage({ params }: Props) {
 
       {/* Notes */}
       <section className="border-b border-hairline bg-paper">
-        <div className="container-ns py-12 md:py-16">
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-16">
+        <div className="container-ns section-y">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-20">
             <div>
-              <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+              <p className="mb-3 text-eyebrow text-taupe">
                 Composition
               </p>
               <h2 className="text-display-md text-balance">
                 Notes on {product.name}
               </h2>
-              <p className="mt-3 max-w-md font-serif text-[1.05rem] leading-relaxed text-taupe">
+              <p className="mt-4 max-w-md text-body-lg text-taupe">
                 How this bottle opens, develops, and finishes. Match it to heat,
                 fabric layers, and how close you sit to other people.
               </p>
@@ -193,17 +193,17 @@ export default async function ProductPage({ params }: Props) {
             aria-hidden
           />
           <div className="absolute inset-0 z-10 flex items-end">
-            <div className="container-ns w-full py-7 sm:py-10 md:py-14 lg:py-16">
-              <div className="max-w-xl">
-                <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-paper/70">
+            <div className="container-ns w-full py-8 sm:py-12 md:py-16 lg:py-20">
+              <div className="max-w-[40rem]">
+                <p className="text-eyebrow text-paper/80">
                   Wear it in
                 </p>
-                <h2 className="mt-2 font-display text-[1.35rem] font-medium leading-snug text-balance text-paper sm:mt-3 sm:text-[2rem] sm:leading-tight md:text-[2.35rem]">
+                <h2 className="mt-3 text-display-md text-balance text-paper sm:mt-4 lg:text-display-lg">
                   {product.name} for rooms that hold a conversation
                 </h2>
-                <p className="mt-2 line-clamp-3 max-w-md font-serif text-[0.98rem] leading-relaxed text-paper/85 sm:mt-4 sm:line-clamp-none sm:text-[1.1rem]">
-                  {product.descriptor}. Built for Pakistani heat, layered
-                  fabric, and evenings that run long.
+                <p className="mt-3 line-clamp-3 max-w-[34rem] text-body text-paper/90 sm:mt-5 sm:line-clamp-none sm:text-body-lg">
+                  Built for Pakistani heat, layered fabric, and evenings that
+                  run long.
                 </p>
               </div>
             </div>
@@ -215,7 +215,6 @@ export default async function ProductPage({ params }: Props) {
       <section className="border-b border-hairline bg-canvas section-y">
         <div className="container-ns">
           <StoreSectionHeader
-            eyebrow="Details"
             title="Character and wear"
             description="The story behind the formula, and how to wear it day to evening."
           />
@@ -225,32 +224,32 @@ export default async function ProductPage({ params }: Props) {
 
       {/* Specs */}
       <section className="border-b border-hairline bg-muted/30">
-        <div className="container-ns py-12 md:py-14">
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start lg:gap-12 xl:gap-16">
+        <div className="container-ns section-y">
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start lg:gap-16 xl:gap-20">
             <PerformanceMeter
               sillage={product.sillage}
               longevity={product.longevity}
             />
-            <dl className="grid gap-6 sm:grid-cols-2">
-              <div className="border-t border-hairline pt-4">
-                <dt className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+            <dl className="grid gap-8 sm:grid-cols-2">
+              <div className="border-t border-hairline pt-5">
+                <dt className="text-eyebrow text-taupe">
                   Concentration
                 </dt>
-                <dd className="mt-2 font-display text-xl font-medium text-ink">
+                <dd className="mt-2 text-display-sm text-ink">
                   {product.concentration}
                 </dd>
-                <dd className="mt-1 font-serif text-[1rem] text-taupe">
-                  {product.prices.map((p) => `${p.ml}ml`).join(" · ")}
+                <dd className="mt-1 font-mono text-sm text-taupe">
+                  {product.prices.map((p) => `${p.ml} ml`).join(" · ")}
                 </dd>
               </div>
-              <div className="border-t border-hairline pt-4">
-                <dt className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+              <div className="border-t border-hairline pt-5">
+                <dt className="text-eyebrow text-taupe">
                   Origin
                 </dt>
-                <dd className="mt-2 font-display text-xl font-medium text-ink">
+                <dd className="mt-2 text-display-sm text-ink">
                   {product.countryOfOrigin}
                 </dd>
-                <dd className="mt-1 font-serif text-[1rem] capitalize text-taupe">
+                <dd className="mt-1 text-body capitalize text-taupe">
                   {product.family} · {product.gender}
                 </dd>
               </div>
@@ -273,38 +272,38 @@ export default async function ProductPage({ params }: Props) {
 
       {/* Ingredients */}
       <section className="border-b border-hairline bg-paper section-y">
-        <div className="container-ns grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+        <div className="container-ns grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-20">
           <div>
             <StoreSectionHeader
               eyebrow="Formula"
               title="Ingredients and sourcing"
               className="mb-0"
             />
-            <p className="mt-4 max-w-md font-serif text-[1.1rem] leading-relaxed text-taupe">
+            <p className="mt-4 max-w-md text-body-lg text-taupe">
               Country of origin: {product.countryOfOrigin}.
               {product.containsAlcohol
                 ? " Core materials used in this formula are listed for transparency, not as full IFRA paperwork."
                 : " This bottle is alcohol-free. Core materials are listed for transparency, not as full IFRA paperwork."}
             </p>
             {!product.containsAlcohol ? (
-              <p className="mt-3 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink">
+              <p className="mt-3 text-eyebrow text-ink">
                 Alcohol-free formula
               </p>
             ) : null}
           </div>
           {product.ingredients.length ? (
-            <ul className="columns-1 gap-x-10 sm:columns-2">
+            <ul className="columns-1 gap-x-10 sm:columns-2 lg:pt-2">
               {product.ingredients.map((ing) => (
                 <li
                   key={ing}
-                  className="mb-3 break-inside-avoid border-b border-hairline pb-3 font-serif text-[1.05rem] text-ink/85"
+                  className="mb-3 break-inside-avoid border-b border-hairline pb-3 text-body text-ink/85"
                 >
                   {ing}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="font-serif text-[1.05rem] text-taupe">
+            <p className="text-body text-taupe">
               {product.containsAlcohol
                 ? "Ingredient details for this bottle are available on the packing insert."
                 : "Alcohol-free formula. Full material notes are available on the packing insert."}
@@ -332,13 +331,13 @@ export default async function ProductPage({ params }: Props) {
               action={
                 <Link
                   href="/products"
-                  className="font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+                  className="inline-flex min-h-11 items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:text-brass-ink hover:decoration-brass"
                 >
                   Shop all
                 </Link>
               }
             />
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-10 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4 2xl:gap-x-6">
               {fallbackRelated.map((p) => (
                 <ProductCard key={p.handle} product={p} showMeter />
               ))}

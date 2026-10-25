@@ -36,13 +36,16 @@ const exploreItems = [
 ];
 
 const linkClass =
-  "inline-flex min-h-11 cursor-pointer items-center rounded-xs px-2 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-paper/85 transition-colors duration-300 hover:text-white xl:text-[13px]";
+  "inline-flex min-h-11 cursor-pointer items-center rounded-xs px-3 text-label text-paper/85 transition-colors duration-300 hover:text-white xl:px-4";
+
+const mobileLink =
+  "flex min-h-12 cursor-pointer items-center text-label text-paper/90 transition-colors hover:text-white";
 
 const iconBtn =
-  "relative inline-flex min-h-10 min-w-9 cursor-pointer items-center justify-center rounded-xs text-paper/85 transition-colors hover:text-white sm:min-h-11 sm:min-w-11";
+  "relative inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xs text-paper/85 transition-colors hover:bg-white/5 hover:text-white";
 
 const iconBtnDesktop =
-  "relative hidden min-h-10 min-w-9 cursor-pointer items-center justify-center rounded-xs text-paper/85 transition-colors hover:text-white sm:inline-flex sm:min-h-11 sm:min-w-11";
+  "relative hidden h-11 w-11 cursor-pointer items-center justify-center rounded-xs text-paper/85 transition-colors hover:bg-white/5 hover:text-white sm:inline-flex";
 
 export function Header() {
   const { openCart, itemCount } = useCart();
@@ -150,7 +153,7 @@ export function Header() {
 
   return (
     <header ref={headerRef} className="nav-glass overflow-visible text-paper">
-      <div className="container-ns flex h-16 items-center gap-1.5 sm:h-[4.25rem] sm:gap-3">
+      <div className="container-ns flex h-16 items-center gap-1 sm:h-[4.25rem] sm:gap-3 lg:h-[4.5rem] lg:gap-6">
         <button
           ref={menuButtonRef}
           type="button"
@@ -172,11 +175,11 @@ export function Header() {
           aria-label={`${siteConfig.name} home`}
           className="shrink-0 cursor-pointer text-paper transition-colors hover:text-white"
         >
-          <Logo className="h-7 sm:h-8" />
+          <Logo className="h-6 min-[380px]:h-7 sm:h-8 lg:h-9" />
         </Link>
 
         <nav
-          className="relative z-50 hidden min-w-0 flex-1 items-center justify-center gap-0.5 lg:flex"
+          className="relative z-50 hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex xl:gap-2"
           aria-label="Primary"
         >
             <NavDropdown
@@ -200,8 +203,8 @@ export function Header() {
             </Link>
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-0 sm:gap-1">
-          <CurrencyToggle className="hidden md:inline-flex" tone="dark" />
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
+          <CurrencyToggle className="mr-1 hidden md:inline-flex" tone="dark" />
           <button
             type="button"
             onClick={openSearch}
@@ -223,7 +226,7 @@ export function Header() {
             {ready && wishCount > 0 ? (
               <span
                 ref={wishBadgeRef}
-                className="absolute right-0.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF1744] px-1 font-mono text-[10px] font-medium text-white"
+                className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF1744] px-1 font-mono text-xs font-medium leading-none text-white"
               >
                 {wishCount}
               </span>
@@ -241,7 +244,7 @@ export function Header() {
             {ready && itemCount > 0 ? (
               <span
                 ref={cartBadgeRef}
-                className="absolute right-0.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF1744] px-1 font-mono text-[10px] font-medium text-white"
+                className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF1744] px-1 font-mono text-xs font-medium leading-none text-white"
               >
                 {itemCount}
               </span>
@@ -267,100 +270,112 @@ export function Header() {
         <div
           ref={mobilePanelRef}
           id="mobile-menu"
-          className="nav-glass-panel max-h-[calc(100dvh-var(--chrome-height))] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-white/10 text-paper lg:hidden"
+          className="nav-glass-panel h-[calc(100dvh-var(--chrome-height))] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-white/10 text-paper lg:hidden"
         >
-          <div className="space-y-1 px-5 py-5 pb-8">
-            <div className="mb-4">
-              <CurrencyToggle tone="dark" />
-            </div>
+          <div className="px-[var(--gutter)] pb-8 pt-3">
+            <nav aria-label="Mobile" className="divide-y divide-white/10">
+              <div className="py-2">
+                {[
+                  { label: "All products", href: "/products" },
+                  { label: "Collections", href: "/collections" },
+                ].map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={mobileLink}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
 
-            {[
-              { label: "Journal", href: "/journal" },
-              { label: "Contact", href: "/contact" },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block cursor-pointer py-3 text-[13px] font-medium uppercase tracking-[0.12em] text-paper/90 transition-colors hover:text-white"
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-
-            <Link
-              href="/products"
-              className="block cursor-pointer py-3 text-[13px] font-medium uppercase tracking-[0.12em] text-paper/90 transition-colors hover:text-white"
-              onClick={() => setMobileOpen(false)}
-            >
-              All Products
-            </Link>
-            <Link
-              href="/collections"
-              className="block cursor-pointer py-3 text-[13px] font-medium uppercase tracking-[0.12em] text-paper/90 transition-colors hover:text-white"
-              onClick={() => setMobileOpen(false)}
-            >
-              All Collections
-            </Link>
-
-            <button
-              type="button"
-              className="flex w-full cursor-pointer items-center justify-between py-3 text-[13px] font-medium uppercase tracking-[0.12em] text-paper/90 transition-colors hover:text-white"
-              onClick={() => setMobileShopOpen((v) => !v)}
-              aria-expanded={mobileShopOpen}
-            >
-              Shop By Category
-              <ChevronDownIcon
-                size={18}
-                color="currentColor"
-                className={cn(
-                  "transition-transform duration-300",
-                  mobileShopOpen && "rotate-180",
-                )}
-              />
-            </button>
-            {mobileShopOpen ? (
-              <div className="mb-3 space-y-5 border-l border-white/20 pl-4">
-                {shopColumns.map((col) => (
-                  <div key={col.title}>
-                    <p className="mb-2 font-display text-[11px] uppercase tracking-[0.14em] text-paper/50">
-                      {col.title}
-                    </p>
-                    <ul className="flex flex-col gap-1">
-                      {col.items.map((item) => (
-                        <li key={item.href}>
-                          <Link
-                            href={item.href}
-                            className="block cursor-pointer py-1.5 text-sm text-paper/85 transition-colors hover:text-white"
-                            onClick={() => setMobileOpen(false)}
-                          >
-                            {item.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                <button
+                  type="button"
+                  className={cn(mobileLink, "w-full justify-between")}
+                  onClick={() => setMobileShopOpen((v) => !v)}
+                  aria-expanded={mobileShopOpen}
+                >
+                  Shop by category
+                  <ChevronDownIcon
+                    size={18}
+                    color="currentColor"
+                    className={cn(
+                      "transition-transform duration-300",
+                      mobileShopOpen && "rotate-180",
+                    )}
+                  />
+                </button>
+                {mobileShopOpen ? (
+                  <div className="mb-3 space-y-5 border-l border-white/20 pl-4">
+                    {shopColumns.map((col) => (
+                      <div key={col.title}>
+                        <p className="mb-1 text-eyebrow text-paper/60">
+                          {col.title}
+                        </p>
+                        <ul className="flex flex-col">
+                          {col.items.map((item) => (
+                            <li key={item.href}>
+                              <Link
+                                href={item.href}
+                                className="flex min-h-11 cursor-pointer items-center text-base text-paper/85 transition-colors hover:text-white"
+                                onClick={() => setMobileOpen(false)}
+                              >
+                                {item.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
+                ) : null}
+
+                <Link
+                  href="/find-your-scent"
+                  className={mobileLink}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Find your scent
+                </Link>
+              </div>
+
+              <div className="py-2">
+                {[
+                  ...exploreItems,
+                  { label: "Journal", href: "/journal" },
+                  { label: "Contact", href: "/contact" },
+                ].map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={mobileLink}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
                 ))}
               </div>
-            ) : null}
 
-            {[
-              ...exploreItems,
-              { label: "Find Your Scent", href: "/find-your-scent" },
-              { label: "Wishlist", href: "/wishlist" },
-              { label: "Search", href: "/search" },
-              { label: "Account", href: "/account" },
-              { label: "Cart", href: "/cart" },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block cursor-pointer py-3 text-[13px] font-medium uppercase tracking-[0.12em] text-paper/90 transition-colors hover:text-white"
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+              <div className="flex flex-wrap items-center justify-between gap-4 py-4">
+                <div className="flex gap-6">
+                  <Link
+                    href="/wishlist"
+                    className="inline-flex min-h-11 items-center text-body-sm text-paper/80 hover:text-white"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Wishlist{ready && wishCount ? ` (${wishCount})` : ""}
+                  </Link>
+                  <Link
+                    href="/account"
+                    className="inline-flex min-h-11 items-center text-body-sm text-paper/80 hover:text-white"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {user ? "Account" : "Sign in"}
+                  </Link>
+                </div>
+                <CurrencyToggle tone="dark" />
+              </div>
+            </nav>
           </div>
         </div>
       ) : null}

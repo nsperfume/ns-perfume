@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 export default function ShippingReturnsPage() {
   return (
     <section className="bg-canvas section-y">
-      <div className="container-ns max-w-2xl">
-        <h1 className="text-display-lg mb-4">Shipping & returns</h1>
-        <div className="flex flex-col gap-8 text-body text-taupe">
+      <div className="container-ns max-w-[48rem]">
+        <h1 className="mb-10 text-display-xl">Shipping & returns</h1>
+        <div className="flex flex-col gap-10 text-body-lg text-taupe">
           <div>
             <h2 className="text-heading-sm mb-3 text-ink">Shipping</h2>
             <p>
@@ -46,7 +46,7 @@ export default function ShippingReturnsPage() {
           <Button href="/policies/shipping" variant="secondary">
             Full shipping policy
           </Button>
-          <Link href="/contact" className="text-eyebrow text-brass self-center">
+          <Link href="/contact" className="inline-flex min-h-11 items-center self-center text-label text-brass-ink underline decoration-brass/40 underline-offset-[6px]">
             Contact care
           </Link>
         </div>

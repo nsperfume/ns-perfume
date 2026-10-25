@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useRef, type PointerEvent } from "react";
 import { pageCopy } from "@/data/copy";
 import { siteImages, wornInWildAlts } from "@/data/images";
-import { cn } from "@/lib/cn";
 
 const frames = [
   { label: "Wrist", note: "Pulse point at golden hour" },
@@ -15,13 +14,11 @@ const frames = [
 function WornShot({
   src,
   alt,
-  index,
   label,
   note,
 }: {
   src: string;
   alt: string;
-  index: number;
   label: string;
   note: string;
 }) {
@@ -67,44 +64,13 @@ function WornShot({
           />
         </div>
 
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-black/15 to-transparent",
-            "opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-focus-within:opacity-100",
-          )}
-          aria-hidden
-        />
-
-        <div
-          className={cn(
-            "absolute inset-x-0 bottom-0 flex translate-y-3 items-end justify-between gap-3 p-4 opacity-0",
-            "transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-            "group-hover:translate-y-0 group-hover:opacity-100",
-            "group-focus-within:translate-y-0 group-focus-within:opacity-100",
-            "md:p-5",
-          )}
-        >
-          <div>
-            <p className="font-display text-[0.95rem] font-medium tracking-wide text-paper">
-              {label}
-            </p>
-            <p className="mt-0.5 font-serif text-[0.95rem] text-paper/75">
-              {note}
-            </p>
-          </div>
-          <p className="shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-paper/55">
-            {String(index + 1).padStart(2, "0")}
-          </p>
-        </div>
       </div>
 
-      <figcaption className="mt-3 flex items-baseline justify-between gap-3 sm:mt-3.5">
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-taupe">
-          {String(index + 1).padStart(2, "0")} · {label}
+      <figcaption className="mt-4 flex items-baseline justify-between gap-3">
+        <span className="text-body-sm font-semibold text-ink">
+          {label}
         </span>
-        <span className="hidden font-serif text-[0.9rem] text-taupe/80 sm:inline">
-          {note}
-        </span>
+        <span className="text-body-sm text-taupe">{note}</span>
       </figcaption>
     </figure>
   );
@@ -116,14 +82,14 @@ export function WornInWild() {
   return (
     <section className="border-b border-hairline bg-canvas section-y">
       <div className="container-ns">
-        <div className="mb-6 max-w-xl sm:mb-8 md:mb-10">
-          <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+        <div className="mb-8 max-w-[44rem] sm:mb-10 lg:mb-14">
+          <p className="mb-3 text-eyebrow text-taupe sm:mb-4">
             In life
           </p>
           <h2 className="text-display-lg text-balance text-ink">
             Worn in the wild
           </h2>
-          <p className="mt-2 text-pretty font-serif text-[1.05rem] leading-relaxed text-taupe">
+          <p className="mt-4 text-pretty text-body sm:text-body-lg text-taupe">
             {pageCopy.wornInWild}
           </p>
         </div>
@@ -134,7 +100,6 @@ export function WornInWild() {
               key={src}
               src={src}
               alt={wornInWildAlts[i] ?? "Fragrance worn in everyday light"}
-              index={i}
               label={frames[i]?.label ?? "In wear"}
               note={frames[i]?.note ?? "Everyday light"}
             />

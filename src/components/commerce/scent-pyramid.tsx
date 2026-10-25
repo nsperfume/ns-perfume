@@ -26,12 +26,12 @@ export function ScentPyramid({
         {bands.map((band) => (
           <div
             key={band.label}
-            className="grid grid-cols-[4rem_1fr] items-baseline gap-4 py-3.5 sm:grid-cols-[5rem_1fr]"
+            className="grid grid-cols-[4.5rem_1fr] items-baseline gap-4 py-5 sm:grid-cols-[6rem_1fr]"
           >
-            <dt className="font-display text-[10px] font-medium uppercase tracking-[0.16em] text-ink/45">
+            <dt className="text-eyebrow text-taupe">
               {band.label}
             </dt>
-            <dd className="font-serif text-[1.08rem] leading-snug text-ink">
+            <dd className="font-display text-[1.5rem] font-medium leading-snug text-ink sm:text-[1.75rem]">
               {band.notes.join(" · ")}
             </dd>
           </div>
@@ -54,10 +54,10 @@ export function ScentPyramid({
             key={band.label}
             className="grid grid-cols-[5rem_1fr] items-baseline gap-4 py-4"
           >
-            <dt className="font-display text-[10px] font-medium uppercase tracking-[0.16em] text-ink/45">
+            <dt className="text-eyebrow text-taupe">
               {band.label}
             </dt>
-            <dd className="font-serif text-[1.1rem] leading-snug text-ink">
+            <dd className="font-display text-[1.5rem] font-medium leading-snug text-ink sm:text-[1.75rem]">
               {band.notes.join(" · ")}
             </dd>
           </div>

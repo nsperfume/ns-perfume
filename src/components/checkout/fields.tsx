@@ -8,10 +8,10 @@ import type {
 } from "react";
 
 const fieldBase =
-  "w-full rounded-md border border-hairline bg-paper px-3.5 py-3 text-base text-ink outline-none transition-[border-color,box-shadow] placeholder:text-taupe/70 focus:border-brass focus:ring-2 focus:ring-brass/20";
+  "min-h-14 w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none transition-[border-color,box-shadow] placeholder:text-taupe/70 hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25";
 
 const labelFloat =
-  "pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 font-display text-sm text-taupe transition-all peer-focus:top-2.5 peer-focus:translate-y-0 peer-focus:text-xs peer-[:not(:placeholder-shown)]:top-2.5 peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:text-xs";
+  "pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-base text-taupe transition-all peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:font-semibold";
 
 export function CheckoutField({
   id,
@@ -24,7 +24,7 @@ export function CheckoutField({
       <input
         id={id}
         placeholder=" "
-        className={cn(fieldBase, "peer pt-5 pb-2.5 font-serif")}
+        className={cn(fieldBase, "peer pt-6 pb-2")}
         {...props}
       />
       <label htmlFor={id} className={labelFloat}>
@@ -45,19 +45,19 @@ export function CheckoutSelect({
     <div className={cn("relative", className)}>
       <select
         id={id}
-        className={cn(fieldBase, "appearance-none pt-5 pb-2.5 pr-9 font-serif")}
+        className={cn(fieldBase, "appearance-none pt-6 pb-2 pr-10")}
         {...props}
       >
         {children}
       </select>
       <label
         htmlFor={id}
-        className="pointer-events-none absolute left-3.5 top-2.5 font-display text-xs text-taupe"
+        className="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-taupe"
       >
         {label}
       </label>
       <span
-        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-taupe"
+        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-taupe"
         aria-hidden
       >
         ▾
@@ -79,13 +79,13 @@ export function CheckoutTextarea({
         placeholder=" "
         className={cn(
           fieldBase,
-          "peer min-h-[5.5rem] resize-y pt-6 pb-2.5 font-serif",
+          "peer min-h-[7rem] resize-y pt-7 pb-2.5",
         )}
         {...props}
       />
       <label
         htmlFor={id}
-        className="pointer-events-none absolute left-3.5 top-3 font-display text-xs text-taupe peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-focus:top-3 peer-focus:text-xs"
+        className="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-taupe peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:text-xs peer-focus:font-semibold"
       >
         {label}
       </label>
@@ -110,7 +110,7 @@ export function CheckoutCheckbox({
     <label
       htmlFor={id}
       className={cn(
-        "flex cursor-pointer items-start gap-3 font-serif text-base leading-snug text-taupe",
+        "flex min-h-11 cursor-pointer items-center gap-3 text-base leading-snug text-taupe",
         className,
       )}
     >
@@ -119,7 +119,7 @@ export function CheckoutCheckbox({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-hairline accent-ink"
+        className="h-4 w-4 shrink-0 cursor-pointer rounded border-hairline accent-ink"
       />
       <span>{label}</span>
     </label>
@@ -128,5 +128,5 @@ export function CheckoutCheckbox({
 
 export function CheckoutError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="mt-1.5 font-display text-sm text-rosewood">{message}</p>;
+  return <p className="mt-1.5 text-sm font-medium text-rosewood">{message}</p>;
 }

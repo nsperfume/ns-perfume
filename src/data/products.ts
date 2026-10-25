@@ -21,7 +21,7 @@ export const products: Product[] = [
     ingredients: ["Alcohol denat.", "Parfum", "Linalool", "Coumarin", "Limonene"],
     countryOfOrigin: "France",
     story:
-      "Amber Noir was composed for the hour after dusk—when the air cools and skin holds warmth. It opens bright with citrus heat, then settles into a deep resinous heart that lingers like silk on a collarbone.",
+      "Amber Noir was composed for the hour after dusk, when the air cools and skin holds warmth. It opens bright with citrus heat, then settles into a deep resinous heart that lingers like silk on a collarbone.",
     howToWear:
       "Apply to pulse points and allow five minutes before dressing. Pairs well with a light cashmere layer. Best worn into warm evenings and formal dinners.",
     tags: ["gender:unisex", "family:oriental", "concentration:edp", "badge:bestseller"],
@@ -60,7 +60,7 @@ export const products: Product[] = [
     ingredients: ["Alcohol denat.", "Parfum", "Benzyl alcohol", "Geraniol"],
     countryOfOrigin: "France",
     story:
-      "Iris Solstice is a study in soft geometry—cool powder meeting sunlit wood. Built for daylight wear with enough structure to last through dinner.",
+      "Iris Solstice is a study in soft geometry: cool powder meeting sunlit wood. Built for daylight wear with enough structure to last through dinner.",
     howToWear:
       "Spray lightly on hair and wrists. Ideal for offices, daytime gatherings, and cool spring afternoons.",
     tags: ["gender:her", "family:floral", "concentration:edp", "badge:new"],
@@ -138,7 +138,7 @@ export const products: Product[] = [
     ingredients: ["Alcohol denat.", "Parfum", "Linalool", "Citronellol"],
     countryOfOrigin: "Spain",
     story:
-      "Fig Verdure is a cool shade walk—crushed leaves, milky fruit, and the faint sweetness of sun on wood. A summer staple refined for year-round wear.",
+      "Fig Verdure is a cool shade walk: crushed leaves, milky fruit, and the faint sweetness of sun on wood. A summer staple refined for year-round wear.",
     howToWear:
       "Best on bare skin in heat. Layer lightly after a shower when skin is still warm.",
     tags: ["gender:unisex", "family:fresh", "concentration:edt", "badge:new"],
@@ -177,7 +177,7 @@ export const products: Product[] = [
     ingredients: ["Alcohol denat.", "Parfum", "Eugenol", "Cinnamal"],
     countryOfOrigin: "France",
     story:
-      "Oud Atelier is a denser composition for cooler nights—rose darkens, leather softens, and the trail fills a room without shouting.",
+      "Oud Atelier is a denser composition for cooler nights. Rose darkens, leather softens, and the trail fills a room without shouting.",
     howToWear:
       "One spray only at the base of the throat. Stronger concentrations need less volume. Ideal for autumn and winter evenings.",
     tags: ["gender:him", "family:oriental", "concentration:edp", "badge:limited"],
@@ -216,7 +216,7 @@ export const products: Product[] = [
     ingredients: ["Alcohol denat.", "Parfum", "Limonene", "Citral", "Linalool"],
     countryOfOrigin: "Italy",
     story:
-      "Citrus Atelier is a clean break into morning light—zested rinds and peppery sparkle over a soft, transparent drydown.",
+      "Citrus Atelier is a clean break into morning light: zested rinds and peppery sparkle over a soft, transparent drydown.",
     howToWear:
       "Reapply mid-afternoon. Perfect for warm climates and people who prefer brightness over weight.",
     tags: ["gender:unisex", "family:fresh", "concentration:edt", "badge:bestseller"],
@@ -255,7 +255,7 @@ export const products: Product[] = [
     ingredients: ["Alcohol denat.", "Parfum", "Coumarin", "Vanillin"],
     countryOfOrigin: "France",
     story:
-      "Vanille Gilde treats gourmand notes with restraint—sweetness is tempered by roast and wood so the composition reads warm, not sugary.",
+      "Vanille Gilde treats gourmand notes with restraint. Sweetness is tempered by roast and wood so the composition reads warm, not sugary.",
     howToWear:
       "Wear into cooler weather. One spray on clothing fibers extends the drydown through the night.",
     tags: ["gender:her", "family:gourmand", "concentration:edp", "badge:limited"],
@@ -290,7 +290,7 @@ export const products: Product[] = [
     ingredients: ["Alcohol denat.", "Parfum"],
     countryOfOrigin: "France",
     story:
-      "Six of our most requested compositions in travel vials—built so you can live with each scent before choosing a full bottle.",
+      "Six of our most requested compositions in travel vials, built so you can live with each scent before choosing a full bottle.",
     howToWear:
       "Wear one vial at a time over three days. Note how the drydown sits on your skin in heat and cool air.",
     tags: ["gender:unisex", "family:fresh", "concentration:edp", "badge:bestseller"],

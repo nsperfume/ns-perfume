@@ -31,7 +31,7 @@ const QUICK_SEARCHES: { label: string; q?: string; href?: string }[] = [
 ];
 
 const quickChipClass =
-  "cursor-pointer rounded-xs border border-hairline bg-[#FAF8F4] px-3 py-1.5 font-serif text-[0.95rem] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper";
+  "inline-flex min-h-10 cursor-pointer items-center rounded-xs border border-hairline bg-[#FAF8F4] px-4 text-body-sm text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper";
 
 /**
  * Drops open from the bottom edge of the fixed chrome (topbar + nav).
@@ -227,7 +227,7 @@ export function SearchSheet() {
 
           {/* Single compact search row */}
           <form
-            className="flex items-stretch overflow-hidden rounded-md border border-ink bg-paper"
+            className="flex items-stretch overflow-hidden rounded-xs border border-ink bg-paper"
             onSubmit={(e) => {
               e.preventDefault();
               goFullSearch();
@@ -244,13 +244,13 @@ export function SearchSheet() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search notes, names, or families"
-                className="min-h-12 w-full border-0 bg-transparent font-serif text-[1.125rem] text-ink outline-none placeholder:text-taupe/65 sm:min-h-[3.25rem] sm:text-[1.25rem]"
+                className="min-h-12 w-full border-0 bg-transparent font-sans text-[1.125rem] text-ink outline-none placeholder:text-taupe/65 sm:min-h-[3.25rem] sm:text-[1.25rem]"
                 aria-label="Search products"
               />
             </div>
             <button
               type="submit"
-              className="hidden shrink-0 cursor-pointer bg-ink px-5 font-display text-[12px] font-medium uppercase tracking-[0.14em] text-paper transition-colors hover:bg-brass hover:text-ink sm:inline-flex sm:items-center"
+              className="hidden shrink-0 cursor-pointer bg-ink px-5 text-label text-paper transition-colors hover:bg-brass hover:text-ink sm:inline-flex sm:items-center"
             >
               Search
             </button>
@@ -269,7 +269,7 @@ export function SearchSheet() {
             {!hasQuery ? (
               <div className="space-y-5">
                 <div>
-                  <p className="mb-2.5 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                  <p className="mb-2.5 text-eyebrow text-taupe">
                     Try a note or collection
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -299,7 +299,7 @@ export function SearchSheet() {
 
                 {bestsellers.length > 0 ? (
                   <div>
-                    <p className="mb-2.5 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                    <p className="mb-2.5 text-eyebrow text-taupe">
                       Bestsellers
                     </p>
                     <ul className="grid gap-1 sm:grid-cols-2">
@@ -308,7 +308,7 @@ export function SearchSheet() {
                           <Link
                             href={`/products/${p.handle}`}
                             onClick={closeSearch}
-                            className="group flex items-center gap-3 rounded-sm px-1.5 py-2 transition-colors hover:bg-muted"
+                            className="group flex items-center gap-3 rounded-xs px-2 py-2 transition-colors hover:bg-muted"
                           >
                             <div className="relative h-12 w-12 shrink-0 overflow-hidden bg-canvas">
                               <Image
@@ -320,12 +320,12 @@ export function SearchSheet() {
                               />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate font-display text-[0.95rem] font-medium text-ink group-hover:text-brass">
+                              <p className="truncate text-base font-semibold text-ink group-hover:text-brass-ink">
                                 {p.name}
                               </p>
                               <Price
                                 amountPkr={p.prices[0]?.price ?? 0}
-                                className="text-[0.85rem] text-taupe"
+                                className="text-caption text-taupe"
                               />
                             </div>
                           </Link>
@@ -337,13 +337,13 @@ export function SearchSheet() {
               </div>
             ) : results.length === 0 ? (
               <div className="flex flex-col items-start gap-3 py-2">
-                <p className="font-serif text-[1.05rem] text-taupe">
+                <p className="text-body text-taupe">
                   No bottles match “{query.trim()}”.
                 </p>
                 <button
                   type="button"
                   onClick={() => goFullSearch()}
-                  className="cursor-pointer font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+                  className="inline-flex min-h-11 cursor-pointer items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass"
                 >
                   Open full search →
                 </button>
@@ -368,24 +368,24 @@ export function SearchSheet() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-col gap-0.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2">
-                          <p className="truncate font-display text-[1.05rem] font-medium text-ink group-hover:text-brass">
+                          <p className="truncate text-display-sm text-ink group-hover:text-brass-ink">
                             {p.name}
                           </p>
-                          <span className="font-mono text-[11px] uppercase tracking-wide text-taupe">
+                          <span className="text-eyebrow text-taupe">
                             {p.concentration}
                           </span>
                         </div>
-                        <p className="mt-0.5 truncate font-serif text-[0.9rem] text-taupe">
+                        <p className="mt-0.5 truncate text-body-sm text-taupe">
                           {p.descriptor}
                         </p>
                         <Price
                           amountPkr={p.prices[0]?.price ?? 0}
-                          className="mt-1 text-[0.95rem] sm:hidden"
+                          className="mt-1 text-base sm:hidden"
                         />
                       </div>
                       <Price
                         amountPkr={p.prices[0]?.price ?? 0}
-                        className="hidden shrink-0 text-[0.95rem] sm:block sm:text-[1.05rem]"
+                        className="hidden shrink-0 text-base sm:block"
                       />
                     </Link>
                   </li>
@@ -399,12 +399,12 @@ export function SearchSheet() {
               type="button"
               onClick={() => goFullSearch()}
               className={cn(
-                "cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink underline-offset-4 hover:underline",
+                "inline-flex min-h-11 cursor-pointer items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass",
               )}
             >
               {hasQuery ? "See all results →" : "Full search page →"}
             </button>
-            <p className="font-mono text-[10px] tracking-wide text-taupe">
+            <p className="font-mono text-xs tracking-wide text-taupe">
               Esc
             </p>
           </div>

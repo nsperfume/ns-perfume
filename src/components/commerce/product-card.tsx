@@ -43,7 +43,7 @@ export function ProductCard({
         className,
       )}
     >
-      <div className="relative mb-3 aspect-square w-full overflow-hidden bg-muted sm:mb-3.5 sm:aspect-4/5">
+      <div className="relative mb-4 aspect-4/5 w-full overflow-hidden bg-muted">
         <Image
           src={product.imagePrimary}
           alt={`NS Perfume ${product.name} bottle`}
@@ -52,7 +52,7 @@ export function ProductCard({
           loading={priority ? "eager" : "lazy"}
           quality={80}
           className="object-cover object-center transition-transform duration-700 ease-out will-change-transform group-hover:scale-105"
-          sizes="(max-width: 640px) 70vw, (max-width: 1024px) 40vw, 28vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 34vw, 25vw"
         />
         <Image
           src={product.imageSecondary}
@@ -61,7 +61,7 @@ export function ProductCard({
           loading="lazy"
           quality={80}
           className="object-cover object-center scale-105 opacity-0 transition-[opacity,transform] duration-700 ease-out will-change-transform group-hover:scale-105 group-hover:opacity-100"
-          sizes="(max-width: 640px) 70vw, (max-width: 1024px) 40vw, 28vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 34vw, 25vw"
           aria-hidden
         />
         <div
@@ -71,47 +71,35 @@ export function ProductCard({
       </div>
 
       <div className="flex flex-1 flex-col">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-          <div className="min-w-0">
-            {badge ? (
-              <p
-                className={cn(
-                  "mb-1 font-display text-[10px] font-medium uppercase tracking-[0.14em]",
-                  badge === "sale" || badge === "limited"
-                    ? "text-rosewood"
-                    : "text-taupe",
-                )}
-              >
-                {badgeLabel(badge)}
-              </p>
-            ) : (
-              <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.14em] text-taupe">
-                <span className="capitalize">{product.family}</span>
-              </p>
-            )}
-            <h3 className="font-display text-[1.05rem] font-medium leading-snug tracking-tight text-ink transition-colors duration-300 group-hover:text-brass sm:text-[1.125rem]">
-              {product.name}
-            </h3>
-          </div>
-          <Price
-            amountPkr={price}
-            className="shrink-0 text-[0.95rem] font-medium tabular-nums sm:pt-0.5 sm:text-[1rem]"
-          />
-        </div>
-
+        <p
+          className={cn(
+            "text-eyebrow",
+            badge === "sale" || badge === "limited"
+              ? "text-rosewood"
+              : badge
+                ? "text-brass-ink"
+                : "text-taupe",
+          )}
+        >
+          {badge ? badgeLabel(badge) : product.family}
+        </p>
+        <h3 className="mt-1.5 text-display-sm text-ink transition-colors duration-300 group-hover:text-brass-ink">
+          {product.name}
+        </h3>
         {showDescriptor ? (
-          <p className="mt-1.5 line-clamp-2 font-serif text-[0.9rem] leading-snug text-taupe">
+          <p className="mt-1.5 line-clamp-2 text-body-sm text-taupe">
             {product.descriptor}
           </p>
-        ) : (
-          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-taupe/80">
+        ) : null}
+        <div className="mt-auto flex flex-col gap-1 pt-3 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-3">
+          <Price amountPkr={price} className="text-ink" />
+          <span className="font-mono text-xs text-taupe">
             {product.concentration}
-            {product.prices[0]?.ml ? ` · ${product.prices[0].ml}ml` : ""}
-          </p>
-        )}
-
+            {product.prices[0]?.ml ? ` · ${product.prices[0].ml} ml` : ""}
+          </span>
+        </div>
         {showMeter ? (
-          <p className="mt-2 font-mono text-[10px] tabular-nums tracking-wide text-taupe">
+          <p className="mt-2 text-caption text-taupe">
             Sillage {sillage}/5 · Longevity {longevity}/5
           </p>
         ) : null}

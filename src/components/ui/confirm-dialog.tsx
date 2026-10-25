@@ -41,7 +41,7 @@ export function ConfirmDialog({
             "rounded-lg border border-[#e4e6ea] bg-paper p-6 shadow-modal outline-none",
           )}
         >
-          <AlertDialog.Title className="font-display text-xl font-medium text-ink">
+          <AlertDialog.Title className="text-heading-sm text-ink">
             {title}
           </AlertDialog.Title>
           <AlertDialog.Description className="mt-2 text-base leading-relaxed text-[#5c6370]">

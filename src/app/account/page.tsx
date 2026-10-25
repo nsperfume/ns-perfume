@@ -18,7 +18,7 @@ export default function AccountPage() {
         fallback={
           <section className="bg-canvas section-y">
             <div className="container-ns max-w-lg">
-              <p className="font-serif text-taupe">Loading your account…</p>
+              <p className="text-body text-taupe">Loading your account…</p>
             </div>
           </section>
         }

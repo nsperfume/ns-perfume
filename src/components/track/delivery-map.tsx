@@ -43,8 +43,8 @@ export function DeliveryMap({
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hairline bg-paper px-4 py-3">
         <div>
-          <p className="text-[13px] font-medium text-ink">{label}</p>
-          <p className="text-[12px] text-taupe">
+          <p className="text-[0.8125rem] font-medium text-ink">{label}</p>
+          <p className="text-xs text-taupe">
             {precision === "city"
               ? "Approximate delivery area"
               : precision === "region"
@@ -56,7 +56,7 @@ export function DeliveryMap({
           href={openSrc}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[13px] font-medium text-brass hover:underline"
+          className="text-[0.8125rem] font-medium text-brass hover:underline"
         >
           Open map
         </a>

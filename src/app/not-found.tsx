@@ -4,8 +4,8 @@ export default function NotFound() {
   return (
     <section className="bg-canvas section-y">
       <div className="container-ns max-w-xl text-center">
-        <h1 className="text-display-lg mb-4">Page not found</h1>
-        <p className="mb-8 text-body text-taupe">
+        <h1 className="mb-5 text-display-xl">Page not found</h1>
+        <p className="mb-10 text-body-lg text-taupe">
           That path does not exist. Return to bestsellers or the full shop
           catalog.
         </p>

@@ -32,18 +32,18 @@ export function ProductReviewsSection({
     >
       <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+          <p className="mb-3 text-eyebrow text-taupe">
             From wearers
           </p>
           <h2 className="text-display-md">Product reviews</h2>
-          <p className="mt-2 font-serif text-[1.05rem] text-taupe">
+          <p className="mt-2 text-body text-taupe">
             {reviewCount > 0
               ? `${reviewCount} review${reviewCount === 1 ? "" : "s"} for this bottle`
               : "No published reviews yet. Be the first to write about this bottle."}
           </p>
           <a
             href="#write-review"
-            className="mt-3 inline-block font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+            className="mt-3 inline-flex min-h-11 items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:text-brass-ink hover:decoration-brass"
           >
             Write a review
           </a>
@@ -51,7 +51,7 @@ export function ProductReviewsSection({
         {rating > 0 ? (
           <div className="flex items-center gap-3">
             <StarRating rating={rating} size="lg" />
-            <span className="font-mono text-[1.05rem] font-medium tabular-nums text-ink">
+            <span className="font-mono text-lg font-medium tabular-nums text-ink">
               {rating.toFixed(1)}
               <span className="text-taupe"> / 5</span>
             </span>
@@ -60,7 +60,7 @@ export function ProductReviewsSection({
       </div>
 
       {reviews.length === 0 ? (
-        <p className="mb-10 font-serif text-body text-taupe">
+        <p className="mb-10 text-body text-taupe">
           Published reviews show here after we check them. You can still leave
           yours below.
         </p>
@@ -71,7 +71,7 @@ export function ProductReviewsSection({
               key={String(r._id || `${r.author}-${r.title}`)}
               className={cn(
                 "flex flex-col border-b border-hairline py-6 md:border-b-0 md:px-8 md:py-2",
-                i === 0 && "md:pl-0",
+                i % 2 === 0 && "md:pl-0",
                 i % 2 === 1 && "md:pr-0",
                 i >= 2 && "md:mt-8 md:border-t md:border-hairline md:pt-8",
               )}
@@ -79,20 +79,20 @@ export function ProductReviewsSection({
               <div className="mb-3 flex flex-wrap items-center gap-2.5">
                 <StarRating rating={r.rating} size="sm" />
                 {r.verified ? (
-                  <span className="bg-ink px-2 py-0.5 font-display text-[10px] uppercase tracking-[0.12em] text-paper">
+                  <span className="bg-ink px-2 py-0.5 text-eyebrow text-paper">
                     Verified
                   </span>
                 ) : null}
               </div>
               {r.title ? (
-                <h3 className="font-display text-[1.1rem] font-medium text-ink">
+                <h3 className="font-sans text-lg font-semibold text-ink">
                   {r.title}
                 </h3>
               ) : null}
-              <p className="mt-2 flex-1 font-serif text-[1.05rem] leading-relaxed text-ink/80">
+              <p className="mt-2 flex-1 text-body text-ink/80">
                 {r.body}
               </p>
-              <p className="mt-5 font-serif text-[0.95rem] text-taupe">
+              <p className="mt-5 text-body-sm text-taupe">
                 {r.author}
                 {r.city ? ` · ${r.city}` : ""}
               </p>

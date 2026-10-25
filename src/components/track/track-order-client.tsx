@@ -8,7 +8,6 @@ import { DeliveryMap } from "@/components/track/delivery-map";
 import { PayableAmount } from "@/components/commerce/price";
 import { Logo } from "@/components/brand/logo";
 import { useCurrency } from "@/context/currency";
-import { formatSize } from "@/lib/format";
 import {
   formatDayRange,
   formatStatusDate,
@@ -18,9 +17,12 @@ import {
 } from "@/lib/order-status";
 import { cn } from "@/lib/cn";
 import { siteConfig } from "@/data/site";
+import { Button } from "@/components/ui/button";
 
 type TrackedOrder = {
   orderNumber: string;
+  /** Signed PDF invoice URL from POST /api/orders/track. */
+  invoiceUrl?: string;
   status: OrderStatus;
   headline: string;
   subcopy: string;
@@ -90,27 +92,27 @@ function TrackLookUpForm({
   error: string | null;
 }) {
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full max-w-[30rem]">
       <header className="mb-8 text-center">
         <Link
           href="/"
           aria-label={`${siteConfig.name} home`}
           className="inline-block text-ink"
         >
-          <Logo className="h-7" />
+          <Logo className="h-8 lg:h-9" />
         </Link>
         {/* Page H1 is server-rendered in app/track-order/page.tsx */}
-        <h2 className="mt-8 font-display text-3xl font-medium tracking-tight text-ink">
+        <h2 className="mt-8 text-display-md text-ink">
           Track your order
         </h2>
-        <p className="mt-2 font-serif text-base leading-relaxed text-taupe">
+        <p className="mt-3 text-body-lg text-taupe">
           Enter the order number from your confirmation and the email used at
           checkout.
         </p>
       </header>
 
       <form
-        className="space-y-4 rounded-md border border-hairline bg-paper p-5 sm:p-6"
+        className="space-y-5 rounded-xs border border-hairline bg-paper p-6 sm:p-8"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit();
@@ -119,7 +121,7 @@ function TrackLookUpForm({
         <div>
           <label
             htmlFor="track-order"
-            className="mb-1.5 block font-display text-sm font-medium text-ink"
+            className="mb-2 block text-sm font-semibold text-ink/80"
           >
             Order number
           </label>
@@ -130,13 +132,13 @@ function TrackLookUpForm({
             placeholder="e.g. NS-4821"
             autoComplete="off"
             required
-            className="w-full rounded-md border border-hairline bg-paper px-3.5 py-3 font-serif text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+            className="min-h-12 w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25"
           />
         </div>
         <div>
           <label
             htmlFor="track-email"
-            className="mb-1.5 block font-display text-sm font-medium text-ink"
+            className="mb-2 block text-sm font-semibold text-ink/80"
           >
             Email
           </label>
@@ -148,13 +150,13 @@ function TrackLookUpForm({
             placeholder="you@example.com"
             autoComplete="email"
             required
-            className="w-full rounded-md border border-hairline bg-paper px-3.5 py-3 font-serif text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+            className="min-h-12 w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25"
           />
         </div>
         {error ? (
           <p
             role="alert"
-            className="rounded-md border border-rosewood/30 bg-rosewood/10 px-3 py-2.5 font-display text-sm text-rosewood"
+            className="rounded-xs border border-rosewood/30 bg-rosewood/10 px-4 py-3 text-sm font-medium text-rosewood"
           >
             {error}
           </p>
@@ -162,17 +164,17 @@ function TrackLookUpForm({
         <button
           type="submit"
           disabled={loading}
-          className="flex min-h-12 w-full cursor-pointer items-center justify-center rounded-md bg-ink font-display text-sm font-medium uppercase tracking-[0.12em] text-paper transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
+          className="flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xs bg-ink text-label text-paper transition-colors hover:bg-brass hover:text-ink disabled:cursor-wait disabled:opacity-60"
         >
           {loading ? "Looking up…" : "Track order"}
         </button>
       </form>
 
-      <p className="mt-6 text-center font-display text-sm text-taupe">
+      <p className="mt-6 text-center text-sm text-taupe">
         Need help?{" "}
         <a
           href={`mailto:${siteConfig.email}`}
-          className="text-brass hover:underline"
+          className="font-semibold text-brass-ink underline-offset-4 hover:underline"
         >
           Contact us
         </a>
@@ -213,7 +215,7 @@ function Timeline({ steps }: { steps: TimelineStep[] }) {
             <div className={cn("pb-5", isLast && "pb-0")}>
               <p
                 className={cn(
-                  "font-display text-base font-medium",
+                  "font-sans text-base font-semibold",
                   cancelled ? "text-rosewood" : "text-ink",
                   step.state === "upcoming" && "text-taupe",
                 )}
@@ -224,7 +226,7 @@ function Timeline({ steps }: { steps: TimelineStep[] }) {
                 {step.description}
               </p>
               {step.at ? (
-                <p className="mt-1 font-display text-xs text-taupe/80">
+                <p className="mt-1 font-sans text-xs text-taupe/80">
                   {formatStatusDate(step.at)}
                 </p>
               ) : null}
@@ -256,30 +258,30 @@ function OrderStatusView({
   );
 
   return (
-    <div className="mx-auto grid w-full max-w-[1100px] gap-0 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+    <div className="mx-auto grid w-full max-w-[1240px] gap-0 lg:grid-cols-2 2xl:max-w-[1360px]">
       {/* Main column */}
-      <div className="px-5 py-8 sm:px-8 lg:px-12 lg:py-10 xl:px-16">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-canvas px-5 py-8 sm:px-8 lg:py-12 lg:pl-[var(--gutter)] lg:pr-14 xl:pr-20">
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/"
             aria-label={`${siteConfig.name} home`}
             className="text-ink"
           >
-            <Logo className="h-7" />
+            <Logo className="h-8 lg:h-9" />
           </Link>
           <button
             type="button"
             onClick={onLookupAnother}
-            className="cursor-pointer text-[13px] text-brass hover:underline"
+            className="inline-flex min-h-10 cursor-pointer items-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline"
           >
             Look up another order
           </button>
         </div>
 
-        <p className="text-[13px] text-taupe">
+        <p className="text-sm text-taupe">
           Order <span className="font-mono text-ink">#{order.orderNumber}</span>
         </p>
-        <h2 className="mt-1 font-display text-2xl font-medium leading-snug text-ink sm:text-3xl">
+        <h2 className="mt-2 text-display-md text-ink">
           {order.headline}
           {name ? (
             <span className="font-normal text-taupe">
@@ -287,20 +289,20 @@ function OrderStatusView({
             </span>
           ) : null}
         </h2>
-        <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-taupe">
+        <p className="mt-3 max-w-lg text-body text-taupe">
           {order.subcopy}
         </p>
 
         {order.status !== "cancelled" && order.status !== "delivered" ? (
-          <div className="mt-5 rounded-md border border-hairline bg-canvas-deep px-4 py-3">
-            <p className="text-[12px] uppercase tracking-wide text-taupe">
+          <div className="mt-5 rounded-xs border border-hairline bg-canvas-deep px-4 py-3">
+            <p className="text-eyebrow text-taupe">
               Estimated delivery
             </p>
-            <p className="mt-0.5 text-[15px] font-medium text-ink">
+            <p className="mt-1 text-base font-semibold text-ink">
               {etaLabel}
             </p>
             {order.shippingMethod?.title ? (
-              <p className="mt-0.5 text-[13px] text-taupe">
+              <p className="mt-0.5 text-caption text-taupe">
                 {order.shippingMethod.title}
                 {order.shippingMethod.description
                   ? ` · ${order.shippingMethod.description}`
@@ -312,7 +314,7 @@ function OrderStatusView({
 
         {/* Map + tracking (Shopify-style) */}
         <section className="mt-6">
-          <h2 className="mb-3 font-display text-lg font-medium text-ink">
+          <h2 className="mb-3 font-sans text-lg font-semibold text-ink">
             {order.status === "delivered"
               ? "Delivered to"
               : order.status === "shipped"
@@ -324,11 +326,11 @@ function OrderStatusView({
 
         {(order.trackingNumber || order.carrier) &&
         (order.status === "shipped" || order.status === "delivered") ? (
-          <section className="mt-4 rounded-md border border-hairline p-4">
-            <h2 className="text-[14px] font-semibold text-ink">
+          <section className="mt-4 rounded-xs border border-hairline p-4">
+            <h2 className="text-sm font-semibold text-ink">
               Tracking details
             </h2>
-            <dl className="mt-3 grid gap-2 text-[13px] sm:grid-cols-2">
+            <dl className="mt-3 grid gap-2 text-[0.8125rem] sm:grid-cols-2">
               {order.carrier ? (
                 <div>
                   <dt className="text-taupe">Carrier</dt>
@@ -349,7 +351,7 @@ function OrderStatusView({
                 href={order.trackingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-flex min-h-10 items-center rounded-md bg-ink px-4 font-display text-sm font-medium uppercase tracking-widest text-paper hover:opacity-90"
+                className="mt-3 inline-flex min-h-11 items-center rounded-xs bg-ink px-5 text-label text-paper transition-colors hover:bg-brass hover:text-ink"
               >
                 Track shipment
               </a>
@@ -357,47 +359,47 @@ function OrderStatusView({
           </section>
         ) : null}
 
-        <section className="mt-6 rounded-md border border-hairline p-5">
-          <h2 className="mb-4 font-display text-lg font-medium text-ink">
+        <section className="mt-6 rounded-xs border border-hairline p-5">
+          <h2 className="mb-4 font-sans text-lg font-semibold text-ink">
             Order updates
           </h2>
           <Timeline steps={order.timeline} />
         </section>
 
-        <section className="mt-4 rounded-md border border-hairline p-5">
-          <h2 className="font-display text-lg font-medium text-ink">
+        <section className="mt-4 rounded-xs border border-hairline p-5">
+          <h2 className="font-sans text-lg font-semibold text-ink">
             Customer information
           </h2>
           <div className="mt-4 grid gap-6 sm:grid-cols-2">
             <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-taupe">
+              <h3 className="font-sans text-eyebrow text-taupe">
                 Contact
               </h3>
-              <p className="mt-1.5 text-[14px] text-ink">{order.email}</p>
+              <p className="mt-1.5 text-sm text-ink">{order.email}</p>
               {(order.phone || addr.phone) && (
-                <p className="text-[14px] text-taupe">
+                <p className="text-sm text-taupe">
                   {order.phone || addr.phone}
                 </p>
               )}
             </div>
             <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-taupe">
+              <h3 className="font-sans text-eyebrow text-taupe">
                 Payment
               </h3>
-              <p className="mt-1.5 text-[14px] text-ink">
+              <p className="mt-1.5 text-sm text-ink">
                 {paymentLabels[order.paymentMethod || ""] ||
                   order.paymentMethod ||
-                  "—"}
+                  "Not specified"}
               </p>
-              <p className="text-[14px] text-taupe">
+              <p className="text-sm text-taupe">
                 <PayableAmount amountPkr={order.totalPkr} />
               </p>
             </div>
             <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-taupe">
+              <h3 className="font-sans text-eyebrow text-taupe">
                 Shipping address
               </h3>
-              <p className="mt-1.5 text-[14px] leading-relaxed text-taupe">
+              <p className="mt-1.5 text-sm leading-relaxed text-taupe">
                 {name}
                 <br />
                 {addr.address1}
@@ -416,14 +418,14 @@ function OrderStatusView({
               </p>
             </div>
             <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-taupe">
+              <h3 className="font-sans text-eyebrow text-taupe">
                 Shipping method
               </h3>
-              <p className="mt-1.5 text-[14px] text-ink">
+              <p className="mt-1.5 text-sm text-ink">
                 {order.shippingMethod?.title || "Standard"}
               </p>
               {order.shippingMethod?.description ? (
-                <p className="text-[13px] text-taupe">
+                <p className="text-[0.8125rem] text-taupe">
                   {order.shippingMethod.description}
                 </p>
               ) : null}
@@ -434,29 +436,35 @@ function OrderStatusView({
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-6">
           <a
             href={`mailto:${siteConfig.email}?subject=Order%20${encodeURIComponent(order.orderNumber)}`}
-            className="text-[14px] text-brass hover:underline"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline"
           >
             Need help? Contact us
           </a>
-          <Link
-            href="/products"
-            className="inline-flex min-h-11 items-center justify-center rounded-md bg-ink px-6 font-display text-sm font-medium uppercase tracking-[0.12em] text-paper hover:opacity-90"
-          >
-            Continue shopping
-          </Link>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+            {order.invoiceUrl ? (
+              <Button
+                href={order.invoiceUrl}
+                download={`${order.orderNumber}-invoice.pdf`}
+                variant="secondary"
+              >
+                Download invoice
+              </Button>
+            ) : null}
+            <Button href="/products">Continue shopping</Button>
+          </div>
         </div>
       </div>
 
       {/* Order summary sidebar */}
       <aside className="border-t border-hairline bg-canvas-deep lg:border-l lg:border-t-0">
-        <div className="px-5 py-8 sm:px-8 lg:sticky lg:top-0 lg:px-10 lg:py-10">
-          <h2 className="mb-5 font-display text-lg font-medium text-ink">
+        <div className="px-5 py-8 sm:px-8 lg:sticky lg:top-0 lg:py-12 lg:pl-14 lg:pr-[var(--gutter)] xl:pl-20">
+          <h2 className="mb-5 font-sans text-lg font-semibold text-ink">
             Order summary
           </h2>
           <ul className="space-y-4">
             {order.lines.map((line) => (
               <li key={line.sku} className="flex gap-3.5">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-hairline bg-paper">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xs border border-hairline bg-paper">
                   {line.image ? (
                     <Image
                       src={line.image}
@@ -468,18 +476,18 @@ function OrderStatusView({
                   ) : null}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-display text-base font-medium text-ink">
+                  <p className="font-sans text-base font-semibold text-ink">
                     {line.name}
                   </p>
                   <p className="text-sm text-taupe">
                     Qty {line.quantity}
                     {line.sizeMl
-                      ? ` · ${formatSize(line.sizeMl)}`
+                      ? ` · ${`${line.sizeMl} ml`}`
                       : ` · ${line.sku}`}
                     {line.isGift ? " · Gift" : ""}
                   </p>
                 </div>
-                <p className="shrink-0 font-display text-base tabular-nums text-ink">
+                <p className="shrink-0 font-mono text-base font-medium tabular-nums text-ink">
                   {format(line.unitPricePkr * line.quantity)}
                 </p>
               </li>
@@ -514,11 +522,11 @@ function OrderStatusView({
             </div>
           </div>
           <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
-            <span className="font-display text-base font-medium text-ink">Total</span>
+            <span className="font-sans text-base font-semibold text-ink">Total</span>
             <PayableAmount
               amountPkr={order.totalPkr}
               variant="stacked"
-              className="items-end text-right font-display text-2xl font-medium tracking-tight text-ink"
+              className="items-end text-right font-mono text-2xl font-medium tracking-tight text-ink"
             />
           </div>
         </div>
@@ -602,7 +610,13 @@ export function TrackOrderClient() {
   }, [searchParams, lookup, autoTried]);
 
   return (
-    <div className="min-h-dvh bg-canvas font-serif text-base text-ink ">
+    <div
+      className={cn(
+        "min-h-dvh bg-canvas text-base text-ink",
+        order &&
+          "lg:bg-[linear-gradient(90deg,var(--color-canvas)_50%,var(--color-canvas-deep)_50%)]",
+      )}
+    >
       {order ? (
         <OrderStatusView
           order={order}

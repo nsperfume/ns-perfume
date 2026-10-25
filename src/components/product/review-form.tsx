@@ -79,10 +79,10 @@ export function ProductReviewForm({
         id="write-review"
         className="scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] border border-hairline bg-muted/40 px-5 py-6 sm:px-6"
       >
-        <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+        <p className="text-eyebrow text-taupe">
           Review received
         </p>
-        <p className="mt-3 font-serif text-[1.1rem] leading-relaxed text-ink">
+        <p className="mt-3 text-body-lg text-ink">
           Thanks. Your note on {productName} is with us for a quick check before
           it appears on this page.
         </p>
@@ -107,13 +107,13 @@ export function ProductReviewForm({
       className="scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] border border-hairline bg-paper px-5 py-6 sm:px-6 md:px-8 md:py-8"
       noValidate
     >
-      <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+      <p className="text-eyebrow text-taupe">
         Your turn
       </p>
-      <h3 className="mt-2 font-display text-[1.35rem] font-medium text-ink">
+      <h3 className="mt-2 text-display-sm text-ink">
         Review {productName}
       </h3>
-      <p className="mt-2 max-w-xl font-serif text-[1.05rem] text-taupe">
+      <p className="mt-2 max-w-xl text-body text-taupe">
         How it opens, how long it lasts, and where you wore it. We publish
         after a short check.
       </p>
@@ -221,7 +221,7 @@ export function ProductReviewForm({
         <Button type="submit" disabled={saving} className="w-auto!">
           {saving ? "Sending…" : "Submit review"}
         </Button>
-        <p className="font-serif text-[0.95rem] text-taupe">
+        <p className="text-body-sm text-taupe">
           Appears after moderation. Keep it honest and specific.
         </p>
       </div>

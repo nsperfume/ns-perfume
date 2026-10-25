@@ -59,15 +59,15 @@ function SectionLead({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 md:flex-row md:items-end md:justify-between md:gap-3",
-        className ?? "mb-4 sm:mb-8 md:mb-10",
+        "flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-10",
+        className ?? "mb-8 sm:mb-10 lg:mb-14",
       )}
     >
-      <div className="max-w-xl">
+      <div className="max-w-[44rem]">
         <p
           className={cn(
-            "mb-1.5 font-display text-[11px] font-medium uppercase tracking-[0.16em] sm:mb-2",
-            light ? "text-paper/65" : "text-taupe",
+            "mb-3 text-eyebrow sm:mb-4",
+            light ? "text-paper/80" : "text-taupe",
           )}
         >
           {eyebrow}
@@ -83,8 +83,8 @@ function SectionLead({
         {description ? (
           <p
             className={cn(
-              "mt-1.5 text-pretty font-serif text-[0.95rem] leading-relaxed sm:mt-2 sm:text-[1.05rem]",
-              light ? "text-white/85" : "text-taupe",
+              "mt-4 max-w-[38rem] text-pretty text-body sm:text-body-lg",
+              light ? "text-white/90" : "text-taupe",
             )}
           >
             {description}
@@ -92,7 +92,7 @@ function SectionLead({
         ) : null}
       </div>
       {action ? (
-        <div className="shrink-0 self-start sm:self-auto">{action}</div>
+        <div className="shrink-0 self-start md:self-auto">{action}</div>
       ) : null}
     </div>
   );
@@ -115,32 +115,32 @@ export function HomeHero() {
         className="absolute inset-0 bg-linear-to-r from-black/70 via-black/45 to-black/15 sm:via-black/40 sm:to-transparent"
         aria-hidden
       />
-      <div className="container-ns relative z-10 flex flex-1 flex-col justify-end pb-10 pt-[calc(var(--spacing-chrome-height)+1rem)] sm:justify-center sm:pb-16 sm:pt-[calc(var(--spacing-chrome-height)+1.5rem)] lg:pb-20">
-        <div className="max-w-xl fade-up lg:max-w-2xl">
-          <p className="mb-2 font-display text-[10px] font-medium uppercase tracking-[0.16em] text-paper/70 sm:mb-4 sm:text-[11px] sm:tracking-[0.18em]">
-            NS Perfume
+      <div className="container-ns relative z-10 flex flex-1 flex-col justify-end pb-12 pt-[calc(var(--spacing-chrome-height)+1.5rem)] sm:justify-center sm:pb-16 sm:pt-[calc(var(--spacing-chrome-height)+2rem)] lg:pb-24">
+        <div className="max-w-[40rem] fade-up lg:max-w-[46rem]">
+          <p className="mb-4 text-eyebrow text-paper/80 sm:mb-5">
+            Amber Noir · Eau de Parfum
           </p>
-          <h1 className="text-display-lg text-balance text-paper sm:text-display-xl">
+          <h1 className="text-display-xl text-balance text-paper">
             Written for heat, stillness, and the hours after work
           </h1>
-          <p className="mt-3 max-w-lg text-pretty font-serif text-[0.98rem] leading-snug text-white/90 sm:mt-5 sm:text-body-lg sm:leading-relaxed">
+          <p className="mt-5 max-w-[36rem] text-pretty text-body text-white/90 sm:mt-6 sm:text-body-lg">
             <span className="sm:hidden">
               Amber Noir opens with bergamot and pink pepper, then settles into
               oud and amber that stay close through dinner.
             </span>
             <span className="hidden sm:inline">{pageCopy.homeHero}</span>
           </p>
-          <div className="mt-5 flex flex-col gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-3">
+          <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap">
             <Button
               href="/products/amber-noir-edp"
-              className="min-h-11 w-full justify-center py-2.5 sm:min-h-12 sm:w-auto"
+              className="w-full sm:w-auto"
             >
               Shop Amber Noir
             </Button>
             <Button
               href="/products"
               variant="secondary"
-              className="min-h-11 w-full justify-center border-paper/75 bg-transparent py-2.5 text-paper hover:border-brass focus-visible:ring-offset-ink sm:min-h-12 sm:w-auto"
+              className="w-full border-paper/70 bg-transparent text-paper hover:border-brass focus-visible:ring-offset-ink sm:w-auto"
             >
               Shop All
             </Button>
@@ -173,8 +173,8 @@ const trustPromises = [
     body: "Unopened bottles in original packaging may be returned within 30 days. If something arrives damaged, write to care with your order number and photos of the parcel.",
   },
   {
-    title: "Honest wear notes",
-    body: "Each product lists top, heart, and base plus sillage and longevity so you can match a bottle to office air, outdoor heat, or a late table before you buy.",
+    title: "A real person at care",
+    body: "Questions about an order or a bottle go to our care team, not a bot. Write, call, or WhatsApp Monday to Friday, 9am to 5pm PKT.",
   },
 ] as const;
 
@@ -184,7 +184,7 @@ const trustPromises = [
  */
 export function HomeTrustSection() {
   return (
-    <section className="border-b border-hairline bg-muted/60 section-y lg:section-viewport">
+    <section className="border-b border-hairline bg-muted/60 section-y">
       <div className="container-ns flex flex-col justify-center">
         <SectionLead
           eyebrow="Ordering with us"
@@ -192,23 +192,23 @@ export function HomeTrustSection() {
           description="Clear terms for cash on delivery, free shipping thresholds, tracking, and returns. Read the full story once, then shop without guessing."
         />
 
-        <ul className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-12">
+        <ul className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-14">
           {trustPromises.map((item, index) => (
-            <li key={item.title} className="border-t border-hairline pt-5">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-taupe">
+            <li key={item.title} className="border-t border-[#e2d6bd] pt-6">
+              <p className="font-mono text-sm text-brass-ink">
                 {String(index + 1).padStart(2, "0")}
               </p>
-              <h3 className="mt-2 font-display text-[1.15rem] font-medium tracking-wide text-ink md:text-[1.25rem]">
+              <h3 className="mt-3 text-heading-sm text-ink">
                 {item.title}
               </h3>
-              <p className="mt-3 max-w-sm font-serif text-[1.05rem] leading-relaxed text-taupe">
+              <p className="mt-3 max-w-md text-body text-taupe">
                 {item.body}
               </p>
             </li>
           ))}
         </ul>
 
-        <div className="mt-10 flex flex-wrap items-center gap-3 sm:mt-12">
+        <div className="mt-12 flex flex-col gap-3 sm:mt-14 sm:flex-row sm:flex-wrap sm:items-center">
           <Button href="/shipping-returns">Shipping and returns</Button>
           <Button href="/track-order" variant="secondary">
             Track an order
@@ -228,7 +228,7 @@ export const HomeTrustBanner = HomeTrustSection;
  */
 export function ShopByCollection() {
   return (
-    <section className="border-b border-hairline bg-canvas py-10 sm:section-y lg:section-viewport">
+    <section className="border-b border-hairline bg-canvas section-y">
       <div className="container-ns flex flex-col justify-center">
         <SectionLead
           eyebrow="Start here"
@@ -238,19 +238,18 @@ export function ShopByCollection() {
             <Button
               href="/collections"
               variant="ghost"
-              className="min-h-0! px-0! py-1!"
             >
               All collections
             </Button>
           }
         />
 
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-5">
           {collectionTiles.map((tile) => (
             <Link
               key={tile.href}
               href={tile.href}
-              className="group relative aspect-4/5 overflow-hidden bg-muted sm:aspect-4/3 lg:aspect-16/11"
+              className="group relative aspect-4/5 overflow-hidden bg-muted sm:aspect-4/3 lg:aspect-3/4"
             >
               <Image
                 src={tile.image}
@@ -259,17 +258,17 @@ export function ShopByCollection() {
                 loading="lazy"
                 quality={80}
                 className="object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-105"
-                sizes="(max-width: 640px) 50vw, 50vw"
+                sizes="(max-width: 1024px) 50vw, 25vw"
               />
               <div
                 className="absolute inset-0 bg-linear-to-t from-black/75 via-black/20 to-transparent transition-opacity duration-500 group-hover:from-black/85"
                 aria-hidden
               />
-              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 sm:gap-3 sm:p-5 md:p-6">
-                <span className="font-display text-[0.95rem] font-medium tracking-wide text-paper transition-transform duration-500 group-hover:-translate-y-0.5 sm:text-[1.2rem] md:text-[1.35rem]">
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-6">
+                <span className="text-display-sm text-paper transition-transform duration-500 group-hover:-translate-y-0.5 md:text-display-md">
                   {tile.title}
                 </span>
-                <span className="hidden font-display text-[11px] uppercase tracking-[0.14em] text-paper/70 transition-colors duration-300 group-hover:text-brass min-[380px]:inline">
+                <span className="hidden text-eyebrow text-paper/80 transition-colors duration-300 group-hover:text-brass min-[380px]:inline">
                   Shop
                 </span>
               </div>
@@ -284,10 +283,9 @@ export function ShopByCollection() {
 export function BestsellersSection({ products }: { products: StoreProduct[] }) {
   const items = products.slice(0, 8);
   return (
-    <section className="border-b border-hairline bg-muted/50 py-8 sm:section-y lg:section-viewport">
+    <section className="border-b border-hairline bg-muted/50 section-y">
       <div className="container-ns flex flex-col justify-center gap-0">
         <SectionLead
-          className="mb-3 sm:mb-8 md:mb-10"
           eyebrow="Most reached for"
           title="Bestsellers"
           description={pageCopy.bestsellers}
@@ -295,7 +293,6 @@ export function BestsellersSection({ products }: { products: StoreProduct[] }) {
             <Button
               href="/collections/bestsellers"
               variant="ghost"
-              className="min-h-0! px-0! py-1!"
             >
               View all
             </Button>
@@ -329,18 +326,18 @@ export function HomePromoBanner() {
           aria-hidden
         />
         <div className="container-ns relative z-10 flex min-h-[min(72dvh,36rem)] items-center py-14 md:min-h-[min(70dvh,40rem)] md:py-16">
-          <div className="w-full max-w-xl bg-canvas/95 p-7 backdrop-blur-sm sm:p-9 md:p-10">
-            <p className="mb-3 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+          <div className="w-full max-w-[38rem] bg-canvas/95 p-7 backdrop-blur-sm sm:p-10 lg:p-12">
+            <p className="mb-4 text-eyebrow text-taupe">
               House note
             </p>
             <h2 className="text-display-lg text-balance text-ink">
               Real pyramids. Real sillage. Less guessing on skin.
             </h2>
-            <p className="mt-4 max-w-md text-pretty font-serif text-[1.1rem] leading-relaxed text-taupe">
+            <p className="mt-5 max-w-[32rem] text-pretty text-body-lg text-taupe">
               We list top, heart, and base plus wear data so you can match a
               bottle to heat, office air, or a late table.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button href="/about">Read our story</Button>
               <Button href="/products" variant="secondary">
                 Shop bottles
@@ -374,14 +371,14 @@ export function BrandStoryBand() {
         </div>
 
         <div className="order-2 flex flex-col justify-center bg-muted/50">
-          <div className="mx-auto flex w-full max-w-lg flex-col px-6 py-12 sm:px-10 sm:py-14 lg:mx-0 lg:max-w-none lg:px-12 lg:py-16 xl:px-16">
-            <p className="mb-3 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+          <div className="mx-auto flex w-full max-w-xl flex-col px-[var(--gutter)] py-14 sm:py-16 lg:mx-0 lg:max-w-[44rem] lg:px-14 lg:py-20 xl:px-20">
+            <p className="mb-4 text-eyebrow text-taupe">
               The house
             </p>
             <h2 className="text-display-lg max-w-[18ch] text-balance text-ink">
               Composed like labels. Worn like daily architecture.
             </h2>
-            <p className="mt-5 max-w-md text-pretty font-serif text-[1.1rem] leading-relaxed text-taupe">
+            <p className="mt-5 max-w-[34rem] text-pretty text-body-lg text-taupe">
               {pageCopy.brandStory}
             </p>
 
@@ -413,13 +410,13 @@ export function BrandStoryBand() {
                     i > 0 && "lg:border-t-0",
                   )}
                 >
-                  <p className="font-display text-[10px] font-medium uppercase tracking-[0.16em] text-ink/45">
+                  <p className="text-eyebrow text-taupe">
                     {row.label}
                   </p>
-                  <p className="mt-2 font-serif text-[1.05rem] leading-snug text-ink">
+                  <p className="mt-2 text-body font-semibold text-ink">
                     {row.notes}
                   </p>
-                  <p className="mt-1.5 font-mono text-[10px] uppercase tracking-widest text-taupe">
+                  <p className="mt-1.5 text-caption text-taupe">
                     {row.hint}
                   </p>
                 </div>
@@ -453,7 +450,7 @@ export function FindYourScentTeaser() {
         aria-hidden
       />
       <div className="container-ns relative z-10 flex min-h-[min(70dvh,34rem)] flex-col justify-center py-14 md:min-h-[min(75dvh,38rem)]">
-        <div className="max-w-lg">
+        <div className="max-w-[36rem]">
           <SectionLead
             light
             eyebrow="Guided match"
@@ -477,7 +474,7 @@ export function TestimonialsSection({
 }) {
   const shown = items.slice(0, 8);
   return (
-    <section className="border-b border-hairline bg-canvas section-y lg:section-viewport">
+    <section className="border-b border-hairline bg-canvas section-y">
       <div className="container-ns flex flex-col justify-center">
         <SectionLead
           eyebrow="From wearers"
@@ -520,7 +517,7 @@ export function JournalPreview({
   const [feature, ...rest] = shown;
 
   return (
-    <section className="border-b border-hairline bg-muted/40 section-y lg:section-viewport">
+    <section className="border-b border-hairline bg-muted/40 section-y">
       <div className="container-ns flex flex-col justify-center">
         <SectionLead
           eyebrow="Journal"
@@ -533,7 +530,7 @@ export function JournalPreview({
           }
         />
 
-        <div className="grid gap-x-8 gap-y-5 lg:grid-cols-12 lg:items-stretch">
+        <div className="grid gap-x-10 gap-y-6 lg:grid-cols-12 lg:items-stretch">
           <Link
             href={`/journal/${feature.slug}`}
             className="group relative order-1 aspect-16/11 overflow-hidden bg-muted lg:col-span-7 lg:row-start-1"
@@ -560,24 +557,24 @@ export function JournalPreview({
               className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent transition-opacity duration-500 group-hover:from-black/70"
               aria-hidden
             />
-            <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+            <div className="absolute inset-x-0 bottom-0 p-5 md:p-8">
               {feature.category ? (
-                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-paper/70">
+                <p className="mb-3 text-eyebrow text-paper/85">
                   {feature.category}
                 </p>
               ) : null}
-              <h3 className="font-display text-[1.35rem] font-medium leading-snug text-paper transition-transform duration-500 group-hover:-translate-y-0.5 md:text-[1.55rem]">
+              <h3 className="max-w-[24ch] text-display-sm text-paper transition-transform duration-500 group-hover:-translate-y-0.5 md:text-display-md">
                 {feature.title}
               </h3>
             </div>
           </Link>
 
-          <div className="order-3 flex min-h-0 flex-col divide-y divide-hairline lg:order-0 lg:col-span-5 lg:row-start-1 lg:border-l lg:border-hairline lg:pl-8">
+          <div className="order-3 flex min-h-0 flex-col divide-y divide-hairline lg:order-0 lg:col-span-5 lg:row-start-1 lg:border-l lg:border-hairline lg:pl-10">
             {rest.map((post) => (
               <Link
                 key={post.slug}
                 href={`/journal/${post.slug}`}
-                className="group grid min-h-0 flex-1 grid-cols-[5.5rem_1fr] items-center gap-4 py-4 first:pt-0 last:pb-0 sm:grid-cols-[7.5rem_1fr] sm:py-5"
+                className="group grid min-h-0 flex-1 grid-cols-[6rem_1fr] items-center gap-5 py-5 first:pt-0 last:pb-0 sm:grid-cols-[8rem_1fr] sm:py-6"
               >
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   {post.imageUrl ? (
@@ -604,13 +601,13 @@ export function JournalPreview({
                   />
                 </div>
                 <div className="min-w-0">
-                  <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.12em] text-taupe">
+                  <p className="mb-1.5 text-caption text-taupe">
                     {formatDate(post.date)} · {post.readTime}
                   </p>
-                  <h3 className="font-display text-[1.05rem] font-medium leading-snug text-ink transition-colors duration-300 group-hover:text-brass sm:text-[1.15rem]">
+                  <h3 className="text-display-sm text-ink transition-colors duration-300 group-hover:text-brass-ink">
                     {post.title}
                   </h3>
-                  <p className="mt-1 line-clamp-2 font-serif text-[0.95rem] text-taupe">
+                  <p className="mt-1.5 line-clamp-2 text-body-sm text-taupe">
                     {post.excerpt}
                   </p>
                 </div>
@@ -623,13 +620,13 @@ export function JournalPreview({
               href={`/journal/${feature.slug}`}
               className="group block max-w-xl"
             >
-              <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-taupe">
+              <p className="mb-2 text-caption text-taupe">
                 {formatDate(feature.date)} · {feature.readTime}
               </p>
-              <p className="font-serif text-[1.05rem] leading-relaxed text-taupe">
+              <p className="text-body-lg text-taupe">
                 {feature.excerpt}
               </p>
-              <span className="mt-4 inline-block font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors duration-300 group-hover:text-brass">
+              <span className="mt-4 inline-block text-label text-ink transition-colors duration-300 group-hover:text-brass-ink">
                 Read article
               </span>
             </Link>

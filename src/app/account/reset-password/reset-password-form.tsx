@@ -18,7 +18,7 @@ export default function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <p className="font-serif text-[1rem] text-ink">
+      <p className="text-body text-ink">
         This link is incomplete. Request a new one from the{" "}
         <Link href="/account" className="underline underline-offset-4">
           sign in page
@@ -73,7 +73,7 @@ export default function ResetPasswordForm() {
         required
       />
       {error ? (
-        <p className="font-serif text-[0.95rem] text-rosewood" role="alert">
+        <p className="text-body-sm text-rosewood" role="alert">
           {error}
         </p>
       ) : null}

@@ -64,7 +64,7 @@ export default async function CollectionPage({ params }: Props) {
         objectPosition="center 48%"
       />
       <section className="border-b border-hairline bg-paper">
-        <div className="container-ns flex flex-wrap items-center gap-x-4 gap-y-2 py-3.5 font-display text-[11px] uppercase tracking-[0.12em] text-taupe">
+        <div className="container-ns flex flex-wrap items-center gap-x-4 gap-y-2 py-3.5 text-eyebrow text-taupe">
           <Link href="/collections" className="cursor-pointer transition-colors hover:text-ink">
             All collections
           </Link>
@@ -77,7 +77,7 @@ export default async function CollectionPage({ params }: Props) {
           <span aria-hidden className="hidden text-hairline sm:inline">
             /
           </span>
-          <span className="w-full font-serif text-[0.95rem] normal-case tracking-normal text-ink/70 sm:w-auto">
+          <span className="w-full text-body-sm normal-case tracking-normal text-ink/70 sm:w-auto">
             {products.length} product{products.length === 1 ? "" : "s"} in this collection
           </span>
         </div>
@@ -93,13 +93,13 @@ export default async function CollectionPage({ params }: Props) {
               <div className="mt-4 flex flex-wrap gap-3">
                 <Link
                   href="/products"
-                  className="font-display text-sm uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+                  className="text-label text-ink underline-offset-4 hover:underline"
                 >
                   All Products
                 </Link>
                 <Link
                   href="/collections"
-                  className="font-display text-sm uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+                  className="text-label text-ink underline-offset-4 hover:underline"
                 >
                   All Collections
                 </Link>

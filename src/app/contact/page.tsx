@@ -86,13 +86,13 @@ export default function ContactPage() {
       />
 
       <section className="border-b border-hairline bg-muted/50">
-        <div className="container-ns grid gap-8 py-10 md:grid-cols-3 md:gap-6 md:py-12">
+        <div className="container-ns grid gap-8 py-12 md:grid-cols-3 md:gap-10 md:py-16">
           {trustPoints.map((item) => (
-            <div key={item.title} className="border-t border-hairline pt-5">
-              <h2 className="font-display text-[1.05rem] font-medium text-ink">
+            <div key={item.title} className="border-t border-[#e2d6bd] pt-6">
+              <h2 className="text-heading-sm text-ink">
                 {item.title}
               </h2>
-              <p className="mt-2 font-serif text-[1.02rem] leading-relaxed text-taupe">
+              <p className="mt-2 max-w-md text-body text-taupe">
                 {item.body}
               </p>
             </div>
@@ -101,32 +101,32 @@ export default function ContactPage() {
       </section>
 
       <section className="bg-canvas section-y">
-        <div className="container-ns grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+        <div className="container-ns grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 xl:gap-24">
           <div>
-            <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+            <p className="mb-3 text-eyebrow text-taupe">
               Care
             </p>
             <h2 className="text-display-md mb-4">How to reach us</h2>
-            <p className="mb-8 max-w-md font-serif text-[1.1rem] leading-relaxed text-taupe">
+            <p className="mb-10 max-w-[32rem] text-body-lg text-taupe">
               Orders, delivery timing, and bottle questions. Use the form or
               write us directly. For live parcel status, tracking is faster than
               email.
             </p>
-            <dl className="space-y-5 border-t border-hairline pt-6">
+            <dl className="grid gap-x-10 gap-y-6 border-t border-hairline pt-8 sm:grid-cols-2">
               {(
                 [
                   {
                     key: "name",
                     label: "Care contact",
                     node: (
-                      <p className="mt-1 font-display text-[1rem] font-medium leading-8 text-ink">
+                      <p className="mt-1 text-base font-semibold leading-8 text-ink">
                         {siteConfig.contactName}
                       </p>
                     ),
                   },
                   {
                     key: "phone",
-                    label: "Phone / WhatsApp",
+                    label: "Phone, WhatsApp, JazzCash, Easypaisa",
                     node: (
                       <div className="mt-1">
                         <CopyableValue
@@ -158,7 +158,7 @@ export default function ContactPage() {
                         href={siteConfig.location.mapsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-1 inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 font-display text-[1rem] font-medium text-ink transition-colors hover:text-brass"
+                        className="mt-1 inline-flex min-h-8 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-base font-semibold text-ink transition-colors hover:text-brass-ink"
                       >
                         <span>{siteConfig.location.label}</span>
                         <span
@@ -174,18 +174,6 @@ export default function ContactPage() {
                     ),
                   },
                   {
-                    key: "wallet",
-                    label: "JazzCash / Easypaisa",
-                    node: (
-                      <div className="mt-1">
-                        <CopyableValue
-                          value={siteConfig.phone}
-                          label="Copy wallet number"
-                        />
-                      </div>
-                    ),
-                  },
-                  {
                     key: "bank",
                     label: "Bank transfer",
                     node: (
@@ -195,28 +183,19 @@ export default function ContactPage() {
                     ),
                   },
                   {
-                    key: "hours",
-                    label: "Hours",
-                    node: (
-                      <p className="mt-1 font-display text-[1rem] font-medium leading-8 text-ink">
-                        Mon to Fri, 9am to 5pm PKT
-                      </p>
-                    ),
-                  },
-                  {
                     key: "orders",
                     label: "Orders",
                     node: (
-                      <div className="mt-1 flex h-8 flex-wrap items-center gap-x-4 gap-y-1">
+                      <div className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-1">
                         <Link
                           href="/track-order"
-                          className="font-display text-[1rem] font-medium text-ink underline-offset-4 hover:underline"
+                          className="inline-flex min-h-10 items-center text-base font-semibold text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass"
                         >
                           Track your order
                         </Link>
                         <Link
                           href="/shipping-returns"
-                          className="font-display text-[1rem] font-medium text-ink underline-offset-4 hover:underline"
+                          className="inline-flex min-h-10 items-center text-base font-semibold text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass"
                         >
                           Shipping and returns
                         </Link>
@@ -225,8 +204,15 @@ export default function ContactPage() {
                   },
                 ] as const
               ).map((row) => (
-                <div key={row.key}>
-                  <dt className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                <div
+                  key={row.key}
+                  className={
+                    row.key === "bank" || row.key === "orders"
+                      ? "sm:col-span-2"
+                      : undefined
+                  }
+                >
+                  <dt className="text-eyebrow text-taupe">
                     {row.label}
                   </dt>
                   <dd>{row.node}</dd>
@@ -235,16 +221,16 @@ export default function ContactPage() {
             </dl>
           </div>
 
-          <div className="border border-hairline bg-paper p-6 shadow-[0_1px_0_rgba(43,36,25,0.04)] sm:p-8 md:p-10">
+          <div className="self-start border border-hairline bg-paper p-6 shadow-[0_1px_0_rgba(43,36,25,0.04)] sm:p-10 xl:p-12">
             {sent ? (
               <div>
-                <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                <p className="text-eyebrow text-taupe">
                   Received
                 </p>
-                <h3 className="mt-3 font-display text-[1.35rem] font-medium text-ink">
+                <h3 className="mt-3 text-display-md text-ink">
                   Message sent
                 </h3>
-                <p className="mt-3 font-serif text-[1.1rem] leading-relaxed text-taupe">
+                <p className="mt-3 text-body-lg text-taupe">
                   {serverMessage ||
                     "Thanks. Care usually replies within one business day on Mon to Fri."}
                 </p>
@@ -267,19 +253,19 @@ export default function ContactPage() {
                 </div>
               </div>
             ) : (
-              <form className="flex flex-col gap-5" onSubmit={onSubmit} noValidate>
+              <form className="flex flex-col gap-6" onSubmit={onSubmit} noValidate>
                 <div>
-                  <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                  <p className="text-eyebrow text-taupe">
                     Write to us
                   </p>
-                  <p className="mt-2 font-serif text-[1.05rem] text-taupe">
+                  <p className="mt-2 text-body text-taupe">
                     Tell us what you need. The clearer the detail, the faster
                     the reply.
                   </p>
                 </div>
 
                 <div>
-                  <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                  <p className="mb-3 text-sm font-semibold text-ink/80">
                     Topic
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -289,10 +275,10 @@ export default function ContactPage() {
                         type="button"
                         onClick={() => setTopic(t.value)}
                         className={cn(
-                          "cursor-pointer border px-3 py-2 font-display text-[11px] font-medium uppercase tracking-widest transition-colors",
+                          "inline-flex min-h-11 cursor-pointer items-center rounded-xs border px-4 text-sm font-semibold transition-colors",
                           topic === t.value
                             ? "border-ink bg-ink text-paper"
-                            : "border-hairline bg-canvas text-ink hover:border-ink/40",
+                            : "border-[#d6cfbf] bg-paper text-ink hover:border-ink/50",
                         )}
                       >
                         {t.label}
@@ -319,7 +305,7 @@ export default function ContactPage() {
                 <div>
                   <label
                     htmlFor="contact-message"
-                    className="mb-1.5 block font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe"
+                    className="mb-2 block text-sm font-semibold text-ink/80"
                   >
                     Message
                   </label>
@@ -330,16 +316,16 @@ export default function ContactPage() {
                     onChange={(e) => setMessage(e.target.value)}
                     rows={6}
                     placeholder="Order number, city, and what you need help with…"
-                    className="w-full resize-y border border-hairline bg-canvas px-3 py-2.5 font-serif text-[1rem] text-ink outline-none transition-colors focus:border-ink/40"
+                    className="min-h-[9rem] w-full resize-y rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none transition-colors placeholder:text-[#8a8f99] hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25"
                   />
                   {errors.message ? (
-                    <p className="mt-1.5 text-sm text-rosewood">
+                    <p className="mt-1.5 text-sm font-medium text-rosewood">
                       {errors.message}
                     </p>
                   ) : null}
                 </div>
                 {errors.form ? (
-                  <p className="font-serif text-[0.95rem] text-rosewood">
+                  <p className="text-body-sm text-rosewood">
                     {errors.form}
                   </p>
                 ) : null}

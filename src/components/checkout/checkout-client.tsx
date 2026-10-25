@@ -48,7 +48,7 @@ function breadcrumbs(
   const order = ["cart", "information", "shipping", "payment"] as const;
   const currentIdx = order.indexOf(step);
   return (
-    <nav aria-label="Checkout steps" className="mb-6 font-display text-sm text-taupe">
+    <nav aria-label="Checkout steps" className="mb-8 text-sm text-taupe">
       <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
         {items.map((item, i) => {
           const active = item.id === step;
@@ -60,18 +60,18 @@ function breadcrumbs(
             (item.id as Step);
           return (
             <li key={item.id} className="flex items-center gap-1.5">
-              {i > 0 ? <span className="text-hairline-dark/30">›</span> : null}
+              {i > 0 ? <span className="text-taupe/60" aria-hidden>›</span> : null}
               {item.href ? (
                 <Link
                   href={item.href}
-                  className="text-brass hover:underline"
+                  className="text-brass-ink underline-offset-4 hover:underline"
                 >
                   {item.label}
                 </Link>
               ) : canNavigate ? (
                 <button
                   type="button"
-                  className="cursor-pointer text-brass hover:underline"
+                  className="cursor-pointer text-brass-ink underline-offset-4 hover:underline"
                   onClick={() => onGo(item.id as Step)}
                 >
                   {item.label}
@@ -311,6 +311,8 @@ export function CheckoutClient() {
       const data = json.data;
       const snapshot: CompletedOrderSnapshot = {
         orderNumber: data.orderNumber,
+        invoiceUrl:
+          typeof data.invoiceUrl === "string" ? data.invoiceUrl : undefined,
         email: data.email,
         phone: data.phone,
         customerName: data.customerName,
@@ -373,7 +375,7 @@ export function CheckoutClient() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-canvas font-serif text-base text-taupe">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas text-base text-taupe">
         Loading checkout…
       </div>
     );
@@ -382,10 +384,10 @@ export function CheckoutClient() {
   if (lines.length === 0) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas px-6 text-center">
-        <p className="font-display text-lg text-ink">Your cart is empty</p>
+        <p className="font-sans text-lg text-ink">Your cart is empty</p>
         <Link
           href="/products"
-          className="font-display text-sm font-medium text-brass hover:underline"
+          className="font-sans text-sm font-semibold text-brass-ink hover:underline"
         >
           Continue shopping
         </Link>
@@ -394,17 +396,17 @@ export function CheckoutClient() {
   }
 
   return (
-    <div className="min-h-dvh bg-canvas font-serif text-base leading-relaxed text-ink antialiased">
-      <div className="mx-auto grid min-h-dvh max-w-[1100px] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+    <div className="min-h-dvh bg-canvas text-base leading-relaxed text-ink antialiased lg:bg-[linear-gradient(90deg,var(--color-canvas)_50%,var(--color-canvas-deep)_50%)]">
+      <div className="mx-auto grid min-h-dvh max-w-[1240px] lg:grid-cols-2 2xl:max-w-[1360px]">
         {/* Form column */}
-        <div className="order-2 px-5 pb-16 pt-6 sm:px-8 lg:order-1 lg:px-12 lg:pt-10 xl:px-16">
+        <div className="order-2 bg-canvas px-5 pb-16 pt-6 sm:px-8 lg:order-1 lg:pl-[var(--gutter)] lg:pr-14 lg:pt-12 xl:pr-20">
           <header className="mb-8 text-center lg:text-left">
             <Link
               href="/"
               aria-label={`${siteConfig.name} home`}
               className="inline-block text-ink"
             >
-              <Logo className="h-7 sm:h-8" />
+              <Logo className="h-7 sm:h-8 lg:h-9" />
             </Link>
           </header>
 
@@ -435,7 +437,7 @@ export function CheckoutClient() {
             </div>
             <div className="my-5 flex items-center gap-3">
               <div className="h-px flex-1 bg-hairline" />
-              <span className="font-display text-xs uppercase tracking-wide text-taupe">
+              <span className="font-sans text-xs uppercase tracking-wide text-taupe">
                 OR
               </span>
               <div className="h-px flex-1 bg-hairline" />
@@ -448,7 +450,7 @@ export function CheckoutClient() {
           {formError ? (
             <div
               role="alert"
-              className="mb-5 rounded-md border border-rosewood/30 bg-rosewood/10 px-4 py-3 text-[14px] text-rosewood"
+              className="mb-5 rounded-xs border border-rosewood/30 bg-rosewood/10 px-4 py-3 text-sm font-medium text-rosewood"
             >
               {formError}
             </div>
@@ -459,12 +461,12 @@ export function CheckoutClient() {
             <div className="space-y-6">
               <section>
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
-                  <h2 className="font-display text-xl font-medium text-ink">
+                  <h2 className="text-heading-sm text-ink">
                     Contact
                   </h2>
-                  <p className="text-[13px] text-taupe">
+                  <p className="text-[0.8125rem] text-taupe">
                     Already have an account?{" "}
-                    <Link href="/account" className="text-brass hover:underline">
+                    <Link href="/account" className="text-brass-ink underline-offset-4 hover:underline">
                       Log in
                     </Link>
                   </p>
@@ -488,7 +490,7 @@ export function CheckoutClient() {
               </section>
 
               <section>
-                <h2 className="mb-3 font-display text-xl font-medium text-ink">
+                <h2 className="mb-3 text-heading-sm text-ink">
                   Delivery
                 </h2>
                 <div className="space-y-3">
@@ -554,7 +556,7 @@ export function CheckoutClient() {
                       setAddr(setAddress)("address2", e.target.value)
                     }
                   />
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div className="min-w-0">
                       <CheckoutField
                         id="city"
@@ -596,17 +598,17 @@ export function CheckoutClient() {
                         }
                       />
                     </div>
-                  </div>
-                  <div>
-                    <CheckoutField
-                      id="phone"
-                      label="Phone"
-                      type="tel"
-                      autoComplete="tel"
-                      value={address.phone}
-                      onChange={(e) => setAddr(setAddress)("phone", e.target.value)}
-                    />
-                    <CheckoutError message={errors.phone} />
+                    <div className="min-w-0">
+                      <CheckoutField
+                        id="phone"
+                        label="Phone"
+                        type="tel"
+                        autoComplete="tel"
+                        value={address.phone}
+                        onChange={(e) => setAddr(setAddress)("phone", e.target.value)}
+                      />
+                      <CheckoutError message={errors.phone} />
+                    </div>
                   </div>
                 </div>
               </section>
@@ -614,14 +616,14 @@ export function CheckoutClient() {
               <div className="flex flex-col-reverse items-stretch justify-between gap-4 pt-2 sm:flex-row sm:items-center">
                 <Link
                   href="/cart"
-                  className="text-center text-[14px] text-brass hover:underline sm:text-left"
+                  className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline sm:justify-start"
                 >
                   ‹ Return to cart
                 </Link>
                 <button
                   type="button"
                   onClick={() => goToStep("shipping")}
-                  className="min-h-14 cursor-pointer rounded-md bg-ink px-8 font-display text-sm font-medium uppercase tracking-[0.12em] text-paper transition-opacity hover:opacity-90"
+                  className="min-h-14 cursor-pointer rounded-xs bg-ink px-8 text-label text-paper transition-colors hover:bg-brass hover:text-ink focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2"
                 >
                   Continue to shipping
                 </button>
@@ -632,15 +634,15 @@ export function CheckoutClient() {
           {/* SHIPPING */}
           {step === "shipping" ? (
             <div className="space-y-6">
-              <section className="rounded-md border border-hairline text-[14px]">
+              <section className="rounded-xs border border-hairline text-body-sm">
                 <div className="flex flex-wrap items-start justify-between gap-2 border-b border-hairline px-4 py-3">
                   <div>
-                    <p className="text-[12px] text-taupe">Contact</p>
+                    <p className="text-eyebrow text-taupe">Contact</p>
                     <p className="text-ink">{email}</p>
                   </div>
                   <button
                     type="button"
-                    className="cursor-pointer text-[13px] text-brass hover:underline"
+                    className="inline-flex min-h-10 cursor-pointer items-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline"
                     onClick={() => setStep("information")}
                   >
                     Change
@@ -648,7 +650,7 @@ export function CheckoutClient() {
                 </div>
                 <div className="flex flex-wrap items-start justify-between gap-2 px-4 py-3">
                   <div>
-                    <p className="text-[12px] text-taupe">Ship to</p>
+                    <p className="text-eyebrow text-taupe">Ship to</p>
                     <p className="text-ink">
                       {[
                         address.address1,
@@ -664,7 +666,7 @@ export function CheckoutClient() {
                   </div>
                   <button
                     type="button"
-                    className="cursor-pointer text-[13px] text-brass hover:underline"
+                    className="inline-flex min-h-10 cursor-pointer items-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline"
                     onClick={() => setStep("information")}
                   >
                     Change
@@ -673,10 +675,10 @@ export function CheckoutClient() {
               </section>
 
               <section>
-                <h2 className="mb-3 font-display text-xl font-medium text-ink">
+                <h2 className="mb-3 text-heading-sm text-ink">
                   Shipping method
                 </h2>
-                <div className="overflow-hidden rounded-md border border-hairline">
+                <div className="overflow-hidden rounded-xs border border-hairline">
                   {SHIPPING_METHODS.map((method, idx) => {
                     const price = shippingPricePkr(method.id, afterDiscount);
                     const free =
@@ -703,11 +705,11 @@ export function CheckoutClient() {
                           <span className="block font-medium text-ink">
                             {method.title}
                           </span>
-                          <span className="block text-[13px] text-taupe">
+                          <span className="block text-[0.8125rem] text-taupe">
                             {method.description}
                           </span>
                         </span>
-                        <span className="text-[14px] font-medium text-ink">
+                        <span className="text-sm font-medium text-ink">
                           {free ? "Free" : null}
                           {!free ? (
                             <PriceInline pkr={price} />
@@ -723,14 +725,14 @@ export function CheckoutClient() {
                 <button
                   type="button"
                   onClick={() => setStep("information")}
-                  className="cursor-pointer text-center text-[14px] text-brass hover:underline sm:text-left"
+                  className="inline-flex min-h-11 cursor-pointer items-center justify-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline sm:justify-start"
                 >
                   ‹ Return to information
                 </button>
                 <button
                   type="button"
                   onClick={() => goToStep("payment")}
-                  className="min-h-14 cursor-pointer rounded-md bg-ink px-8 font-display text-sm font-medium uppercase tracking-[0.12em] text-paper transition-opacity hover:opacity-90"
+                  className="min-h-14 cursor-pointer rounded-xs bg-ink px-8 text-label text-paper transition-colors hover:bg-brass hover:text-ink focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2"
                 >
                   Continue to payment
                 </button>
@@ -741,15 +743,15 @@ export function CheckoutClient() {
           {/* PAYMENT */}
           {step === "payment" ? (
             <div className="space-y-6">
-              <section className="rounded-md border border-hairline text-[14px]">
+              <section className="rounded-xs border border-hairline text-body-sm">
                 <div className="flex flex-wrap items-start justify-between gap-2 border-b border-hairline px-4 py-3">
                   <div>
-                    <p className="text-[12px] text-taupe">Contact</p>
+                    <p className="text-eyebrow text-taupe">Contact</p>
                     <p>{email}</p>
                   </div>
                   <button
                     type="button"
-                    className="cursor-pointer text-[13px] text-brass hover:underline"
+                    className="inline-flex min-h-10 cursor-pointer items-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline"
                     onClick={() => setStep("information")}
                   >
                     Change
@@ -757,7 +759,7 @@ export function CheckoutClient() {
                 </div>
                 <div className="flex flex-wrap items-start justify-between gap-2 border-b border-hairline px-4 py-3">
                   <div>
-                    <p className="text-[12px] text-taupe">Ship to</p>
+                    <p className="text-eyebrow text-taupe">Ship to</p>
                     <p>
                       {[address.address1, address.city, address.province]
                         .filter(Boolean)
@@ -766,7 +768,7 @@ export function CheckoutClient() {
                   </div>
                   <button
                     type="button"
-                    className="cursor-pointer text-[13px] text-brass hover:underline"
+                    className="inline-flex min-h-10 cursor-pointer items-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline"
                     onClick={() => setStep("information")}
                   >
                     Change
@@ -774,7 +776,7 @@ export function CheckoutClient() {
                 </div>
                 <div className="flex flex-wrap items-start justify-between gap-2 px-4 py-3">
                   <div>
-                    <p className="text-[12px] text-taupe">Method</p>
+                    <p className="text-eyebrow text-taupe">Method</p>
                     <p>
                       {shippingLabel}
                       {shippingPkr === 0
@@ -789,7 +791,7 @@ export function CheckoutClient() {
                   </div>
                   <button
                     type="button"
-                    className="cursor-pointer text-[13px] text-brass hover:underline"
+                    className="inline-flex min-h-10 cursor-pointer items-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline"
                     onClick={() => setStep("shipping")}
                   >
                     Change
@@ -798,13 +800,13 @@ export function CheckoutClient() {
               </section>
 
               <section>
-                <h2 className="mb-1 font-display text-xl font-medium text-ink">
+                <h2 className="mb-1 text-heading-sm text-ink">
                   Payment
                 </h2>
                 <p className="mb-3 text-sm text-taupe">
                   Choose cash on delivery or bank transfer. Online card will be available once a payment gateway is connected.
                 </p>
-                <div className="overflow-hidden rounded-md border border-hairline">
+                <div className="overflow-hidden rounded-xs border border-hairline">
                   {PAYMENT_METHODS.map((method, idx) => {
                     const selected = paymentMethod === method.id;
                     return (
@@ -829,19 +831,19 @@ export function CheckoutClient() {
                                 {method.title}
                               </span>
                               {method.badge ? (
-                                <span className="rounded bg-ink px-1.5 py-0.5 font-display text-[10px] font-semibold uppercase tracking-wide text-paper">
+                                <span className="rounded-xs bg-ink px-1.5 py-0.5 text-eyebrow text-paper">
                                   {method.badge}
                                 </span>
                               ) : null}
                             </span>
-                            <span className="mt-0.5 block text-[13px] text-taupe">
+                            <span className="mt-0.5 block text-[0.8125rem] text-taupe">
                               {method.description}
                             </span>
                           </span>
                         </label>
 
                         {selected && method.id === "cod" ? (
-                          <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4 text-[13px] leading-relaxed text-taupe">
+                          <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4 text-[0.8125rem] leading-relaxed text-taupe">
                             <p className="font-medium text-ink">
                               How cash on delivery works
                             </p>
@@ -865,16 +867,16 @@ export function CheckoutClient() {
                         ) : null}
 
                         {selected && method.id === "bank" ? (
-                          <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4 text-[13px] leading-relaxed text-taupe">
+                          <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4 text-[0.8125rem] leading-relaxed text-taupe">
                             <p className="font-medium text-ink">
                               Pay to this account or wallet
                             </p>
                             <TransferDetails />
-                            <div className="rounded-md border border-hairline bg-paper px-3 py-2.5">
-                              <p className="text-[11px] uppercase tracking-wide text-taupe">
+                            <div className="rounded-xs border border-hairline bg-paper px-3 py-2.5">
+                              <p className="text-eyebrow text-taupe">
                                 Amount to transfer (PKR)
                               </p>
-                              <p className="mt-0.5 text-[15px] font-semibold text-ink">
+                              <p className="mt-0.5 text-[0.9375rem] font-semibold text-ink">
                                 <PayableAmount
                                   amountPkr={totalPkr}
                                   variant="stacked"
@@ -912,10 +914,10 @@ export function CheckoutClient() {
               </section>
 
               <section>
-                <h2 className="mb-3 font-display text-xl font-medium text-ink">
+                <h2 className="mb-3 text-heading-sm text-ink">
                   Billing address
                 </h2>
-                <div className="overflow-hidden rounded-md border border-hairline">
+                <div className="overflow-hidden rounded-xs border border-hairline">
                   <label
                     className={cn(
                       "flex cursor-pointer items-center gap-3 px-4 py-4",
@@ -929,7 +931,7 @@ export function CheckoutClient() {
                       onChange={() => setBillingSame(true)}
                       className="h-4 w-4 accent-brass"
                     />
-                    <span className="text-[14px]">Same as shipping address</span>
+                    <span className="text-sm">Same as shipping address</span>
                   </label>
                   <label
                     className={cn(
@@ -944,7 +946,7 @@ export function CheckoutClient() {
                       onChange={() => setBillingSame(false)}
                       className="h-4 w-4 accent-brass"
                     />
-                    <span className="text-[14px]">Use a different billing address</span>
+                    <span className="text-sm">Use a different billing address</span>
                   </label>
                   {!billingSame ? (
                     <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4">
@@ -1036,7 +1038,7 @@ export function CheckoutClient() {
                   checked={rememberMe}
                   onChange={setRememberMe}
                 />
-                <label className="mt-4 block text-[13px] text-taupe" htmlFor="notes">
+                <label className="mt-4 block text-sm font-semibold text-ink/80" htmlFor="notes">
                   Order notes (optional)
                 </label>
                 <textarea
@@ -1044,7 +1046,7 @@ export function CheckoutClient() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  className="mt-1.5 w-full rounded-md border border-hairline bg-paper px-3 py-2.5 font-serif text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+                  className="mt-2 w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/25"
                   placeholder="Delivery instructions, gift timing, etc."
                 />
               </section>
@@ -1053,7 +1055,7 @@ export function CheckoutClient() {
                 <button
                   type="button"
                   onClick={() => setStep("shipping")}
-                  className="cursor-pointer text-center text-[14px] text-brass hover:underline sm:text-left"
+                  className="inline-flex min-h-11 cursor-pointer items-center justify-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline sm:justify-start"
                 >
                   ‹ Return to shipping
                 </button>
@@ -1061,7 +1063,7 @@ export function CheckoutClient() {
                   type="button"
                   disabled={submitting}
                   onClick={submitOrder}
-                  className="min-h-12 cursor-pointer rounded-md bg-ink px-6 font-display text-sm font-medium uppercase tracking-[0.08em] text-paper transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 sm:min-h-14 sm:px-8 sm:tracking-[0.12em]"
+                  className="min-h-14 cursor-pointer rounded-xs bg-ink px-6 text-label text-paper transition-colors hover:bg-brass hover:text-ink focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 sm:px-8"
                 >
                   {submitting
                     ? "Processing…"
@@ -1090,7 +1092,7 @@ export function CheckoutClient() {
           ) : null}
 
           <footer className="mt-12 border-t border-hairline pt-5">
-            <ul className="flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-brass">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-caption text-brass-ink">
               <li>
                 <Link href="/policies/refund" className="hover:underline">
                   Refund policy

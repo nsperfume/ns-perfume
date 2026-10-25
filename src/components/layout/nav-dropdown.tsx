@@ -35,10 +35,10 @@ type NavDropdownProps = {
 };
 
 const triggerClass =
-  "group inline-flex cursor-pointer items-center gap-1.5 rounded-xs px-2 py-2 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-paper/85 outline-none transition-colors duration-300 hover:text-white focus-visible:text-white aria-expanded:text-white xl:text-[13px]";
+  "group inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xs px-3 text-label text-paper/85 outline-none transition-colors duration-300 hover:text-white focus-visible:text-white aria-expanded:text-white xl:px-4";
 
 const linkRowClass =
-  "group/link relative z-10 flex cursor-pointer items-center justify-between gap-2 rounded-sm px-1.5 py-1.5 font-serif text-[15px] font-semibold leading-snug text-ink/90 outline-none transition-colors duration-200 hover:bg-muted hover:text-ink focus-visible:bg-muted";
+  "group/link relative z-10 flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xs px-2 py-1.5 text-[0.9375rem] font-medium leading-snug text-ink/85 outline-none transition-colors duration-200 hover:bg-muted hover:text-ink focus-visible:bg-muted";
 
 function chromeBottom(): number {
   const chrome = document.querySelector<HTMLElement>("[data-site-chrome]");
@@ -117,12 +117,9 @@ export function NavDropdown({
   if (wide && columns) {
     body = (
       <div className="mx-auto w-full max-w-[80rem] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper text-ink shadow-[0_24px_48px_rgba(0,0,0,0.24)]">
-        <div className="flex flex-col gap-2.5 border-b border-hairline bg-[#FAF8F4] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex flex-col gap-3 border-b border-hairline bg-[#FAF8F4] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="min-w-0">
-            <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
-              {label}
-            </p>
-            <p className="mt-0.5 font-serif text-[15px] font-medium text-ink/70">
+            <p className="text-body-sm text-ink/75">
               {pageCopy.shopMegaHint}
             </p>
           </div>
@@ -133,7 +130,8 @@ export function NavDropdown({
                   key={link.href}
                   href={link.href}
                   variant={i === 0 ? "primary" : "secondary"}
-                  className="h-10! min-h-10! w-auto max-w-none px-4"
+                  size="sm"
+                  className="w-auto max-w-none"
                   onClick={closeNow}
                 >
                   {link.label}
@@ -149,9 +147,9 @@ export function NavDropdown({
               <nav
                 key={col.title}
                 aria-label={col.title}
-                className="border-b border-hairline px-4 py-4 sm:border-r sm:[&:nth-child(2n)]:border-r-0 xl:border-r xl:[&:nth-child(4n)]:border-r-0"
+                className="border-b border-hairline px-5 py-5 odd:border-r xl:border-b-0 xl:border-r xl:last:border-r-0"
               >
-                <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+                <p className="mb-3 px-2 text-eyebrow text-taupe">
                   {col.title}
                 </p>
                 <ul className="flex flex-col">
@@ -165,7 +163,7 @@ export function NavDropdown({
                         <span>{item.label}</span>
                         <span
                           aria-hidden
-                          className="text-[11px] text-ink/0 transition-colors duration-200 group-hover/link:text-ink/35"
+                          className="text-xs text-ink/0 transition-colors duration-200 group-hover/link:text-ink/35"
                         >
                           →
                         </span>
@@ -199,11 +197,11 @@ export function NavDropdown({
                   className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"
                   aria-hidden
                 />
-                <span className="absolute inset-x-0 bottom-0 p-3.5">
-                  <span className="block font-display text-[10px] font-medium uppercase tracking-[0.14em] text-paper/75">
+                <span className="absolute inset-x-0 bottom-0 p-4">
+                  <span className="block text-eyebrow text-paper/75">
                     Featured Look
                   </span>
-                  <span className="mt-1 block font-display text-[12px] font-medium tracking-[0.06em] text-paper">
+                  <span className="mt-1 block text-sm font-semibold text-paper">
                     {panelImage.cta ?? "Shop the collection →"}
                   </span>
                 </span>
@@ -212,23 +210,11 @@ export function NavDropdown({
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-1.5 border-t border-hairline px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="font-serif text-[13px] font-medium tracking-wide text-taupe">
-            Nationwide delivery · clear sizes
-          </p>
-          <Link
-            href="/find-your-scent"
-            onClick={closeNow}
-            className="inline-flex min-h-8 cursor-pointer items-center font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-brass"
-          >
-            Find Your Scent →
-          </Link>
-        </div>
       </div>
     );
   } else if (items) {
     body = (
-      <div className="mx-auto w-full max-w-[17rem] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper p-1.5 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
+      <div className="mx-auto w-full max-w-[17rem] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper p-2 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
         <ul className="flex flex-col">
           {items.map((item) => (
             <li key={item.href}>

@@ -104,7 +104,7 @@ export function ProductGallery({
               type="button"
               onClick={() => go(-1)}
               className={cn(
-                "absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center",
+                "absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs",
                 "border border-hairline bg-paper/95 text-ink opacity-0 transition-opacity duration-300",
                 "hover:border-ink/30 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
                 "max-md:opacity-100",
@@ -117,7 +117,7 @@ export function ProductGallery({
               type="button"
               onClick={() => go(1)}
               className={cn(
-                "absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center",
+                "absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs",
                 "border border-hairline bg-paper/95 text-ink opacity-0 transition-opacity duration-300",
                 "hover:border-ink/30 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
                 "max-md:opacity-100",
@@ -126,7 +126,7 @@ export function ProductGallery({
             >
               <Chevron dir="right" className="h-4 w-4" />
             </button>
-            <p className="absolute bottom-3 left-3 z-10 font-display text-[10px] font-medium uppercase tracking-[0.16em] text-taupe">
+            <p className="absolute bottom-3 left-3 z-10 font-mono text-xs text-taupe">
               {active + 1} / {list.length}
             </p>
           </>
@@ -135,9 +135,9 @@ export function ProductGallery({
 
       {/* Same width as hero — exactly 2 per row */}
       {list.length > 1 ? (
-        <ul className="mt-2 grid w-full grid-cols-2 gap-2 overflow-hidden sm:mt-3 sm:gap-3">
+        <ul className="mt-2 flex w-full gap-2 overflow-x-auto pb-1 sm:mt-3 md:grid md:grid-cols-2 md:gap-3 md:overflow-hidden md:pb-0">
           {list.map((src, i) => (
-            <li key={`${src}-cell-${i}`} className="min-w-0">
+            <li key={`${src}-cell-${i}`} className="w-[4.5rem] shrink-0 md:w-auto md:min-w-0">
               <button
                 type="button"
                 onClick={() => setActive(i)}
@@ -157,8 +157,8 @@ export function ProductGallery({
                   fill
                   loading="lazy"
                   quality={85}
-                  sizes="(max-width: 768px) 50vw, (max-width: 1280px) 29vw, 360px"
-                  className="object-contain object-center p-3 sm:p-4"
+                  sizes="(max-width: 768px) 72px, (max-width: 1280px) 29vw, 360px"
+                  className="object-contain object-center p-1.5 md:p-4"
                 />
               </button>
             </li>

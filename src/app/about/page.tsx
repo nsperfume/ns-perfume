@@ -23,13 +23,13 @@ export default function AboutPage() {
       />
 
       <section className="bg-muted section-y">
-        <div className="container-ns grid gap-6 lg:grid-cols-2">
+        <div className="container-ns grid gap-6 lg:grid-cols-2 lg:gap-8">
           <FeaturePanel
-            title="Formulas First"
+            title="Formulas first"
             body="Each composition is structured as a real pyramid. Top materials introduce the scent. Heart materials define most of the wear. Bases linger. We name bergamot, iris butter, oud, and tonka because placeholder labels break trust."
           />
           <FeaturePanel
-            title="Made For Pakistani Weather"
+            title="Made for Pakistani weather"
             body="Summer heat lifts top notes off the skin fast, and humidity makes heavy bases louder. That is why every bottle carries a sillage rating for how far it travels and a longevity rating for how long it stays. Choose for a crowded office, an outdoor wedding in June, or a cool December evening, not only for the name on the label."
             muted
           />
@@ -38,15 +38,16 @@ export default function AboutPage() {
 
       <section id="sourcing" className="bg-canvas section-y">
         <div className="container-ns max-w-2xl">
-          <h2 className="text-display-md mb-4">Ingredients And Sourcing</h2>
-          <p className="measure text-body text-taupe">
+          <p className="mb-3 text-eyebrow text-taupe">Sourcing</p>
+          <h2 className="mb-5 text-display-lg">Ingredients and sourcing</h2>
+          <p className="text-body-lg text-taupe">
             We work with registered fragrance houses and list core materials plus
             country of origin on every product page. Allergen disclosures required by
             labeling rules ship on the packing insert. Every bottle is checked for
             authenticity before dispatch.
           </p>
           <div className="mt-10">
-            <Button href="/products">Explore The Line</Button>
+            <Button href="/products">Explore the line</Button>
           </div>
         </div>
       </section>

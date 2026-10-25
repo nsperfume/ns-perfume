@@ -1,3 +1,4 @@
+import { siteConfig } from "@/data/site";
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { OrderModel } from "@/models/Order";
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
 
     if (!order) {
       return jsonError(
-        "We couldn’t find an order with that number and email. Check both and try again, or email care@nsperfume.com.",
+        `We couldn't find an order with that number and email. Check both and try again, or email ${siteConfig.email}.`,
         404,
       );
     }

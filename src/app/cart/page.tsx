@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { useCart } from "@/context/cart";
-import { formatSize } from "@/lib/format";
 import { Price } from "@/components/commerce/price";
 import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/layout/page-hero";
@@ -51,10 +50,10 @@ export default function CartPage() {
         <div className="container-ns">
           {lines.length === 0 ? (
             <div className="mx-auto flex max-w-lg flex-col items-start gap-6">
-              <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+              <p className="text-eyebrow text-taupe">
                 Empty bag
               </p>
-              <p className="font-serif text-body-lg text-ink/80">
+              <p className="text-body-lg text-ink/80">
                 {pageCopy.cartEmpty}
               </p>
               <div className="flex flex-wrap gap-3">
@@ -65,20 +64,20 @@ export default function CartPage() {
               </div>
             </div>
           ) : (
-            <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-16 xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-16 xl:grid-cols-[minmax(0,1fr)_25rem] 2xl:gap-24">
               <div>
                 <div className="mb-8 flex flex-col gap-3 border-b border-hairline pb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                   <div>
-                    <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+                    <p className="text-eyebrow text-taupe">
                       Line items
                     </p>
-                    <h2 className="mt-1 font-display text-2xl font-medium text-ink">
+                    <h2 className="mt-2 text-display-md text-ink">
                       {count} piece{count === 1 ? "" : "s"}
                     </h2>
                   </div>
                   <Link
                     href="/products"
-                    className="font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+                    className="inline-flex min-h-11 items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass"
                   >
                     Continue shopping
                   </Link>
@@ -91,7 +90,7 @@ export default function CartPage() {
                       data-line
                       className="border-b border-hairline py-7 first:pt-0"
                     >
-                      <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-4 sm:grid-cols-[7rem_minmax(0,1fr)_auto] sm:gap-6">
+                      <div className="grid grid-cols-[6rem_minmax(0,1fr)] gap-5 sm:grid-cols-[8rem_minmax(0,1fr)_auto] sm:gap-7">
                         <Link
                           href={`/products/${line.productHandle}`}
                           aria-label={`View ${line.name}`}
@@ -113,33 +112,32 @@ export default function CartPage() {
                             <div className="min-w-0">
                               <Link
                                 href={`/products/${line.productHandle}`}
-                                className="font-display text-[1.15rem] font-medium leading-snug text-ink transition-colors hover:text-brass sm:text-xl"
+                                className="text-display-sm text-ink transition-colors hover:text-brass-ink"
                               >
                                 {line.name}
-                                {line.isGift ? " (Gift)" : ""}
                               </Link>
-                              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-taupe">
-                                {line.sizeMl > 0 ? formatSize(line.sizeMl) : null}
+                              <p className="mt-1.5 font-mono text-xs text-taupe">
+                                {line.sizeMl > 0 ? `${line.sizeMl} ml` : null}
                                 {line.sizeMl > 0 ? " · " : null}
                                 {line.sku}
                               </p>
                             </div>
                             <Price
                               amountPkr={line.price * line.quantity}
-                              className="shrink-0 text-[1rem] font-medium tabular-nums sm:hidden"
+                              className="shrink-0 text-base sm:hidden"
                             />
                           </div>
 
                           {line.isGift || line.giftMessage ? (
                             <div className="mt-3 space-y-1.5 border-l-2 border-brass/40 pl-3">
                               {line.isGift ? (
-                                <p className="font-display text-[10px] uppercase tracking-[0.12em] text-brass">
+                                <p className="text-eyebrow text-brass-ink">
                                   Gift
                                   {line.giftWrap ? " · Wrap included" : ""}
                                 </p>
                               ) : null}
                               {line.giftMessage ? (
-                                <p className="font-serif text-[0.95rem] leading-snug text-ink/80">
+                                <p className="text-body-sm leading-snug text-ink/80">
                                   <span className="text-taupe">Note: </span>
                                   {line.giftMessage}
                                 </p>
@@ -149,13 +147,13 @@ export default function CartPage() {
 
                           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
                             <div
-                              className="inline-flex h-9 items-stretch border border-hairline"
+                              className="inline-flex h-11 items-stretch rounded-xs border border-[#d6cfbf]"
                               role="group"
                               aria-label={`Quantity for ${line.name}`}
                             >
                               <button
                                 type="button"
-                                className="flex w-9 cursor-pointer items-center justify-center text-sm transition-colors hover:bg-muted"
+                                className="flex w-11 cursor-pointer items-center justify-center text-base transition-colors hover:bg-muted"
                                 onClick={() =>
                                   updateQuantity(line.sku, line.quantity - 1)
                                 }
@@ -163,12 +161,12 @@ export default function CartPage() {
                               >
                                 −
                               </button>
-                              <span className="flex min-w-9 items-center justify-center border-x border-hairline font-mono text-[13px] tabular-nums">
+                              <span className="flex min-w-10 items-center justify-center font-mono text-sm tabular-nums">
                                 {line.quantity}
                               </span>
                               <button
                                 type="button"
-                                className="flex w-9 cursor-pointer items-center justify-center text-sm transition-colors hover:bg-muted"
+                                className="flex w-11 cursor-pointer items-center justify-center text-base transition-colors hover:bg-muted"
                                 onClick={() =>
                                   updateQuantity(line.sku, line.quantity + 1)
                                 }
@@ -179,7 +177,7 @@ export default function CartPage() {
                             </div>
                             <button
                               type="button"
-                              className="cursor-pointer font-display text-[11px] uppercase tracking-[0.12em] text-taupe transition-colors hover:text-ink"
+                              className="inline-flex min-h-11 cursor-pointer items-center text-caption text-taupe underline decoration-hairline underline-offset-4 transition-colors hover:text-ink"
                               onClick={() => removeItem(line.sku)}
                             >
                               Remove
@@ -190,10 +188,10 @@ export default function CartPage() {
                         <div className="hidden text-right sm:block">
                           <Price
                             amountPkr={line.price * line.quantity}
-                            className="text-[1.05rem] font-medium tabular-nums"
+                            className="text-lg"
                           />
                           {line.quantity > 1 ? (
-                            <p className="mt-1 font-mono text-[11px] text-taupe">
+                            <p className="mt-1 font-mono text-xs text-taupe">
                               {format(line.price)} each
                             </p>
                           ) : null}
@@ -205,24 +203,24 @@ export default function CartPage() {
               </div>
 
               <aside className="lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.25rem)]">
-                <div className="border border-hairline bg-muted/40 p-6 sm:p-7">
-                  <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+                <div className="border border-hairline bg-muted/40 p-6 sm:p-8">
+                  <p className="text-eyebrow text-taupe">
                     Order summary
                   </p>
 
                   <div className="mt-6 space-y-3">
-                    <div className="flex items-baseline justify-between gap-4 font-serif text-[1.05rem]">
+                    <div className="flex items-baseline justify-between gap-4 text-body">
                       <span className="text-taupe">
                         Subtotal · {count} item{count === 1 ? "" : "s"}
                       </span>
                       <Price
                         amountPkr={subtotal}
-                        className="font-medium tabular-nums text-ink"
+                        className="text-ink"
                       />
                     </div>
-                    <div className="flex items-baseline justify-between gap-4 font-serif text-[1.05rem]">
+                    <div className="flex items-baseline justify-between gap-4 text-body">
                       <span className="text-taupe">Shipping</span>
-                      <span className="text-right text-[0.95rem] text-ink/70">
+                      <span className="text-right text-body-sm text-ink/75">
                         Calculated at checkout
                       </span>
                     </div>
@@ -230,12 +228,12 @@ export default function CartPage() {
 
                   <div className="mt-5 border-t border-hairline pt-5">
                     <div className="flex items-end justify-between gap-3">
-                      <span className="font-display text-[12px] uppercase tracking-[0.12em] text-ink">
+                      <span className="text-eyebrow text-ink">
                         Estimated total
                       </span>
                       <Price
                         amountPkr={subtotal}
-                        className="text-[1.5rem] font-medium tabular-nums"
+                        className="text-2xl"
                       />
                     </div>
                   </div>
@@ -247,7 +245,7 @@ export default function CartPage() {
                         style={{ width: `${freeShipProgress}%` }}
                       />
                     </div>
-                    <p className="font-serif text-[0.85rem] leading-snug text-taupe">
+                    <p className="text-caption text-taupe">
                       {freeShipGap > 0
                         ? `Add ${format(freeShipGap)} more for complimentary shipping.`
                         : "This order qualifies for complimentary shipping."}
@@ -257,12 +255,6 @@ export default function CartPage() {
                   <Button href="/checkout" className="mt-6 w-full sm:w-full">
                     Check out
                   </Button>
-                  <Link
-                    href="/products"
-                    className="mt-4 block text-center font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
-                  >
-                    Continue shopping
-                  </Link>
                 </div>
               </aside>
             </div>

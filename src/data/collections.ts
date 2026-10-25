@@ -7,7 +7,7 @@ export const collections: Collection[] = [
     title: "For Her",
     description: "Florals, iris, and soft gourmands composed for her wardrobe.",
     seoCopy:
-      "Explore NS Perfume compositions created with feminine-leaning structures—powdered iris, rose, and warm vanilla gourmands. Each eau de parfum and eau de toilette is listed with its true scent pyramid, sillage, and longevity so you can choose by wear time and occasion rather than by trend. From Iris Solstice for daylight offices to Vanille Gilde for cooler evenings, every bottle links to full note breakdowns, concentration, and available sizes.",
+      "Explore NS Perfume compositions created with feminine-leaning structures: powdered iris, rose, and warm vanilla gourmands. Each eau de parfum and eau de toilette is listed with its true scent pyramid, sillage, and longevity so you can choose by wear time and occasion rather than by trend. From Iris Solstice for daylight offices to Vanille Gilde for cooler evenings, every bottle links to full note breakdowns, concentration, and available sizes.",
     bannerTone: "canvas",
     filterTags: ["gender:her"],
   },
@@ -16,7 +16,7 @@ export const collections: Collection[] = [
     title: "For Him",
     description: "Woods, oud, and dry amber structures built for daily and evening wear.",
     seoCopy:
-      "Shop NS Perfume for him—cedar, vetiver, smoked leather, and restrained oud. Cedar Rift is a clean daytime EDT; Oud Atelier is a denser parfum for night. Filter by family and concentration to match climate, office policy, and how long you need a scent to last.",
+      "Shop NS Perfume for him: cedar, vetiver, smoked leather, and restrained oud. Cedar Rift is a clean daytime EDT; Oud Atelier is a denser parfum for night. Filter by family and concentration to match climate, office policy, and how long you need a scent to last.",
     bannerTone: "deep",
     filterTags: ["gender:him"],
   },
@@ -25,7 +25,7 @@ export const collections: Collection[] = [
     title: "Unisex",
     description: "Shared compositions that sit well across wardrobes and seasons.",
     seoCopy:
-      "Our unisex lineup balances fresh citrus, green fig, and oriental amber without leaning hard into gendered clichés. Amber Noir, Fig Verdure, and Citrus Atelier give you options from soft sillage to room-filling trails—each with transparent note lists and performance meters on the product page.",
+      "Our unisex lineup balances fresh citrus, green fig, and oriental amber without leaning hard into gendered clichés. Amber Noir, Fig Verdure, and Citrus Atelier give you options from soft sillage to room-filling trails, each with transparent note lists and performance meters on the product page.",
     bannerTone: "canvas",
     filterTags: ["gender:unisex"],
   },
@@ -79,7 +79,7 @@ export const collections: Collection[] = [
     title: "Eau de Parfum",
     description: "Higher concentration for longer longevity on skin.",
     seoCopy:
-      "EDP formulas in the NS Perfume range sit between daily EDT brightness and extrait intensity. Expect richer hearts and longer drydowns—ideal when you want six to eight hours of wear without heavy reapplication.",
+      "EDP formulas in the NS Perfume range sit between daily EDT brightness and extrait intensity. Expect richer hearts and longer drydowns, ideal when you want six to eight hours of wear without heavy reapplication.",
     bannerTone: "canvas",
     filterTags: ["concentration:edp"],
   },
@@ -115,7 +115,7 @@ export const collections: Collection[] = [
     title: "New Arrivals",
     description: "Recently released compositions and limited formats.",
     seoCopy:
-      "New arrivals at NS Perfume surface the latest note structures and bottle sizes. Browse concentration badges and scent pyramids first—then choose size once performance matches how you live.",
+      "New arrivals at NS Perfume surface the latest note structures and bottle sizes. Browse concentration badges and scent pyramids first, then choose size once performance matches how you live.",
     bannerTone: "canvas",
     filterTags: ["badge:new"],
   },
@@ -124,7 +124,7 @@ export const collections: Collection[] = [
     title: "Bestsellers",
     description: "Most requested bottles across gender and family.",
     seoCopy:
-      "Bestsellers reflect wear-tested favorites—Amber Noir, Cedar Rift, Citrus Atelier, and the Discovery Set. Each listing still shows honest sillage and longevity so popular does not mean one-size-fits-all.",
+      "Bestsellers reflect wear-tested favorites: Amber Noir, Cedar Rift, Citrus Atelier, and the Discovery Set. Each listing still shows honest sillage and longevity so popular does not mean one-size-fits-all.",
     bannerTone: "deep",
     filterTags: ["badge:bestseller"],
   },

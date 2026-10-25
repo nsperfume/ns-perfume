@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { formatSize } from "@/lib/format";
 
 export function SizeSelector({
   sizes,
@@ -24,13 +23,13 @@ export function SizeSelector({
             aria-selected={selected}
             onClick={() => onChange(ml)}
             className={cn(
-              "min-h-11 min-w-11 rounded-xs border px-3 py-2 font-mono text-sm transition-colors",
+              "inline-flex min-h-12 min-w-[4.5rem] items-center justify-center rounded-xs border px-4 font-mono text-sm font-medium transition-colors",
               selected
                 ? "border-ink bg-ink text-paper"
-                : "border-hairline bg-transparent text-taupe hover:border-ink",
+                : "border-[#d6cfbf] bg-paper text-ink hover:border-ink",
             )}
           >
-            {formatSize(ml)}
+            {ml} ml
           </button>
         );
       })}

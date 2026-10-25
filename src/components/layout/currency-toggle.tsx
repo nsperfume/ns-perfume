@@ -23,7 +23,7 @@ export function CurrencyToggle({
       options={currencies.map((c) => ({ value: c.code, label: c.code }))}
       className={cn("min-w-0", className)}
       triggerClassName={cn(
-        "min-h-9 min-w-[4.5rem] px-2.5 py-1.5 font-mono text-xs tracking-wide",
+        "min-h-10! min-w-[4.75rem] px-3 py-1.5 font-mono text-sm tracking-wide",
         tone === "dark" && "backdrop-blur-md",
       )}
     />

@@ -19,19 +19,19 @@ export function StoreSectionHeader({
   return (
     <div
       className={cn(
-        "mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between",
+        "mb-8 flex flex-col gap-4 sm:mb-12 sm:flex-row sm:items-end sm:justify-between sm:gap-10",
         className,
       )}
     >
-      <div className="max-w-2xl">
+      <div className="max-w-[44rem]">
         {eyebrow ? (
-          <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+          <p className="mb-3 text-eyebrow text-taupe">
             {eyebrow}
           </p>
         ) : null}
         <h2 className="text-display-md text-balance text-ink">{title}</h2>
         {description ? (
-          <p className="mt-2 max-w-xl text-pretty font-serif text-[1.05rem] leading-relaxed text-taupe">
+          <p className="mt-4 max-w-[38rem] text-pretty text-body-lg text-taupe">
             {description}
           </p>
         ) : null}
@@ -49,19 +49,19 @@ export function StoreBreadcrumb({
   return (
     <nav
       aria-label="Breadcrumb"
-      className="mb-8 flex flex-wrap items-center gap-x-2 gap-y-1 font-display text-[11px] uppercase tracking-[0.12em] text-taupe"
+      className="mb-6 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-eyebrow text-taupe"
     >
       {items.map((item, i) => (
         <span key={`${item.label}-${i}`} className="inline-flex items-center gap-2">
           {i > 0 ? (
-            <span className="text-hairline" aria-hidden>
+            <span className="text-taupe/50" aria-hidden>
               /
             </span>
           ) : null}
           {item.href ? (
             <Link
               href={item.href}
-              className="cursor-pointer transition-colors hover:text-ink"
+              className="inline-flex min-h-8 cursor-pointer items-center transition-colors hover:text-ink"
             >
               {item.label}
             </Link>

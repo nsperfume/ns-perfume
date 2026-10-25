@@ -13,7 +13,6 @@ import {
 } from "@/lib/scent-guide";
 import type { StoreProduct } from "@/lib/mappers";
 import { cn } from "@/lib/cn";
-import { formatSize } from "@/lib/format";
 
 export function FindYourScentGuide() {
   const [catalog, setCatalog] = useState<StoreProduct[]>([]);
@@ -81,17 +80,17 @@ export function FindYourScentGuide() {
       <div className="min-w-0">
         <div className="mb-8">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-taupe">
+            <p className="text-eyebrow text-taupe">
               {done
                 ? "Your matches"
                 : `Question ${step + 1} of ${SCENT_GUIDE_STEPS.length}`}
             </p>
-            <p className="font-mono text-[11px] tabular-nums text-taupe">
+            <p className="font-mono text-sm tabular-nums text-taupe">
               {Math.min(100, progress)}%
             </p>
           </div>
           <div
-            className="h-1 w-full overflow-hidden bg-hairline"
+            className="h-1 w-full overflow-hidden rounded-full bg-hairline"
             role="progressbar"
             aria-valuenow={Math.min(100, progress)}
             aria-valuemin={0}
@@ -108,7 +107,7 @@ export function FindYourScentGuide() {
         {!done ? (
           <>
             <h2 className="text-display-md text-balance">{current.question}</h2>
-            <p className="mt-3 max-w-xl font-serif text-[1.05rem] leading-relaxed text-taupe">
+            <p className="mt-4 max-w-[36rem] text-body-lg text-taupe">
               {current.help}
             </p>
 
@@ -121,10 +120,10 @@ export function FindYourScentGuide() {
                       type="button"
                       onClick={() => choose(opt.id)}
                       className={cn(
-                        "group flex w-full cursor-pointer items-start gap-4 border px-4 py-4 text-left transition-colors sm:px-5 sm:py-5",
+                        "group flex w-full cursor-pointer items-start gap-4 rounded-xs border px-5 py-4 text-left transition-colors sm:px-6 sm:py-5",
                         selected
                           ? "border-ink bg-ink text-paper"
-                          : "border-hairline bg-paper text-ink hover:border-ink/35 hover:bg-muted/60",
+                          : "border-[#d6cfbf] bg-paper text-ink hover:border-ink/50 hover:bg-muted/60",
                       )}
                     >
                       <span
@@ -137,13 +136,13 @@ export function FindYourScentGuide() {
                         aria-hidden
                       />
                       <span className="min-w-0">
-                        <span className="block font-display text-[1.05rem] font-medium tracking-wide sm:text-[1.125rem]">
+                        <span className="block font-sans text-lg font-semibold leading-snug">
                           {opt.label}
                         </span>
                         <span
                           className={cn(
-                            "mt-1 block font-serif text-[0.98rem] leading-snug",
-                            selected ? "text-paper/75" : "text-taupe",
+                            "mt-1 block text-body-sm",
+                            selected ? "text-paper/80" : "text-taupe",
                           )}
                         >
                           {opt.hint}
@@ -184,16 +183,16 @@ export function FindYourScentGuide() {
         ) : (
           <>
             <h2 className="text-display-md">Three bottles to try first</h2>
-            <p className="mt-3 max-w-xl font-serif text-[1.05rem] leading-relaxed text-taupe">
+            <p className="mt-4 max-w-[36rem] text-body-lg text-taupe">
               Ranked from your answers against real catalog fields: gender,
               family, sillage, longevity, and concentration. No generated copy
               and no black-box model.
             </p>
 
             {loading ? (
-              <p className="mt-8 font-serif text-taupe">Loading the line…</p>
+              <p className="mt-8 text-body text-taupe">Loading the line…</p>
             ) : matches.length === 0 ? (
-              <p className="mt-8 font-serif text-taupe">
+              <p className="mt-8 text-body text-taupe">
                 No bottles matched closely enough. Soften a filter by starting
                 again, or browse the full shop.
               </p>
@@ -213,39 +212,39 @@ export function FindYourScentGuide() {
                         </div>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="bg-ink px-2.5 py-1 font-display text-[10px] font-medium uppercase tracking-[0.14em] text-paper">
+                            <span className="bg-ink px-2.5 py-1 text-eyebrow text-paper">
                               {match.rankLabel}
                             </span>
-                            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-taupe">
+                            <span className="text-caption text-taupe">
                               Match {index + 1} of {matches.length}
                             </span>
                           </div>
-                          <h3 className="mt-3 font-display text-[1.45rem] font-medium text-ink">
+                          <h3 className="mt-3 text-display-sm text-ink">
                             <Link
                               href={`/products/${p.handle}`}
-                              className="transition-colors hover:text-brass"
+                              className="transition-colors hover:text-brass-ink"
                             >
                               {p.name}
                             </Link>
                           </h3>
-                          <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-taupe">
+                          <p className="mt-2 font-mono text-xs text-taupe">
                             {p.concentration}
-                            {price?.ml ? ` · ${formatSize(price.ml)}` : ""}
+                            {price?.ml ? ` · ${`${price.ml} ml`}` : ""}
                             {` · ${p.family}`}
                           </p>
-                          <p className="mt-3 max-w-xl font-serif text-[1.05rem] leading-relaxed text-ink/80">
+                          <p className="mt-3 max-w-xl text-body text-ink/80">
                             {p.descriptor}
                           </p>
 
                           <div className="mt-5">
-                            <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                            <p className="mb-2 text-eyebrow text-taupe">
                               Why this bottle
                             </p>
                             <ul className="space-y-1.5">
                               {match.reasons.map((reason) => (
                                 <li
                                   key={reason}
-                                  className="flex gap-2 font-serif text-[1rem] text-ink/85"
+                                  className="flex gap-2 text-body text-ink/85"
                                 >
                                   <span
                                     className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brass"
@@ -313,11 +312,11 @@ export function FindYourScentGuide() {
         )}
       </div>
 
-      <aside className="border border-hairline bg-muted/40 p-5 sm:p-6 lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.25rem)]">
-        <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+      <aside className="border border-hairline bg-muted/40 p-6 sm:p-8 lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.5rem)]">
+        <p className="text-eyebrow text-taupe">
           How matching works
         </p>
-        <p className="mt-3 font-serif text-[1.05rem] leading-relaxed text-ink/85">
+        <p className="mt-3 text-body text-ink/85">
           Each answer scores bottles already in the catalog. We use gender,
           scent family, sillage, longevity, and concentration. Sets and
           discovery kits are left out so you get single bottles first.
@@ -330,7 +329,7 @@ export function FindYourScentGuide() {
           ].map((line) => (
             <li
               key={line}
-              className="flex gap-2 font-serif text-[0.98rem] text-taupe"
+              className="flex gap-2 text-body-sm text-taupe"
             >
               <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ink/40" />
               {line}
@@ -340,16 +339,16 @@ export function FindYourScentGuide() {
 
         {answerSummary.length ? (
           <div className="mt-6 border-t border-hairline pt-5">
-            <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+            <p className="text-eyebrow text-taupe">
               Your path
             </p>
             <ol className="mt-3 space-y-2">
               {answerSummary.map((line, i) => (
                 <li
                   key={`${line}-${i}`}
-                  className="font-serif text-[0.98rem] text-ink"
+                  className="text-body-sm text-ink"
                 >
-                  <span className="font-mono text-[10px] text-taupe">
+                  <span className="font-mono text-sm text-taupe">
                     {String(i + 1).padStart(2, "0")}
                   </span>{" "}
                   {line}
@@ -358,7 +357,7 @@ export function FindYourScentGuide() {
             </ol>
           </div>
         ) : (
-          <p className="mt-6 border-t border-hairline pt-5 font-serif text-[0.98rem] text-taupe">
+          <p className="mt-6 border-t border-hairline pt-5 text-body-sm text-taupe">
             Your choices will collect here as you move through the guide.
           </p>
         )}

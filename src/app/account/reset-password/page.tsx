@@ -12,11 +12,11 @@ export default function ResetPasswordPage() {
   return (
     <section className="bg-canvas section-y">
       <div className="container-ns max-w-lg">
-        <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+        <p className="mb-2 text-eyebrow text-taupe">
           Account
         </p>
         <h1 className="text-display-lg text-balance text-ink">Choose a new password</h1>
-        <p className="mt-4 font-serif text-[1.1rem] leading-relaxed text-taupe">
+        <p className="mt-4 text-body-lg text-taupe">
           Use at least 8 characters. After saving you will be signed in.
         </p>
         <div className="mt-8 border border-hairline bg-paper p-6 sm:p-8">

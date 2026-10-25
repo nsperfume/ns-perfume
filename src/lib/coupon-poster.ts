@@ -251,7 +251,7 @@ export async function drawCouponPoster(
   const brand = (options.brandName || siteConfig.name).toUpperCase();
   const shop =
     (options.shopUrl || siteConfig.url).replace(/^https?:\/\//, "") ||
-    "nsperfume.com";
+    "nsperfume.pk";
 
   const dpr =
     options.pixelRatio ??

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { useCart } from "@/context/cart";
-import { formatSize } from "@/lib/format";
 import { Price } from "@/components/commerce/price";
 import { Button } from "@/components/ui/button";
 import { pageCopy } from "@/data/copy";
@@ -134,14 +133,14 @@ export function CartDrawer() {
       />
       <aside
         ref={panelRef}
-        className="relative flex h-full w-full max-w-[26rem] flex-col bg-paper shadow-modal"
+        className="relative flex h-full w-full max-w-[28rem] flex-col bg-paper shadow-modal 2xl:max-w-[30rem]"
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-hairline px-5 py-4 sm:px-6">
-          <h2 className="flex items-baseline gap-2.5 font-display text-lg font-medium tracking-tight text-ink">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-hairline px-5 py-3 sm:px-7">
+          <h2 className="flex items-center gap-3 text-display-sm text-ink">
             Your Bag
             {itemCount > 0 ? (
-              <span className="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1.5 font-mono text-[11px] font-medium text-paper">
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-ink px-1.5 font-mono text-xs font-medium text-paper">
                 {itemCount}
               </span>
             ) : null}
@@ -149,7 +148,7 @@ export function CartDrawer() {
           <button
             type="button"
             onClick={closeCart}
-            className="flex h-9 w-9 cursor-pointer items-center justify-center text-taupe transition-colors hover:bg-muted hover:text-ink"
+            className="-mr-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-xs text-taupe transition-colors hover:bg-muted hover:text-ink"
             aria-label="Close"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -166,11 +165,11 @@ export function CartDrawer() {
         {/* Lines / empty body */}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto scrollbar-panel">
           {lines.length === 0 ? (
-            <div className="flex flex-1 flex-col px-5 pt-6 pb-4 sm:px-6">
-              <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+            <div className="flex flex-1 flex-col px-5 pt-8 pb-4 sm:px-7">
+              <p className="text-eyebrow text-taupe">
                 Empty
               </p>
-              <p className="mt-3 max-w-none font-serif text-[1.1rem] leading-relaxed text-ink/85">
+              <p className="mt-3 max-w-[34ch] text-body-lg text-ink/85">
                 {pageCopy.cartEmpty}
               </p>
               <div className="mt-8 flex flex-col gap-3">
@@ -190,11 +189,11 @@ export function CartDrawer() {
                   Bestsellers
                 </Button>
               </div>
-              <div className="mt-auto border-t border-hairline pt-5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+              <div className="mt-auto border-t border-hairline pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <Link
                   href="/wishlist"
                   onClick={closeCart}
-                  className="font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+                  className="inline-flex min-h-11 items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass"
                 >
                   View wishlist
                 </Link>
@@ -206,7 +205,7 @@ export function CartDrawer() {
                 <li
                   key={line.sku}
                   data-cart-line
-                  className="grid grid-cols-[4.25rem_minmax(0,1fr)] gap-3.5 px-5 py-4 sm:grid-cols-[4.75rem_minmax(0,1fr)] sm:gap-4 sm:px-6 sm:py-5"
+                  className="grid grid-cols-[5rem_minmax(0,1fr)] gap-4 px-5 py-5 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:gap-5 sm:px-7"
                 >
                   <Link
                     href={`/products/${line.productHandle}`}
@@ -231,36 +230,36 @@ export function CartDrawer() {
                         <Link
                           href={`/products/${line.productHandle}`}
                           onClick={closeCart}
-                          className="line-clamp-2 font-display text-[0.95rem] font-medium leading-snug text-ink transition-colors hover:text-brass"
+                          className="line-clamp-2 text-base font-semibold leading-snug text-ink transition-colors hover:text-brass-ink"
                         >
                           {line.name}
                           {line.isGift ? " (Gift)" : ""}
                         </Link>
-                        <p className="mt-0.5 font-mono text-[11px] tracking-wide text-taupe">
-                          {line.sizeMl > 0 ? formatSize(line.sizeMl) : line.sku}
+                        <p className="mt-1 font-mono text-xs text-taupe">
+                          {line.sizeMl > 0 ? `${line.sizeMl} ml` : line.sku}
                           {line.giftWrap ? " · Wrap" : ""}
                         </p>
                         {line.giftMessage ? (
-                          <p className="mt-1 line-clamp-2 font-serif text-[0.8rem] leading-snug text-taupe">
+                          <p className="mt-1 line-clamp-2 text-caption leading-snug text-taupe">
                             Note: {line.giftMessage}
                           </p>
                         ) : null}
                       </div>
                       <Price
                         amountPkr={line.price * line.quantity}
-                        className="shrink-0 text-[0.95rem] font-medium tabular-nums"
+                        className="shrink-0 text-base"
                       />
                     </div>
 
                     <div className="mt-3 flex items-center justify-between gap-3">
                       <div
-                        className="inline-flex h-8 items-stretch overflow-hidden border border-hairline"
+                        className="inline-flex h-10 items-stretch overflow-hidden rounded-xs border border-[#d6cfbf]"
                         role="group"
                         aria-label={`Quantity for ${line.name}`}
                       >
                         <button
                           type="button"
-                          className="flex w-8 cursor-pointer items-center justify-center text-sm text-ink transition-colors hover:bg-muted"
+                          className="flex w-10 cursor-pointer items-center justify-center text-base text-ink transition-colors hover:bg-muted"
                           onClick={() =>
                             updateQuantity(line.sku, line.quantity - 1)
                           }
@@ -268,12 +267,12 @@ export function CartDrawer() {
                         >
                           −
                         </button>
-                        <span className="flex min-w-8 items-center justify-center border-x border-hairline font-mono text-[12px] tabular-nums">
+                        <span className="flex min-w-9 items-center justify-center font-mono text-sm tabular-nums">
                           {line.quantity}
                         </span>
                         <button
                           type="button"
-                          className="flex w-8 cursor-pointer items-center justify-center text-sm text-ink transition-colors hover:bg-muted"
+                          className="flex w-10 cursor-pointer items-center justify-center text-base text-ink transition-colors hover:bg-muted"
                           onClick={() =>
                             updateQuantity(line.sku, line.quantity + 1)
                           }
@@ -284,7 +283,7 @@ export function CartDrawer() {
                       </div>
                       <button
                         type="button"
-                        className="cursor-pointer font-display text-[11px] uppercase tracking-widest text-taupe transition-colors hover:text-ink"
+                        className="inline-flex min-h-10 cursor-pointer items-center text-caption text-taupe underline decoration-hairline underline-offset-4 transition-colors hover:text-ink"
                         onClick={() => removeItem(line.sku)}
                       >
                         Remove
@@ -299,9 +298,9 @@ export function CartDrawer() {
 
         {/* Footer (filled bag only) */}
         {lines.length > 0 ? (
-          <div className="shrink-0 border-t border-hairline bg-muted/50 px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-5">
+          <div className="shrink-0 border-t border-hairline bg-muted/50 px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-7">
             <div className="mb-4" aria-label="Free shipping progress">
-              <div className="mb-1.5 flex justify-between gap-2 font-serif text-[13px] text-taupe">
+              <div className="mb-2 flex justify-between gap-2 text-caption text-taupe">
                 <span>
                   {freeShipRemaining > 0
                     ? "Toward free shipping"
@@ -310,7 +309,7 @@ export function CartDrawer() {
                 {freeShipRemaining > 0 ? (
                   <Price
                     amountPkr={freeShipRemaining}
-                    className="text-[13px] text-taupe"
+                    className="text-sm text-taupe"
                   />
                 ) : null}
               </div>
@@ -327,20 +326,20 @@ export function CartDrawer() {
 
             <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                <p className="text-eyebrow text-taupe">
                   Subtotal
                 </p>
-                <p className="mt-0.5 font-serif text-[12px] text-taupe">
+                <p className="mt-0.5 text-caption text-taupe">
                   Shipping at checkout
                 </p>
               </div>
               <Price
                 amountPkr={subtotal}
-                className="text-xl font-medium tabular-nums text-ink"
+                className="text-xl text-ink"
               />
             </div>
 
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="mt-5 flex flex-col gap-2.5">
               <Button
                 href="/checkout"
                 className="w-full sm:w-full"

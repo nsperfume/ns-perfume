@@ -1,30 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { EB_Garamond, IBM_Plex_Mono, Ubuntu } from "next/font/google";
+import { Cormorant_Garamond, IBM_Plex_Mono, Manrope } from "next/font/google";
 import { SiteShell } from "@/components/layout/site-shell";
 import { siteConfig } from "@/data/site";
 import "./globals.css";
 
-/* Display / headline face */
-const ubuntu = Ubuntu({
-  variable: "--font-ubuntu",
+/* Display: headings, product names, pull quotes (24px and up only) */
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  display: "swap",
-});
-
-/* Editorial body copy */
-const ebGaramond = EB_Garamond({
-  variable: "--font-eb-garamond",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["500", "600"],
   style: ["normal", "italic"],
   display: "swap",
 });
 
+/* UI and body copy: nav, buttons, forms, paragraphs */
+const manrope = Manrope({
+  variable: "--font-manrope",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+/* Numerals: prices, ml sizes, SKUs, order numbers */
 const ibmPlexMono = IBM_Plex_Mono({
   variable: "--font-ibm-plex-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -57,7 +57,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ubuntu.variable} ${ebGaramond.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body
         className="flex min-h-full flex-col bg-canvas text-ink"

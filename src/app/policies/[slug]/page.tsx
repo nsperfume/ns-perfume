@@ -28,13 +28,13 @@ export default async function PolicyPage({ params }: Props) {
 
   return (
     <section className="bg-canvas section-y">
-      <div className="container-ns max-w-2xl">
-        <h1 className="text-display-lg mb-12">{policy.title}</h1>
-        <div className="flex flex-col gap-8">
+      <div className="container-ns max-w-[48rem]">
+        <h1 className="mb-12 text-display-xl">{policy.title}</h1>
+        <div className="flex flex-col gap-10">
           {policy.sections.map((section) => (
             <div key={section.heading}>
               <h2 className="text-heading-sm mb-3">{section.heading}</h2>
-              <p className="text-body text-taupe">{section.body}</p>
+              <p className="text-body-lg text-taupe">{section.body}</p>
             </div>
           ))}
         </div>

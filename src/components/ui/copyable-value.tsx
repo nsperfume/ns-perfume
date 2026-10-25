@@ -74,13 +74,13 @@ export function CopyableValue({
   const text = (
     <span
       className={cn(
-        "block font-sans text-[1rem] font-medium leading-8 text-ink",
+        "block text-base font-medium leading-8 text-ink",
+        /^[\d\s+()-]+$|^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(value)
+          ? "font-mono"
+          : "font-sans",
         "break-all tabular-nums tracking-normal [font-variant-numeric:lining-nums_tabular-nums]",
         valueClassName,
       )}
-      style={{
-        fontFamily: "var(--font-ubuntu), Ubuntu, system-ui, sans-serif",
-      }}
     >
       {value}
     </span>

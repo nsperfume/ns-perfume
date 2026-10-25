@@ -42,13 +42,13 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
         )}
         aria-hidden
       />
-      <p className="flex-1 font-serif text-[0.95rem] font-medium leading-snug">
+      <p className="flex-1 text-body-sm font-medium leading-snug">
         {toast.message}
       </p>
       <button
         type="button"
         onClick={onDismiss}
-        className="shrink-0 cursor-pointer font-display text-[10px] uppercase tracking-[0.12em] text-taupe hover:text-ink"
+        className="shrink-0 cursor-pointer text-eyebrow text-taupe hover:text-ink"
       >
         Close
       </button>

@@ -28,14 +28,14 @@ export default function GiftCardsPage() {
         objectPosition="center 45%"
       />
       <section className="bg-canvas section-y">
-        <div className="container-ns grid gap-12 lg:grid-cols-2">
-          <div className="flex min-h-80 items-center justify-center rounded-lg border border-hairline bg-paper p-12">
+        <div className="container-ns grid gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="flex min-h-80 items-center justify-center rounded-xs border border-hairline bg-paper p-12">
             <div className="text-center">
-              <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-brass">
+              <p className="text-eyebrow text-brass-ink">
                 Coming soon
               </p>
-              <h2 className="text-display-md mt-3">Digital Gift Cards</h2>
-              <p className="mx-auto mt-4 max-w-sm font-serif text-body text-taupe">
+              <h2 className="mt-3 text-display-md">Digital gift cards</h2>
+              <p className="mx-auto mt-4 max-w-sm text-body text-taupe">
                 We are not selling gift cards yet. Check back soon, or choose
                 one of the gifting options on this page.
               </p>
@@ -43,7 +43,7 @@ export default function GiftCardsPage() {
           </div>
           <div>
             <h2 className="text-heading-sm text-ink">Gifting today</h2>
-            <p className="mt-3 measure font-serif text-body text-taupe">
+            <p className="mt-3 max-w-[38rem] text-body-lg text-taupe">
               The Discovery Set is the easy choice when you do not know their
               signature yet. Several formulas to wear for a few days each, so
               they can settle on a full bottle later. Gift sets pair discovery
@@ -58,18 +58,18 @@ export default function GiftCardsPage() {
                 Browse gift sets
               </Button>
             </div>
-            <p className="mt-8 font-serif text-body text-taupe">
+            <p className="mt-8 text-body text-taupe">
               Buying for a team or an occasion?{" "}
               <Link
                 href="/contact"
-                className="text-brass underline-offset-4 hover:underline"
+                className="font-semibold text-brass-ink underline underline-offset-4"
               >
                 Contact care
               </Link>{" "}
               or call{" "}
               <a
                 href={`tel:${siteConfig.phone}`}
-                className="text-brass underline-offset-4 hover:underline"
+                className="font-semibold text-brass-ink underline underline-offset-4"
               >
                 {siteConfig.phone}
               </a>{" "}

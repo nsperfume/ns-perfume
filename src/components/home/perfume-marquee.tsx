@@ -160,7 +160,7 @@ function MarqueeRow({
             key={`${text}-${i}`}
             className="inline-flex shrink-0 items-center gap-5 px-5 md:gap-7 md:px-7"
           >
-            <span className="whitespace-nowrap font-serif text-[0.9rem] leading-none text-paper/90 md:text-[1.05rem]">
+            <span className="whitespace-nowrap text-sm font-medium leading-none text-paper/90 md:text-base">
               {text}
             </span>
             <span

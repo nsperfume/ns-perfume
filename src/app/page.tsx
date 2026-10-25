@@ -4,7 +4,6 @@ import {
   HomeTrustSection,
   ShopByCollection,
   BestsellersSection,
-  HomePromoBanner,
   BrandStoryBand,
   FindYourScentTeaser,
   TestimonialsSection,
@@ -63,7 +62,6 @@ export default async function HomePage() {
       <ShopByCollection />
       <BestsellersSection products={bestsellerList} />
       <HomeTrustSection />
-      <HomePromoBanner />
       <BrandStoryBand />
       <FindYourScentTeaser />
       <TestimonialsSection

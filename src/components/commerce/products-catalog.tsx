@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import { pageCopy } from "@/data/copy";
 import { SelectInline } from "@/components/ui/select";
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 
 const GENDER_OPTIONS = [
   { value: "all", label: "All" },
@@ -32,9 +32,9 @@ const BADGE_OPTIONS = [
 
 const SORT_OPTIONS = [
   { value: "featured", label: "Featured" },
-  { value: "price-asc", label: "Price · Low to High" },
-  { value: "price-desc", label: "Price · High to Low" },
-  { value: "name", label: "Name · A–Z" },
+  { value: "price-asc", label: "Price: low to high" },
+  { value: "price-desc", label: "Price: high to low" },
+  { value: "name", label: "Name: A to Z" },
 ] as const;
 
 function FilterGroup({
@@ -46,7 +46,7 @@ function FilterGroup({
 }) {
   return (
     <fieldset className="border-b border-hairline pb-5">
-      <legend className="mb-3 w-full font-serif text-[13px] font-bold uppercase tracking-[0.14em] text-ink/70">
+      <legend className="mb-3 w-full text-eyebrow text-taupe">
         {title}
       </legend>
       <div className="flex flex-col gap-0.5">{children}</div>
@@ -72,29 +72,29 @@ function FilterOption({
   return (
     <label
       className={cn(
-        "flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2.5 py-2.5 transition-colors",
+        "flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xs px-3 py-2 transition-colors",
         checked
           ? "bg-ink text-paper"
           : "text-ink/85 hover:bg-muted/70 hover:text-ink",
       )}
     >
-      <span className="flex min-w-0 items-center gap-2.5">
+      <span className="flex min-w-0 items-center gap-3">
         <input
           type="radio"
           name={name}
           value={value}
           checked={checked}
           onChange={onChange}
-          className="h-3.5 w-3.5 shrink-0 accent-ink"
+          className="h-4 w-4 shrink-0 accent-ink"
         />
-        <span className="font-serif text-[16px] font-semibold leading-snug">
+        <span className="text-body-sm font-medium leading-snug">
           {label}
         </span>
       </span>
       {typeof count === "number" ? (
         <span
           className={cn(
-            "shrink-0 font-serif text-[14px] font-semibold",
+            "shrink-0 text-sm font-semibold",
             checked ? "text-paper/75" : "text-ink/55",
           )}
         >
@@ -119,27 +119,27 @@ function BadgeOption({
   return (
     <label
       className={cn(
-        "flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2.5 py-2.5 transition-colors",
+        "flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xs px-3 py-2 transition-colors",
         checked
           ? "bg-ink text-paper"
           : "text-ink/85 hover:bg-muted/70 hover:text-ink",
       )}
     >
-      <span className="flex min-w-0 items-center gap-2.5">
+      <span className="flex min-w-0 items-center gap-3">
         <input
           type="checkbox"
           checked={checked}
           onChange={onChange}
-          className="h-3.5 w-3.5 shrink-0 rounded-sm accent-ink"
+          className="h-4 w-4 shrink-0 rounded-sm accent-ink"
         />
-        <span className="font-serif text-[16px] font-semibold leading-snug">
+        <span className="text-body-sm font-medium leading-snug">
           {label}
         </span>
       </span>
       {typeof count === "number" ? (
         <span
           className={cn(
-            "shrink-0 font-serif text-[14px] font-semibold",
+            "shrink-0 text-sm font-semibold",
             checked ? "text-paper/75" : "text-ink/55",
           )}
         >
@@ -249,10 +249,10 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="font-serif text-[15px] font-bold uppercase tracking-[0.12em] text-ink">
+          <p className="text-label text-ink">
             Filters
           </p>
-          <p className="mt-1 font-serif text-[14px] font-medium text-ink/60">
+          <p className="mt-1 text-caption text-taupe">
             {filtered.length} of {products.length}
           </p>
         </div>
@@ -260,7 +260,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
           <button
             type="button"
             onClick={resetFilters}
-            className="cursor-pointer font-serif text-[13px] font-bold uppercase tracking-widest text-ink/60 underline-offset-4 hover:text-ink hover:underline"
+            className="inline-flex min-h-8 cursor-pointer items-center text-label text-ink/70 underline underline-offset-4 hover:text-ink"
           >
             Clear All
           </button>
@@ -354,12 +354,12 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
         <button
           type="button"
           onClick={() => setMobileOpen((v) => !v)}
-          className="inline-flex min-h-11 cursor-pointer items-center gap-2 border border-hairline bg-paper px-4 font-serif text-[13px] font-bold uppercase tracking-[0.12em] text-ink"
+          className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xs border border-ink/70 bg-paper px-5 text-label text-ink"
           aria-expanded={mobileOpen}
         >
           Filters
           {activeCount > 0 ? (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1.5 font-mono text-[10px] text-paper">
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1.5 font-mono text-xs text-paper">
               {activeCount}
             </span>
           ) : null}
@@ -367,22 +367,22 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
       </div>
 
       {mobileOpen ? (
-        <div className="mb-6 rounded-md border border-hairline bg-paper p-5 lg:hidden">
+        <div className="mb-6 rounded-xs border border-hairline bg-paper p-5 lg:hidden">
           {filtersPanel}
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="mt-5 w-full min-h-11 cursor-pointer border border-ink bg-ink font-display text-[11px] uppercase tracking-[0.14em] text-paper"
+            className="mt-5 min-h-12 w-full cursor-pointer rounded-xs border border-ink bg-ink text-label text-paper"
           >
             Show {filtered.length} results
           </button>
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10 xl:gap-12">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10 2xl:gap-14">
         {/* Desktop sidebar */}
-        <aside className="hidden w-full shrink-0 lg:block lg:w-60 xl:w-64">
-          <div className="sticky top-[calc(var(--spacing-chrome-height)+1rem)] rounded-md border border-hairline bg-paper p-5 xl:p-6">
+        <aside className="hidden w-full shrink-0 lg:block lg:w-60 2xl:w-64">
+          <div className="sticky top-[calc(var(--spacing-chrome-height)+1.5rem)] max-h-[calc(100dvh-var(--spacing-chrome-height)-3rem)] overflow-y-auto rounded-xs border border-hairline bg-paper p-5 scrollbar-panel xl:p-6">
             {filtersPanel}
           </div>
         </aside>
@@ -393,7 +393,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
             ref={gridTopRef}
             className="mb-5 flex scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] flex-col gap-3 border-b border-hairline pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
           >
-            <p className="min-w-0 font-serif text-[15px] font-medium text-ink/65">
+            <p className="min-w-0 text-body-sm text-taupe">
               {filtered.length} product{filtered.length === 1 ? "" : "s"}
               {activeCount > 0 ? " · filtered" : ""}
             </p>
@@ -406,7 +406,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
               }}
               aria-label="Sort products"
               prefix={
-                <span className="shrink-0 font-serif text-[13px] font-bold uppercase tracking-[0.12em] text-ink/70">
+                <span className="shrink-0 text-eyebrow text-taupe">
                   Sort By
                 </span>
               }
@@ -425,13 +425,13 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
               <button
                 type="button"
                 onClick={resetFilters}
-                className="mt-4 cursor-pointer font-display text-[12px] uppercase tracking-[0.14em] text-ink underline-offset-4 hover:underline"
+                className="mt-4 cursor-pointer text-label text-ink underline-offset-4 hover:underline"
               >
                 Clear filters
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-10 sm:gap-x-5 md:grid-cols-3 2xl:grid-cols-4 2xl:gap-x-6">
               {pageItems.map((p) => (
                 <ProductCard key={p.handle} product={p} />
               ))}
@@ -443,18 +443,18 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
               <button
                 type="button"
                 disabled={safePage <= 1}
-                className="min-h-11 cursor-pointer border border-hairline px-4 font-display text-[11px] uppercase tracking-[0.12em] text-ink transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-11 cursor-pointer rounded-xs border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => goToPage(safePage - 1)}
               >
                 Previous
               </button>
-              <span className="font-mono text-caption text-taupe">
+              <span className="font-mono text-sm text-taupe">
                 {safePage} / {totalPages}
               </span>
               <button
                 type="button"
                 disabled={safePage >= totalPages}
-                className="min-h-11 cursor-pointer border border-hairline px-4 font-display text-[11px] uppercase tracking-[0.12em] text-ink transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-11 cursor-pointer rounded-xs border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => goToPage(safePage + 1)}
               >
                 Next

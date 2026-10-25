@@ -11,21 +11,21 @@ export function Input({ label, error, className, id, ...props }: InputProps) {
   return (
     <label
       className={
-        label ? "flex flex-col gap-2 text-sm font-medium text-taupe" : "contents"
+        label ? "flex flex-col gap-2 text-sm font-semibold text-taupe" : "contents"
       }
     >
       {label ? <span className="text-ink/80">{label}</span> : null}
       <input
         id={inputId}
         className={cn(
-          "min-h-11 w-full rounded-md border border-[#d8dbe2] bg-paper px-3.5 py-3 text-base text-ink outline-none transition-colors placeholder:text-[#9aa1ad] focus:border-brass focus:ring-2 focus:ring-brass/20",
+          "min-h-12 w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 font-sans text-base text-ink outline-none transition-colors placeholder:text-[#8a8f99] hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25",
           error &&
             "border-rosewood focus:border-rosewood focus:ring-rosewood/20",
           className,
         )}
         {...props}
       />
-      {error ? <span className="text-sm text-rosewood">{error}</span> : null}
+      {error ? <span className="text-sm font-medium text-rosewood">{error}</span> : null}
     </label>
   );
 }
@@ -46,21 +46,21 @@ export function Textarea({
   return (
     <label
       className={
-        label ? "flex flex-col gap-2 text-sm font-medium text-taupe" : "contents"
+        label ? "flex flex-col gap-2 text-sm font-semibold text-taupe" : "contents"
       }
     >
       {label ? <span className="text-ink/80">{label}</span> : null}
       <textarea
         id={inputId}
         className={cn(
-          "min-h-[6.5rem] w-full resize-y rounded-md border border-[#d8dbe2] bg-paper px-3.5 py-3 text-base text-ink outline-none transition-colors placeholder:text-[#9aa1ad] focus:border-brass focus:ring-2 focus:ring-brass/20",
+          "min-h-[7.5rem] w-full resize-y rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 font-sans text-base leading-relaxed text-ink outline-none transition-colors placeholder:text-[#8a8f99] hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25",
           error &&
             "border-rosewood focus:border-rosewood focus:ring-rosewood/20",
           className,
         )}
         {...props}
       />
-      {error ? <span className="text-sm text-rosewood">{error}</span> : null}
+      {error ? <span className="text-sm font-medium text-rosewood">{error}</span> : null}
     </label>
   );
 }

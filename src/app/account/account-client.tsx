@@ -27,6 +27,8 @@ type OrderLine = {
 type AccountOrder = {
   id: string;
   orderNumber: string;
+  /** Signed PDF invoice URL from /api/account/orders. */
+  invoiceUrl?: string;
   status: string;
   totalPkr: number;
   currency: string;
@@ -124,25 +126,25 @@ function AuthPanel() {
   return (
     <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-14">
       <div>
-        <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+        <p className="mb-2 text-eyebrow text-taupe">
           Account
         </p>
         {/* Page H1 is server-rendered in app/account/page.tsx */}
         <h2 className="text-display-lg text-balance text-ink">
           Sign in without the fuss
         </h2>
-        <p className="mt-4 max-w-md font-serif text-[1.1rem] leading-relaxed text-taupe">
+        <p className="mt-4 max-w-md text-body-lg text-taupe">
           One place for order history, repeat orders, and a saved profile.
           Guest checkout still works if you prefer.
         </p>
-        <ul className="mt-8 space-y-3 border-t border-hairline pt-6 font-serif text-[1.05rem] text-ink/80">
+        <ul className="mt-8 space-y-3 border-t border-hairline pt-6 text-body text-ink/80">
           <li>See past orders by the email you used</li>
           <li>Repeat an order into your bag in one tap</li>
           <li>Track parcels without digging through inbox threads</li>
         </ul>
       </div>
 
-      <div className="border border-hairline bg-paper p-6 sm:p-8">
+      <div className="border border-hairline bg-paper p-6 sm:p-10">
         <div className="mb-6 flex w-full gap-1 border-b border-hairline pb-1">
           {(
             [
@@ -159,7 +161,7 @@ function AuthPanel() {
                 setNotice("");
               }}
               className={cn(
-                "flex-1 cursor-pointer border-b-2 px-2 pb-3 text-center font-display text-[11px] font-medium uppercase tracking-[0.08em] transition-colors sm:px-3 sm:text-[12px] sm:tracking-[0.12em]",
+                "min-h-12 flex-1 cursor-pointer border-b-2 px-2 pb-3 pt-2 text-center text-eyebrow transition-colors sm:px-3",
                 mode === id || (mode === "forgot" && id === "signin")
                   ? "border-ink text-ink"
                   : "border-transparent text-taupe hover:text-ink",
@@ -174,7 +176,7 @@ function AuthPanel() {
           <>
             <a
               href="/api/auth/google"
-              className="mb-5 flex min-h-12 w-full items-center justify-center gap-3 border border-hairline bg-canvas px-4 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:border-ink/40"
+              className="mb-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xs border border-[#d6cfbf] bg-paper px-4 text-label text-ink transition-colors hover:border-ink/50"
             >
               <GoogleIcon className="h-6 w-6" />
               Continue with Google
@@ -182,7 +184,7 @@ function AuthPanel() {
 
             <div className="relative mb-5 text-center">
               <span className="absolute inset-x-0 top-1/2 h-px bg-hairline" />
-              <span className="relative bg-paper px-3 font-display text-[10px] uppercase tracking-[0.14em] text-taupe">
+              <span className="relative bg-paper px-3 text-eyebrow text-taupe">
                 Or email
               </span>
             </div>
@@ -208,7 +210,7 @@ function AuthPanel() {
             required
           />
           {mode === "forgot" ? (
-            <p className="font-serif text-[0.95rem] text-taupe">
+            <p className="text-body-sm text-taupe">
               Enter the email on your account and we will send a link to choose
               a new password.
             </p>
@@ -232,27 +234,27 @@ function AuthPanel() {
                 setError("");
                 setNotice("");
               }}
-              className="cursor-pointer font-serif text-[0.95rem] text-taupe underline underline-offset-4 hover:text-ink"
+              className="ml-auto flex min-h-10 cursor-pointer items-center text-body-sm text-taupe underline underline-offset-4 hover:text-ink"
             >
               Forgot your password?
             </button>
           ) : null}
           {mode === "register" ? (
-            <p className="font-serif text-[0.9rem] text-taupe">
+            <p className="text-body-sm text-taupe">
               Use at least 8 characters. That is all.
             </p>
           ) : null}
           {error ? (
-            <p className="font-serif text-[0.95rem] text-rosewood" role="alert">
+            <p className="text-body-sm text-rosewood" role="alert">
               {error}
             </p>
           ) : null}
           {notice ? (
-            <p className="font-serif text-[0.95rem] text-ink" role="status">
+            <p className="text-body-sm text-ink" role="status">
               {notice}
             </p>
           ) : null}
-          <Button type="submit" disabled={saving} className="w-full">
+          <Button type="submit" disabled={saving} className="w-full sm:w-full">
             {saving
               ? "Please wait…"
               : mode === "register"
@@ -269,7 +271,7 @@ function AuthPanel() {
                 setError("");
                 setNotice("");
               }}
-              className="w-full cursor-pointer font-serif text-[0.95rem] text-taupe underline underline-offset-4 hover:text-ink"
+              className="min-h-11 w-full cursor-pointer text-body-sm text-taupe underline underline-offset-4 hover:text-ink"
             >
               Back to sign in
             </button>
@@ -288,7 +290,7 @@ function VerifyEmailBanner() {
 
   if (verify === "done") {
     return (
-      <p className="mb-8 border border-hairline bg-muted px-4 py-3 font-serif text-[1rem] text-ink" role="status">
+      <p className="mb-8 border border-hairline bg-muted px-4 py-3 text-body text-ink" role="status">
         Your email is confirmed. Orders placed with this address now appear below.
       </p>
     );
@@ -308,7 +310,7 @@ function VerifyEmailBanner() {
 
   return (
     <div className="mb-8 flex flex-col gap-3 border border-hairline bg-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between" role="status">
-      <p className="font-serif text-[1rem] text-ink">
+      <p className="text-body text-ink">
         {verify === "invalid"
           ? "That confirmation link is invalid or has expired."
           : "Confirm your email to see orders you placed as a guest with this address."}
@@ -317,7 +319,7 @@ function VerifyEmailBanner() {
         type="button"
         onClick={resend}
         disabled={state === "sending" || state === "sent"}
-        className="shrink-0 cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink underline underline-offset-4 hover:text-brass disabled:cursor-default disabled:no-underline disabled:opacity-70"
+        className="inline-flex min-h-11 shrink-0 cursor-pointer items-center text-label text-ink underline underline-offset-4 hover:text-brass-ink disabled:cursor-default disabled:no-underline disabled:opacity-70"
       >
         {state === "sent"
           ? "Link sent. Check your inbox"
@@ -407,11 +409,11 @@ function ProfilePanel() {
     <div className="container-ns">
       <header className="mb-10 flex flex-col gap-4 border-b border-hairline pb-8 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+          <p className="mb-2 text-eyebrow text-taupe">
             Your account
           </p>
           <h2 className="text-display-lg text-ink">Hello, {greeting}</h2>
-          <p className="mt-2 font-serif text-[1.05rem] text-taupe">
+          <p className="mt-2 text-body text-taupe">
             {user?.email}
           </p>
         </div>
@@ -438,7 +440,7 @@ function ProfilePanel() {
           onSubmit={saveProfile}
           className="h-fit space-y-4 border border-hairline bg-paper p-6 sm:p-7"
         >
-          <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+          <p className="text-eyebrow text-taupe">
             Profile
           </p>
           <Input
@@ -461,25 +463,25 @@ function ProfilePanel() {
         <section>
           <div className="mb-6 flex items-end justify-between gap-3">
             <div>
-              <p className="mb-1 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+              <p className="mb-1 text-eyebrow text-taupe">
                 Orders
               </p>
-              <h2 className="font-display text-[1.35rem] font-medium text-ink">
+              <h2 className="text-display-sm text-ink">
                 Recent purchases
               </h2>
             </div>
           </div>
 
           {loadingOrders ? (
-            <p className="font-serif text-taupe">Loading orders…</p>
+            <p className="text-body text-taupe">Loading orders…</p>
           ) : null}
 
           {!loadingOrders && !orders.length ? (
             <div className="border border-dashed border-hairline bg-muted/40 p-8">
-              <p className="font-serif text-[1.1rem] text-ink/80">
+              <p className="text-body-lg text-ink/80">
                 No orders on this account yet.
               </p>
-              <p className="mt-2 font-serif text-[1rem] text-taupe">
+              <p className="mt-2 text-body text-taupe">
                 When you place an order while signed in, it shows up here. You
                 can also track a guest order anytime.
               </p>
@@ -500,10 +502,10 @@ function ProfilePanel() {
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="font-display text-[0.95rem] font-medium text-ink">
+                    <p className="font-mono text-base font-medium text-ink">
                       {order.orderNumber}
                     </p>
-                    <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-taupe">
+                    <p className="mt-1 text-caption capitalize text-taupe">
                       {new Date(order.createdAt).toLocaleDateString("en-GB", {
                         day: "numeric",
                         month: "short",
@@ -511,18 +513,19 @@ function ProfilePanel() {
                       })}{" "}
                       · {order.status}
                     </p>
-                    <p className="mt-3 font-serif text-[1.05rem] text-ink">
+                    <p className="mt-3 font-mono text-lg font-medium text-ink">
                       {format(order.totalPkr)}
                     </p>
-                    <p className="mt-2 line-clamp-2 font-serif text-[0.95rem] text-taupe">
+                    <p className="mt-2 line-clamp-2 text-body-sm text-taupe">
                       {order.lines
                         .map((l) => `${l.name} × ${l.quantity}`)
                         .join(" · ")}
                     </p>
                   </div>
-                  <div className="flex flex-col gap-2 sm:items-end">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
                     <Button
                       type="button"
+                      size="sm"
                       onClick={() => repeatOrder(order)}
                       disabled={repeating === order.orderNumber}
                     >
@@ -530,12 +533,23 @@ function ProfilePanel() {
                         ? "Adding…"
                         : "Repeat order"}
                     </Button>
-                    <Link
-                      href={`/track-order?order=${encodeURIComponent(order.orderNumber)}&email=${encodeURIComponent(user?.email || "")}`}
-                      className="font-display text-[11px] font-medium uppercase tracking-[0.12em] text-brass"
-                    >
-                      Track
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-x-5">
+                      <Link
+                        href={`/track-order?order=${encodeURIComponent(order.orderNumber)}&email=${encodeURIComponent(user?.email || "")}`}
+                        className="inline-flex min-h-11 items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:text-brass-ink hover:decoration-brass"
+                      >
+                        Track
+                      </Link>
+                      {order.invoiceUrl ? (
+                        <a
+                          href={order.invoiceUrl}
+                          download={`${order.orderNumber}-invoice.pdf`}
+                          className="inline-flex min-h-11 items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:text-brass-ink hover:decoration-brass"
+                        >
+                          Download invoice
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </li>
@@ -554,7 +568,7 @@ export default function AccountPage() {
     <section className="bg-canvas section-y">
       {loading ? (
         <div className="container-ns max-w-lg">
-          <p className="font-serif text-taupe">Loading your account…</p>
+          <p className="text-body text-taupe">Loading your account…</p>
         </div>
       ) : user ? (
         <ProfilePanel />
