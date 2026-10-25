@@ -83,7 +83,9 @@ export async function GET(req: Request) {
       .toLowerCase()
       .trim();
     const googleId = String(profile.sub || profile.id || "").trim();
-    if (!email || !googleId) {
+    const verified =
+      (profile as { email_verified?: boolean | string }).email_verified;
+    if (!email || !googleId || (verified !== true && verified !== "true")) {
       return NextResponse.redirect(
         new URL("/account?authError=google_profile", origin),
       );
@@ -103,6 +105,11 @@ export async function GET(req: Request) {
         emailVerified: true,
       });
     } else {
+      // A password set on an account whose email was never verified may belong to
+      // someone who registered this address first. Google proves ownership, so drop it.
+      if (!customer.emailVerified && !customer.googleId) {
+        customer.passwordHash = "";
+      }
       customer.googleId = customer.googleId || googleId;
       customer.emailVerified = true;
       if (profile.name && !customer.name) customer.name = profile.name;

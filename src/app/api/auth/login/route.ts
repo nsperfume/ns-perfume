@@ -7,6 +7,7 @@ import {
   verifyPassword,
 } from "@/lib/customer-auth";
 import { CustomerModel } from "@/models/Customer";
+import { limitByIp } from "@/lib/rate-limit";
 
 const schema = z.object({
   email: z.string().trim().email("Enter a valid email"),
@@ -15,6 +16,8 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const limited = limitByIp(req, "login", 10, 15 * 60_000);
+    if (limited) return limited;
     const raw = await req.json();
     const parsed = schema.safeParse(raw);
     if (!parsed.success) {

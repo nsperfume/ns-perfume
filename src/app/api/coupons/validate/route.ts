@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { jsonError, jsonOk } from "@/lib/api";
 import { resolveDiscountDetailed } from "@/lib/coupons";
+import { limitByIp } from "@/lib/rate-limit";
 
 /**
  * Public endpoint: validate coupon for checkout UI.
@@ -8,6 +9,8 @@ import { resolveDiscountDetailed } from "@/lib/coupons";
  */
 export async function GET(req: NextRequest) {
   try {
+    const limited = limitByIp(req, "coupon-validate", 20, 10 * 60_000);
+    if (limited) return limited;
     const code = req.nextUrl.searchParams.get("code") || "";
     const subtotal = Number(req.nextUrl.searchParams.get("subtotal") || 0);
     if (!code.trim()) return jsonError("Enter a discount code", 400);

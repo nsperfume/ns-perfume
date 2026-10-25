@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { OrderModel } from "@/models/Order";
+import { limitByIp } from "@/lib/rate-limit";
 import {
   buildTimeline,
   estimateDeliveryRange,
@@ -16,6 +17,8 @@ function normalizeOrderNumber(raw: string) {
 
 export async function POST(req: Request) {
   try {
+    const limited = limitByIp(req, "track", 20, 10 * 60_000);
+    if (limited) return limited;
     await connectDB();
     const body = await req.json();
     const orderNumber = normalizeOrderNumber(String(body.orderNumber || ""));
@@ -24,13 +27,9 @@ export async function POST(req: Request) {
       return jsonError("Order number and email are required");
     }
 
-    // Allow NS- prefix or plain digits
-    const variants = [
-      orderNumber,
-      orderNumber.replace(/^#/, ""),
-      orderNumber.startsWith("NS") ? orderNumber : `NS${orderNumber}`,
-      orderNumber.replace(/^NS-?/, "NS"),
-    ];
+    // Accept "NS-4821", "NS4821", "#4821" or "4821" (stored as NS-XXXX; legacy NS772829567).
+    const core = orderNumber.replace(/^#/, "").replace(/^NS-?/, "");
+    const variants = [orderNumber, `NS-${core}`, `NS${core}`];
 
     const order = await OrderModel.findOne({
       email,

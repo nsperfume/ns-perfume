@@ -116,6 +116,7 @@ export async function resolveDiscountDetailed(
     return { ok: false, reason: "empty", message: MESSAGES.empty };
   }
 
+  // Only stored coupons are redeemable. Deleting or disabling one retires it.
   try {
     await connectDB();
     const doc = await CouponModel.findOne({ code: key }).lean();
@@ -140,20 +141,14 @@ export async function resolveDiscountDetailed(
         subtotalPkr,
       );
     }
-  } catch {
-    /* fall through to built-ins */
+  } catch (e) {
+    console.error("Coupon lookup failed", e);
   }
 
-  const fb = FALLBACK[key];
-  if (!fb) {
-    return { ok: false, reason: "not_found", message: MESSAGES.not_found };
-  }
-  return computeFromRule(key, fb, subtotalPkr);
+  return { ok: false, reason: "not_found", message: MESSAGES.not_found };
 }
 
-/**
- * Resolve coupon from MongoDB; falls back to built-in codes if DB empty/unreachable.
- */
+/** Resolve a coupon from MongoDB. */
 export async function resolveDiscount(
   code: string,
   subtotalPkr: number,
@@ -184,10 +179,7 @@ export async function redeemCoupon(code: string): Promise<boolean> {
   try {
     await connectDB();
     const existing = await CouponModel.findOne({ code: key }).lean();
-    if (!existing) {
-      // Built-in fallthrough codes without a stored row still work at checkout
-      return Boolean(FALLBACK[key]);
-    }
+    if (!existing) return false;
     const result = await CouponModel.updateOne(
       {
         code: key,

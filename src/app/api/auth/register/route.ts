@@ -7,6 +7,7 @@ import {
   setCustomerSessionCookie,
 } from "@/lib/customer-auth";
 import { CustomerModel } from "@/models/Customer";
+import { limitByIp } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name is required").max(80),
@@ -16,6 +17,8 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const limited = limitByIp(req, "register", 5, 60 * 60_000);
+    if (limited) return limited;
     const raw = await req.json();
     const parsed = schema.safeParse(raw);
     if (!parsed.success) {

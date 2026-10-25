@@ -10,6 +10,15 @@ import {
   normalizeRole,
 } from "@/lib/auth";
 import { AdminUserModel } from "@/models/AdminUser";
+import { limitByIp, rateLimit } from "@/lib/rate-limit";
+import { createHash, timingSafeEqual } from "node:crypto";
+
+/** Constant-time string compare (hash first so lengths always match). */
+function sameSecret(a: string, b: string) {
+  const ha = createHash("sha256").update(a).digest();
+  const hb = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ha, hb);
+}
 
 const SUPER_NAME = "Asim Ali";
 
@@ -27,21 +36,30 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await connectDB();
     const body = await req.json();
     const email = String(body.email || "").toLowerCase().trim();
     const password = String(body.password || "");
 
-    const bootstrapEmail = (
-      process.env.ADMIN_EMAIL || "admin@nsperfume.com"
-    ).toLowerCase();
-    const bootstrapPass =
-      process.env.ADMIN_PASSWORD || "ChangeMeNSAdmin123!";
+    const limited =
+      limitByIp(req, "admin-login", 10, 15 * 60_000) ||
+      rateLimit(`admin-login:${email}`, 8, 15 * 60_000);
+    if (limited) return limited;
+
+    await connectDB();
+
+    const bootstrapEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase() || "";
+    const bootstrapPass = process.env.ADMIN_PASSWORD || "";
 
     /**
      * Env bootstrap creates / re-syncs the super admin (Asim Ali).
+     * Only when both ADMIN_EMAIL and ADMIN_PASSWORD are configured.
      */
-    if (email === bootstrapEmail && password === bootstrapPass) {
+    if (
+      bootstrapEmail &&
+      bootstrapPass &&
+      email === bootstrapEmail &&
+      sameSecret(password, bootstrapPass)
+    ) {
       let user = await AdminUserModel.findOne({ email: bootstrapEmail });
       if (!user) {
         user = await AdminUserModel.create({

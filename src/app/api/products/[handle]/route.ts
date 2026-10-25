@@ -10,9 +10,13 @@ export async function GET(_req: Request, ctx: Ctx) {
   try {
     await connectDB();
     const { handle } = await ctx.params;
-    const doc = await ProductModel.findOne({ handle }).lean();
+    const doc = await ProductModel.findOne({ handle }).lean<{ status?: string }>();
     if (!doc) return jsonError("Product not found", 404);
-    return jsonOk(mapProduct(doc));
+    // Unpublished products are visible to admins only.
+    if (doc.status !== "active" && !(await requireAdmin())) {
+      return jsonError("Product not found", 404);
+    }
+    return jsonOk(mapProduct(doc as Parameters<typeof mapProduct>[0]));
   } catch (e) {
     console.error(e);
     return jsonError("Failed to load product", 500);

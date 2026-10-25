@@ -4,31 +4,42 @@ import { requireAdmin } from "@/lib/auth";
 import { mapProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
 
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export async function GET(req: Request) {
   try {
     await connectDB();
     const { searchParams } = new URL(req.url);
-    const q = searchParams.get("q")?.trim();
-    const status = searchParams.get("status") || "active";
+    const q = searchParams.get("q")?.trim().slice(0, 80);
     const tag = searchParams.get("tag");
-    const all = searchParams.get("all") === "1";
+    const wantsHidden =
+      searchParams.get("all") === "1" ||
+      (searchParams.has("status") && searchParams.get("status") !== "active");
+    // Drafts and archived products are admin-only.
+    const isAdmin = wantsHidden ? Boolean(await requireAdmin()) : false;
+    const all = isAdmin && searchParams.get("all") === "1";
+    const status = isAdmin ? searchParams.get("status") || "active" : "active";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: any = {};
     if (!all) filter.status = status;
     if (tag) filter.tags = tag;
     if (q) {
+      const pattern = { $regex: escapeRegex(q), $options: "i" };
       filter.$or = [
-        { name: { $regex: q, $options: "i" } },
-        { descriptor: { $regex: q, $options: "i" } },
-        { handle: { $regex: q, $options: "i" } },
-        { "topNotes": { $regex: q, $options: "i" } },
-        { "heartNotes": { $regex: q, $options: "i" } },
-        { "baseNotes": { $regex: q, $options: "i" } },
+        { name: pattern },
+        { descriptor: pattern },
+        { handle: pattern },
+        { topNotes: pattern },
+        { heartNotes: pattern },
+        { baseNotes: pattern },
       ];
     }
 
-    const docs = await ProductModel.find(filter).sort({ updatedAt: -1 }).lean();
+    const docs = await ProductModel.find(filter)
+      .sort({ updatedAt: -1 })
+      .limit(500)
+      .lean();
     return jsonOk(docs.map(mapProduct));
   } catch (e) {
     console.error(e);
@@ -49,6 +60,6 @@ export async function POST(req: Request) {
     return jsonOk(mapProduct(created.toObject()), { status: 201 });
   } catch (e) {
     console.error(e);
-    return jsonError("Failed to create product", 500, String(e));
+    return jsonError("Failed to create product", 500);
   }
 }

@@ -1,19 +1,21 @@
 /**
- * Short storefront order refs, e.g. NS-4821.
- * Easy to say on the phone and type on track-order.
+ * Short storefront order refs, e.g. NS-7K4Q2M.
+ * Six characters from an alphabet without 0/O/1/I/L, easy to read on the phone,
+ * and close to 900 million combinations so numbers can't be guessed or enumerated.
  */
 const PREFIX = "NS-";
+const ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
+/** Web Crypto (not node:crypto) because admin client pages import this module. */
 export function generateOrderNumber(): string {
-  // 4 digits, always 1000-9999: NS-4821
-  const n = 1000 + Math.floor(Math.random() * 9000);
-  return `${PREFIX}${n}`;
-}
-
-/** Longer fallback if a 4-digit code collides. */
-export function generateOrderNumberFallback(): string {
-  const mix = Date.now().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, "");
-  return `${PREFIX}${mix.slice(-5)}`;
+  const limit = 256 - (256 % ALPHABET.length); // rejection sampling avoids modulo bias
+  let code = "";
+  while (code.length < 6) {
+    for (const b of globalThis.crypto.getRandomValues(new Uint8Array(12))) {
+      if (b < limit && code.length < 6) code += ALPHABET[b % ALPHABET.length];
+    }
+  }
+  return `${PREFIX}${code}`;
 }
 
 /**

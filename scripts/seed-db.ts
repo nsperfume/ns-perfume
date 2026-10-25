@@ -45,14 +45,21 @@ async function main() {
   if (!uri) throw new Error("MONGODB_URI missing");
 
   const dbName = process.env.MONGODB_DB || "ns-perfume";
+  const host = uri.replace(/^mongodb(\+srv)?:\/\/([^@]*@)?/, "").split(/[/?]/)[0];
+  if (!process.argv.includes("--yes")) {
+    console.error(
+      `This wipes products, collections, testimonials, reviews and journal in "${dbName}" on ${host}.\n` +
+        "Re-run with --yes to confirm: pnpm seed:db -- --yes",
+    );
+    process.exit(1);
+  }
   await mongoose.connect(uri, { dbName });
   const db = mongoose.connection.db;
   if (!db) throw new Error("No db");
 
-  const email = (
-    process.env.ADMIN_EMAIL || "admin@nsperfume.com"
-  ).toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "ChangeMeNSAdmin123!";
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email || !password) throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must be set");
   const passwordHash = await bcrypt.hash(password, 10);
 
   await db.collection("adminusers").updateOne(

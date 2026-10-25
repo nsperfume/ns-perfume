@@ -4,6 +4,9 @@ import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth";
 import { getCustomerSession } from "@/lib/customer-auth";
 import { OrderModel } from "@/models/Order";
+import { ProductModel } from "@/models/Product";
+import { GIFT_WRAP_FEE_PKR } from "@/lib/types";
+import { limitByIp } from "@/lib/rate-limit";
 import {
   FREE_SHIPPING_THRESHOLD_PKR,
   shippingPricePkr,
@@ -11,51 +14,110 @@ import {
 } from "@/lib/checkout";
 import { redeemCoupon, releaseCoupon, resolveDiscount } from "@/lib/coupons";
 import { estimateDeliveryRange } from "@/lib/order-status";
-import {
-  generateOrderNumber,
-  generateOrderNumberFallback,
-} from "@/lib/order-number";
+import { generateOrderNumber } from "@/lib/order-number";
+
+const field = (max = 200) => z.string().max(max);
 
 const addressSchema = z.object({
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  company: z.string().optional().default(""),
-  address1: z.string().min(1),
-  address2: z.string().optional().default(""),
-  city: z.string().min(1),
-  province: z.string().min(1),
-  postalCode: z.string().optional().default(""),
-  country: z.string().min(2).default("PK"),
-  phone: z.string().optional().default(""),
+  firstName: field(80).min(1),
+  lastName: field(80).min(1),
+  company: field(120).optional().default(""),
+  address1: field().min(1),
+  address2: field().optional().default(""),
+  city: field(80).min(1),
+  province: field(80).min(1),
+  postalCode: field(20).optional().default(""),
+  country: field(2).min(2).default("PK"),
+  phone: field(30).optional().default(""),
 });
 
+/**
+ * Client lines identify what to buy. Name, price and size are re-read from the
+ * catalog; `unitPricePkr` is only the price the shopper saw, used to detect changes.
+ */
 const lineSchema = z.object({
-  productHandle: z.string().min(1),
-  name: z.string().min(1),
+  productHandle: field(120).min(1),
+  name: field().min(1),
   sizeMl: z.number().nonnegative(),
-  sku: z.string().min(1),
-  quantity: z.number().int().positive(),
+  sku: field(80).min(1),
+  quantity: z.number().int().positive().max(20),
   unitPricePkr: z.number().nonnegative(),
-  image: z.string().optional().default(""),
+  image: field(500).optional().default(""),
   isGift: z.boolean().optional(),
-  giftMessage: z.string().optional(),
+  giftMessage: field(300).optional(),
   giftWrap: z.boolean().optional(),
 });
 
+type ProductForPricing = {
+  handle: string;
+  name: string;
+  inStock?: boolean;
+  imagePrimary?: string;
+  sizes: { ml: number; pricePkr: number; sku: string }[];
+};
+
+/** Re-price cart lines from the catalog. Returns an error message for the shopper on mismatch. */
+async function priceLines(lines: z.infer<typeof lineSchema>[]) {
+  const handles = [...new Set(lines.map((l) => l.productHandle))];
+  const products = await ProductModel.find({
+    handle: { $in: handles },
+    status: "active",
+  })
+    .select("handle name inStock imagePrimary sizes")
+    .lean<ProductForPricing[]>();
+  const byHandle = new Map(products.map((p) => [p.handle, p]));
+
+  const priced = [];
+  for (const l of lines) {
+    const product = byHandle.get(l.productHandle);
+    const baseSku = l.sku.replace(/-GIFT$/, "");
+    const size =
+      product?.sizes.find((s) => s.sku === baseSku) ??
+      product?.sizes.find((s) => s.ml === l.sizeMl);
+    if (!product || !size) {
+      return { error: `${l.name} is no longer available. Remove it from your bag to continue.` };
+    }
+    if (product.inStock === false) {
+      return { error: `${product.name} is out of stock. Remove it from your bag to continue.` };
+    }
+    const wrap = Boolean(l.isGift && l.giftWrap);
+    const unitPricePkr = size.pricePkr + (wrap ? GIFT_WRAP_FEE_PKR : 0);
+    // Never charge more than the shopper was shown. A lower catalog price is honored.
+    if (unitPricePkr > l.unitPricePkr) {
+      return {
+        error: `The price of ${product.name} ${size.ml}ml changed since it was added. Remove it and add it again to see the current price.`,
+      };
+    }
+    priced.push({
+      productHandle: product.handle,
+      name: wrap ? `${product.name} (Gift Wrap)` : product.name,
+      sizeMl: size.ml,
+      sku: wrap ? `${size.sku}-GIFT` : size.sku,
+      quantity: l.quantity,
+      unitPricePkr,
+      image: product.imagePrimary || "",
+      isGift: l.isGift ?? false,
+      giftMessage: l.giftMessage || "",
+      giftWrap: wrap,
+    });
+  }
+  return { lines: priced };
+}
+
 const createOrderSchema = z.object({
-  email: z.string().email(),
-  phone: z.string().optional().default(""),
-  lines: z.array(lineSchema).min(1),
+  email: z.string().email().max(200),
+  phone: field(30).optional().default(""),
+  lines: z.array(lineSchema).min(1).max(30),
   shippingAddress: addressSchema,
   billingAddress: addressSchema.optional(),
   billingSameAsShipping: z.boolean().optional().default(true),
   shippingMethodId: z.enum(["standard", "express"]),
   paymentMethod: z.enum(["cod", "card", "bank"]),
-  discountCode: z.string().optional().default(""),
+  discountCode: field(40).optional().default(""),
   marketingOptIn: z.boolean().optional().default(false),
-  notes: z.string().optional().default(""),
-  currency: z.string().optional().default("PKR"),
-  cardLast4: z.string().optional().default(""),
+  notes: field(1000).optional().default(""),
+  currency: field(3).optional().default("PKR"),
+  cardLast4: field(4).optional().default(""),
 });
 
 export async function GET() {
@@ -73,6 +135,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const limited = limitByIp(req, "orders", 10, 10 * 60_000);
+    if (limited) return limited;
     await connectDB();
     const session = await getCustomerSession();
     const customerId = session?.sub || "";
@@ -83,7 +147,15 @@ export async function POST(req: Request) {
     }
 
     const body = parsed.data;
-    const subtotalPkr = body.lines.reduce(
+    if (body.paymentMethod === "card") {
+      return jsonError("Card payments are not available yet. Choose cash on delivery or bank transfer.", 400);
+    }
+
+    const pricing = await priceLines(body.lines);
+    if ("error" in pricing) return jsonError(pricing.error ?? "Cart error", 409);
+    const lines = pricing.lines;
+
+    const subtotalPkr = lines.reduce(
       (sum, l) => sum + l.unitPricePkr * l.quantity,
       0,
     );
@@ -130,11 +202,10 @@ export async function POST(req: Request) {
       .trim();
 
     let orderNumber = generateOrderNumber();
-    for (let attempt = 0; attempt < 12; attempt++) {
+    for (let attempt = 0; attempt < 5; attempt++) {
       const taken = await OrderModel.exists({ orderNumber });
       if (!taken) break;
-      orderNumber =
-        attempt < 8 ? generateOrderNumber() : generateOrderNumberFallback();
+      orderNumber = generateOrderNumber();
     }
 
     const status =
@@ -182,18 +253,7 @@ export async function POST(req: Request) {
         shippingPkr,
         taxPkr,
         totalPkr,
-        lines: body.lines.map((l) => ({
-          productHandle: l.productHandle,
-          name: l.name,
-          sizeMl: l.sizeMl,
-          sku: l.sku,
-          quantity: l.quantity,
-          unitPricePkr: l.unitPricePkr,
-          image: l.image,
-          isGift: l.isGift ?? false,
-          giftMessage: l.giftMessage || "",
-          giftWrap: l.giftWrap ?? false,
-        })),
+        lines,
         shippingAddress: {
           ...body.shippingAddress,
           line1: body.shippingAddress.address1,
@@ -209,7 +269,7 @@ export async function POST(req: Request) {
           description: shippingDescriptions[body.shippingMethodId],
         },
         paymentMethod: body.paymentMethod,
-        cardLast4: body.cardLast4?.slice(-4) || "",
+        cardLast4: "",
         marketingOptIn: body.marketingOptIn ?? false,
         notes: body.notes || "",
         estimatedDeliveryFrom: new Date(eta.from),

@@ -7,7 +7,8 @@ export async function GET(req: Request) {
   try {
     await connectDB();
     const { searchParams } = new URL(req.url);
-    const all = searchParams.get("all") === "1";
+    // Draft testimonials are admin-only.
+    const all = searchParams.get("all") === "1" && Boolean(await requireAdmin());
     const filter = all ? {} : { status: "published", featured: true };
     const docs = await TestimonialModel.find(filter)
       .sort({ sortOrder: 1, createdAt: -1 })

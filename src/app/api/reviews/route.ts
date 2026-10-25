@@ -3,13 +3,15 @@ import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth";
 import { ReviewModel } from "@/models/Review";
 import { ProductModel } from "@/models/Product";
+import { limitByIp } from "@/lib/rate-limit";
 
 export async function GET(req: Request) {
   try {
     await connectDB();
     const { searchParams } = new URL(req.url);
     const productHandle = searchParams.get("product");
-    const all = searchParams.get("all") === "1";
+    // Pending and hidden reviews are admin-only.
+    const all = searchParams.get("all") === "1" && Boolean(await requireAdmin());
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: any = all ? {} : { status: "published" };
     if (productHandle) filter.productHandle = productHandle;
@@ -25,9 +27,13 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const admin = await requireAdmin();
+    if (!admin) {
+      const limited = limitByIp(req, "reviews", 5, 30 * 60_000);
+      if (limited) return limited;
+    }
     await connectDB();
     const body = await req.json();
-    const admin = await requireAdmin();
 
     const productHandle = String(body.productHandle || "").trim();
     const author = String(body.author || "").trim();
