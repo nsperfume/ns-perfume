@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/context/cart";
 import { useCurrency } from "@/context/currency";
 import { useCustomer } from "@/context/customer";
@@ -11,8 +11,6 @@ import {
   emptyAddress,
   PAYMENT_METHODS,
   PK_PROVINCES,
-  SHIPPING_METHODS,
-  shippingPricePkr,
   type CheckoutAddress,
   type CompletedOrderSnapshot,
   type PaymentMethodId,
@@ -31,6 +29,8 @@ import { PayableAmount } from "@/components/commerce/price";
 import { Logo } from "@/components/brand/logo";
 import { siteConfig } from "@/data/site";
 import { BrandLoaderBlock } from "@/components/brand/brand-loader";
+import { useCheckoutConfig } from "@/context/checkout-config";
+import { computeTotals, enabledShippingMethods, shippingFor } from "@/lib/checkout-config";
 
 type Step = "information" | "shipping" | "payment";
 
@@ -103,8 +103,11 @@ export function CheckoutClient() {
   const [email, setEmail] = useState("");
   const [marketing, setMarketing] = useState(true);
   const [address, setAddress] = useState<CheckoutAddress>(emptyAddress);
-  const [shippingMethodId, setShippingMethodId] =
-    useState<ShippingMethodId>("standard");
+  const checkoutConfig = useCheckoutConfig();
+  const shippingMethods = enabledShippingMethods(checkoutConfig);
+  const [shippingMethodId, setShippingMethodId] = useState<ShippingMethodId>(
+    () => shippingMethods[0]?.id ?? "standard",
+  );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("cod");
   const [billingSame, setBillingSame] = useState(true);
   const [billing, setBilling] = useState<CheckoutAddress>(emptyAddress);
@@ -173,19 +176,20 @@ export function CheckoutClient() {
   }, [email, address, marketing, hydrated]);
 
   const afterDiscount = Math.max(0, subtotal - discountPkr);
-  const shippingPkr = useMemo(() => {
-    if (step === "information") return null;
-    let price = shippingPricePkr(shippingMethodId, afterDiscount);
-    if (freeShipPromo && shippingMethodId === "standard") price = 0;
-    return price;
-  }, [step, shippingMethodId, afterDiscount, freeShipPromo]);
+  // Same rules the order API applies when it prices the order.
+  const totals = computeTotals(checkoutConfig, {
+    subtotalPkr: subtotal,
+    discountPkr,
+    shippingMethodId,
+    paymentMethod,
+    freeShippingCoupon: freeShipPromo,
+  });
+  const shippingPkr = step === "information" ? null : totals.shippingPkr;
+  // The cash-on-delivery fee applies once the shopper is choosing how to pay.
+  const codFeePkr = step === "payment" ? totals.codFeePkr : 0;
+  const totalPkr = afterDiscount + (shippingPkr ?? 0) + totals.taxPkr + codFeePkr;
 
-  const totalPkr =
-    afterDiscount + (shippingPkr === null ? 0 : shippingPkr);
-
-  const shippingLabel = SHIPPING_METHODS.find(
-    (m) => m.id === shippingMethodId,
-  )?.title;
+  const shippingLabel = checkoutConfig.shipping[shippingMethodId]?.title;
 
   const setAddr =
     (setter: typeof setAddress) =>
@@ -321,6 +325,10 @@ export function CheckoutClient() {
         subtotalPkr: data.subtotalPkr,
         shippingPkr: data.shippingPkr,
         discountPkr: data.discountPkr || 0,
+        codFeePkr: data.codFeePkr || 0,
+        taxPkr: data.taxPkr || 0,
+        taxIncludedPkr: data.taxIncludedPkr || 0,
+        taxLabel: data.taxLabel || "",
         discountCode: data.discountCode,
         currency: data.currency,
         paymentMethod: data.paymentMethod,
@@ -678,11 +686,9 @@ export function CheckoutClient() {
                   Shipping method
                 </h2>
                 <div className="overflow-hidden rounded-xs border border-hairline">
-                  {SHIPPING_METHODS.map((method, idx) => {
-                    const price = shippingPricePkr(method.id, afterDiscount);
-                    const free =
-                      (method.id === "standard" && price === 0) ||
-                      (freeShipPromo && method.id === "standard");
+                  {shippingMethods.map((method, idx) => {
+                    const price = shippingFor(checkoutConfig, method.id, afterDiscount, freeShipPromo);
+                    const free = price === 0;
                     const selected = shippingMethodId === method.id;
                     return (
                       <label
@@ -1125,6 +1131,9 @@ export function CheckoutClient() {
             discountCode={discountCode}
             shippingPkr={shippingPkr}
             shippingLabel={step === "information" ? undefined : shippingLabel}
+            codFeePkr={codFeePkr}
+            taxPkr={totals.taxPkr}
+            taxIncludedPkr={totals.taxIncludedPkr}
             totalPkr={totalPkr}
             onApplyDiscount={applyDiscount}
             onRemoveDiscount={() => {

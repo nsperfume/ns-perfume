@@ -37,6 +37,9 @@ type TrackedOrder = {
   discountCode?: string;
   shippingPkr: number;
   taxPkr: number;
+  codFeePkr?: number;
+  taxIncludedPkr?: number;
+  taxLabel?: string;
   totalPkr: number;
   paymentMethod?: string;
   shippingMethod?: { id?: string; title?: string; description?: string };
@@ -516,10 +519,23 @@ function OrderStatusView({
                   : format(order.shippingPkr)}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span>Taxes</span>
-              <span className="text-ink">{format(order.taxPkr || 0)}</span>
-            </div>
+            {order.codFeePkr ? (
+              <div className="flex justify-between">
+                <span>Cash on delivery fee</span>
+                <span className="text-ink">{format(order.codFeePkr)}</span>
+              </div>
+            ) : null}
+            {order.taxPkr ? (
+              <div className="flex justify-between">
+                <span>{order.taxLabel || "Tax"}</span>
+                <span className="text-ink">{format(order.taxPkr)}</span>
+              </div>
+            ) : null}
+            {order.taxIncludedPkr ? (
+              <p className="text-right text-caption">
+                Includes {order.taxLabel || "tax"} of {format(order.taxIncludedPkr)}
+              </p>
+            ) : null}
           </div>
           <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
             <span className="font-sans text-base font-semibold text-ink">Total</span>

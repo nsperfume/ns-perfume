@@ -14,6 +14,10 @@ export type OrderEmailData = {
   discountPkr: number;
   discountCode?: string;
   shippingPkr: number;
+  codFeePkr?: number;
+  taxPkr?: number;
+  taxIncludedPkr?: number;
+  taxLabel?: string;
   totalPkr: number;
   paymentMethod: string;
   shippingMethod?: { title?: string; description?: string };
@@ -52,11 +56,16 @@ export function toOrderEmailData(order: Record<string, unknown>): OrderEmailData
       quantity: Number(l.quantity) || 1,
       unitPricePkr: Number(l.unitPricePkr) || 0,
       image: l.image,
+      giftMessage: l.giftMessage || "",
     })),
     subtotalPkr: Number(o.subtotalPkr) || 0,
     discountPkr: Number(o.discountPkr) || 0,
     discountCode: o.discountCode || "",
     shippingPkr: Number(o.shippingPkr) || 0,
+    codFeePkr: Number(o.codFeePkr) || 0,
+    taxPkr: Number(o.taxPkr) || 0,
+    taxIncludedPkr: Number(o.taxIncludedPkr) || 0,
+    taxLabel: o.taxLabel || "",
     totalPkr: Number(o.totalPkr) || 0,
     paymentMethod: String(o.paymentMethod || "cod"),
     shippingMethod: o.shippingMethod,

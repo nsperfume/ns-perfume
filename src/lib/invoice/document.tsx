@@ -163,7 +163,12 @@ export function InvoiceDocument({ order: o }: { order: OrderEmailData }) {
         </View>
         {o.lines.map((l, i) => (
           <View key={`${l.name}-${i}`} style={s.tr} wrap={false}>
-            <Text style={[s.cItem, s.strong]}>{l.name}</Text>
+            <View style={s.cItem}>
+              <Text style={s.strong}>{l.name}</Text>
+              {l.giftMessage ? (
+                <Text style={{ color: C.muted, fontSize: 8.5, marginTop: 2 }}>Gift message: “{l.giftMessage}”</Text>
+              ) : null}
+            </View>
             <Text style={[s.cSize, s.num]}>{l.sizeMl ? `${l.sizeMl} ml` : ""}</Text>
             <Text style={[s.cQty, s.num]}>{l.quantity}</Text>
             <Text style={[s.cPrice, s.num]}>{formatPkr(l.unitPricePkr)}</Text>
@@ -186,10 +191,27 @@ export function InvoiceDocument({ order: o }: { order: OrderEmailData }) {
             <Text>Shipping</Text>
             <Text style={s.num}>{o.shippingPkr > 0 ? formatPkr(o.shippingPkr) : "Free"}</Text>
           </View>
+          {o.codFeePkr ? (
+            <View style={s.totalRow}>
+              <Text>Cash on delivery fee</Text>
+              <Text style={s.num}>{formatPkr(o.codFeePkr)}</Text>
+            </View>
+          ) : null}
+          {o.taxPkr ? (
+            <View style={s.totalRow}>
+              <Text>{o.taxLabel || "Tax"}</Text>
+              <Text style={s.num}>{formatPkr(o.taxPkr)}</Text>
+            </View>
+          ) : null}
           <View style={s.grandRow}>
             <Text style={[s.strong, { fontSize: 11 }]}>Total (PKR)</Text>
             <Text style={[s.num, { fontSize: 12 }]}>{formatPkr(o.totalPkr)}</Text>
           </View>
+          {o.taxIncludedPkr ? (
+            <Text style={{ color: C.muted, fontSize: 8, textAlign: "right", marginTop: 4 }}>
+              Includes {o.taxLabel || "tax"} of {formatPkr(o.taxIncludedPkr)}
+            </Text>
+          ) : null}
         </View>
 
         {o.paymentMethod === "bank" && status !== "Paid" && status !== "Cancelled" ? (

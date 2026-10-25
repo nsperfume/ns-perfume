@@ -57,7 +57,14 @@ const OrderSchema = new Schema(
     discountPkr: { type: Number, default: 0 },
     discountCode: { type: String, default: "" },
     shippingPkr: { type: Number, default: 0 },
+    /** Cash-on-delivery fee charged on this order (from store settings at the time). */
+    codFeePkr: { type: Number, default: 0 },
+    /** Tax added on top (exclusive). */
     taxPkr: { type: Number, default: 0 },
+    /** Tax already included in prices (inclusive), for invoices. */
+    taxIncludedPkr: { type: Number, default: 0 },
+    /** e.g. "GST (18%)"; empty when tax is off. */
+    taxLabel: { type: String, default: "" },
     totalPkr: { type: Number, default: 0 },
     lines: { type: [OrderLineSchema], default: [] },
     shippingAddress: { type: AddressSchema, default: {} },

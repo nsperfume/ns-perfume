@@ -1,30 +1,8 @@
 /** Shopify-style checkout pricing helpers (amounts in PKR base). */
 
-export const FREE_SHIPPING_THRESHOLD_PKR = 8000;
+/** Shipping prices, thresholds, fees and tax live in Admin > Settings (lib/checkout-config). */
+export type { ShippingMethodId } from "@/lib/checkout-config";
 
-export type ShippingMethodId = "standard" | "express";
-
-export type ShippingMethod = {
-  id: ShippingMethodId;
-  title: string;
-  description: string;
-  basePricePkr: number;
-};
-
-export const SHIPPING_METHODS: ShippingMethod[] = [
-  {
-    id: "standard",
-    title: "Standard",
-    description: "3 to 5 business days",
-    basePricePkr: 350,
-  },
-  {
-    id: "express",
-    title: "Express",
-    description: "1 to 2 business days",
-    basePricePkr: 750,
-  },
-];
 
 export type PaymentMethodId = "cod" | "card" | "bank";
 
@@ -68,21 +46,6 @@ export const PK_PROVINCES = [
   "Azad Jammu and Kashmir",
 ] as const;
 
-export function shippingPricePkr(
-  methodId: ShippingMethodId,
-  subtotalAfterDiscount: number,
-): number {
-  const method = SHIPPING_METHODS.find((m) => m.id === methodId);
-  if (!method) return 0;
-  if (
-    methodId === "standard" &&
-    subtotalAfterDiscount >= FREE_SHIPPING_THRESHOLD_PKR
-  ) {
-    return 0;
-  }
-  if (methodId === "standard" && method.basePricePkr === 0) return 0;
-  return method.basePricePkr;
-}
 
 export type CheckoutAddress = {
   country: string;
@@ -125,6 +88,10 @@ export type CompletedOrderSnapshot = {
   subtotalPkr: number;
   shippingPkr: number;
   discountPkr: number;
+  codFeePkr?: number;
+  taxPkr?: number;
+  taxIncludedPkr?: number;
+  taxLabel?: string;
   discountCode?: string;
   currency: string;
   paymentMethod: PaymentMethodId;

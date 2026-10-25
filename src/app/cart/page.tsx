@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/layout/page-hero";
 import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
-import { FREE_SHIPPING_THRESHOLD_PKR } from "@/lib/checkout";
 import { useCurrency } from "@/context/currency";
+import { useCheckoutConfig } from "@/context/checkout-config";
+import { freeShippingGap } from "@/lib/checkout-config";
 
 export default function CartPage() {
   const { lines, removeItem, updateQuantity, subtotal } = useCart();
@@ -29,11 +30,13 @@ export default function CartPage() {
   }, [lines.length]);
 
   const count = lines.reduce((s, l) => s + l.quantity, 0);
-  const freeShipGap = Math.max(0, FREE_SHIPPING_THRESHOLD_PKR - subtotal);
-  const freeShipProgress = Math.min(
-    100,
-    Math.round((subtotal / FREE_SHIPPING_THRESHOLD_PKR) * 100),
-  );
+  const checkoutConfig = useCheckoutConfig();
+  // null when the free-shipping offer is switched off in admin.
+  const freeShipGap = freeShippingGap(checkoutConfig, subtotal);
+  const freeShipProgress =
+    freeShipGap === null
+      ? 100
+      : Math.min(100, Math.round((subtotal / checkoutConfig.freeShippingThresholdPkr) * 100));
 
   return (
     <>
@@ -237,6 +240,7 @@ export default function CartPage() {
                     </div>
                   </div>
 
+                  {freeShipGap !== null ? (
                   <div className="mt-5 space-y-2">
                     <div className="h-1 overflow-hidden bg-hairline">
                       <div
@@ -250,6 +254,7 @@ export default function CartPage() {
                         : "This order qualifies for complimentary shipping."}
                     </p>
                   </div>
+                  ) : null}
 
                   <Button href="/checkout" className="mt-6 w-full sm:w-full">
                     Check out

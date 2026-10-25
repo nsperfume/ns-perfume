@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { SiteSettingsModel } from "@/models/SiteSettings";
-import {
-  DEFAULT_SITE_SETTINGS,
-  getSiteSettings,
-} from "@/lib/site-settings";
+import { getSiteSettings } from "@/lib/site-settings";
+import { jsonError } from "@/lib/api";
+import { revalidateStorefront } from "@/lib/revalidate";
+import { validationError } from "@/lib/validation/catalog";
+import { checkoutConfigSchema } from "@/lib/validation/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -25,48 +26,44 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const body = (await req.json()) as {
+    const body = (await req.json().catch(() => null)) as {
       topbarText?: string;
       topbarEnabled?: boolean;
-    };
+      checkout?: unknown;
+    } | null;
+    if (!body) return jsonError("Invalid request", 400);
 
-    const topbarText = (body.topbarText ?? "").trim();
-    if (!topbarText) {
-      return NextResponse.json(
-        { ok: false, error: "Top bar text is required." },
-        { status: 400 },
-      );
+    // Partial update: only the sections that were sent are changed.
+    const set: Record<string, unknown> = {};
+    if (body.topbarText !== undefined) {
+      const topbarText = String(body.topbarText).trim();
+      if (!topbarText) return jsonError("Top bar text is required.", 400, { fieldErrors: { topbarText: "Required" } });
+      if (topbarText.length > 220) {
+        return jsonError("Top bar text must be 220 characters or fewer.", 400, {
+          fieldErrors: { topbarText: "220 characters or fewer" },
+        });
+      }
+      set.topbarText = topbarText;
     }
-    if (topbarText.length > 220) {
-      return NextResponse.json(
-        { ok: false, error: "Top bar text must be 220 characters or fewer." },
-        { status: 400 },
-      );
+    if (typeof body.topbarEnabled === "boolean") set.topbarEnabled = body.topbarEnabled;
+    if (body.checkout !== undefined) {
+      const parsed = checkoutConfigSchema.safeParse(body.checkout);
+      if (!parsed.success) return validationError(parsed.error);
+      set.checkout = parsed.data;
     }
+    if (!Object.keys(set).length) return jsonError("Nothing to save", 400);
 
     await connectDB();
-    const doc = await SiteSettingsModel.findOneAndUpdate(
+    await SiteSettingsModel.findOneAndUpdate(
       { key: "main" },
-      {
-        key: "main",
-        topbarText,
-        topbarEnabled:
-          typeof body.topbarEnabled === "boolean"
-            ? body.topbarEnabled
-            : DEFAULT_SITE_SETTINGS.topbarEnabled,
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
-    ).lean();
-
-    return NextResponse.json({
-      ok: true,
-      data: {
-        topbarText: doc?.topbarText || topbarText,
-        topbarEnabled: Boolean(doc?.topbarEnabled),
-      },
-    });
+      { $set: { key: "main", ...set } },
+      { upsert: true, setDefaultsOnInsert: true },
+    );
+    // Prices and the announcement bar are baked into cached pages.
+    revalidateStorefront();
+    return NextResponse.json({ ok: true, data: await getSiteSettings() });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Failed to save";
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
+    console.error(e);
+    return jsonError("Could not save settings", 500);
   }
 }

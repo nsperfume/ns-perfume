@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/json-ld";
 import { faqItems } from "@/data/site";
+import { fillCheckoutCopy } from "@/lib/checkout-config";
+import { getSiteSettings } from "@/lib/site-settings";
 
 export const metadata: Metadata = {
   title: "FAQ on shipping, notes, authenticity",
@@ -9,11 +11,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/faq" },
 };
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  // Shipping answers quote the live rates from Admin > Settings.
+  const { checkout } = await getSiteSettings();
+  const items = faqItems.map((item) => ({ ...item, answer: fillCheckoutCopy(item.answer, checkout) }));
   const faqLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: faqItems.map((item) => ({
+    mainEntity: items.map((item) => ({
       "@type": "Question",
       name: item.question,
       acceptedAnswer: {
@@ -33,7 +38,7 @@ export default function FaqPage() {
           Shipping, ingredients, authenticity, and how concentration shapes wear.
         </p>
         <div className="flex flex-col border-t border-hairline" id="concentration">
-          {faqItems.map((item) => (
+          {items.map((item) => (
             <details
               key={item.question}
               className="group border-b border-hairline"

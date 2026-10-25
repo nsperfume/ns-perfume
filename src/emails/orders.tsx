@@ -41,7 +41,18 @@ function OrderTotals({ o }: { o: OrderEmailData }) {
     `Shipping${o.shippingMethod?.title ? ` (${o.shippingMethod.title})` : ""}`,
     o.shippingPkr > 0 ? formatPkr(o.shippingPkr) : "Free",
   ]);
-  return <Totals rows={rows} total={["Total", formatPkr(o.totalPkr)]} />;
+  if (o.codFeePkr) rows.push(["Cash on delivery fee", formatPkr(o.codFeePkr)]);
+  if (o.taxPkr) rows.push([o.taxLabel || "Tax", formatPkr(o.taxPkr)]);
+  return (
+    <>
+      <Totals rows={rows} total={["Total", formatPkr(o.totalPkr)]} />
+      {o.taxIncludedPkr ? (
+        <P muted>
+          Includes {o.taxLabel || "tax"} of {formatPkr(o.taxIncludedPkr)}.
+        </P>
+      ) : null}
+    </>
+  );
 }
 
 function OrderDetails({ o }: { o: OrderEmailData }) {

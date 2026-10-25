@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, IBM_Plex_Mono, Manrope } from "next/font/google";
 import { SiteShell } from "@/components/layout/site-shell";
+import { CheckoutConfigProvider } from "@/context/checkout-config";
+import { getSiteSettings } from "@/lib/site-settings";
 import { siteConfig } from "@/data/site";
 import "./globals.css";
 
@@ -49,11 +51,13 @@ export const viewport: Viewport = {
   themeColor: "#0b0b0b",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Store charges are edited in admin; cached pages refresh when settings are saved.
+  const { checkout } = await getSiteSettings();
   return (
     <html
       lang="en"
@@ -63,7 +67,9 @@ export default function RootLayout({
         className="flex min-h-full flex-col bg-canvas text-ink"
         suppressHydrationWarning
       >
-        <SiteShell>{children}</SiteShell>
+        <CheckoutConfigProvider value={checkout}>
+          <SiteShell>{children}</SiteShell>
+        </CheckoutConfigProvider>
       </body>
     </html>
   );

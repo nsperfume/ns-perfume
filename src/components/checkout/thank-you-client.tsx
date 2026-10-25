@@ -263,25 +263,20 @@ export function ThankYouClient() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold leading-snug text-ink">
-                      {line.name}
-                      {line.isGift ? " (Gift)" : ""}
+                      {line.name.replace(/\s*\(Gift( Wrap)?\)$/, "")}
                     </p>
                     <p className="mt-0.5 text-sm text-taupe">
                       Qty {line.quantity}
-                      {line.sizeMl > 0
-                        ? ` · ${`${line.sizeMl} ml`}`
-                        : ` · ${line.sku}`}
-                      {line.giftWrap ? " · Gift wrap" : line.isGift ? " · Gift" : ""}
+                      {line.sizeMl > 0 ? ` · ${line.sizeMl} ml` : ""}
                     </p>
-                    {line.giftWrap ? (
-                      <p className="mt-1 text-sm text-taupe">
-                        Gift wrap included
+                    {line.isGift ? (
+                      <p className="mt-1 text-sm font-medium text-brass-ink">
+                        {line.giftWrap ? "Gift, wrapped" : "Gift"}
                       </p>
                     ) : null}
                     {line.giftMessage ? (
                       <p className="mt-1 text-sm leading-snug text-taupe">
-                        <span className="text-taupe">Gift note: </span>
-                        {line.giftMessage}
+                        Message: “{line.giftMessage}”
                       </p>
                     ) : null}
                   </div>
@@ -309,6 +304,23 @@ export function ThankYouClient() {
                   {order.shippingPkr === 0 ? "Free" : format(order.shippingPkr)}
                 </span>
               </div>
+              {order.codFeePkr ? (
+                <div className="flex justify-between">
+                  <span>Cash on delivery fee</span>
+                  <span className="text-ink">{format(order.codFeePkr)}</span>
+                </div>
+              ) : null}
+              {order.taxPkr ? (
+                <div className="flex justify-between">
+                  <span>{order.taxLabel || "Tax"}</span>
+                  <span className="text-ink">{format(order.taxPkr)}</span>
+                </div>
+              ) : null}
+              {order.taxIncludedPkr ? (
+                <p className="text-right text-caption">
+                  Includes {order.taxLabel || "tax"} of {format(order.taxIncludedPkr)}
+                </p>
+              ) : null}
             </div>
             <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
               <span className="font-sans text-base font-semibold text-ink">Total</span>

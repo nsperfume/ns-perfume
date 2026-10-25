@@ -5,14 +5,10 @@ import { requireAdmin } from "@/lib/auth";
 import { getCustomerSession } from "@/lib/customer-auth";
 import { OrderModel } from "@/models/Order";
 import { ProductModel } from "@/models/Product";
-import { GIFT_WRAP_FEE_PKR } from "@/lib/types";
 import { limitByIp } from "@/lib/rate-limit";
 import { emailConfigured, notifyOrderPlaced } from "@/lib/email";
-import {
-  FREE_SHIPPING_THRESHOLD_PKR,
-  shippingPricePkr,
-  type ShippingMethodId,
-} from "@/lib/checkout";
+import { computeTotals, type CheckoutConfig } from "@/lib/checkout-config";
+import { getCheckoutConfig } from "@/lib/site-settings";
 import { redeemCoupon, releaseCoupon, resolveDiscount } from "@/lib/coupons";
 import { estimateDeliveryRange } from "@/lib/order-status";
 import { generateOrderNumber } from "@/lib/order-number";
@@ -59,7 +55,7 @@ type ProductForPricing = {
 };
 
 /** Re-price cart lines from the catalog. Returns an error message for the shopper on mismatch. */
-async function priceLines(lines: z.infer<typeof lineSchema>[]) {
+async function priceLines(lines: z.infer<typeof lineSchema>[], config: CheckoutConfig) {
   const handles = [...new Set(lines.map((l) => l.productHandle))];
   const products = await ProductModel.find({
     handle: { $in: handles },
@@ -72,7 +68,7 @@ async function priceLines(lines: z.infer<typeof lineSchema>[]) {
   const priced = [];
   for (const l of lines) {
     const product = byHandle.get(l.productHandle);
-    const baseSku = l.sku.replace(/-GIFT$/, "");
+    const baseSku = l.sku.replace(/-GIFT(-NOTE)?$/, "");
     const size =
       product?.sizes.find((s) => s.sku === baseSku) ??
       product?.sizes.find((s) => s.ml === l.sizeMl);
@@ -83,7 +79,10 @@ async function priceLines(lines: z.infer<typeof lineSchema>[]) {
       return { error: `${product.name} is out of stock. Remove it from your bag to continue.` };
     }
     const wrap = Boolean(l.isGift && l.giftWrap);
-    const unitPricePkr = size.pricePkr + (wrap ? GIFT_WRAP_FEE_PKR : 0);
+    if (wrap && !config.giftWrap.enabled) {
+      return { error: "Gift wrap is not available right now. Remove gift wrap from your bag to continue." };
+    }
+    const unitPricePkr = size.pricePkr + (wrap ? config.giftWrap.feePkr : 0);
     // Never charge more than the shopper was shown. A lower catalog price is honored.
     if (unitPricePkr > l.unitPricePkr) {
       return {
@@ -92,7 +91,7 @@ async function priceLines(lines: z.infer<typeof lineSchema>[]) {
     }
     priced.push({
       productHandle: product.handle,
-      name: wrap ? `${product.name} (Gift Wrap)` : product.name,
+      name: wrap ? `${product.name} (Gift Wrap)` : l.isGift ? `${product.name} (Gift)` : product.name,
       sizeMl: size.ml,
       sku: wrap ? `${size.sku}-GIFT` : size.sku,
       quantity: l.quantity,
@@ -153,7 +152,12 @@ export async function POST(req: Request) {
       return jsonError("Card payments are not available yet. Choose cash on delivery or bank transfer.", 400);
     }
 
-    const pricing = await priceLines(body.lines);
+    const config = await getCheckoutConfig();
+    if (!config.shipping[body.shippingMethodId]?.enabled) {
+      return jsonError("That shipping method is not available. Choose another one.", 400);
+    }
+
+    const pricing = await priceLines(body.lines, config);
     if ("error" in pricing) return jsonError(pricing.error ?? "Cart error", 409);
     const lines = pricing.lines;
 
@@ -166,34 +170,16 @@ export async function POST(req: Request) {
       ? await resolveDiscount(body.discountCode, subtotalPkr)
       : null;
     const discountPkr = discount?.amountPkr ?? 0;
-    const afterDiscount = Math.max(0, subtotalPkr - discountPkr);
-
-    const freeShipPromo = Boolean(discount?.freeShipping);
-    let shippingPkr = shippingPricePkr(
-      body.shippingMethodId as ShippingMethodId,
-      afterDiscount,
-    );
-    if (freeShipPromo && body.shippingMethodId === "standard") {
-      shippingPkr = 0;
-    }
-    if (
-      body.shippingMethodId === "standard" &&
-      afterDiscount >= FREE_SHIPPING_THRESHOLD_PKR
-    ) {
-      shippingPkr = 0;
-    }
-
-    const taxPkr = 0;
-    const totalPkr = afterDiscount + shippingPkr + taxPkr;
-
-    const shippingTitles: Record<string, string> = {
-      standard: "Standard",
-      express: "Express",
-    };
-    const shippingDescriptions: Record<string, string> = {
-      standard: "3 to 5 business days",
-      express: "1 to 2 business days",
-    };
+    // Charges come from Admin > Settings and are always recalculated here.
+    const { shippingPkr, codFeePkr, taxPkr, taxIncludedPkr, totalPkr } = computeTotals(config, {
+      subtotalPkr,
+      discountPkr,
+      shippingMethodId: body.shippingMethodId,
+      paymentMethod: body.paymentMethod,
+      freeShippingCoupon: Boolean(discount?.freeShipping),
+    });
+    const shippingOption = config.shipping[body.shippingMethodId];
+    const taxLabel = config.tax.mode === "none" ? "" : `${config.tax.label} (${config.tax.ratePercent}%)`;
 
     const customerName = [
       body.shippingAddress.firstName,
@@ -253,7 +239,10 @@ export async function POST(req: Request) {
         discountPkr,
         discountCode: discount?.code || "",
         shippingPkr,
+        codFeePkr,
         taxPkr,
+        taxIncludedPkr,
+        taxLabel,
         totalPkr,
         lines,
         shippingAddress: {
@@ -267,8 +256,8 @@ export async function POST(req: Request) {
         billingSameAsShipping: body.billingSameAsShipping !== false,
         shippingMethod: {
           id: body.shippingMethodId,
-          title: shippingTitles[body.shippingMethodId],
-          description: shippingDescriptions[body.shippingMethodId],
+          title: shippingOption.title,
+          description: shippingOption.description,
         },
         paymentMethod: body.paymentMethod,
         cardLast4: "",
@@ -289,6 +278,10 @@ export async function POST(req: Request) {
           totalPkr: created.totalPkr,
           subtotalPkr: created.subtotalPkr,
           shippingPkr: created.shippingPkr,
+          codFeePkr: created.codFeePkr,
+          taxPkr: created.taxPkr,
+          taxIncludedPkr: created.taxIncludedPkr,
+          taxLabel: created.taxLabel,
           discountPkr: created.discountPkr,
           discountCode: created.discountCode,
           currency: created.currency,

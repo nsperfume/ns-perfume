@@ -7,9 +7,10 @@ import { useCart } from "@/context/cart";
 import { Price } from "@/components/commerce/price";
 import { Button } from "@/components/ui/button";
 import { pageCopy } from "@/data/copy";
-import { FREE_SHIPPING_THRESHOLD_PKR } from "@/lib/checkout";
 import { cn } from "@/lib/cn";
 import { animate, EASE, finished } from "@/lib/animate";
+import { useCheckoutConfig } from "@/context/checkout-config";
+import { freeShippingGap } from "@/lib/checkout-config";
 
 export function CartDrawer() {
   const { lines, isOpen, closeCart, removeItem, updateQuantity, subtotal } =
@@ -20,11 +21,13 @@ export function CartDrawer() {
   const listRef = useRef<HTMLUListElement>(null);
 
   const itemCount = lines.reduce((s, l) => s + l.quantity, 0);
-  const freeShipRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD_PKR - subtotal);
-  const freeShipProgress = Math.min(
-    100,
-    Math.round((subtotal / FREE_SHIPPING_THRESHOLD_PKR) * 100),
-  );
+  const checkoutConfig = useCheckoutConfig();
+  // null when the free-shipping offer is switched off in admin.
+  const freeShipRemaining = freeShippingGap(checkoutConfig, subtotal);
+  const freeShipProgress =
+    freeShipRemaining === null
+      ? 100
+      : Math.min(100, Math.round((subtotal / checkoutConfig.freeShippingThresholdPkr) * 100));
 
   useEffect(() => {
     if (isOpen) setMounted(true);
@@ -262,6 +265,7 @@ export function CartDrawer() {
         {/* Footer (filled bag only) */}
         {lines.length > 0 ? (
           <div className="shrink-0 border-t border-hairline bg-muted/50 px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-7">
+            {freeShipRemaining !== null ? (
             <div className="mb-4" aria-label="Free shipping progress">
               <div className="mb-2 flex justify-between gap-2 text-caption text-taupe">
                 <span>
@@ -286,6 +290,7 @@ export function CartDrawer() {
                 />
               </div>
             </div>
+            ) : null}
 
             <div className="flex items-end justify-between gap-3">
               <div>

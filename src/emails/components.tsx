@@ -343,6 +343,7 @@ export type EmailLine = {
   quantity: number;
   unitPricePkr: number;
   image?: string;
+  giftMessage?: string;
 };
 
 export function LineItems({ lines }: { lines: EmailLine[] }) {
@@ -366,6 +367,11 @@ export function LineItems({ lines }: { lines: EmailLine[] }) {
             <Text style={{ margin: 0, fontSize: 12, lineHeight: "18px", color: colors.muted }}>
               {[l.sizeMl ? `${l.sizeMl} ml` : "", `Qty ${l.quantity}`].filter(Boolean).join(" · ")}
             </Text>
+            {l.giftMessage ? (
+              <Text style={{ margin: "6px 0 0", fontSize: 12, lineHeight: "18px", color: colors.text, fontStyle: "italic" }}>
+                Gift message: “{l.giftMessage}”
+              </Text>
+            ) : null}
           </Column>
           <Column align="right" style={{ padding: "12px 0 12px 12px", verticalAlign: "top", whiteSpace: "nowrap" }}>
             <Text style={{ margin: 0, fontSize: 14, lineHeight: "20px", color: colors.ink }}>

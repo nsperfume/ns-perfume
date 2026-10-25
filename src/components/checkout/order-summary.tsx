@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useState } from "react";
 import type { CartLine } from "@/lib/types";
 import { useCurrency } from "@/context/currency";
-import { FREE_SHIPPING_THRESHOLD_PKR } from "@/lib/checkout";
+import { useCheckoutConfig } from "@/context/checkout-config";
+import { freeShippingGap, taxLineLabel } from "@/lib/checkout-config";
 import { cn } from "@/lib/cn";
 import { PayableAmount } from "@/components/commerce/price";
 
@@ -15,6 +16,12 @@ type SummaryProps = {
   discountCode: string;
   shippingPkr: number | null;
   shippingLabel?: string;
+  /** Cash-on-delivery fee once the shopper is on the payment step. */
+  codFeePkr?: number;
+  /** Tax added on top (exclusive). */
+  taxPkr?: number;
+  /** Tax already inside prices (inclusive), shown as a note. */
+  taxIncludedPkr?: number;
   totalPkr: number;
   onApplyDiscount: (code: string) => string | null | Promise<string | null>;
   onRemoveDiscount: () => void;
@@ -28,6 +35,9 @@ export function CheckoutOrderSummary({
   discountCode,
   shippingPkr,
   shippingLabel,
+  codFeePkr = 0,
+  taxPkr = 0,
+  taxIncludedPkr = 0,
   totalPkr,
   onApplyDiscount,
   onRemoveDiscount,
@@ -50,7 +60,8 @@ export function CheckoutOrderSummary({
     }
   };
 
-  const freeShipGap = Math.max(0, FREE_SHIPPING_THRESHOLD_PKR - (subtotalPkr - discountPkr));
+  const config = useCheckoutConfig();
+  const freeShipGap = freeShippingGap(config, subtotalPkr - discountPkr);
 
   const body = (
     <>
@@ -140,7 +151,7 @@ export function CheckoutOrderSummary({
         </div>
       ) : null}
 
-      {freeShipGap > 0 ? (
+      {freeShipGap === null ? null : freeShipGap > 0 ? (
         <p className="mt-4 text-sm leading-snug text-taupe">
           Add {format(freeShipGap)} more for complimentary standard shipping.
         </p>
@@ -176,10 +187,18 @@ export function CheckoutOrderSummary({
             ) : null}
           </span>
         </div>
-        <div className="flex justify-between text-taupe">
-          <span>Estimated taxes</span>
-          <span className="font-mono text-ink">{format(0)}</span>
-        </div>
+        {codFeePkr > 0 ? (
+          <div className="flex justify-between text-taupe">
+            <span>Cash on delivery fee</span>
+            <span className="font-mono text-ink">{format(codFeePkr)}</span>
+          </div>
+        ) : null}
+        {config.tax.mode === "exclusive" ? (
+          <div className="flex justify-between text-taupe">
+            <span>{taxLineLabel(config)}</span>
+            <span className="font-mono text-ink">{format(taxPkr)}</span>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
@@ -193,6 +212,11 @@ export function CheckoutOrderSummary({
           />
         </div>
       </div>
+      {taxIncludedPkr > 0 ? (
+        <p className="mt-2 text-right text-caption text-taupe">
+          Includes {taxLineLabel(config)} of {format(taxIncludedPkr)}
+        </p>
+      ) : null}
     </>
   );
 

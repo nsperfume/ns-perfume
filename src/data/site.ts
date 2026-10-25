@@ -153,7 +153,7 @@ export const faqItems = [
   {
     question: "How long does shipping take?",
     answer:
-      "We deliver within Pakistan only. In-stock orders usually leave within one business day. Standard delivery takes 3 to 5 business days and express takes 1 to 2 business days.",
+      "{{shipping}} In-stock orders usually leave within one business day.",
   },
   {
     question: "What is your return policy?",
@@ -241,7 +241,7 @@ export const policies: Record<
       },
       {
         heading: "Rates",
-        body: "We deliver within Pakistan. Standard and express rates are shown at checkout, and orders over Rs 8,000 qualify for complimentary standard shipping. Standard delivery takes 3 to 5 business days and express takes 1 to 2.",
+        body: "{{shipping}}",
       },
       {
         heading: "Damage",
@@ -251,9 +251,3 @@ export const policies: Record<
   },
 };
 
-export const trustBadges = [
-  "Cash on delivery in major cities",
-  "Complimentary shipping over Rs 8,000",
-  "Easy returns on eligible sealed bottles",
-  "Authenticity checked before dispatch",
-] as const;

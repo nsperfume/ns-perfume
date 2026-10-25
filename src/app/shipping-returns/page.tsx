@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { describeShipping } from "@/lib/checkout-config";
+import { getSiteSettings } from "@/lib/site-settings";
 
 export const metadata: Metadata = {
   title: "Shipping & Returns",
   description:
-    "Delivery across Pakistan, free shipping over Rs 8,000, unopened returns within 30 days, and damaged parcel reporting.",
+    "Delivery across Pakistan with standard and express options, unopened returns within 30 days, and damaged parcel reporting.",
   alternates: { canonical: "/shipping-returns" },
 };
 
-export default function ShippingReturnsPage() {
+export default async function ShippingReturnsPage() {
+  const { checkout } = await getSiteSettings();
   return (
     <section className="bg-canvas section-y">
       <div className="container-ns max-w-[48rem]">
@@ -18,10 +21,8 @@ export default function ShippingReturnsPage() {
           <div>
             <h2 className="text-heading-sm mb-3 text-ink">Shipping</h2>
             <p>
-              We deliver within Pakistan. In-stock orders placed before 2pm
-              warehouse time ship the next business day. Standard delivery takes
-              3 to 5 business days and express takes 1 to 2 business days.
-              Standard shipping is complimentary on orders over Rs 8,000.
+              {describeShipping(checkout)} In-stock orders placed before 2pm
+              ship the next business day.
             </p>
           </div>
           <div>

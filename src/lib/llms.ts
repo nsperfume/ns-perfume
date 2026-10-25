@@ -4,7 +4,8 @@
  * Built from the live catalog so it never drifts from the site.
  */
 import { faqItems, policies, siteConfig } from "@/data/site";
-import { FREE_SHIPPING_THRESHOLD_PKR, SHIPPING_METHODS } from "@/lib/checkout";
+import { describeShipping, fillCheckoutCopy, type CheckoutConfig } from "@/lib/checkout-config";
+import { getCheckoutConfig } from "@/lib/site-settings";
 import { richTextToPlain } from "@/lib/rich-text";
 import { siteUrl } from "@/lib/site-url";
 import { getCollections, getJournalPosts, getStoreProducts } from "@/lib/store-data";
@@ -35,18 +36,22 @@ function priceRange(p: StoreProduct) {
   return lo === hi ? rs(lo) : `${rs(lo)} to ${rs(hi)}`;
 }
 
-function shippingFacts() {
-  const methods = SHIPPING_METHODS.map((m) => `${m.title}: ${m.description}, ${rs(m.basePricePkr)}`).join("; ");
-  return `Ships within Pakistan only. ${methods}. Standard shipping is free on orders over ${rs(FREE_SHIPPING_THRESHOLD_PKR)}. Payment by cash on delivery, bank transfer (${siteConfig.bankTransfer.bankName}), JazzCash or Easypaisa. Prices are in Pakistani rupees (PKR).`;
+function shippingFacts(config: CheckoutConfig) {
+  return `${describeShipping(config)} Payment by cash on delivery, bank transfer (${siteConfig.bankTransfer.bankName}), JazzCash or Easypaisa. Prices are in Pakistani rupees (PKR).`;
 }
 
 export async function buildLlmsTxt() {
   const base = siteUrl();
-  const [products, collections, posts] = await Promise.all([getStoreProducts(), getCollections(), getJournalPosts()]);
+  const [products, collections, posts, config] = await Promise.all([
+    getStoreProducts(),
+    getCollections(),
+    getJournalPosts(),
+    getCheckoutConfig(),
+  ]);
   const lines = [
     `# ${siteConfig.name}`,
     "",
-    `> ${clean(siteConfig.description)} Based in ${siteConfig.location.detail}, Punjab, Pakistan. ${shippingFacts()}`,
+    `> ${clean(siteConfig.description)} Based in ${siteConfig.location.detail}, Punjab, Pakistan. ${shippingFacts(config)}`,
     "",
     "Every fragrance page lists top, heart and base notes, a sillage and longevity rating out of 5, concentration, available sizes in ml and the price in PKR.",
     "",
@@ -80,11 +85,11 @@ export async function buildLlmsTxt() {
 
 export async function buildLlmsFullTxt() {
   const base = siteUrl();
-  const products = await getStoreProducts();
+  const [products, config] = await Promise.all([getStoreProducts(), getCheckoutConfig()]);
   const out = [
     `# ${siteConfig.name}: full catalog`,
     "",
-    `> ${clean(siteConfig.description)} ${shippingFacts()}`,
+    `> ${clean(siteConfig.description)} ${shippingFacts(config)}`,
     "",
     `Website: ${base}. Contact: ${siteConfig.email}, WhatsApp ${siteConfig.phone}. Store: ${siteConfig.location.label}, ${siteConfig.location.detail}, Pakistan.`,
     "",
@@ -112,12 +117,12 @@ export async function buildLlmsFullTxt() {
   }
 
   out.push("## Frequently asked questions", "");
-  for (const f of faqItems) out.push(`### ${clean(f.question)}`, "", clean(f.answer), "");
+  for (const f of faqItems) out.push(`### ${clean(f.question)}`, "", clean(fillCheckoutCopy(f.answer, config)), "");
 
   out.push("## Policies", "");
   for (const [slug, p] of Object.entries(policies)) {
     out.push(`### ${p.title}`, "", `URL: ${base}/policies/${slug}`, "");
-    for (const sec of p.sections) out.push(`${clean(sec.heading)}: ${clean(sec.body)}`, "");
+    for (const sec of p.sections) out.push(`${clean(sec.heading)}: ${clean(fillCheckoutCopy(sec.body, config))}`, "");
   }
 
   return out.filter((line, i, arr) => !(line === "" && arr[i - 1] === "")).join("\n");

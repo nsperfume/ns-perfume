@@ -11,6 +11,18 @@ import {
 } from "react";
 import type { CartLine } from "@/lib/types";
 
+/**
+ * A gift without wrap shares the bottle's SKU, so it would merge with a normal
+ * copy of the same size and lose its gift details. Give it its own line key.
+ * The order API strips the suffix and prices from the catalog.
+ */
+function withGiftSku<T extends { sku: string; isGift?: boolean; giftWrap?: boolean }>(line: T): T {
+  if (line.isGift && !line.giftWrap && !/-GIFT(-NOTE)?$/.test(line.sku)) {
+    return { ...line, sku: `${line.sku}-GIFT-NOTE` };
+  }
+  return line;
+}
+
 type CartContextValue = {
   lines: CartLine[];
   isOpen: boolean;
@@ -62,7 +74,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const toggleCart = useCallback(() => setIsOpen((v) => !v), []);
 
   const addItem = useCallback(
-    (line: Omit<CartLine, "quantity">, quantity = 1) => {
+    (raw: Omit<CartLine, "quantity">, quantity = 1) => {
+      const line = withGiftSku(raw);
       setLines((prev) => {
         const existing = prev.find((l) => l.sku === line.sku);
         if (existing) {
@@ -84,7 +97,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         let next = [...prev];
         for (const item of items) {
           const quantity = item.quantity ?? 1;
-          const { quantity: _q, ...line } = item;
+          const { quantity: _q, ...rawLine } = item;
+          const line = withGiftSku(rawLine);
           const existing = next.find((l) => l.sku === line.sku);
           if (existing) {
             next = next.map((l) =>
