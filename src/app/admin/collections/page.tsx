@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -12,14 +12,21 @@ import {
   adminFieldClass,
 } from "@/components/admin/form-section";
 import {
+  AdminSearchableSelect,
+  type SearchableOption,
+} from "@/components/admin/searchable-select";
+import {
+  AdminNotice,
   AdminPageHeader,
   AdminStatusBadge,
   AdminTable,
   AdminTd,
   AdminTh,
+  readAdminJson,
 } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
 import { richTextToPlain, sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
@@ -31,6 +38,8 @@ type Collection = {
   description?: string;
   status?: string;
   bannerImage?: string;
+  productHandles?: string[];
+  filterTags?: string[];
 };
 
 const formSchema = z.object({
@@ -61,26 +70,61 @@ const formSchema = z.object({
 
 export default function AdminCollectionsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ email?: string; name?: string } | null>(
-    null,
-  );
+  const [user, setUser] = useState<{
+    email?: string;
+    name?: string;
+    role?: string;
+    isSuperAdmin?: boolean;
+  } | null>(null);
   const [items, setItems] = useState<Collection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [productOptions, setProductOptions] = useState<SearchableOption[]>([]);
+  const [editing, setEditing] = useState<Collection | null>(null);
   const [title, setTitle] = useState("");
   const [handle, setHandle] = useState("");
   const [description, setDescription] = useState("");
   const [bannerImage, setBannerImage] = useState("");
   const [status, setStatus] = useState<"active" | "draft">("draft");
+  const [productHandles, setProductHandles] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(true);
+  const [notice, setNotice] = useState<{
+    text: string;
+    tone: "info" | "error";
+  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Collection | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const canDelete = Boolean(
+    user?.isSuperAdmin || user?.role === "super_admin",
+  );
+
+  const productLabel = useMemo(() => {
+    const map = new Map(productOptions.map((o) => [o.value, o.label]));
+    return (h: string) => map.get(h);
+  }, [productOptions]);
 
   function load() {
+    setLoading(true);
     fetch("/api/collections?all=1")
       .then((r) => r.json())
       .then((j) => {
         if (j.ok) setItems(j.data);
-      });
+        else
+          setNotice({
+            text: j.error || "Could not load collections",
+            tone: "error",
+          });
+      })
+      .catch(() =>
+        setNotice({
+          text: "Network error while loading collections",
+          tone: "error",
+        }),
+      )
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
@@ -91,9 +135,96 @@ export default function AdminCollectionsPage() {
         else setUser(j.data);
       });
     load();
+    fetch("/api/products?all=1")
+      .then((r) => r.json())
+      .then((j) => {
+        if (!j.ok || !Array.isArray(j.data)) return;
+        setProductOptions(
+          (j.data as { handle: string; name: string; status?: string }[]).map(
+            (p) => ({
+              value: p.handle,
+              label: p.name,
+              hint: p.status && p.status !== "active" ? p.status : undefined,
+            }),
+          ),
+        );
+      })
+      .catch(() => {
+        /* picker falls back to typed handles */
+      });
   }, [router]);
 
-  async function create(e: React.FormEvent) {
+  function resetForm() {
+    setEditing(null);
+    setTitle("");
+    setHandle("");
+    setDescription("");
+    setBannerImage("");
+    setStatus("draft");
+    setProductHandles([]);
+    setErrors({});
+    setFormError("");
+  }
+
+  function startEdit(c: Collection) {
+    setEditing(c);
+    setTitle(c.title);
+    setHandle(c.handle);
+    setDescription(toRichHtml(c.description || ""));
+    setBannerImage(c.bannerImage || "");
+    setStatus(c.status === "draft" ? "draft" : "active");
+    setProductHandles(c.productHandles || []);
+    setErrors({});
+    setFormError("");
+    setNotice(null);
+    setShowForm(true);
+    document
+      .getElementById("admin-main-scroll")
+      ?.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function addProductHandle(value: string) {
+    const h = value.trim();
+    // Only real catalog handles; ignore stray typed text.
+    if (!h || !productOptions.some((o) => o.value === h)) return;
+    setProductHandles((list) => (list.includes(h) ? list : [...list, h]));
+  }
+
+  function removeProductHandle(h: string) {
+    setProductHandles((list) => list.filter((x) => x !== h));
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/collections/${encodeURIComponent(deleteTarget.handle)}`,
+        { method: "DELETE" },
+      );
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        setNotice({
+          text: json.error || "Could not delete collection",
+          tone: "error",
+        });
+        return;
+      }
+      if (editing?.handle === deleteTarget.handle) resetForm();
+      setNotice({ text: `Deleted ${deleteTarget.title}`, tone: "info" });
+      setDeleteTarget(null);
+      load();
+    } catch {
+      setNotice({
+        text: "Network error. The collection was not deleted.",
+        tone: "error",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setFormError("");
     setErrors({});
@@ -102,9 +233,13 @@ export default function AdminCollectionsPage() {
       setErrors({ description: "Keep under 500 characters" });
       return;
     }
-    const parsed = formSchema.safeParse({
+    // The handle is locked while editing, so only validate it on create.
+    const schema = editing
+      ? formSchema.extend({ handle: z.string() })
+      : formSchema;
+    const parsed = schema.safeParse({
       title,
-      handle,
+      handle: editing ? editing.handle : handle,
       description: sanitizeRichHtml(toRichHtml(description)),
       bannerImage,
       status,
@@ -120,21 +255,39 @@ export default function AdminCollectionsPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/collections", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
-      });
-      const json = await res.json();
+      const { handle: parsedHandle, ...fields } = parsed.data;
+      const res = editing
+        ? await fetch(`/api/collections/${encodeURIComponent(editing.handle)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...fields,
+              bannerImage: fields.bannerImage || "",
+              productHandles,
+            }),
+          })
+        : await fetch("/api/collections", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...fields,
+              handle: parsedHandle,
+              productHandles,
+            }),
+          });
+      const json = await readAdminJson(res);
       if (!json.ok) {
-        setFormError(json.error || "Could not create collection");
+        setFormError(
+          json.error ||
+            (editing ? "Could not save collection" : "Could not create collection"),
+        );
         return;
       }
-      setTitle("");
-      setHandle("");
-      setDescription("");
-      setBannerImage("");
-      setStatus("draft");
+      setNotice({
+        text: editing ? `Saved ${parsed.data.title}` : `Created ${parsed.data.title}`,
+        tone: "info",
+      });
+      resetForm();
       load();
     } catch {
       setFormError("Network error");
@@ -149,15 +302,33 @@ export default function AdminCollectionsPage() {
         title="Collections"
         description="Group bottles for shop navigation. Draft stays off the storefront."
         action={
-          <Button
-            type="button"
-            variant={showForm ? "secondary" : "primary"}
-            onClick={() => setShowForm((v) => !v)}
-          >
-            {showForm ? "Hide form" : "New collection"}
-          </Button>
+          editing ? (
+            <Button
+              type="button"
+              onClick={() => {
+                resetForm();
+                setShowForm(true);
+              }}
+            >
+              New collection
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant={showForm ? "secondary" : "primary"}
+              onClick={() => setShowForm((v) => !v)}
+            >
+              {showForm ? "Hide form" : "New collection"}
+            </Button>
+          )
         }
       />
+
+      {notice ? (
+        <AdminNotice tone={notice.tone} onDismiss={() => setNotice(null)}>
+          {notice.text}
+        </AdminNotice>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)] lg:items-start">
         {/* List — left */}
@@ -169,7 +340,7 @@ export default function AdminCollectionsPage() {
                 {items.length}
               </span>
             </h2>
-            <Tooltip content="Product membership is driven by tags and filters on each collection.">
+            <Tooltip content="A bottle shows in a collection when it is picked here, ticked under Categories on the product, or matches the collection's filter tags. With none of these the collection is empty.">
               <button
                 type="button"
                 className="cursor-help font-display text-xs text-admin-muted underline-offset-2 hover:underline"
@@ -184,11 +355,18 @@ export default function AdminCollectionsPage() {
                 <AdminTh>Collection</AdminTh>
                 <AdminTh>Handle</AdminTh>
                 <AdminTh>Status</AdminTh>
+                <AdminTh className="text-right">Actions</AdminTh>
               </tr>
             </thead>
             <tbody>
               {items.map((c) => (
-                <tr key={c.handle} className="hover:bg-admin-soft">
+                <tr
+                  key={c.handle}
+                  className={cn(
+                    "hover:bg-admin-soft",
+                    editing?.handle === c.handle && "bg-admin-soft",
+                  )}
+                >
                   <AdminTd>
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border border-admin-line bg-admin-soft">
@@ -221,15 +399,39 @@ export default function AdminCollectionsPage() {
                   <AdminTd>
                     <AdminStatusBadge status={c.status || "active"} />
                   </AdminTd>
+                  <AdminTd className="text-right">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="h-10! min-h-10! w-auto! px-4!"
+                        onClick={() => startEdit(c)}
+                      >
+                        Edit
+                      </Button>
+                      {canDelete ? (
+                        <Button
+                          type="button"
+                          variant="danger"
+                          className="h-10! min-h-10! w-auto! px-4!"
+                          onClick={() => setDeleteTarget(c)}
+                        >
+                          Delete
+                        </Button>
+                      ) : null}
+                    </div>
+                  </AdminTd>
                 </tr>
               ))}
               {items.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={3}
+                    colSpan={4}
                     className="px-4 py-14 text-center text-admin-muted"
                   >
-                    No collections yet. Use the form on the right to create one.
+                    {loading
+                      ? "Loading collections…"
+                      : "No collections yet. Use the form on the right to create one."}
                   </td>
                 </tr>
               ) : null}
@@ -240,14 +442,28 @@ export default function AdminCollectionsPage() {
         {/* Form — right */}
         {showForm ? (
           <form
-            onSubmit={create}
+            onSubmit={submit}
             className="min-w-0 space-y-4 lg:sticky lg:top-4"
             noValidate
           >
+            {editing ? (
+              <div className="flex items-center justify-between gap-3 rounded-md border border-admin-line bg-admin-soft-2 px-4 py-3">
+                <p className="min-w-0 text-sm text-admin-ink">
+                  Editing <span className="font-semibold">{editing.title}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="shrink-0 cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.12em] text-admin-muted transition-colors hover:text-admin-ink"
+                >
+                  Cancel edit
+                </button>
+              </div>
+            ) : null}
             <AdminFormSection
               title="Name and URL"
               description="Title customers see. Handle is the collection URL."
-              tip="Handle becomes /collections/your-handle. Prefer simple slugs like for-him."
+              tip="Handle becomes /collections/your-handle. Prefer simple slugs like for-him. It cannot change after create."
             >
               <div>
                 <AdminFieldLabel tip="Display name in navigation and headers." required>
@@ -263,12 +479,14 @@ export default function AdminCollectionsPage() {
                   onChange={(e) => {
                     const v = e.target.value;
                     setTitle(v);
-                    setHandle(
-                      v
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, "-")
-                        .replace(/^-|-$/g, ""),
-                    );
+                    if (!editing) {
+                      setHandle(
+                        v
+                          .toLowerCase()
+                          .replace(/[^a-z0-9]+/g, "-")
+                          .replace(/^-|-$/g, ""),
+                      );
+                    }
                   }}
                   placeholder="For him"
                 />
@@ -289,6 +507,7 @@ export default function AdminCollectionsPage() {
                     errors.handle && "border-rosewood",
                   )}
                   required
+                  disabled={Boolean(editing)}
                   value={handle}
                   onChange={(e) =>
                     setHandle(
@@ -335,6 +554,66 @@ export default function AdminCollectionsPage() {
             </AdminFormSection>
 
             <AdminFormSection
+              title="Products"
+              description="Hand-pick bottles for this collection."
+              tip="Products also join when ticked under Categories on the product page, or when they match this collection's filter tags."
+            >
+              <AdminSearchableSelect
+                label="Add product"
+                value=""
+                options={productOptions.filter(
+                  (o) => !productHandles.includes(o.value),
+                )}
+                placeholder="Search products…"
+                emptyLabel="No matching products."
+                onChange={addProductHandle}
+              />
+              {productHandles.length ? (
+                <ul className="space-y-1.5">
+                  {productHandles.map((h) => (
+                    <li
+                      key={h}
+                      className="flex items-center justify-between gap-3 rounded-md border border-admin-line bg-admin-soft-2 px-3 py-2"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-admin-ink">
+                          {productLabel(h) || h}
+                        </span>
+                        <span className="block font-mono text-[11px] text-admin-faint">
+                          {h}
+                          {productOptions.length && !productLabel(h)
+                            ? " · not in catalog"
+                            : ""}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeProductHandle(h)}
+                        className="shrink-0 cursor-pointer font-display text-[11px] font-medium uppercase tracking-wide text-admin-muted transition-colors hover:text-rosewood"
+                        aria-label={`Remove ${productLabel(h) || h}`}
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-admin-muted">
+                  No hand-picked products.
+                </p>
+              )}
+              {editing?.filterTags?.length ? (
+                <p className="text-[13px] leading-relaxed text-admin-muted">
+                  Also includes products tagged{" "}
+                  <span className="font-mono text-admin-ink">
+                    {editing.filterTags.join(", ")}
+                  </span>
+                  .
+                </p>
+              ) : null}
+            </AdminFormSection>
+
+            <AdminFormSection
               title="Banner image"
               description="Shown on collection cards and header where used."
               tip="Drop a file, click to upload, or paste a URL."
@@ -355,7 +634,13 @@ export default function AdminCollectionsPage() {
               <p className="text-sm font-medium text-rosewood">{formError}</p>
             ) : null}
             <Button type="submit" disabled={saving} className="w-full">
-              {saving ? "Creating…" : "Create collection"}
+              {saving
+                ? editing
+                  ? "Saving…"
+                  : "Creating…"
+                : editing
+                  ? "Save collection"
+                  : "Create collection"}
             </Button>
           </form>
         ) : (
@@ -373,6 +658,23 @@ export default function AdminCollectionsPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(o) => {
+          if (!o && !deleting) setDeleteTarget(null);
+        }}
+        title="Delete this collection?"
+        description={
+          deleteTarget
+            ? `${deleteTarget.title} (/collections/${deleteTarget.handle}) will be removed from the storefront. Products stay in the catalog.`
+            : "This collection will be removed."
+        }
+        confirmLabel="Delete collection"
+        cancelLabel="Keep collection"
+        loading={deleting}
+        onConfirm={confirmDelete}
+      />
     </AdminShell>
   );
 }

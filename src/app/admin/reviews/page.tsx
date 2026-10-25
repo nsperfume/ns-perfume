@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { AdminPageHeader, AdminStatusBadge } from "@/components/admin/ui";
+import {
+  AdminNotice,
+  AdminPageHeader,
+  AdminStatusBadge,
+  readAdminJson,
+} from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -32,17 +37,30 @@ export default function AdminReviewsPage() {
   const [items, setItems] = useState<R[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{
+    text: string;
+    tone: "info" | "error";
+  } | null>(null);
 
   const canDelete = Boolean(
     user?.isSuperAdmin || user?.role === "super_admin",
   );
 
   function load() {
+    setLoading(true);
     fetch("/api/reviews?all=1")
       .then((r) => r.json())
       .then((j) => {
         if (j.ok) setItems(j.data);
-      });
+        else
+          setNotice({ text: j.error || "Could not load reviews", tone: "error" });
+      })
+      .catch(() =>
+        setNotice({ text: "Network error while loading reviews", tone: "error" }),
+      )
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
@@ -56,22 +74,59 @@ export default function AdminReviewsPage() {
   }, [router]);
 
   async function setStatus(id: string, status: string) {
-    await fetch(`/api/reviews/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    load();
+    setBusyId(id);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/reviews/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        setNotice({
+          text:
+            json.error ||
+            `Could not ${status === "published" ? "publish" : "hide"} review`,
+          tone: "error",
+        });
+        return;
+      }
+      setNotice({
+        text: status === "published" ? "Review published" : "Review hidden",
+        tone: "info",
+      });
+      load();
+    } catch {
+      setNotice({
+        text: "Network error. The review was not changed.",
+        tone: "error",
+      });
+    } finally {
+      setBusyId(null);
+    }
   }
 
   async function confirmDelete() {
     if (!deleteId) return;
     setDeleting(true);
+    setNotice(null);
     try {
-      await fetch(`/api/reviews/${deleteId}`, { method: "DELETE" });
-      setDeleteId(null);
+      const res = await fetch(`/api/reviews/${deleteId}`, { method: "DELETE" });
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        setNotice({ text: json.error || "Could not delete review", tone: "error" });
+        return;
+      }
+      setNotice({ text: "Review deleted", tone: "info" });
       load();
+    } catch {
+      setNotice({
+        text: "Network error. The review was not deleted.",
+        tone: "error",
+      });
     } finally {
+      setDeleteId(null);
       setDeleting(false);
     }
   }
@@ -84,6 +139,12 @@ export default function AdminReviewsPage() {
         title="Product reviews"
         description="Publish or hide reviews on product pages."
       />
+
+      {notice ? (
+        <AdminNotice tone={notice.tone} onDismiss={() => setNotice(null)}>
+          {notice.text}
+        </AdminNotice>
+      ) : null}
 
       <div className="space-y-3">
         {items.map((r) => (
@@ -125,6 +186,7 @@ export default function AdminReviewsPage() {
                 {r.status !== "published" ? (
                   <Button
                     className="h-10! min-h-10! w-auto! px-4!"
+                    disabled={busyId === r._id}
                     onClick={() => setStatus(r._id, "published")}
                   >
                     Publish
@@ -134,6 +196,7 @@ export default function AdminReviewsPage() {
                   <Button
                     variant="secondary"
                     className="h-10! min-h-10! w-auto! px-4!"
+                    disabled={busyId === r._id}
                     onClick={() => setStatus(r._id, "hidden")}
                   >
                     Hide
@@ -154,7 +217,7 @@ export default function AdminReviewsPage() {
         ))}
         {items.length === 0 ? (
           <p className="rounded-lg border border-admin-line bg-admin-paper px-5 py-12 text-center text-sm text-admin-muted">
-            No reviews yet.
+            {loading ? "Loading reviews…" : "No reviews yet."}
           </p>
         ) : null}
       </div>

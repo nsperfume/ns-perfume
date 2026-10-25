@@ -7,6 +7,41 @@ export type OrderStatus =
   | "delivered"
   | "cancelled";
 
+export const ORDER_STATUS_VALUES: readonly OrderStatus[] = [
+  "pending",
+  "confirmed",
+  "shipped",
+  "delivered",
+  "cancelled",
+];
+
+/**
+ * Allowed admin status moves. Pending/confirmed/shipped can move freely
+ * (fixing a mis-click), but a cancelled order is final and a delivered order
+ * can only be cancelled (return / refund), never sent back to an earlier step.
+ * Same-status updates are allowed so tracking details can be edited.
+ */
+const ORDER_STATUS_NEXT: Record<OrderStatus, readonly OrderStatus[]> = {
+  pending: ORDER_STATUS_VALUES,
+  confirmed: ORDER_STATUS_VALUES,
+  shipped: ORDER_STATUS_VALUES,
+  delivered: ["delivered", "cancelled"],
+  cancelled: ["cancelled"],
+};
+
+export function isOrderStatus(value: unknown): value is OrderStatus {
+  return (
+    typeof value === "string" &&
+    (ORDER_STATUS_VALUES as readonly string[]).includes(value)
+  );
+}
+
+export function canTransitionOrderStatus(from: unknown, to: OrderStatus) {
+  // Unknown legacy statuses can be moved anywhere to repair them.
+  if (!isOrderStatus(from)) return true;
+  return ORDER_STATUS_NEXT[from].includes(to);
+}
+
 export type TimelineStep = {
   id: string;
   label: string;

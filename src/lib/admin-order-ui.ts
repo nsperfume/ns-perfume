@@ -1,5 +1,7 @@
 /** Shared admin order display helpers. */
 
+import { canTransitionOrderStatus } from "@/lib/order-status";
+
 export type AdminOrderLine = {
   productHandle?: string;
   name?: string;
@@ -73,6 +75,15 @@ export const ORDER_STATUSES = [
   { value: "delivered", label: "Delivered" },
   { value: "cancelled", label: "Cancelled" },
 ] as const;
+
+/** Status select options with impossible moves (e.g. out of cancelled) disabled. */
+export function orderStatusOptions(current: string) {
+  return ORDER_STATUSES.map((o) => ({
+    value: o.value,
+    label: o.label,
+    disabled: !canTransitionOrderStatus(current, o.value),
+  }));
+}
 
 export function paymentLabel(method?: string) {
   switch (method) {

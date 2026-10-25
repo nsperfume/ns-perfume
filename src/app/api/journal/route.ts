@@ -6,6 +6,16 @@ import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 import { JournalModel } from "@/models/Journal";
 import slugify from "slugify";
 
+/** Today's calendar date in Pakistan as yyyy-MM-dd (en-CA formats that way). */
+function todayInKarachi() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Karachi",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
 export async function GET(req: Request) {
   try {
     await connectDB();
@@ -47,7 +57,7 @@ export async function POST(req: Request) {
       title,
       excerpt: String(body.excerpt || "").trim(),
       body: sanitizeRichHtml(toRichHtml(body.body)),
-      date: String(body.date || new Date().toISOString().slice(0, 10)),
+      date: String(body.date || "").trim() || todayInKarachi(),
       readTime: String(body.readTime || "5 min").trim(),
       category: String(body.category || "Guides").trim(),
       relatedProductHandle: String(body.relatedProductHandle || "").trim(),

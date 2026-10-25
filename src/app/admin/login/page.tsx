@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
+import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -12,13 +13,50 @@ const schema = z.object({
   password: z.string().min(6, "Password needs at least 6 characters"),
 });
 
+/**
+ * Where to go after sign-in. Only same-site admin paths from `?next=`
+ * (set by the admin gate) are honored; anything else falls back to /admin.
+ */
+function nextAdminPath() {
+  try {
+    const next = new URLSearchParams(window.location.search).get("next") || "";
+    if (
+      next.startsWith("/admin") &&
+      !next.startsWith("//") &&
+      !next.includes("\\") &&
+      !next.startsWith("/admin/login")
+    ) {
+      return next;
+    }
+  } catch {
+    /* ignore */
+  }
+  return "/admin";
+}
+
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@nsperfume.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  // Already signed in (DB-checked by the API): skip the form.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/auth")
+      .then((r) => r.json())
+      .then((j) => {
+        if (!cancelled && j?.ok) router.replace(nextAdminPath());
+      })
+      .catch(() => {
+        /* stay on the form */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,7 +86,7 @@ export default function AdminLoginPage() {
         setLoading(false);
         return;
       }
-      router.push("/admin");
+      router.push(nextAdminPath());
       router.refresh();
     } catch {
       setError("Network error");
@@ -63,10 +101,8 @@ export default function AdminLoginPage() {
         noValidate
         className="w-full max-w-md rounded-lg border border-[#e4e6ea] bg-paper p-8 shadow-[0_8px_30px_rgba(28,31,38,0.06)] sm:p-10"
       >
-        <p className="font-display text-xs font-medium uppercase tracking-[0.14em] text-[#5c6370]">
-          NS Perfume
-        </p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-ink">
+        <Logo className="h-7 text-ink" />
+        <h1 className="mt-6 font-display text-3xl font-medium tracking-tight text-ink">
           Admin sign in
         </h1>
         <p className="mt-2 text-base leading-relaxed text-[#5c6370]">

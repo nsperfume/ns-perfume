@@ -6,8 +6,10 @@ import { z } from "zod";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   AdminCard,
+  AdminNotice,
   AdminPageHeader,
   AdminStatusBadge,
+  readAdminJson,
 } from "@/components/admin/ui";
 import { AdminRichTextEditor } from "@/components/admin/rich-text-editor";
 import { Button } from "@/components/ui/button";
@@ -50,17 +52,35 @@ export default function AdminTestimonialsPage() {
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState<{
+    text: string;
+    tone: "info" | "error";
+  } | null>(null);
 
   const canDelete = Boolean(
     user?.isSuperAdmin || user?.role === "super_admin",
   );
 
   function load() {
+    setLoading(true);
     fetch("/api/testimonials?all=1")
       .then((r) => r.json())
       .then((j) => {
         if (j.ok) setItems(j.data);
-      });
+        else
+          setNotice({
+            text: j.error || "Could not load testimonials",
+            tone: "error",
+          });
+      })
+      .catch(() =>
+        setNotice({
+          text: "Network error while loading testimonials",
+          tone: "error",
+        }),
+      )
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
@@ -95,6 +115,7 @@ export default function AdminTestimonialsPage() {
       return;
     }
     setSaving(true);
+    setNotice(null);
     try {
       const res = await fetch("/api/testimonials", {
         method: "POST",
@@ -106,11 +127,18 @@ export default function AdminTestimonialsPage() {
           rating: 5,
         }),
       });
-      const json = await res.json();
-      if (json.ok) {
-        setForm({ author: "", city: "Karachi", quote: "", productName: "" });
-        load();
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        setErrors({ form: json.error || "Could not publish testimonial" });
+        return;
       }
+      setForm({ author: "", city: "Karachi", quote: "", productName: "" });
+      setNotice({ text: "Testimonial published", tone: "info" });
+      load();
+    } catch {
+      setErrors({
+        form: "Network error. The testimonial was not saved, try again.",
+      });
     } finally {
       setSaving(false);
     }
@@ -119,11 +147,28 @@ export default function AdminTestimonialsPage() {
   async function confirmDelete() {
     if (!deleteId) return;
     setDeleting(true);
+    setNotice(null);
     try {
-      await fetch(`/api/testimonials/${deleteId}`, { method: "DELETE" });
-      setDeleteId(null);
+      const res = await fetch(`/api/testimonials/${deleteId}`, {
+        method: "DELETE",
+      });
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        setNotice({
+          text: json.error || "Could not delete testimonial",
+          tone: "error",
+        });
+        return;
+      }
+      setNotice({ text: "Testimonial deleted", tone: "info" });
       load();
+    } catch {
+      setNotice({
+        text: "Network error. The testimonial was not deleted.",
+        tone: "error",
+      });
     } finally {
+      setDeleteId(null);
       setDeleting(false);
     }
   }
@@ -137,9 +182,20 @@ export default function AdminTestimonialsPage() {
         description="Homepage quotes. Separate from product-page reviews."
       />
 
+      {notice ? (
+        <AdminNotice tone={notice.tone} onDismiss={() => setNotice(null)}>
+          {notice.text}
+        </AdminNotice>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
         <AdminCard title="Add testimonial">
           <form className="space-y-4 p-5" onSubmit={create} noValidate>
+            {errors.form ? (
+              <p role="alert" className="text-sm font-medium text-rosewood">
+                {errors.form}
+              </p>
+            ) : null}
             <Input
               label="Author"
               required
@@ -218,7 +274,7 @@ export default function AdminTestimonialsPage() {
           ))}
           {items.length === 0 ? (
             <li className="rounded-lg border border-admin-line bg-admin-paper px-5 py-12 text-center text-sm text-admin-muted">
-              No testimonials yet.
+              {loading ? "Loading testimonials…" : "No testimonials yet."}
             </li>
           ) : null}
         </ul>

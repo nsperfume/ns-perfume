@@ -12,9 +12,25 @@ export async function PUT(req: Request, ctx: Ctx) {
     if (!admin) return jsonError("Unauthorized", 401);
     await connectDB();
     const { id } = await ctx.params;
-    const body = await req.json();
-    const doc = await ReviewModel.findByIdAndUpdate(id, body, {
-      new: true,
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return jsonError("Invalid payload", 400);
+    }
+    // Moderation fields only; author content and product link stay as written.
+    const updates: Record<string, unknown> = {};
+    if (body.status !== undefined) {
+      if (!["published", "pending", "hidden"].includes(body.status)) {
+        return jsonError("Status must be published, pending, or hidden", 400);
+      }
+      updates.status = body.status;
+    }
+    if (typeof body.verified === "boolean") updates.verified = body.verified;
+    if (!Object.keys(updates).length) {
+      return jsonError("Nothing to update", 400);
+    }
+    const doc = await ReviewModel.findByIdAndUpdate(id, updates, {
+      returnDocument: "after",
+      runValidators: true,
     });
     if (!doc) return jsonError("Not found", 404);
     await recomputeProductRating(doc.productHandle);
@@ -32,7 +48,8 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     await connectDB();
     const { id } = await ctx.params;
     const doc = await ReviewModel.findByIdAndDelete(id);
-    if (doc) await recomputeProductRating(doc.productHandle);
+    if (!doc) return jsonError("Review not found", 404);
+    await recomputeProductRating(doc.productHandle);
     return jsonOk({ id });
   } catch (e) {
     console.error(e);

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
+  AdminNotice,
   AdminPageHeader,
   AdminStatusBadge,
   AdminTable,
@@ -27,6 +28,8 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [user, setUser] = useState<AdminUser | null>(null);
   const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/auth")
@@ -39,11 +42,16 @@ export default function AdminProductsPage() {
   }, [router]);
 
   function load() {
+    setLoading(true);
+    setLoadError(null);
     fetch("/api/products?all=1")
       .then((r) => r.json())
       .then((j) => {
         if (j.ok) setProducts(j.data);
-      });
+        else setLoadError(j.error || "Could not load products");
+      })
+      .catch(() => setLoadError("Network error while loading products"))
+      .finally(() => setLoading(false));
   }
 
   const filtered = products.filter(
@@ -57,9 +65,19 @@ export default function AdminProductsPage() {
     <AdminShell user={user}>
       <AdminPageHeader
         title="Products"
-        description={`${products.length} products · prices in PKR`}
+        description={
+          loading
+            ? "Loading catalog… · prices in PKR"
+            : `${products.length} products · prices in PKR`
+        }
         action={<Button href="/admin/products/new">Add product</Button>}
       />
+
+      {loadError ? (
+        <AdminNotice tone="error" onDismiss={() => setLoadError(null)}>
+          {loadError}
+        </AdminNotice>
+      ) : null}
 
       <div className="mb-5 max-w-md">
         <Input
@@ -120,7 +138,11 @@ export default function AdminProductsPage() {
                 colSpan={5}
                 className="px-4 py-14 text-center text-admin-muted"
               >
-                No products match.
+                {loading
+                  ? "Loading products…"
+                  : products.length === 0
+                    ? "No products yet."
+                    : "No products match."}
               </td>
             </tr>
           ) : null}

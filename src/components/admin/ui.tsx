@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { ChevronsLeftIcon } from "@animateicons/react/lucide";
+import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import type { ReactNode } from "react";
 
 /**
  * Admin layout primitives only.
@@ -214,6 +214,18 @@ export function AdminModal({
   children: ReactNode;
   wide?: boolean;
 }) {
+  // Escape closes the dialog. Nested Radix layers (selects, popovers, confirm
+  // dialogs) handle Escape first and mark it defaultPrevented, so skip those.
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-90 flex items-end justify-center sm:items-center sm:p-6">
@@ -251,6 +263,66 @@ export function AdminModal({
       </div>
     </div>
   );
+}
+
+/**
+ * Inline status line for admin actions (save, delete, publish…).
+ * `error` tone reads as an alert; dismiss is optional.
+ */
+export function AdminNotice({
+  tone = "info",
+  children,
+  onDismiss,
+  className,
+}: {
+  tone?: "info" | "error";
+  children: ReactNode;
+  onDismiss?: () => void;
+  className?: string;
+}) {
+  const error = tone === "error";
+  return (
+    <div
+      role={error ? "alert" : "status"}
+      className={cn(
+        "mb-4 flex items-start justify-between gap-3 rounded-md border px-4 py-2.5 text-sm",
+        error
+          ? "border-rosewood/40 bg-rosewood/10 text-rosewood"
+          : "border-admin-line bg-admin-paper text-admin-ink",
+        className,
+      )}
+    >
+      <span className="min-w-0 pt-0.5">{children}</span>
+      {onDismiss ? (
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss"
+          className="-mr-1 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-lg leading-none opacity-70 transition-opacity hover:opacity-100"
+        >
+          ×
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** Read `{ ok, error }` from an API response without throwing on non-JSON bodies. */
+export async function readAdminJson<T = unknown>(
+  res: Response,
+): Promise<{ ok: boolean; data?: T; error?: string }> {
+  const json = (await res.json().catch(() => null)) as {
+    ok?: boolean;
+    data?: T;
+    error?: string;
+  } | null;
+  if (json && typeof json.ok === "boolean") {
+    return { ok: json.ok, data: json.data, error: json.error };
+  }
+  return {
+    ok: false,
+    error: res.ok ? "Unexpected response" : `Request failed (${res.status})`,
+  };
 }
 
 export function formatPkr(n: number) {

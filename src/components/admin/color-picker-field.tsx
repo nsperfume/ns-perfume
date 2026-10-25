@@ -78,12 +78,9 @@ export function AdminColorPickerField({
         </Popover.Root>
         <input
           value={value}
-          onChange={(e) => {
-            const raw = e.target.value;
-            onChange(raw);
-            const normalized = normalizeHex(raw);
-            if (normalized) onChange(normalized);
-          }}
+          // Keep raw text while typing ("#E8D" must not expand mid-entry);
+          // shorthand / missing "#" is normalized on blur.
+          onChange={(e) => onChange(e.target.value)}
           onBlur={() => {
             const normalized = normalizeHex(value);
             if (normalized) onChange(normalized);

@@ -54,15 +54,50 @@ export function couponOfferDetail(c: CouponPosterInput): string {
   return "Fixed discount applied at checkout";
 }
 
-function formatExpiry(expiresAt?: string | Date | null): string | null {
+/** Coupon expiry days are Pakistan calendar days (see admin coupons API). */
+export const COUPON_TIME_ZONE = "Asia/Karachi";
+
+function toExpiryDate(expiresAt?: string | Date | null): Date | null {
   if (!expiresAt) return null;
   const d = expiresAt instanceof Date ? expiresAt : new Date(expiresAt);
-  if (Number.isNaN(d.getTime())) return null;
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * `yyyy-MM-dd` for a date input, read in Pakistan time so the stored
+ * end-of-day instant (18:59:59Z) and legacy midnight-UTC values both show
+ * the day the admin picked, whatever the browser's time zone.
+ */
+export function couponExpiryInputValue(
+  expiresAt?: string | Date | null,
+): string {
+  const d = toExpiryDate(expiresAt);
+  if (!d) return "";
+  // en-CA formats as yyyy-MM-dd.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: COUPON_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+/** Human expiry date (e.g. "26 Oct 2026") in Pakistan time. */
+export function formatCouponExpiry(
+  expiresAt?: string | Date | null,
+): string | null {
+  const d = toExpiryDate(expiresAt);
+  if (!d) return null;
   return d.toLocaleDateString("en-PK", {
+    timeZone: COUPON_TIME_ZONE,
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+}
+
+function formatExpiry(expiresAt?: string | Date | null): string | null {
+  return formatCouponExpiry(expiresAt);
 }
 
 function isLightHex(hex: string): boolean {

@@ -15,8 +15,10 @@ import {
 import { AdminRichTextEditor } from "@/components/admin/rich-text-editor";
 import {
   AdminCard,
+  AdminNotice,
   AdminPageHeader,
   AdminStatusBadge,
+  readAdminJson,
 } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -41,20 +43,33 @@ type JournalRow = {
   status: "published" | "draft";
 };
 
-const emptyForm = {
-  title: "",
-  slug: "",
-  excerpt: "",
-  body: "",
-  date: new Date().toISOString().slice(0, 10),
-  readTime: "5 min",
-  category: "",
-  relatedProductHandle: "",
-  relatedCollectionHandle: "",
-  imageUrl: "",
-  imageTone: "#E8DFC8",
-  status: "published" as "published" | "draft",
-};
+/** Today's calendar date in Pakistan as yyyy-MM-dd (en-CA formats that way). */
+function todayInKarachi() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Karachi",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/** Fresh blank post. Date is computed when the form opens, not at module load. */
+function emptyForm() {
+  return {
+    title: "",
+    slug: "",
+    excerpt: "",
+    body: "",
+    date: todayInKarachi(),
+    readTime: "5 min",
+    category: "",
+    relatedProductHandle: "",
+    relatedCollectionHandle: "",
+    imageUrl: "",
+    imageTone: "#E8DFC8",
+    status: "published" as "published" | "draft",
+  };
+}
 
 const schema = z.object({
   title: z.string().trim().min(4, "Title is required"),
@@ -98,6 +113,11 @@ export default function AdminJournalPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
+  const [notice, setNotice] = useState<{
+    text: string;
+    tone: "info" | "error";
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const canDelete = Boolean(
     user?.isSuperAdmin || user?.role === "super_admin",
@@ -123,11 +143,18 @@ export default function AdminJournalPage() {
   );
 
   function load() {
+    setLoading(true);
     fetch("/api/journal?all=1")
       .then((r) => r.json())
       .then((j) => {
         if (j.ok) setItems(j.data);
-      });
+        else
+          setNotice({ text: j.error || "Could not load posts", tone: "error" });
+      })
+      .catch(() =>
+        setNotice({ text: "Network error while loading posts", tone: "error" }),
+      )
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
@@ -171,7 +198,7 @@ export default function AdminJournalPage() {
   }, [router]);
 
   function resetForm() {
-    setForm(emptyForm);
+    setForm(emptyForm());
     setEditingId(null);
     setSlugTouched(false);
     setErrors({});
@@ -227,13 +254,21 @@ export default function AdminJournalPage() {
           body: JSON.stringify(payload),
         },
       );
-      const json = await res.json();
+      const json = await readAdminJson(res);
       if (json.ok) {
+        setNotice({
+          text: editingId ? "Post updated" : "Post saved",
+          tone: "info",
+        });
         resetForm();
         load();
       } else {
         setErrors({ form: json.error || "Could not save" });
       }
+    } catch {
+      setErrors({
+        form: "Network error while saving. Your text is still here, try again.",
+      });
     } finally {
       setSaving(false);
     }
@@ -242,12 +277,24 @@ export default function AdminJournalPage() {
   async function confirmDelete() {
     if (!deleteId) return;
     setDeleting(true);
+    setNotice(null);
     try {
-      await fetch(`/api/journal/${deleteId}`, { method: "DELETE" });
+      const res = await fetch(`/api/journal/${deleteId}`, { method: "DELETE" });
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        setNotice({ text: json.error || "Could not delete post", tone: "error" });
+        return;
+      }
       if (editingId === deleteId) resetForm();
-      setDeleteId(null);
+      setNotice({ text: "Post deleted", tone: "info" });
       load();
+    } catch {
+      setNotice({
+        text: "Network error. The post was not deleted.",
+        tone: "error",
+      });
     } finally {
+      setDeleteId(null);
       setDeleting(false);
     }
   }
@@ -260,6 +307,12 @@ export default function AdminJournalPage() {
         title="Journal"
         description="Editorial notes for the storefront. Published posts appear on Recent notes and /journal."
       />
+
+      {notice ? (
+        <AdminNotice tone={notice.tone} onDismiss={() => setNotice(null)}>
+          {notice.text}
+        </AdminNotice>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,28rem)_1fr]">
         <AdminCard title={editingId ? "Edit post" : "Write post"}>
@@ -459,7 +512,9 @@ export default function AdminJournalPage() {
           ))}
           {!items.length ? (
             <li className="rounded-lg border border-dashed border-admin-line p-8 text-center text-sm text-admin-muted">
-              No journal posts yet. Write the first note on the left.
+              {loading
+                ? "Loading posts…"
+                : "No journal posts yet. Write the first note on the left."}
             </li>
           ) : null}
         </ul>
@@ -468,7 +523,7 @@ export default function AdminJournalPage() {
       <ConfirmDialog
         open={Boolean(deleteId)}
         onOpenChange={(open) => {
-          if (!open) setDeleteId(null);
+          if (!open && !deleting) setDeleteId(null);
         }}
         title="Delete journal post?"
         description={

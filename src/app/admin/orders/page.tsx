@@ -4,19 +4,22 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
+  AdminNotice,
   AdminPageHeader,
   AdminTable,
   AdminTd,
   AdminTh,
   formatPkr,
+  readAdminJson,
 } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatOrderNumber } from "@/lib/order-number";
 import {
-  ORDER_STATUSES,
   formatOrderDate,
   mapAdminOrder,
+  orderStatusOptions,
   paymentLabel,
   paymentShort,
   type AdminOrder,
@@ -31,15 +34,25 @@ export default function AdminOrdersPage() {
     null,
   );
   const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ text: string; tone: "info" | "error" } | null>(
+    null,
+  );
+  const [cancelTarget, setCancelTarget] = useState<AdminOrder | null>(null);
 
   const load = useCallback(() => {
+    setLoading(true);
     fetch("/api/orders")
       .then((r) => r.json())
       .then((j) => {
         if (j.ok) setOrders((j.data || []).map(mapAdminOrder));
-      });
+        else setMsg({ text: j.error || "Could not load orders", tone: "error" });
+      })
+      .catch(() =>
+        setMsg({ text: "Network error while loading orders", tone: "error" }),
+      )
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -64,31 +77,46 @@ export default function AdminOrdersPage() {
           body: JSON.stringify({ status }),
         },
       );
-      const json = await res.json();
+      const json = await readAdminJson<{
+        status?: string;
+        trackingNumber?: string;
+        carrier?: string;
+      }>(res);
       if (!json.ok) {
-        setMsg(json.error || "Update failed");
+        setMsg({ text: json.error || "Update failed", tone: "error" });
       } else {
-        setMsg(`${formatOrderNumber(orderNumber)} updated to ${status}`);
+        setMsg({
+          text: `${formatOrderNumber(orderNumber)} updated to ${status}`,
+          tone: "info",
+        });
         setOrders((prev) =>
           prev.map((o) =>
             o.orderNumber === orderNumber
               ? {
                   ...o,
-                  status,
-                  trackingNumber:
-                    json.data?.trackingNumber || o.trackingNumber,
-                  carrier: json.data?.carrier || o.carrier,
+                  status: json.data?.status || status,
+                  trackingNumber: json.data?.trackingNumber ?? o.trackingNumber,
+                  carrier: json.data?.carrier ?? o.carrier,
                 }
               : o,
           ),
         );
       }
     } catch {
-      setMsg("Network error");
+      setMsg({ text: "Network error. The order was not updated.", tone: "error" });
     } finally {
       setSaving(null);
     }
   };
+
+  function onStatusChange(o: AdminOrder, next: string) {
+    if (next === o.status) return;
+    if (next === "cancelled") {
+      setCancelTarget(o);
+      return;
+    }
+    void updateStatus(o.orderNumber, next);
+  }
 
   return (
     <AdminShell user={user}>
@@ -98,9 +126,9 @@ export default function AdminOrdersPage() {
       />
 
       {msg ? (
-        <p className="mb-4 border border-admin-line bg-admin-paper px-4 py-2.5 text-sm text-admin-ink">
-          {msg}
-        </p>
+        <AdminNotice tone={msg.tone} onDismiss={() => setMsg(null)}>
+          {msg.text}
+        </AdminNotice>
       ) : null}
 
       <AdminTable>
@@ -153,9 +181,11 @@ export default function AdminOrdersPage() {
                   <Select
                     aria-label={`Status for ${ref}`}
                     value={o.status}
-                    onValueChange={(v) => updateStatus(o.orderNumber, v)}
-                    options={[...ORDER_STATUSES]}
-                    disabled={saving === o.orderNumber}
+                    onValueChange={(v) => onStatusChange(o, v)}
+                    options={orderStatusOptions(o.status)}
+                    disabled={
+                      saving === o.orderNumber || o.status === "cancelled"
+                    }
                     triggerClassName={selectTrigger}
                   />
                 </AdminTd>
@@ -189,12 +219,37 @@ export default function AdminOrdersPage() {
                 colSpan={6}
                 className="px-4 py-14 text-center text-admin-muted"
               >
-                No orders yet.
+                {loading ? "Loading orders…" : "No orders yet."}
               </td>
             </tr>
           ) : null}
         </tbody>
       </AdminTable>
+
+      <ConfirmDialog
+        open={Boolean(cancelTarget)}
+        onOpenChange={(o) => {
+          if (!o && !saving) setCancelTarget(null);
+        }}
+        title="Cancel this order?"
+        description={
+          cancelTarget
+            ? `${formatOrderNumber(cancelTarget.orderNumber)} will be marked cancelled and the customer track page will say so.${
+                cancelTarget.discountCode
+                  ? ` One use of ${cancelTarget.discountCode} goes back to the coupon.`
+                  : ""
+              } Cancelled orders cannot be reopened.`
+            : "Cancelled orders cannot be reopened."
+        }
+        confirmLabel="Cancel order"
+        cancelLabel="Keep order"
+        loading={Boolean(cancelTarget && saving === cancelTarget.orderNumber)}
+        onConfirm={async () => {
+          if (!cancelTarget) return;
+          await updateStatus(cancelTarget.orderNumber, "cancelled");
+          setCancelTarget(null);
+        }}
+      />
     </AdminShell>
   );
 }

@@ -187,16 +187,19 @@ export default function AdminCustomerDetailPage() {
                   <AdminTh>Status</AdminTh>
                   <AdminTh>Payment</AdminTh>
                   <AdminTh className="text-right">Total</AdminTh>
-                  <AdminTh className="text-right">Track</AdminTh>
+                  <AdminTh className="text-right">Actions</AdminTh>
                 </tr>
               </thead>
               <tbody>
                 {data.orders.map((o) => (
                   <tr key={o.orderNumber} className="hover:bg-admin-soft">
                     <AdminTd>
-                      <p className="font-semibold">
+                      <Link
+                        href={`/admin/orders/${encodeURIComponent(o.orderNumber)}`}
+                        className="font-semibold text-admin-ink hover:text-brass hover:underline"
+                      >
                         {formatOrderNumber(o.orderNumber)}
-                      </p>
+                      </Link>
                       <p className="text-[11px] text-admin-faint">
                         {formatDate(o.createdAt)}
                       </p>
@@ -212,11 +215,11 @@ export default function AdminCustomerDetailPage() {
                     </AdminTd>
                     <AdminTd className="text-right">
                       <Button
-                        href={`/track-order?orderNumber=${encodeURIComponent(o.orderNumber)}&email=${encodeURIComponent(data.email)}`}
-                        variant="ghost"
-                        className="min-h-10!"
+                        href={`/admin/orders/${encodeURIComponent(o.orderNumber)}`}
+                        variant="secondary"
+                        className="h-10! min-h-10! w-auto! px-4!"
                       >
-                        Track
+                        Details
                       </Button>
                     </AdminTd>
                   </tr>

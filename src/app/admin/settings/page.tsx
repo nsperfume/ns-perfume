@@ -8,8 +8,10 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { CouponManager } from "@/components/admin/coupon-manager";
 import {
   AdminCard,
+  AdminNotice,
   AdminPageHeader,
   AdminStatusBadge,
+  readAdminJson,
 } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -129,6 +131,10 @@ export default function AdminSettingsPage() {
   const [teamSaving, setTeamSaving] = useState(false);
   const [removeTeamId, setRemoveTeamId] = useState<string | null>(null);
   const [removingTeam, setRemovingTeam] = useState(false);
+  const [teamNotice, setTeamNotice] = useState<{
+    text: string;
+    tone: "info" | "error";
+  } | null>(null);
 
   const isSuper = Boolean(user?.isSuperAdmin || user?.role === "super_admin");
 
@@ -240,11 +246,32 @@ export default function AdminSettingsPage() {
   async function confirmRemoveTeam() {
     if (!removeTeamId) return;
     setRemovingTeam(true);
+    setTeamNotice(null);
+    const member = team.find((m) => m.id === removeTeamId);
     try {
-      await fetch(`/api/admin/team/${removeTeamId}`, { method: "DELETE" });
-      setRemoveTeamId(null);
+      const res = await fetch(`/api/admin/team/${removeTeamId}`, {
+        method: "DELETE",
+      });
+      const j = await readAdminJson(res);
+      if (!j.ok) {
+        setTeamNotice({
+          text: j.error || "Could not remove admin",
+          tone: "error",
+        });
+        return;
+      }
+      setTeamNotice({
+        text: `${member?.name || member?.email || "Admin"} removed`,
+        tone: "info",
+      });
       loadTeam();
+    } catch {
+      setTeamNotice({
+        text: "Network error. The admin was not removed.",
+        tone: "error",
+      });
     } finally {
+      setRemoveTeamId(null);
       setRemovingTeam(false);
     }
   }
@@ -417,6 +444,17 @@ export default function AdminSettingsPage() {
                 {teamSaving ? "Creating…" : "Add admin"}
               </Button>
             </form>
+            {teamNotice ? (
+              <div className="px-5 pt-4">
+                <AdminNotice
+                  tone={teamNotice.tone}
+                  onDismiss={() => setTeamNotice(null)}
+                  className="mb-0"
+                >
+                  {teamNotice.text}
+                </AdminNotice>
+              </div>
+            ) : null}
             <ul className="divide-y divide-admin-line">
               {team.map((m) => (
                 <li

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import {
+  couponExpiryInputValue,
   downloadDataUrl,
   drawCouponPoster,
   exportCouponPosterPng,
@@ -43,9 +44,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
     coupon.usageLimit != null ? String(coupon.usageLimit) : "",
   );
   const [expiresAt, setExpiresAt] = useState(
-    coupon.expiresAt
-      ? new Date(coupon.expiresAt).toISOString().slice(0, 10)
-      : "",
+    couponExpiryInputValue(coupon.expiresAt),
   );
   const [drawing, setDrawing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -64,9 +63,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
     setSubcopy(coupon.posterSubcopy || "");
     setUsageLimit(coupon.usageLimit != null ? String(coupon.usageLimit) : "");
     setExpiresAt(
-      coupon.expiresAt
-        ? new Date(coupon.expiresAt).toISOString().slice(0, 10)
-        : "",
+      couponExpiryInputValue(coupon.expiresAt),
     );
     setError(null);
     setNote(null);
@@ -395,7 +392,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
                 placeholder="Unlimited"
               />
               <Input
-                label="Expires on"
+                label="Expires on (end of day, PKT)"
                 type="date"
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.target.value)}

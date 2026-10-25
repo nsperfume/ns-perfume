@@ -12,6 +12,7 @@ import {
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { readAdminJson } from "@/components/admin/ui";
 import { cn } from "@/lib/cn";
 import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 
@@ -38,6 +39,11 @@ const SCENT_FAMILIES = [
   { value: "aromatic", label: "Aromatic" },
 ] as const;
 
+type SizeRow = { ml: number; price: number; sku: string; compareAt?: number };
+
+/** Comma-separated list fields edited as raw text, parsed on blur / save. */
+type ListKey = "topNotes" | "heartNotes" | "baseNotes" | "ingredients";
+
 const empty = {
   handle: "",
   name: "",
@@ -46,7 +52,7 @@ const empty = {
   concentration: "EDP",
   family: "fresh",
   gender: "unisex",
-  prices: [{ ml: 50, price: 15000, sku: "" }],
+  prices: [{ ml: 50, price: 15000, sku: "" }] as SizeRow[],
   topNotes: [] as string[],
   heartNotes: [] as string[],
   baseNotes: [] as string[],
@@ -141,7 +147,7 @@ export function ProductForm({
       concentration: initial.concentration,
       family: initial.family,
       gender: initial.gender,
-      prices: initial.prices,
+      prices: initial.prices.map((p) => ({ ...p })) as SizeRow[],
       topNotes: initial.topNotes,
       heartNotes: initial.heartNotes,
       baseNotes: initial.baseNotes,
@@ -161,6 +167,13 @@ export function ProductForm({
       status: initial.status || "active",
     };
   });
+  // Raw text so commas and spaces survive typing; parsed on blur and on save.
+  const [listText, setListText] = useState<Record<ListKey, string>>(() => ({
+    topNotes: (initial?.topNotes || []).join(", "),
+    heartNotes: (initial?.heartNotes || []).join(", "),
+    baseNotes: (initial?.baseNotes || []).join(", "),
+    ingredients: (initial?.ingredients || []).join(", "),
+  }));
   const [collections, setCollections] = useState<CollectionOption[]>([]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -191,6 +204,16 @@ export function ProductForm({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function setListDraft(key: ListKey, value: string) {
+    setListText((t) => ({ ...t, [key]: value }));
+  }
+
+  function commitList(key: ListKey) {
+    const parsed = parseNotes(listText[key]);
+    setField(key, parsed);
+    setListText((t) => ({ ...t, [key]: parsed.join(", ") }));
+  }
+
   function toggleCollection(handle: string) {
     setForm((f) => {
       const has = f.collectionHandles.includes(handle);
@@ -214,6 +237,22 @@ export function ProductForm({
       return;
     }
 
+    const topNotes = parseNotes(listText.topNotes);
+    const heartNotes = parseNotes(listText.heartNotes);
+    const baseNotes = parseNotes(listText.baseNotes);
+    const ingredients = parseNotes(listText.ingredients);
+
+    const badCompareAt = form.prices.findIndex(
+      (p) => p.compareAt != null && p.compareAt > 0 && p.compareAt <= p.price,
+    );
+    if (badCompareAt >= 0) {
+      setSaving(false);
+      setError(
+        `Size ${badCompareAt + 1}: compare-at price must be higher than the price, or left blank.`,
+      );
+      return;
+    }
+
     const payload = {
       handle: form.handle,
       name: form.name,
@@ -226,15 +265,19 @@ export function ProductForm({
         ml: p.ml,
         pricePkr: p.price,
         sku: p.sku || `NS-${form.handle}-${p.ml}`.toUpperCase(),
+        // Keep the sale "was" price; omit when blank so it is cleared.
+        ...(p.compareAt != null && p.compareAt > 0
+          ? { compareAtPkr: p.compareAt }
+          : {}),
       })),
-      topNotes: form.topNotes,
-      heartNotes: form.heartNotes,
-      baseNotes: form.baseNotes,
+      topNotes,
+      heartNotes,
+      baseNotes,
       sillage: form.sillage,
       longevity: form.longevity,
       ingredients: form.containsAlcohol
-        ? form.ingredients
-        : withoutAlcoholIngredients(form.ingredients),
+        ? ingredients
+        : withoutAlcoholIngredients(ingredients),
       containsAlcohol: form.containsAlcohol,
       countryOfOrigin: form.countryOfOrigin,
       story: sanitizeRichHtml(toRichHtml(form.story)),
@@ -251,31 +294,39 @@ export function ProductForm({
       status: form.status,
     };
 
-    const res = await fetch(
-      isNew ? "/api/products" : `/api/products/${form.handle}`,
-      {
-        method: isNew ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    );
-    const json = await res.json();
-    setSaving(false);
-    if (!json.ok) {
-      setError(json.error || "Save failed");
-      return;
+    try {
+      const res = await fetch(
+        isNew
+          ? "/api/products"
+          : `/api/products/${encodeURIComponent(form.handle)}`,
+        {
+          method: isNew ? "POST" : "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        setError(json.error || "Save failed");
+        return;
+      }
+      onSaved();
+    } catch {
+      setError("Network error while saving. Check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
-    onSaved();
   }
 
   async function remove() {
     setDeleting(true);
     setError("");
     try {
-      const res = await fetch(`/api/products/${form.handle}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
+      const res = await fetch(
+        `/api/products/${encodeURIComponent(form.handle)}`,
+        { method: "DELETE" },
+      );
+      const json = await readAdminJson(res);
       if (json.ok) {
         setDeleteOpen(false);
         onSaved();
@@ -506,7 +557,7 @@ export function ProductForm({
                     Remove
                   </button>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <div>
                     <AdminFieldLabel tip="Bottle size in millilitres.">
                       ML
@@ -535,6 +586,27 @@ export function ProductForm({
                         prices[i] = { ...size, price: Number(e.target.value) };
                         setField("prices", prices);
                       }}
+                    />
+                  </div>
+                  <div>
+                    <AdminFieldLabel tip="Optional sale reference. The original price, higher than Price. Leave blank when not on sale.">
+                      Compare-at
+                    </AdminFieldLabel>
+                    <input
+                      type="number"
+                      min={0}
+                      className={adminFieldClass}
+                      value={size.compareAt ?? ""}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const prices = [...form.prices];
+                        prices[i] = {
+                          ...size,
+                          compareAt: raw === "" ? undefined : Number(raw),
+                        };
+                        setField("prices", prices);
+                      }}
+                      placeholder="None"
                     />
                   </div>
                   <div>
@@ -699,10 +771,9 @@ export function ProductForm({
               </AdminFieldLabel>
               <input
                 className={adminFieldClass}
-                value={form.topNotes.join(", ")}
-                onChange={(e) =>
-                  setField("topNotes", parseNotes(e.target.value))
-                }
+                value={listText.topNotes}
+                onChange={(e) => setListDraft("topNotes", e.target.value)}
+                onBlur={() => commitList("topNotes")}
                 placeholder="Bergamot, Pink pepper"
               />
             </div>
@@ -712,10 +783,9 @@ export function ProductForm({
               </AdminFieldLabel>
               <input
                 className={adminFieldClass}
-                value={form.heartNotes.join(", ")}
-                onChange={(e) =>
-                  setField("heartNotes", parseNotes(e.target.value))
-                }
+                value={listText.heartNotes}
+                onChange={(e) => setListDraft("heartNotes", e.target.value)}
+                onBlur={() => commitList("heartNotes")}
                 placeholder="Rose, Iris"
               />
             </div>
@@ -725,10 +795,9 @@ export function ProductForm({
               </AdminFieldLabel>
               <input
                 className={adminFieldClass}
-                value={form.baseNotes.join(", ")}
-                onChange={(e) =>
-                  setField("baseNotes", parseNotes(e.target.value))
-                }
+                value={listText.baseNotes}
+                onChange={(e) => setListDraft("baseNotes", e.target.value)}
+                onBlur={() => commitList("baseNotes")}
                 placeholder="Amber, Cedar, Musk"
               />
             </div>
@@ -768,10 +837,9 @@ export function ProductForm({
               </AdminFieldLabel>
               <input
                 className={adminFieldClass}
-                value={form.ingredients.join(", ")}
-                onChange={(e) =>
-                  setField("ingredients", parseNotes(e.target.value))
-                }
+                value={listText.ingredients}
+                onChange={(e) => setListDraft("ingredients", e.target.value)}
+                onBlur={() => commitList("ingredients")}
                 placeholder={
                   form.containsAlcohol
                     ? "Alcohol denat., Parfum, Linalool"
@@ -789,13 +857,14 @@ export function ProductForm({
                   checked={form.containsAlcohol}
                   onChange={(e) => {
                     const next = e.target.checked;
-                    setForm((f) => ({
-                      ...f,
-                      containsAlcohol: next,
-                      ingredients: next
-                        ? f.ingredients
-                        : withoutAlcoholIngredients(f.ingredients),
-                    }));
+                    setField("containsAlcohol", next);
+                    if (!next) {
+                      const cleaned = withoutAlcoholIngredients(
+                        parseNotes(listText.ingredients),
+                      );
+                      setField("ingredients", cleaned);
+                      setListDraft("ingredients", cleaned.join(", "));
+                    }
                   }}
                   className="h-4 w-4 accent-brass"
                 />

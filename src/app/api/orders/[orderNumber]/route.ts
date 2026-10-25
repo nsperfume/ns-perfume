@@ -2,7 +2,11 @@ import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth";
 import { OrderModel } from "@/models/Order";
-import { estimateDeliveryRange } from "@/lib/order-status";
+import {
+  canTransitionOrderStatus,
+  estimateDeliveryRange,
+} from "@/lib/order-status";
+import { releaseCoupon } from "@/lib/coupons";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -13,9 +17,19 @@ const patchSchema = z.object({
     "delivered",
     "cancelled",
   ]),
-  carrier: z.string().optional(),
-  trackingNumber: z.string().optional(),
-  trackingUrl: z.string().optional(),
+  // Fulfillment details are stored exactly as the admin sends them.
+  // Omitted = unchanged, empty string = cleared. Never auto-filled.
+  carrier: z.string().trim().max(80).optional(),
+  trackingNumber: z.string().trim().max(120).optional(),
+  trackingUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine(
+      (v) => !v || /^https?:\/\//i.test(v),
+      "Tracking link must start with http:// or https://",
+    )
+    .optional(),
 });
 
 type Params = { params: Promise<{ orderNumber: string }> };
@@ -49,61 +63,85 @@ export async function PATCH(req: Request, { params }: Params) {
     const orderNumber = decodeURIComponent(raw).trim();
 
     await connectDB();
-    const parsed = patchSchema.safeParse(await req.json());
+    const parsed = patchSchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
-      return jsonError("Invalid payload", 400, parsed.error.flatten());
+      return jsonError(
+        parsed.error.issues[0]?.message || "Invalid payload",
+        400,
+        parsed.error.flatten(),
+      );
     }
 
     const { status, carrier, trackingNumber, trackingUrl } = parsed.data;
-    const order = await OrderModel.findOne({ orderNumber });
+    const order = await OrderModel.findOne({ orderNumber }).lean();
     if (!order) return jsonError("Order not found", 404);
 
+    const from = String(order.status || "");
+    if (!canTransitionOrderStatus(from, status)) {
+      return jsonError(
+        from === "cancelled"
+          ? "Cancelled orders cannot be reopened. Ask the customer to place a new order."
+          : `A ${from} order cannot be moved back to ${status}.`,
+        409,
+      );
+    }
+
     const now = new Date();
-    order.status = status;
+    const set: Record<string, unknown> = { status };
 
     if (status === "confirmed" && !order.confirmedAt) {
-      order.confirmedAt = now;
+      set.confirmedAt = now;
     }
     if (status === "shipped") {
-      if (!order.shippedAt) order.shippedAt = now;
-      if (!order.confirmedAt) order.confirmedAt = now;
-      if (carrier !== undefined) order.carrier = carrier;
-      if (trackingNumber !== undefined) order.trackingNumber = trackingNumber;
-      if (trackingUrl !== undefined) order.trackingUrl = trackingUrl;
-      if (!order.trackingNumber) {
-        order.trackingNumber = `TRK${Date.now().toString().slice(-10)}`;
-      }
-      if (!order.carrier) order.carrier = "NS Express";
-      if (!order.trackingUrl) {
-        order.trackingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://nsperfume.com"}/track-order?orderNumber=${encodeURIComponent(order.orderNumber)}`;
-      }
+      if (!order.shippedAt) set.shippedAt = now;
+      if (!order.confirmedAt) set.confirmedAt = now;
     }
     if (status === "delivered") {
-      if (!order.deliveredAt) order.deliveredAt = now;
-      if (!order.shippedAt) order.shippedAt = now;
-      if (!order.confirmedAt) order.confirmedAt = now;
+      if (!order.deliveredAt) set.deliveredAt = now;
+      if (!order.shippedAt) set.shippedAt = now;
+      if (!order.confirmedAt) set.confirmedAt = now;
     }
-    if (status === "cancelled") {
-      order.cancelledAt = now;
-    }
+    const cancelling = status === "cancelled" && from !== "cancelled";
+    if (cancelling) set.cancelledAt = now;
+
+    if (carrier !== undefined) set.carrier = carrier;
+    if (trackingNumber !== undefined) set.trackingNumber = trackingNumber;
+    if (trackingUrl !== undefined) set.trackingUrl = trackingUrl;
 
     if (!order.estimatedDeliveryFrom || !order.estimatedDeliveryTo) {
       const eta = estimateDeliveryRange(
         order.createdAt || now,
         order.shippingMethod?.id,
       );
-      order.estimatedDeliveryFrom = new Date(eta.from);
-      order.estimatedDeliveryTo = new Date(eta.to);
+      set.estimatedDeliveryFrom = new Date(eta.from);
+      set.estimatedDeliveryTo = new Date(eta.to);
     }
 
-    await order.save();
+    // Compare-and-set on the status we validated, so two admins (or a double
+    // click) cannot both cancel and release the coupon twice.
+    const updated = await OrderModel.findOneAndUpdate(
+      { _id: order._id, status: order.status },
+      { $set: set },
+      { returnDocument: "after", runValidators: true },
+    ).lean();
+    if (!updated) {
+      return jsonError(
+        "This order was just updated elsewhere. Reload and try again.",
+        409,
+      );
+    }
+
+    // Give the coupon use back exactly once, on the move into cancelled.
+    if (cancelling && updated.discountCode) {
+      await releaseCoupon(String(updated.discountCode));
+    }
 
     return jsonOk({
-      orderNumber: order.orderNumber,
-      status: order.status,
-      carrier: order.carrier,
-      trackingNumber: order.trackingNumber,
-      trackingUrl: order.trackingUrl,
+      orderNumber: updated.orderNumber,
+      status: updated.status,
+      carrier: updated.carrier || "",
+      trackingNumber: updated.trackingNumber || "",
+      trackingUrl: updated.trackingUrl || "",
     });
   } catch (e) {
     console.error(e);

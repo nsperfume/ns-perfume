@@ -131,6 +131,8 @@ export function AdminSearchableSelect({
       return;
     }
     if (e.key === "Escape") {
+      // Closing the list should not also close a parent AdminModal.
+      if (open) e.preventDefault();
       setQuery(selected ? selected.label : value);
       setOpen(false);
       return;

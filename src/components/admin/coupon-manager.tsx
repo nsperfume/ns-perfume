@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import {
   AdminCard,
+  AdminNotice,
   AdminStatusBadge,
+  readAdminJson,
 } from "@/components/admin/ui";
 import {
   CouponPosterStudio,
@@ -14,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/cn";
+import { formatCouponExpiry } from "@/lib/coupon-poster";
 
 function typeLabel(t: string) {
   if (t === "percent") return "Percent off";
@@ -50,6 +53,8 @@ export function CouponManager({ canDelete }: Props) {
   const [deleteCouponId, setDeleteCouponId] = useState<string | null>(null);
   const [deletingCoupon, setDeletingCoupon] = useState(false);
   const [posterCoupon, setPosterCoupon] = useState<AdminCoupon | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
 
   function loadCoupons() {
     setLoading(true);
@@ -57,7 +62,9 @@ export function CouponManager({ canDelete }: Props) {
       .then((r) => r.json())
       .then((j) => {
         if (j.ok) setCoupons(j.data as AdminCoupon[]);
+        else setListError(j.error || "Could not load coupons");
       })
+      .catch(() => setListError("Network error while loading coupons"))
       .finally(() => setLoading(false));
   }
 
@@ -110,22 +117,48 @@ export function CouponManager({ canDelete }: Props) {
   }
 
   async function toggleCoupon(c: AdminCoupon) {
-    await fetch("/api/admin/coupons", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: c.id, active: !c.active }),
-    });
-    loadCoupons();
+    setTogglingId(c.id);
+    setListError(null);
+    try {
+      const res = await fetch("/api/admin/coupons", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: c.id, active: !c.active }),
+      });
+      const j = await readAdminJson(res);
+      if (!j.ok) {
+        setListError(
+          j.error || `Could not ${c.active ? "disable" : "enable"} ${c.code}`,
+        );
+        return;
+      }
+      loadCoupons();
+    } catch {
+      setListError(`Network error. ${c.code} was not changed.`);
+    } finally {
+      setTogglingId(null);
+    }
   }
 
   async function confirmDeleteCoupon() {
     if (!deleteCouponId) return;
     setDeletingCoupon(true);
+    setListError(null);
     try {
-      await fetch(`/api/admin/coupons/${deleteCouponId}`, { method: "DELETE" });
-      setDeleteCouponId(null);
+      const res = await fetch(`/api/admin/coupons/${deleteCouponId}`, {
+        method: "DELETE",
+      });
+      const j = await readAdminJson(res);
+      if (!j.ok) {
+        setListError(j.error || "Could not delete coupon");
+        return;
+      }
       loadCoupons();
+    } catch {
+      setListError("Network error. The coupon was not deleted.");
     } finally {
+      // Close either way so the result notice is visible.
+      setDeleteCouponId(null);
       setDeletingCoupon(false);
     }
   }
@@ -222,7 +255,7 @@ export function CouponManager({ canDelete }: Props) {
               placeholder="e.g. 10 (empty = unlimited)"
             />
             <Input
-              label="Expires on"
+              label="Expires on (end of day, PKT)"
               type="date"
               value={couponForm.expiresAt}
               onChange={(e) =>
@@ -241,6 +274,17 @@ export function CouponManager({ canDelete }: Props) {
           </Button>
         </form>
 
+        {listError ? (
+          <div className="px-5 pt-4">
+            <AdminNotice
+              tone="error"
+              onDismiss={() => setListError(null)}
+              className="mb-0"
+            >
+              {listError}
+            </AdminNotice>
+          </div>
+        ) : null}
         <ul className="divide-y divide-admin-line">
           {coupons.map((c) => {
             const exhausted =
@@ -285,7 +329,9 @@ export function CouponManager({ canDelete }: Props) {
                   >
                     {usageLabel(c)}
                     {c.expiresAt
-                      ? ` · ends ${new Date(c.expiresAt).toLocaleDateString("en-PK")}`
+                      ? ` · ${
+                          new Date(c.expiresAt) < new Date() ? "ended" : "ends"
+                        } ${formatCouponExpiry(c.expiresAt)}`
                       : ""}
                   </p>
                 </div>
@@ -305,9 +351,14 @@ export function CouponManager({ canDelete }: Props) {
                     type="button"
                     variant="secondary"
                     className="h-10! min-h-10! w-auto! px-3!"
+                    disabled={togglingId === c.id}
                     onClick={() => toggleCoupon(c)}
                   >
-                    {c.active ? "Disable" : "Enable"}
+                    {togglingId === c.id
+                      ? "Saving…"
+                      : c.active
+                        ? "Disable"
+                        : "Enable"}
                   </Button>
                   {canDelete ? (
                     <Button

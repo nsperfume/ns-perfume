@@ -5,6 +5,21 @@ import { requireAdmin } from "@/lib/auth";
 import { CouponModel } from "@/models/Coupon";
 import { ensureDefaultCoupons } from "@/lib/coupons";
 
+/**
+ * "Expires on" is a calendar day in Pakistan. A bare `yyyy-MM-dd` is stored as
+ * the last millisecond of that day in Asia/Karachi (UTC+5, no DST), i.e.
+ * 18:59:59.999Z, so a code stays valid all day for local shoppers.
+ * Full ISO timestamps are kept as sent. Returns undefined when unparseable.
+ */
+function expiryFromInput(value: string): Date | undefined {
+  const v = value.trim();
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  const d = day ? new Date(`${v}T23:59:59.999+05:00`) : new Date(v);
+  if (Number.isNaN(d.getTime())) return undefined;
+  if (day && d.toISOString().slice(0, 10) !== v) return undefined; // e.g. 2026-02-31
+  return d;
+}
+
 function mapCoupon(doc: {
   _id: unknown;
   code: string;
@@ -102,6 +117,12 @@ export async function POST(req: Request) {
     if (data.posterBgMode === "image" && !data.posterImageUrl) {
       // allow save without image yet; studio can assign later
     }
+    let expiresAt: Date | null = null;
+    if (data.expiresAt) {
+      const parsedExpiry = expiryFromInput(data.expiresAt);
+      if (!parsedExpiry) return jsonError("Enter a valid expiry date", 400);
+      expiresAt = parsedExpiry;
+    }
 
     const exists = await CouponModel.findOne({ code: data.code });
     if (exists) return jsonError("That code already exists", 409);
@@ -114,7 +135,7 @@ export async function POST(req: Request) {
       active: data.active,
       minSubtotalPkr: data.minSubtotalPkr,
       usageLimit: data.usageLimit ?? null,
-      expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      expiresAt,
       usedCount: 0,
       posterBgMode: data.posterBgMode,
       posterBgColor: data.posterBgColor,
@@ -146,9 +167,12 @@ export async function PUT(req: Request) {
     if (body.usageLimit === null) updates.usageLimit = null;
     else if (typeof body.usageLimit === "number" && body.usageLimit > 0)
       updates.usageLimit = Math.floor(body.usageLimit);
-    if (body.expiresAt === null) updates.expiresAt = null;
-    else if (typeof body.expiresAt === "string" && body.expiresAt)
-      updates.expiresAt = new Date(body.expiresAt);
+    if (body.expiresAt === null || body.expiresAt === "") updates.expiresAt = null;
+    else if (typeof body.expiresAt === "string") {
+      const parsedExpiry = expiryFromInput(body.expiresAt);
+      if (!parsedExpiry) return jsonError("Enter a valid expiry date", 400);
+      updates.expiresAt = parsedExpiry;
+    }
     if (typeof body.type === "string") updates.type = body.type;
     if (body.posterBgMode === "color" || body.posterBgMode === "image")
       updates.posterBgMode = body.posterBgMode;

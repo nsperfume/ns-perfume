@@ -23,6 +23,7 @@ import {
 } from "@animateicons/react/lucide";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
+import { Logo, LogoMark } from "@/components/brand/logo";
 import {
   AdminThemeProvider,
   useAdminTheme,
@@ -222,21 +223,20 @@ function AdminShellInner({
         )}
       >
         {!collapsed ? (
-          <div className="min-w-0">
-            <p className="truncate font-display text-base font-medium tracking-wide text-white">
-              NS Perfume
-            </p>
-            <p className="mt-0.5 font-display text-[11px] uppercase tracking-[0.16em] text-white/40">
+          <Link href="/admin" className="block min-w-0 text-white">
+            <Logo className="h-6 max-w-full" title="NS Perfume admin" />
+            <p className="mt-2 font-display text-[11px] uppercase tracking-[0.16em] text-white/40">
               Admin console
             </p>
-          </div>
+          </Link>
         ) : (
-          <span
-            className="font-display text-base font-semibold text-white"
+          <Link
+            href="/admin"
+            className="flex text-white"
             title="NS Perfume Admin"
           >
-            NS
-          </span>
+            <LogoMark className="h-8" title="NS Perfume admin" />
+          </Link>
         )}
         <button
           type="button"
@@ -385,9 +385,9 @@ function AdminShellInner({
             <MenuIcon size={18} color="currentColor" isAnimated={false} />
             Menu
           </button>
-          <span className="font-display text-base font-medium text-admin-ink">
-            NS Admin
-          </span>
+          <Link href="/admin" className="flex text-admin-ink">
+            <Logo className="h-5" title="NS Perfume admin" />
+          </Link>
           <Button
             variant="secondary"
             onClick={logout}

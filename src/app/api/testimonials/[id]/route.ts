@@ -29,7 +29,8 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     if (!admin) return jsonError("Forbidden", 403);
     await connectDB();
     const { id } = await ctx.params;
-    await TestimonialModel.findByIdAndDelete(id);
+    const doc = await TestimonialModel.findByIdAndDelete(id).lean();
+    if (!doc) return jsonError("Testimonial not found", 404);
     return jsonOk({ id });
   } catch (e) {
     console.error(e);
