@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { ContactMessageModel } from "@/models/ContactMessage";
 import { limitByIp } from "@/lib/rate-limit";
+import { notifyContact } from "@/lib/email";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name is required").max(80),
@@ -32,13 +33,22 @@ export async function POST(req: Request) {
     }
 
     await connectDB();
-    await ContactMessageModel.create({
+    const created = await ContactMessageModel.create({
       name: parsed.data.name,
       email: parsed.data.email.toLowerCase(),
       topic: parsed.data.topic,
       message: parsed.data.message,
       status: "new",
     });
+    notifyContact(
+      {
+        name: parsed.data.name,
+        email: parsed.data.email.toLowerCase(),
+        topic: parsed.data.topic,
+        message: parsed.data.message,
+      },
+      String(created._id),
+    );
 
     return jsonOk(
       {

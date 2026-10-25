@@ -8,6 +8,8 @@ import {
 } from "@/lib/customer-auth";
 import { CustomerModel } from "@/models/Customer";
 import { limitByIp } from "@/lib/rate-limit";
+import { notifyWelcome } from "@/lib/email";
+import { createLinkToken } from "@/lib/tokens";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name is required").max(80),
@@ -36,12 +38,16 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await hashPassword(parsed.data.password);
+    const verify = createLinkToken();
     const created = await CustomerModel.create({
       email,
       name: parsed.data.name.trim(),
       passwordHash,
       emailVerified: false,
+      emailVerifyTokenHash: verify.hash,
+      emailVerifyExpires: new Date(Date.now() + 48 * 60 * 60 * 1000),
     });
+    notifyWelcome({ email: created.email, name: created.name || "" }, verify.token);
 
     const token = await createCustomerToken({
       sub: String(created._id),

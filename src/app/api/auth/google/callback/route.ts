@@ -8,6 +8,7 @@ import {
   setCustomerSessionCookie,
 } from "@/lib/customer-auth";
 import { CustomerModel } from "@/models/Customer";
+import { notifyWelcome } from "@/lib/email";
 
 type GoogleTokenResponse = {
   access_token?: string;
@@ -104,6 +105,7 @@ export async function GET(req: Request) {
         avatarUrl: profile.picture || "",
         emailVerified: true,
       });
+      notifyWelcome({ email: customer.email, name: customer.name || "" });
     } else {
       // A password set on an account whose email was never verified may belong to
       // someone who registered this address first. Google proves ownership, so drop it.

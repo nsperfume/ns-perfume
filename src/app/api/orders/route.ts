@@ -7,6 +7,7 @@ import { OrderModel } from "@/models/Order";
 import { ProductModel } from "@/models/Product";
 import { GIFT_WRAP_FEE_PKR } from "@/lib/types";
 import { limitByIp } from "@/lib/rate-limit";
+import { emailConfigured, notifyOrderPlaced } from "@/lib/email";
 import {
   FREE_SHIPPING_THRESHOLD_PKR,
   shippingPricePkr,
@@ -277,6 +278,8 @@ export async function POST(req: Request) {
         confirmedAt: status === "confirmed" ? now : null,
       });
 
+      notifyOrderPlaced(created.toObject());
+
       return jsonOk(
         {
           orderNumber: created.orderNumber,
@@ -295,6 +298,7 @@ export async function POST(req: Request) {
           customerName: created.customerName,
           phone: created.phone,
           createdAt: created.createdAt,
+          confirmationEmail: emailConfigured(),
         },
         { status: 201 },
       );

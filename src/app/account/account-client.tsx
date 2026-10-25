@@ -67,7 +67,8 @@ function GoogleIcon({ className }: { className?: string }) {
 function AuthPanel() {
   const search = useSearchParams();
   const { refresh, googleEnabled } = useCustomer();
-  const [mode, setMode] = useState<"signin" | "register">("signin");
+  const [mode, setMode] = useState<"signin" | "register" | "forgot">("signin");
+  const [notice, setNotice] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -82,8 +83,20 @@ function AuthPanel() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setNotice("");
     setSaving(true);
     try {
+      if (mode === "forgot") {
+        const res = await fetch("/api/auth/password/forgot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const json = await res.json();
+        if (json.ok) setNotice(json.data.message);
+        else setError(json.error || "Something went wrong");
+        return;
+      }
       const endpoint =
         mode === "register" ? "/api/auth/register" : "/api/auth/login";
       const body =
@@ -143,10 +156,11 @@ function AuthPanel() {
               onClick={() => {
                 setMode(id);
                 setError("");
+                setNotice("");
               }}
               className={cn(
                 "flex-1 cursor-pointer border-b-2 px-2 pb-3 text-center font-display text-[11px] font-medium uppercase tracking-[0.08em] transition-colors sm:px-3 sm:text-[12px] sm:tracking-[0.12em]",
-                mode === id
+                mode === id || (mode === "forgot" && id === "signin")
                   ? "border-ink text-ink"
                   : "border-transparent text-taupe hover:text-ink",
               )}
@@ -156,7 +170,7 @@ function AuthPanel() {
           ))}
         </div>
 
-        {googleEnabled ? (
+        {googleEnabled && mode !== "forgot" ? (
           <>
             <a
               href="/api/auth/google"
@@ -193,33 +207,126 @@ function AuthPanel() {
             autoComplete="email"
             required
           />
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete={
-              mode === "register" ? "new-password" : "current-password"
-            }
-            required
-          />
+          {mode === "forgot" ? (
+            <p className="font-serif text-[0.95rem] text-taupe">
+              Enter the email on your account and we will send a link to choose
+              a new password.
+            </p>
+          ) : (
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete={
+                mode === "register" ? "new-password" : "current-password"
+              }
+              required
+            />
+          )}
+          {mode === "signin" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("forgot");
+                setError("");
+                setNotice("");
+              }}
+              className="cursor-pointer font-serif text-[0.95rem] text-taupe underline underline-offset-4 hover:text-ink"
+            >
+              Forgot your password?
+            </button>
+          ) : null}
           {mode === "register" ? (
             <p className="font-serif text-[0.9rem] text-taupe">
               Use at least 8 characters. That is all.
             </p>
           ) : null}
           {error ? (
-            <p className="font-serif text-[0.95rem] text-rosewood">{error}</p>
+            <p className="font-serif text-[0.95rem] text-rosewood" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {notice ? (
+            <p className="font-serif text-[0.95rem] text-ink" role="status">
+              {notice}
+            </p>
           ) : null}
           <Button type="submit" disabled={saving} className="w-full">
             {saving
               ? "Please wait…"
               : mode === "register"
                 ? "Create account"
-                : "Sign in"}
+                : mode === "forgot"
+                  ? "Send reset link"
+                  : "Sign in"}
           </Button>
+          {mode === "forgot" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signin");
+                setError("");
+                setNotice("");
+              }}
+              className="w-full cursor-pointer font-serif text-[0.95rem] text-taupe underline underline-offset-4 hover:text-ink"
+            >
+              Back to sign in
+            </button>
+          ) : null}
         </form>
       </div>
+    </div>
+  );
+}
+
+function VerifyEmailBanner() {
+  const search = useSearchParams();
+  const { user } = useCustomer();
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const verify = search.get("verify");
+
+  if (verify === "done") {
+    return (
+      <p className="mb-8 border border-hairline bg-muted px-4 py-3 font-serif text-[1rem] text-ink" role="status">
+        Your email is confirmed. Orders placed with this address now appear below.
+      </p>
+    );
+  }
+  if (!user || user.emailVerified) return null;
+
+  async function resend() {
+    setState("sending");
+    try {
+      const res = await fetch("/api/auth/verify-email/resend", { method: "POST" });
+      const json = await res.json();
+      setState(json.ok ? "sent" : "error");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <div className="mb-8 flex flex-col gap-3 border border-hairline bg-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between" role="status">
+      <p className="font-serif text-[1rem] text-ink">
+        {verify === "invalid"
+          ? "That confirmation link is invalid or has expired."
+          : "Confirm your email to see orders you placed as a guest with this address."}
+      </p>
+      <button
+        type="button"
+        onClick={resend}
+        disabled={state === "sending" || state === "sent"}
+        className="shrink-0 cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink underline underline-offset-4 hover:text-brass disabled:cursor-default disabled:no-underline disabled:opacity-70"
+      >
+        {state === "sent"
+          ? "Link sent. Check your inbox"
+          : state === "sending"
+            ? "Sending…"
+            : state === "error"
+              ? "Try again"
+              : "Send confirmation link"}
+      </button>
     </div>
   );
 }
@@ -323,6 +430,8 @@ function ProfilePanel() {
           </Button>
         </div>
       </header>
+
+      <VerifyEmailBanner />
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-12">
         <form

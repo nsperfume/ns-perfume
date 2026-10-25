@@ -114,6 +114,8 @@ export const CHECKOUT_ORDER_STORAGE_KEY = "ns-checkout-completed-order";
 
 export type CompletedOrderSnapshot = {
   orderNumber: string;
+  /** True when the server queued a confirmation email. */
+  confirmationEmail?: boolean;
   email: string;
   phone?: string;
   customerName: string;

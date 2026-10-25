@@ -75,15 +75,10 @@ export function Footer() {
     setSending(true);
     setError(null);
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch("/api/newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Newsletter signup",
-          email: value,
-          topic: "general",
-          message: `Newsletter signup. Please add ${value} to the list.`,
-        }),
+        body: JSON.stringify({ email: value, source: "footer" }),
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) {

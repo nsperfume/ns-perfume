@@ -349,6 +349,7 @@ export function CheckoutClient() {
           }),
         ),
         createdAt: data.createdAt || new Date().toISOString(),
+        confirmationEmail: Boolean(data.confirmationEmail),
       };
 
       sessionStorage.setItem(

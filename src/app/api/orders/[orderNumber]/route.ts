@@ -7,6 +7,7 @@ import {
   estimateDeliveryRange,
 } from "@/lib/order-status";
 import { releaseCoupon } from "@/lib/coupons";
+import { notifyOrderStatus } from "@/lib/email";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -135,6 +136,9 @@ export async function PATCH(req: Request, { params }: Params) {
     if (cancelling && updated.discountCode) {
       await releaseCoupon(String(updated.discountCode));
     }
+
+    // Customer email only when the status really changed (not for tracking-only saves).
+    if (from !== status) notifyOrderStatus(updated, status);
 
     return jsonOk({
       orderNumber: updated.orderNumber,

@@ -15,6 +15,7 @@ import {
   MailIcon,
   MenuIcon,
   MessageCircleIcon,
+  SendIcon,
   SettingsIcon,
   ShoppingBagIcon,
   StarIcon,
@@ -97,6 +98,7 @@ const NAV_GROUPS: NavGroup[] = [
     id: "system",
     label: "System",
     items: [
+      { href: "/admin/emails", label: "Emails", Icon: SendIcon },
       { href: "/admin/settings", label: "Settings", Icon: SettingsIcon },
     ],
   },

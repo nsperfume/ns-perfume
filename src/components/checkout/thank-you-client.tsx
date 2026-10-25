@@ -100,6 +100,12 @@ export function ThankYouClient() {
           <section className="mt-8 rounded-md border border-hairline p-5">
             <h2 className="font-display text-lg font-medium">What happens next</h2>
             <p className="mt-2 text-[14px] leading-relaxed text-taupe">
+              {order.confirmationEmail ? (
+                <>
+                  A confirmation is on its way to{" "}
+                  <span className="font-medium text-ink">{order.email}</span>.{" "}
+                </>
+              ) : null}
               Our team will confirm the details with you by phone or WhatsApp
               {order.phone ? (
                 <>
