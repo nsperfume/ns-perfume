@@ -30,6 +30,7 @@ import { TransferDetails } from "@/components/commerce/transfer-details";
 import { PayableAmount } from "@/components/commerce/price";
 import { Logo } from "@/components/brand/logo";
 import { siteConfig } from "@/data/site";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 
 type Step = "information" | "shipping" | "payment";
 
@@ -375,9 +376,7 @@ export function CheckoutClient() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-canvas text-base text-taupe">
-        Loading checkout…
-      </div>
+      <BrandLoaderBlock className="min-h-dvh bg-canvas" label="Loading checkout" />
     );
   }
 

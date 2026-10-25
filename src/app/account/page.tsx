@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import AccountClient from "./account-client";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 
 export const metadata: Metadata = {
   title: "Account",
@@ -16,11 +17,7 @@ export default function AccountPage() {
       <h1 className="sr-only">Your NS Perfume account</h1>
       <Suspense
         fallback={
-          <section className="bg-canvas section-y">
-            <div className="container-ns max-w-lg">
-              <p className="text-body text-taupe">Loading your account…</p>
-            </div>
-          </section>
+          <BrandLoaderBlock label="Loading your account" />
         }
       >
         <AccountClient />

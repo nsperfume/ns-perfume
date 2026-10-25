@@ -10,6 +10,7 @@ import { useCurrency } from "@/context/currency";
 import { useCustomer } from "@/context/customer";
 import { useUi } from "@/context/ui";
 import { cn } from "@/lib/cn";
+import { BrandLoader, BrandLoaderBlock } from "@/components/brand/brand-loader";
 
 type OrderLine = {
   productHandle: string;
@@ -473,7 +474,9 @@ function ProfilePanel() {
           </div>
 
           {loadingOrders ? (
-            <p className="text-body text-taupe">Loading orders…</p>
+            <div className="flex justify-center py-10">
+              <BrandLoader size={64} label="Loading orders" />
+            </div>
           ) : null}
 
           {!loadingOrders && !orders.length ? (
@@ -567,9 +570,7 @@ export default function AccountPage() {
   return (
     <section className="bg-canvas section-y">
       {loading ? (
-        <div className="container-ns max-w-lg">
-          <p className="text-body text-taupe">Loading your account…</p>
-        </div>
+        <BrandLoaderBlock label="Loading your account" />
       ) : user ? (
         <ProfilePanel />
       ) : (

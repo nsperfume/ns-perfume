@@ -4,6 +4,7 @@ import { SearchPageClient } from "@/components/search/search-page-client";
 import { PageHero } from "@/components/layout/page-hero";
 import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 
 export const metadata: Metadata = {
   title: "Search perfume by note or name",
@@ -24,7 +25,7 @@ export default function SearchRoute() {
       />
       <Suspense
         fallback={
-          <div className="container-ns section-y text-taupe">Loading search…</div>
+          <BrandLoaderBlock label="Loading search" />
         }
       >
         <SearchPageClient />

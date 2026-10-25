@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/commerce/product-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { StoreProduct } from "@/lib/mappers";
+import { BrandLoader } from "@/components/brand/brand-loader";
 
 type CatalogStatus = "loading" | "ready" | "error";
 
@@ -92,9 +93,9 @@ export function SearchPageClient() {
         </form>
 
         {hasQuery && status === "loading" ? (
-          <p className="mb-24 text-body text-taupe" role="status">
-            Searching the line…
-          </p>
+          <div className="mb-24 flex justify-center py-8">
+            <BrandLoader size={72} label="Searching" caption="Searching the collection" />
+          </div>
         ) : null}
 
         {hasQuery && status === "error" ? (

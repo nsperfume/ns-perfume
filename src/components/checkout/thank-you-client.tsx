@@ -14,6 +14,7 @@ import { PayableAmount } from "@/components/commerce/price";
 import { Logo } from "@/components/brand/logo";
 import { siteConfig } from "@/data/site";
 import { Button } from "@/components/ui/button";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 
 const paymentLabels: Record<PaymentMethodId, string> = {
   cod: "Cash on delivery (COD)",
@@ -38,9 +39,7 @@ export function ThankYouClient() {
 
   if (!ready) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-canvas text-base text-taupe">
-        Loading…
-      </div>
+      <BrandLoaderBlock className="min-h-dvh bg-canvas" label="Loading your order" />
     );
   }
 

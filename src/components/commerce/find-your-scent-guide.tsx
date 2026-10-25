@@ -13,6 +13,7 @@ import {
 } from "@/lib/scent-guide";
 import type { StoreProduct } from "@/lib/mappers";
 import { cn } from "@/lib/cn";
+import { BrandLoader } from "@/components/brand/brand-loader";
 
 export function FindYourScentGuide() {
   const [catalog, setCatalog] = useState<StoreProduct[]>([]);
@@ -190,7 +191,9 @@ export function FindYourScentGuide() {
             </p>
 
             {loading ? (
-              <p className="mt-8 text-body text-taupe">Loading the line…</p>
+              <div className="mt-8 flex justify-center">
+                <BrandLoader size={72} label="Finding your matches" />
+              </div>
             ) : matches.length === 0 ? (
               <p className="mt-8 text-body text-taupe">
                 No bottles matched closely enough. Soften a filter by starting
