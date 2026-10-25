@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
 import { TestimonialModel } from "@/models/Testimonial";
+import { testimonialSchema, validationError } from "@/lib/validation/catalog";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -11,9 +12,11 @@ export async function PUT(req: Request, ctx: Ctx) {
     if (!admin) return jsonError("Unauthorized", 401);
     await connectDB();
     const { id } = await ctx.params;
-    const body = await req.json();
-    const doc = await TestimonialModel.findByIdAndUpdate(id, body, {
-      new: true,
+    const parsed = testimonialSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return validationError(parsed.error);
+    const doc = await TestimonialModel.findByIdAndUpdate(id, { $set: parsed.data }, {
+      returnDocument: "after",
+      runValidators: true,
     }).lean();
     if (!doc) return jsonError("Not found", 404);
     return jsonOk(doc);

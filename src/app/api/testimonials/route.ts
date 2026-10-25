@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth";
 import { TestimonialModel } from "@/models/Testimonial";
+import { testimonialSchema, validationError } from "@/lib/validation/catalog";
 
 export async function GET(req: Request) {
   try {
@@ -25,8 +26,11 @@ export async function POST(req: Request) {
     const admin = await requireAdmin();
     if (!admin) return jsonError("Unauthorized", 401);
     await connectDB();
-    const body = await req.json();
-    const created = await TestimonialModel.create(body);
+    const parsed = testimonialSchema
+      .required({ author: true, quote: true })
+      .safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return validationError(parsed.error);
+    const created = await TestimonialModel.create(parsed.data);
     return jsonOk(created, { status: 201 });
   } catch (e) {
     console.error(e);

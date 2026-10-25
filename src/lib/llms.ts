@@ -25,6 +25,8 @@ function clean(value: string) {
 }
 
 const rs = (n: number) => `Rs ${Math.round(n).toLocaleString("en-US")}`;
+const sentence = (v: string) => clean(v).replace(/[.\s]+$/, "");
+const titleCase = (v: string) => v.charAt(0).toUpperCase() + v.slice(1);
 
 function priceRange(p: StoreProduct) {
   const prices = p.prices.map((x) => x.price).filter((n) => n > 0);
@@ -51,7 +53,7 @@ export async function buildLlmsTxt() {
     "## Fragrances",
     ...products.map(
       (p) =>
-        `- [${p.name} ${CONCENTRATION[p.concentration]}](${base}/products/${p.handle}): ${clean(p.descriptor)}. ${p.family}, ${p.prices.map((x) => `${x.ml} ml`).join(" / ")}, ${priceRange(p)}.`,
+        `- [${p.name} ${CONCENTRATION[p.concentration]}](${base}/products/${p.handle}): ${sentence(p.descriptor)}. ${titleCase(p.family)}, ${p.prices.map((x) => `${x.ml} ml`).join(" / ")}, ${priceRange(p)}.`,
     ),
     "",
     "## Collections",
@@ -93,7 +95,7 @@ export async function buildLlmsFullTxt() {
       `## ${p.name} (${CONCENTRATION[p.concentration]})`,
       "",
       `URL: ${base}/products/${p.handle}`,
-      `Family: ${p.family}. For: ${p.gender === "unisex" ? "everyone" : p.gender === "her" ? "her" : "him"}.`,
+      `Family: ${titleCase(p.family)}. For: ${p.gender === "unisex" ? "everyone" : p.gender === "her" ? "her" : "him"}.`,
       `Sizes and prices: ${p.prices.map((x) => `${x.ml} ml ${rs(x.price)}`).join(", ")}. ${p.inStock ? "In stock." : "Currently out of stock."}`,
       `Top notes: ${p.topNotes.join(", ") || "not listed"}.`,
       `Heart notes: ${p.heartNotes.join(", ") || "not listed"}.`,
@@ -101,7 +103,7 @@ export async function buildLlmsFullTxt() {
       `Sillage ${p.sillage}/5, longevity ${p.longevity}/5.`,
       p.reviewCount ? `Rated ${p.rating.toFixed(1)}/5 from ${p.reviewCount} reviews.` : "",
       "",
-      clean(p.descriptor) ? `${clean(p.descriptor)}.` : "",
+      sentence(p.descriptor) ? `${sentence(p.descriptor)}.` : "",
       clean(p.description),
       p.story ? `Story: ${clean(p.story)}` : "",
       p.howToWear ? `How to wear: ${clean(p.howToWear)}` : "",

@@ -3,6 +3,7 @@ import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth";
 import { mapProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
+import { isDuplicateKey, productCreateSchema, validationError } from "@/lib/validation/catalog";
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -52,13 +53,16 @@ export async function POST(req: Request) {
     const admin = await requireAdmin();
     if (!admin) return jsonError("Unauthorized", 401);
     await connectDB();
-    const body = await req.json();
-    if (!body.handle || !body.name) {
-      return jsonError("handle and name are required");
-    }
-    const created = await ProductModel.create(body);
+    const parsed = productCreateSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return validationError(parsed.error);
+    const created = await ProductModel.create(parsed.data);
     return jsonOk(mapProduct(created.toObject()), { status: 201 });
   } catch (e) {
+    if (isDuplicateKey(e)) {
+      return jsonError("Another product already uses this URL. Change the name or URL.", 409, {
+        fieldErrors: { handle: "Already in use" },
+      });
+    }
     console.error(e);
     return jsonError("Failed to create product", 500);
   }

@@ -3,6 +3,7 @@ import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
 import { mapProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
+import { isDuplicateKey, productUpdateSchema, validationError } from "@/lib/validation/catalog";
 
 type Ctx = { params: Promise<{ handle: string }> };
 
@@ -29,14 +30,30 @@ export async function PUT(req: Request, ctx: Ctx) {
     if (!admin) return jsonError("Unauthorized", 401);
     await connectDB();
     const { handle } = await ctx.params;
-    const body = await req.json();
-    const doc = await ProductModel.findOneAndUpdate({ handle }, body, {
-      new: true,
+    const parsed = productUpdateSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return validationError(parsed.error);
+    const update = parsed.data;
+
+    const current = await ProductModel.findOne({ handle }).select("status imagePrimary").lean<{ status?: string; imagePrimary?: string }>();
+    if (!current) return jsonError("Product not found", 404);
+    const status = update.status ?? current.status;
+    const image = update.imagePrimary ?? current.imagePrimary;
+    if (status === "active" && !image) {
+      return jsonError("Add a main image before publishing", 400, { fieldErrors: { imagePrimary: "Add a main image before publishing" } });
+    }
+
+    const doc = await ProductModel.findOneAndUpdate({ handle }, { $set: update }, {
+      returnDocument: "after",
       runValidators: true,
     }).lean();
     if (!doc) return jsonError("Product not found", 404);
     return jsonOk(mapProduct(doc));
   } catch (e) {
+    if (isDuplicateKey(e)) {
+      return jsonError("Another product already uses this URL. Change the name or URL.", 409, {
+        fieldErrors: { handle: "Already in use" },
+      });
+    }
     console.error(e);
     return jsonError("Failed to update product", 500);
   }

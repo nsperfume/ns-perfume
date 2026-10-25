@@ -21,12 +21,12 @@ const fontDir = path.join(process.cwd(), "src/lib/invoice/fonts");
 Font.register({
   family: "Manrope",
   fonts: [
-    { src: path.join(fontDir, "manrope-latin-400-normal.woff"), fontWeight: 400 },
-    { src: path.join(fontDir, "manrope-latin-600-normal.woff"), fontWeight: 600 },
+    { src: path.join(fontDir, "manrope-latin-400-normal.ttf"), fontWeight: 400 },
+    { src: path.join(fontDir, "manrope-latin-600-normal.ttf"), fontWeight: 600 },
   ],
 });
-Font.register({ family: "Cormorant", src: path.join(fontDir, "cormorant-garamond-latin-600-normal.woff"), fontWeight: 600 });
-Font.register({ family: "PlexMono", src: path.join(fontDir, "ibm-plex-mono-latin-500-normal.woff"), fontWeight: 500 });
+Font.register({ family: "Cormorant", src: path.join(fontDir, "cormorant-garamond-latin-600-normal.ttf"), fontWeight: 600 });
+Font.register({ family: "PlexMono", src: path.join(fontDir, "ibm-plex-mono-latin-500-normal.ttf"), fontWeight: 500 });
 Font.registerHyphenationCallback((word) => [word]);
 
 const C = { ink: "#111111", text: "#3A3A3A", muted: "#6B6B6B", line: "#E8E0D0", soft: "#FAF7F1", brass: "#A9873C" };
@@ -121,7 +121,7 @@ export function InvoiceDocument({ order: o }: { order: OrderEmailData }) {
             </View>
             <View style={s.metaRow}>
               <Text style={s.metaLabel}>Date</Text>
-              <Text style={s.metaValue}>{formatDate(o.createdAt)}</Text>
+              <Text style={[s.metaValue, { fontFamily: "Manrope" }]}>{formatDate(o.createdAt)}</Text>
             </View>
             <View style={s.metaRow}>
               <Text style={s.metaLabel}>Payment</Text>
