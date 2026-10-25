@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useRouter } from "next/navigation";
 import slugify from "slugify";
 import { z } from "zod";
@@ -18,10 +19,13 @@ import {
   type SearchableOption,
 } from "@/components/admin/searchable-select";
 import {
+  AdminActionDivider,
   AdminEmptyState,
   AdminFilterChips,
+  AdminIconAction,
   AdminNotice,
   AdminPageHeader,
+  AdminRowActions,
   AdminSearchInput,
   AdminStatusBadge,
   AdminTable,
@@ -146,6 +150,7 @@ export default function AdminCollectionsPage() {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [rowDelete, setRowDelete] = useState<Collection | null>(null);
   const schema = editing ? editSchema : createSchema;
   const v = useFormValidation(schema);
 
@@ -362,6 +367,29 @@ export default function AdminCollectionsPage() {
     }
   }
 
+  async function deleteFromList() {
+    if (!rowDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/collections/${encodeURIComponent(rowDelete.handle)}`,
+        { method: "DELETE" },
+      );
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        toast.error(json.error || "Could not delete collection");
+        return;
+      }
+      toast.success(`Deleted ${rowDelete.title}`);
+      setRowDelete(null);
+      load();
+    } catch {
+      toast.error("Network error. The collection was not deleted.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   async function confirmDelete() {
     if (!editing) return;
     setDeleting(true);
@@ -513,11 +541,11 @@ export default function AdminCollectionsPage() {
                             </p>
                           ) : null}
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="text-admin-muted! hover:text-admin-danger!"
-                          aria-label={`Remove ${p?.name || h}`}
+                        <AdminIconAction
+                          icon="delete"
+                          tone="danger"
+                          label="Remove from collection"
+                          ariaLabel={`Remove ${p?.name || h} from this collection`}
                           onClick={() =>
                             update({
                               productHandles: form.productHandles.filter(
@@ -525,9 +553,7 @@ export default function AdminCollectionsPage() {
                               ),
                             })
                           }
-                        >
-                          Remove
-                        </Button>
+                        />
                       </li>
                     );
                   })}
@@ -717,6 +743,7 @@ export default function AdminCollectionsPage() {
               Products
             </AdminTh>
             <AdminTh className="w-32">Status</AdminTh>
+            <AdminTh className="w-12 text-right sm:w-40">Actions</AdminTh>
           </tr>
         </thead>
         <tbody>
@@ -724,8 +751,12 @@ export default function AdminCollectionsPage() {
             <tr
               key={c.handle}
               tabIndex={0}
-              onClick={() => openEditor(c)}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("[data-row-ignore]")) return;
+                openEditor(c);
+              }}
               onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   openEditor(c);
@@ -762,15 +793,45 @@ export default function AdminCollectionsPage() {
               <AdminTd>
                 <AdminStatusBadge status={c.status || "active"} />
               </AdminTd>
+              <AdminTd className="py-2">
+                <AdminRowActions>
+                  {(c.status || "active") === "active" ? (
+                    <AdminIconAction
+                      icon="view"
+                      label="View in store"
+                      ariaLabel={`View ${c.title} in the store`}
+                      href={`/collections/${encodeURIComponent(c.handle)}`}
+                      external
+                      className="max-sm:hidden"
+                    />
+                  ) : null}
+                  <AdminIconAction
+                    icon="edit"
+                    label="Edit collection"
+                    ariaLabel={`Edit ${c.title}`}
+                    onClick={() => openEditor(c)}
+                  />
+                  {canDelete ? (
+                    <span className="hidden items-center sm:flex">
+                      <AdminActionDivider />
+                      <AdminIconAction
+                        icon="delete"
+                        tone="danger"
+                        label="Delete collection"
+                        ariaLabel={`Delete ${c.title}`}
+                        onClick={() => setRowDelete(c)}
+                      />
+                    </span>
+                  ) : null}
+                </AdminRowActions>
+              </AdminTd>
             </tr>
           ))}
           {!visible.length ? (
             <tr>
-              <td colSpan={3}>
+              <td colSpan={4}>
                 {loading ? (
-                  <p className="px-6 py-14 text-center text-admin-muted">
-                    Loading collections…
-                  </p>
+                  <BrandLoaderBlock className="min-h-[40vh]" label="Loading collections" />
                 ) : items.length ? (
                   <AdminEmptyState
                     title="No collections match"
@@ -805,6 +866,23 @@ export default function AdminCollectionsPage() {
           ) : null}
         </tbody>
       </AdminTable>
+
+      <ConfirmDialog
+        open={rowDelete !== null}
+        onOpenChange={(o) => {
+          if (!o && !deleting) setRowDelete(null);
+        }}
+        title="Delete this collection?"
+        description={
+          rowDelete
+            ? `${rowDelete.title} will be removed from the shop. The products stay in your catalog.`
+            : "This collection will be removed."
+        }
+        confirmLabel="Delete collection"
+        cancelLabel="Keep collection"
+        loading={deleting}
+        onConfirm={deleteFromList}
+      />
     </>,
   );
 }

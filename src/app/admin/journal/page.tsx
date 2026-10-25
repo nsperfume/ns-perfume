@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useRouter } from "next/navigation";
 import slugify from "slugify";
 import { z } from "zod";
@@ -20,10 +21,13 @@ import {
   adminFieldClass,
 } from "@/components/admin/form-section";
 import {
+  AdminActionDivider,
   AdminEmptyState,
   AdminFilterChips,
+  AdminIconAction,
   AdminNotice,
   AdminPageHeader,
+  AdminRowActions,
   AdminSearchInput,
   AdminStatusBadge,
   AdminTable,
@@ -179,6 +183,7 @@ export default function AdminJournalPage() {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [rowDelete, setRowDelete] = useState<JournalRow | null>(null);
   const v = useFormValidation(journalSchema);
 
   const canDelete = Boolean(
@@ -407,6 +412,26 @@ export default function AdminJournalPage() {
       toast.error("Network error. The post was not saved.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteFromList() {
+    if (!rowDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/journal/${rowDelete.id}`, { method: "DELETE" });
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        toast.error(json.error || "Could not delete the post");
+        return;
+      }
+      toast.success("Post deleted");
+      setRowDelete(null);
+      load();
+    } catch {
+      toast.error("Network error. The post was not deleted.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -735,6 +760,7 @@ export default function AdminJournalPage() {
             <AdminTh className="hidden md:table-cell">Category</AdminTh>
             <AdminTh className="hidden sm:table-cell">Date</AdminTh>
             <AdminTh className="w-32">Status</AdminTh>
+            <AdminTh className="w-12 text-right sm:w-40">Actions</AdminTh>
           </tr>
         </thead>
         <tbody>
@@ -742,8 +768,12 @@ export default function AdminJournalPage() {
             <tr
               key={post.id}
               tabIndex={0}
-              onClick={() => openEditor(post)}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("[data-row-ignore]")) return;
+                openEditor(post);
+              }}
               onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   openEditor(post);
@@ -785,15 +815,45 @@ export default function AdminJournalPage() {
               <AdminTd>
                 <AdminStatusBadge status={post.status} />
               </AdminTd>
+              <AdminTd className="py-2">
+                <AdminRowActions>
+                  {post.status === "published" ? (
+                    <AdminIconAction
+                      icon="view"
+                      label="View on site"
+                      ariaLabel={`View ${post.title} on the site`}
+                      href={`/journal/${encodeURIComponent(post.slug)}`}
+                      external
+                      className="max-sm:hidden"
+                    />
+                  ) : null}
+                  <AdminIconAction
+                    icon="edit"
+                    label="Edit post"
+                    ariaLabel={`Edit ${post.title}`}
+                    onClick={() => openEditor(post)}
+                  />
+                  {canDelete ? (
+                    <span className="hidden items-center sm:flex">
+                      <AdminActionDivider />
+                      <AdminIconAction
+                        icon="delete"
+                        tone="danger"
+                        label="Delete post"
+                        ariaLabel={`Delete ${post.title}`}
+                        onClick={() => setRowDelete(post)}
+                      />
+                    </span>
+                  ) : null}
+                </AdminRowActions>
+              </AdminTd>
             </tr>
           ))}
           {!visible.length ? (
             <tr>
-              <td colSpan={4}>
+              <td colSpan={5}>
                 {loading ? (
-                  <p className="px-6 py-14 text-center text-admin-muted">
-                    Loading posts…
-                  </p>
+                  <BrandLoaderBlock className="min-h-[40vh]" label="Loading posts" />
                 ) : items.length ? (
                   <AdminEmptyState
                     title="No posts match"
@@ -828,6 +888,23 @@ export default function AdminJournalPage() {
           ) : null}
         </tbody>
       </AdminTable>
+
+      <ConfirmDialog
+        open={rowDelete !== null}
+        onOpenChange={(o) => {
+          if (!o && !deleting) setRowDelete(null);
+        }}
+        title="Delete this post?"
+        description={
+          rowDelete
+            ? `${rowDelete.title} will be removed from the journal. This cannot be undone.`
+            : "This post will be removed."
+        }
+        confirmLabel="Delete post"
+        cancelLabel="Keep post"
+        loading={deleting}
+        onConfirm={deleteFromList}
+      />
     </>,
   );
 }

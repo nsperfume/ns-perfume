@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { BrandLoader } from "@/components/brand/brand-loader";
 import { z } from "zod";
 import {
+  AdminActionDivider,
   AdminCard,
   AdminEmptyState,
+  AdminIcon,
+  AdminIconAction,
   AdminModal,
+  AdminRowActions,
   AdminStatusBadge,
   AdminTable,
   AdminTd,
@@ -496,6 +501,15 @@ type Props = {
   canDelete: boolean;
 };
 
+async function copyCode(code: string) {
+  try {
+    await navigator.clipboard.writeText(code);
+    toast.success(`Copied ${code}`);
+  } catch {
+    toast.error("Could not copy. Select the code and copy it instead.");
+  }
+}
+
 export function CouponManager({ canDelete }: Props) {
   const [coupons, setCoupons] = useState<AdminCoupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -608,9 +622,7 @@ export function CouponManager({ canDelete }: Props) {
             }
           />
         ) : loading && coupons.length === 0 ? (
-          <p className="px-6 py-10 text-center text-[0.9375rem] text-admin-muted">
-            Loading coupons…
-          </p>
+          <div className="flex justify-center px-6 py-10"><BrandLoader size={56} label="Loading coupons" /></div>
         ) : coupons.length === 0 ? (
           <AdminEmptyState
             title="No coupons yet"
@@ -656,24 +668,36 @@ export function CouponManager({ canDelete }: Props) {
                     <span>{c.expiresAt ? `Ends ${endsLabel(c)}` : "No end date"}</span>
                     {statusBadges(c)}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => copyCode(c.code)}
+                    >
+                      <AdminIcon name="copy" size={16} />
+                      Copy code
+                    </Button>
                     <Button
                       variant="secondary"
                       size="sm"
                       className="flex-1"
                       onClick={() => setPosterCoupon(c)}
                     >
+                      <AdminIcon name="poster" size={16} />
                       Poster
                     </Button>
                     {canDelete ? (
-                      <Button
-                        variant="danger-outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => setDeleteTarget(c)}
-                      >
-                        Delete
-                      </Button>
+                      <>
+                        <AdminActionDivider />
+                        <AdminIconAction
+                          icon="delete"
+                          tone="danger"
+                          label="Delete coupon"
+                          ariaLabel={`Delete coupon ${c.code}`}
+                          onClick={() => setDeleteTarget(c)}
+                        />
+                      </>
                     ) : null}
                   </div>
                 </li>
@@ -688,9 +712,7 @@ export function CouponManager({ canDelete }: Props) {
                   <AdminTh numeric>Used</AdminTh>
                   <AdminTh>Ends</AdminTh>
                   <AdminTh>Active</AdminTh>
-                  <AdminTh className="text-right">
-                    <span className="sr-only">Actions</span>
-                  </AdminTh>
+                  <AdminTh className="w-36 text-right">Actions</AdminTh>
                 </tr>
               </thead>
               <tbody>
@@ -732,27 +754,33 @@ export function CouponManager({ canDelete }: Props) {
                         onChange={(next) => onToggle(c, next)}
                       />
                     </AdminTd>
-                    <AdminTd className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="w-auto!"
+                    <AdminTd className="py-2">
+                      <AdminRowActions>
+                        <AdminIconAction
+                          icon="copy"
+                          label="Copy code"
+                          ariaLabel={`Copy coupon code ${c.code}`}
+                          onClick={() => copyCode(c.code)}
+                        />
+                        <AdminIconAction
+                          icon="poster"
+                          label="Make a poster"
+                          ariaLabel={`Make a poster for ${c.code}`}
                           onClick={() => setPosterCoupon(c)}
-                        >
-                          Poster
-                        </Button>
+                        />
                         {canDelete ? (
-                          <Button
-                            variant="danger-outline"
-                            size="sm"
-                            className="w-auto!"
-                            onClick={() => setDeleteTarget(c)}
-                          >
-                            Delete
-                          </Button>
+                          <>
+                            <AdminActionDivider />
+                            <AdminIconAction
+                              icon="delete"
+                              tone="danger"
+                              label="Delete coupon"
+                              ariaLabel={`Delete coupon ${c.code}`}
+                              onClick={() => setDeleteTarget(c)}
+                            />
+                          </>
                         ) : null}
-                      </div>
+                      </AdminRowActions>
                     </AdminTd>
                   </tr>
                 ))}

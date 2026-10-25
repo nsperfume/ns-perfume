@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -8,8 +9,11 @@ import {
   AdminCard,
   AdminEmptyState,
   AdminFilterChips,
+  AdminIcon,
+  AdminIconAction,
   AdminModal,
   AdminPageHeader,
+  AdminRowActions,
   AdminSearchInput,
   AdminStatusBadge,
   readAdminJson,
@@ -234,20 +238,23 @@ function ContactsInbox() {
 
       <AdminCard>
         {loading && !rows.length ? (
-          <p className="px-6 py-14 text-center text-admin-muted">Loading messages…</p>
+          <BrandLoaderBlock className="min-h-[40vh]" label="Loading messages" />
         ) : empty ? (
           emptyState
         ) : (
           <ul className="divide-y divide-admin-line">
             {visible.map((m) => (
-                <li key={m.id}>
+                <li
+                  key={m.id}
+                  className={cn(
+                    "flex flex-col transition-colors hover:bg-admin-soft-2 md:flex-row md:items-center",
+                    m.status === "new" && "bg-admin-soft-2",
+                  )}
+                >
                   <button
                     type="button"
                     onClick={() => openMessage(m)}
-                    className={cn(
-                      "grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 px-5 py-4 text-left transition-colors hover:bg-admin-soft-2 sm:px-6 md:grid-cols-[14rem_minmax(0,1fr)_auto] md:items-center",
-                      m.status === "new" && "bg-admin-soft-2",
-                    )}
+                    className="grid min-w-0 flex-1 cursor-pointer grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 px-5 pb-2 pt-4 text-left sm:px-6 md:grid-cols-[14rem_minmax(0,1fr)_auto] md:items-center md:py-4 md:pr-2"
                   >
                     <span className="min-w-0">
                       <span
@@ -277,6 +284,20 @@ function ContactsInbox() {
                       </span>
                     </span>
                   </button>
+                  <AdminRowActions className="px-3 pb-2 md:pb-0 md:pr-4">
+                    <AdminIconAction
+                      icon="view"
+                      label="Open message"
+                      ariaLabel={`Open message from ${m.name}`}
+                      onClick={() => openMessage(m)}
+                    />
+                    <AdminIconAction
+                      icon="reply"
+                      label="Reply by email"
+                      ariaLabel={`Reply to ${m.name} by email`}
+                      href={`mailto:${m.email}?subject=${encodeURIComponent(`Re: ${m.topic || "Your message"}`)}`}
+                    />
+                  </AdminRowActions>
                 </li>
             ))}
           </ul>
@@ -335,8 +356,9 @@ function ContactsInbox() {
               )}
               <a
                 href={`mailto:${detail.email}?subject=${encodeURIComponent(`Re: ${detail.topic || "Your message"}`)}`}
-                className="inline-flex h-11 items-center justify-center rounded-md border border-admin-ink bg-admin-ink px-5 text-sm font-semibold text-admin-paper transition-colors hover:border-brass hover:bg-brass hover:text-white"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-admin-ink bg-admin-ink px-5 text-sm font-semibold text-admin-paper transition-colors hover:border-brass hover:bg-brass hover:text-white"
               >
+                <AdminIcon name="reply" size={17} />
                 Reply by email
               </a>
             </div>
@@ -351,9 +373,7 @@ export default function AdminContactsPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 text-base text-admin-muted">
-          Loading messages…
-        </div>
+        <BrandLoaderBlock className="min-h-[40vh]" label="Loading messages" />
       }
     >
       <ContactsInbox />

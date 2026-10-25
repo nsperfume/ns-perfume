@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import slugify from "slugify";
 import { z } from "zod";
-import { Trash2Icon, XIcon } from "@animateicons/react/lucide";
+import { XIcon } from "@animateicons/react/lucide";
 import type { StoreProduct } from "@/lib/mappers";
 import { AdminImageField } from "@/components/admin/image-field";
 import { AdminRichTextEditor } from "@/components/admin/rich-text-editor";
@@ -14,6 +14,7 @@ import {
 } from "@/components/admin/form-section";
 import { Select } from "@/components/admin/select";
 import { Button } from "@/components/admin/button";
+import { AdminIconAction } from "@/components/admin/ui";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { toast } from "@/components/admin/toast";
 import {
@@ -1008,25 +1009,20 @@ export function ProductForm({
                     <AdminFieldError message={err[`prices.${i}.compareAt`]} />
                   </div>
                   <div className="col-span-2 flex justify-end sm:col-span-1">
-                    <button
-                      type="button"
+                    <AdminIconAction
+                      icon="delete"
+                      tone="danger"
+                      label="Remove size"
+                      ariaLabel={`Remove size ${i + 1}`}
+                      disabled={form.prices.length <= 1}
+                      className="h-11! w-11!"
                       onClick={() =>
                         setField(
                           "prices",
                           form.prices.filter((_, j) => j !== i),
                         )
                       }
-                      disabled={form.prices.length <= 1}
-                      aria-label={`Remove size ${i + 1}`}
-                      title={
-                        form.prices.length <= 1
-                          ? "A product needs at least one size"
-                          : "Remove size"
-                      }
-                      className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-md text-admin-muted transition-colors hover:bg-admin-soft hover:text-admin-danger disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-admin-muted"
-                    >
-                      <Trash2Icon size={18} color="currentColor" isAnimated={false} />
-                    </button>
+                    />
                   </div>
                 </div>
               ))}

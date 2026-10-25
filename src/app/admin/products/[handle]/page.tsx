@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useParams, useRouter } from "next/navigation";
-import { ExternalLinkIcon } from "@animateicons/react/lucide";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { ProductForm } from "@/components/admin/product-form";
 import {
+  AdminIcon,
   AdminCard,
   AdminEmptyState,
   AdminPageHeader,
@@ -76,14 +77,14 @@ export default function AdminProductEditPage() {
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center gap-2 rounded-md border border-admin-ink bg-admin-paper px-5 text-sm font-semibold text-admin-ink transition-colors hover:border-brass"
             >
+              <AdminIcon name="view" size={17} />
               View in store
-              <ExternalLinkIcon size={16} color="currentColor" isAnimated={false} />
             </a>
           ) : undefined
         }
       />
       {loading ? (
-        <p className="text-[0.9375rem] text-admin-muted">Loading product…</p>
+        <BrandLoaderBlock className="min-h-[40vh]" label="Loading product" />
       ) : !isNew && (loadError || !product) ? (
         <AdminCard>
           <AdminEmptyState

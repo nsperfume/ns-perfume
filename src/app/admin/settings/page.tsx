@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BrandLoader } from "@/components/brand/brand-loader";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { MoonIcon, SunIcon } from "@animateicons/react/lucide";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { CouponManager } from "@/components/admin/coupon-manager";
+import { CheckoutSettings } from "@/components/admin/checkout-settings";
+import type { CheckoutConfig } from "@/lib/checkout-config";
 import {
+  AdminActionDivider,
+  AdminIconAction,
+  AdminRowActions,
   AdminCard,
   AdminModal,
   AdminPageHeader,
@@ -70,6 +76,7 @@ const EMPTY_TEAM: TeamForm = { name: "", email: "", password: "" };
 
 const SECTIONS = [
   { id: "announcement", label: "Announcement bar" },
+  { id: "charges", label: "Shipping and charges" },
   { id: "coupons", label: "Coupons" },
   { id: "team", label: "Team", superOnly: true },
   { id: "currency", label: "Currency" },
@@ -360,7 +367,13 @@ export default function AdminSettingsPage() {
     (announcement.topbarText !== savedAnnouncement.topbarText ||
       announcement.topbarEnabled !== savedAnnouncement.topbarEnabled);
 
-  const leaveGuard = useUnsavedChangesGuard(announcementDirty && !savingTopbar);
+  const [checkout, setCheckout] = useState<CheckoutConfig | null>(null);
+  const [chargesDirty, setChargesDirty] = useState(false);
+  const onChargesDirty = useCallback((d: boolean) => setChargesDirty(d), []);
+
+  const leaveGuard = useUnsavedChangesGuard(
+    (announcementDirty && !savingTopbar) || chargesDirty,
+  );
 
   function loadTeam() {
     setTeamLoading(true);
@@ -394,6 +407,7 @@ export default function AdminSettingsPage() {
           };
           setAnnouncement(next);
           setSavedAnnouncement(next);
+          if (j.data.checkout) setCheckout(j.data.checkout);
         }
       })
       .finally(() => setAnnouncementLoaded(true));
@@ -577,6 +591,10 @@ export default function AdminSettingsPage() {
             </AdminCard>
           </Section>
 
+          <Section id="charges">
+            <CheckoutSettings initial={checkout} onDirtyChange={onChargesDirty} />
+          </Section>
+
           <Section id="coupons">
             <CouponManager canDelete={isSuper} />
           </Section>
@@ -592,9 +610,7 @@ export default function AdminSettingsPage() {
                 }
               >
                 {teamLoading && team.length === 0 ? (
-                  <p className="px-6 py-10 text-center text-[0.9375rem] text-admin-muted">
-                    Loading team…
-                  </p>
+                  <div className="flex justify-center px-6 py-10"><BrandLoader size={56} label="Loading team" /></div>
                 ) : (
                   <ul className="divide-y divide-admin-line">
                     {team.map((m) => {
@@ -618,16 +634,26 @@ export default function AdminSettingsPage() {
                               label={owner ? "Owner" : "Admin"}
                               tone={owner ? "brass" : "neutral"}
                             />
-                            {!owner ? (
-                              <Button
-                                variant="danger-outline"
-                                size="sm"
-                                className="w-auto!"
-                                onClick={() => setRemoveTarget(m)}
-                              >
-                                Remove
-                              </Button>
-                            ) : null}
+                            <AdminRowActions>
+                              <AdminIconAction
+                                icon="email"
+                                label="Email"
+                                ariaLabel={`Email ${m.name || m.email}`}
+                                href={`mailto:${m.email}`}
+                              />
+                              {!owner ? (
+                                <>
+                                  <AdminActionDivider />
+                                  <AdminIconAction
+                                    icon="remove-user"
+                                    tone="danger"
+                                    label="Remove admin"
+                                    ariaLabel={`Remove ${m.name || m.email} from the team`}
+                                    onClick={() => setRemoveTarget(m)}
+                                  />
+                                </>
+                              ) : null}
+                            </AdminRowActions>
                           </div>
                         </li>
                       );
@@ -683,7 +709,7 @@ export default function AdminSettingsPage() {
                     ) : null}
                   </>
                 ) : (
-                  <p className="text-[0.8125rem] text-admin-muted">Loading rates…</p>
+                  <div className="flex justify-center px-6 py-10"><BrandLoader size={56} label="Loading rates" /></div>
                 )}
               </div>
             </AdminCard>

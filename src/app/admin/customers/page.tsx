@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   AdminEmptyState,
   AdminFilterChips,
+  AdminIconAction,
   AdminPageHeader,
+  AdminRowActions,
   AdminSearchInput,
   AdminStatusBadge,
   AdminTable,
@@ -14,6 +17,7 @@ import {
   AdminTh,
   formatPkr,
   useRowLink,
+  whatsappHref,
 } from "@/components/admin/ui";
 import { Button } from "@/components/admin/button";
 import { Select } from "@/components/admin/select";
@@ -37,6 +41,37 @@ function formatDate(iso: string | null) {
     month: "short",
     year: "numeric",
   });
+}
+
+/** View first, then the ways to reach the customer. */
+function CustomerActions({ row }: { row: Row }) {
+  const who = row.name || row.email;
+  const wa = whatsappHref(row.phone);
+  return (
+    <AdminRowActions>
+      <AdminIconAction
+        icon="view"
+        label="View customer"
+        ariaLabel={`View ${who}`}
+        href={`/admin/customers/${encodeURIComponent(row.email)}`}
+      />
+      {wa ? (
+        <AdminIconAction
+          icon="whatsapp"
+          label="WhatsApp"
+          ariaLabel={`WhatsApp ${who}`}
+          href={wa}
+          external
+        />
+      ) : null}
+      <AdminIconAction
+        icon="email"
+        label="Email"
+        ariaLabel={`Email ${who}`}
+        href={`mailto:${row.email}`}
+      />
+    </AdminRowActions>
+  );
 }
 
 export default function AdminCustomersPage() {
@@ -149,18 +184,19 @@ export default function AdminCustomersPage() {
       {/* Phones: cards */}
       <div className="md:hidden">
         {loading ? (
-          <p className="rounded-lg border border-admin-line bg-admin-paper px-4 py-12 text-center text-admin-muted">
-            Loading customers…
-          </p>
+          <BrandLoaderBlock className="min-h-[40vh]" label="Loading customers" />
         ) : empty ? (
           <div className="rounded-lg border border-admin-line bg-admin-paper">{emptyState}</div>
         ) : (
           <ul className="space-y-3">
             {visible.map((r) => (
-              <li key={r.email}>
+              <li
+                key={r.email}
+                className="rounded-lg border border-admin-line bg-admin-paper p-4 shadow-admin"
+              >
                 <Link
                   href={`/admin/customers/${encodeURIComponent(r.email)}`}
-                  className="block rounded-lg border border-admin-line bg-admin-paper p-4 shadow-admin"
+                  className="block"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -180,6 +216,9 @@ export default function AdminCustomersPage() {
                     {r.lastOrderAt ? ` · last ${formatDate(r.lastOrderAt)}` : ""}
                   </p>
                 </Link>
+                <div className="mt-3 border-t border-admin-line pt-2">
+                  <CustomerActions row={r} />
+                </div>
               </li>
             ))}
           </ul>
@@ -195,18 +234,17 @@ export default function AdminCustomersPage() {
             <AdminTh numeric>Total spent</AdminTh>
             <AdminTh>Last order</AdminTh>
             <AdminTh numeric>Messages</AdminTh>
+            <AdminTh className="w-36 text-right">Actions</AdminTh>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={6} className="px-4 py-14 text-center text-admin-muted">
-                Loading customers…
-              </td>
+              <td colSpan={7}><BrandLoaderBlock className="min-h-[40vh]" label="Loading customers" /></td>
             </tr>
           ) : empty ? (
             <tr>
-              <td colSpan={6}>{emptyState}</td>
+              <td colSpan={7}>{emptyState}</td>
             </tr>
           ) : (
             visible.map((r) => {
@@ -239,6 +277,9 @@ export default function AdminCustomersPage() {
                     {formatDate(r.lastOrderAt) || "No orders"}
                   </AdminTd>
                   <AdminTd numeric>{r.messageCount}</AdminTd>
+                  <AdminTd className="py-2">
+                    <CustomerActions row={r} />
+                  </AdminTd>
                 </tr>
               );
             })

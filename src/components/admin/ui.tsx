@@ -1,9 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronsLeftIcon, SearchIcon, XIcon } from "@animateicons/react/lucide";
+import {
+  ChevronsLeftIcon,
+  CopyIcon,
+  DownloadIcon,
+  ExternalLinkIcon,
+  EyeIcon,
+  EyeOffIcon,
+  ImageIcon,
+  MailIcon,
+  PencilIcon,
+  PhoneIcon,
+  ReplyIcon,
+  SearchIcon,
+  SendIcon,
+  Trash2Icon,
+  UploadIcon,
+  UserMinusIcon,
+  XIcon,
+} from "@animateicons/react/lucide";
+import { siWhatsapp } from "simple-icons";
 import { useRouter } from "next/navigation";
 import { useEffect, type MouseEvent, type ReactNode } from "react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
 
 /**
@@ -565,6 +585,259 @@ export function useRowLink() {
     },
     className: "cursor-pointer transition-colors hover:bg-admin-soft-2",
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* Actions: one icon set, one order, everywhere                         */
+/* View (eye) → main contextual action → Edit (pencil) → Delete (trash) */
+/* ------------------------------------------------------------------ */
+
+export type AdminIconName =
+  | "view"
+  | "edit"
+  | "delete"
+  | "download"
+  | "reply"
+  | "email"
+  | "call"
+  | "whatsapp"
+  | "publish"
+  | "hide"
+  | "external"
+  | "copy"
+  | "poster"
+  | "send"
+  | "upload"
+  | "remove-user";
+
+function BrandGlyph({ path, size }: { path: string; size: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      aria-hidden
+      className="shrink-0"
+    >
+      <path d={path} />
+    </svg>
+  );
+}
+
+/** The single icon map for admin actions (lucide, static; brands via simple-icons). */
+export function AdminIcon({
+  name,
+  size = 18,
+  className,
+}: {
+  name: AdminIconName;
+  size?: number;
+  className?: string;
+}) {
+  const p = { size, color: "currentColor", isAnimated: false, className: cn("shrink-0", className) };
+  switch (name) {
+    case "view":
+      return <EyeIcon {...p} />;
+    case "edit":
+      return <PencilIcon {...p} />;
+    case "delete":
+      return <Trash2Icon {...p} />;
+    case "download":
+      return <DownloadIcon {...p} />;
+    case "reply":
+      return <ReplyIcon {...p} />;
+    case "email":
+      return <MailIcon {...p} />;
+    case "call":
+      return <PhoneIcon {...p} />;
+    case "whatsapp":
+      return <BrandGlyph path={siWhatsapp.path} size={size - 1} />;
+    case "publish":
+      return <EyeIcon {...p} />;
+    case "hide":
+      return <EyeOffIcon {...p} />;
+    case "external":
+      return <ExternalLinkIcon {...p} />;
+    case "copy":
+      return <CopyIcon {...p} />;
+    case "poster":
+      return <ImageIcon {...p} />;
+    case "send":
+      return <SendIcon {...p} />;
+    case "upload":
+      return <UploadIcon {...p} />;
+    case "remove-user":
+      return <UserMinusIcon {...p} />;
+  }
+}
+
+const ICON_ACTION =
+  "inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-admin-muted outline-none transition-colors hover:bg-admin-soft hover:text-admin-ink focus-visible:ring-2 focus-visible:ring-brass/60 focus-visible:ring-offset-1 focus-visible:ring-offset-admin-paper disabled:cursor-not-allowed disabled:opacity-40";
+
+/**
+ * 40×40 icon action with a tooltip and aria-label. Use `href` for pages
+ * (Next Link), `download` for files, `external` for new tabs, or `onClick`.
+ * `tone="danger"` turns rosewood on hover only.
+ */
+export function AdminIconAction({
+  label,
+  ariaLabel,
+  icon,
+  href,
+  download,
+  external,
+  onClick,
+  tone = "neutral",
+  disabled,
+  className,
+}: {
+  /** Tooltip text (short, e.g. "View order") */
+  label: string;
+  /** Screen-reader text when it should name the record (defaults to label) */
+  ariaLabel?: string;
+  icon: AdminIconName;
+  href?: string;
+  download?: boolean;
+  external?: boolean;
+  onClick?: () => void;
+  tone?: "neutral" | "danger";
+  disabled?: boolean;
+  className?: string;
+}) {
+  const cls = cn(
+    ICON_ACTION,
+    tone === "danger" &&
+      "hover:bg-(--admin-tone-rose-bg) hover:text-admin-danger focus-visible:ring-admin-danger/50",
+    disabled && "pointer-events-none opacity-40",
+    className,
+  );
+  const glyph = <AdminIcon name={icon} />;
+  const a11y = ariaLabel ?? label;
+  const native =
+    href &&
+    (download ||
+      external ||
+      /^(mailto:|tel:|https?:|\/api\/)/.test(href));
+  const el = href ? (
+    native ? (
+      <a
+        href={href}
+        aria-label={a11y}
+        className={cls}
+        download={download || undefined}
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
+      >
+        {glyph}
+      </a>
+    ) : (
+      <Link href={href} aria-label={a11y} className={cls}>
+        {glyph}
+      </Link>
+    )
+  ) : (
+    <button
+      type="button"
+      aria-label={a11y}
+      className={cls}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {glyph}
+    </button>
+  );
+  return <Tooltip content={label}>{el}</Tooltip>;
+}
+
+/** Row action group: consistent spacing, never triggers the row click. */
+export function AdminRowActions({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      data-row-ignore
+      className={cn("flex items-center justify-end gap-0.5", className)}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Thin divider that sets destructive actions apart from the rest. */
+export function AdminActionDivider() {
+  return <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-admin-line" />;
+}
+
+/**
+ * wa.me number from a stored phone: digits only, leading 0 becomes 92,
+ * bare 10-digit mobiles (3xx…) get 92. Numbers typed with + are kept.
+ */
+export function whatsappNumber(phone?: string | null): string {
+  if (!phone) return "";
+  const hadPlus = phone.trim().startsWith("+");
+  let d = phone.replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  else if (!hadPlus && d.startsWith("0")) d = `92${d.slice(1)}`;
+  else if (!hadPlus && d.length === 10 && d.startsWith("3")) d = `92${d}`;
+  return d.length >= 10 ? d : "";
+}
+
+export function whatsappHref(phone?: string | null, text?: string): string {
+  const n = whatsappNumber(phone);
+  if (!n) return "";
+  return `https://wa.me/${n}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+}
+
+/**
+ * Labelled contact buttons for detail pages: WhatsApp, Call, Email.
+ * Each shows only when the phone or email exists.
+ */
+export function AdminContactActions({
+  phone,
+  email,
+  whatsappText,
+  emailSubject,
+  className,
+}: {
+  phone?: string | null;
+  email?: string | null;
+  whatsappText?: string;
+  emailSubject?: string;
+  className?: string;
+}) {
+  const wa = whatsappHref(phone, whatsappText);
+  const items: { key: string; href: string; label: string; icon: AdminIconName; external?: boolean }[] = [];
+  if (wa) items.push({ key: "wa", href: wa, label: "WhatsApp", icon: "whatsapp", external: true });
+  if (phone) items.push({ key: "tel", href: `tel:${phone.replace(/[^\d+]/g, "")}`, label: "Call", icon: "call" });
+  if (email)
+    items.push({
+      key: "mail",
+      href: `mailto:${email}${emailSubject ? `?subject=${encodeURIComponent(emailSubject)}` : ""}`,
+      label: "Email",
+      icon: "email",
+    });
+  if (!items.length) return null;
+  return (
+    <div className={cn("flex flex-wrap gap-2", className)}>
+      {items.map((it) => (
+        <a
+          key={it.key}
+          href={it.href}
+          target={it.external ? "_blank" : undefined}
+          rel={it.external ? "noopener noreferrer" : undefined}
+          className="inline-flex min-h-10 items-center gap-2 rounded-md border border-admin-line bg-admin-paper px-3.5 text-sm font-semibold text-admin-ink outline-none transition-colors hover:border-admin-ink focus-visible:ring-2 focus-visible:ring-brass/60"
+        >
+          <AdminIcon name={it.icon} size={17} className="text-admin-muted" />
+          {it.label}
+        </a>
+      ))}
+    </div>
+  );
 }
 
 /** Read `{ ok, error }` from an API response without throwing on non-JSON bodies. */

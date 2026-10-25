@@ -10,6 +10,7 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/admin/button";
+import { AdminIcon } from "@/components/admin/ui";
 import { AdminFieldError } from "@/components/admin/form-validation";
 import { toast } from "@/components/admin/toast";
 
@@ -290,6 +291,7 @@ export function AdminImageField({
               onClick={() => fileRef.current?.click()}
               className="w-auto! [&>span:last-child]:px-3!"
             >
+              <AdminIcon name="upload" size={16} />
               Replace
             </Button>
             {actions}
@@ -298,8 +300,9 @@ export function AdminImageField({
               variant="ghost"
               disabled={uploading}
               onClick={onRemoveSlot ?? clearImage}
-              className="ml-auto no-underline! text-admin-muted! hover:text-admin-danger!"
+              className="ml-auto no-underline! text-admin-muted! hover:bg-(--admin-tone-rose-bg)! hover:text-admin-danger!"
             >
+              <AdminIcon name="delete" size={16} />
               Remove
             </Button>
           </div>

@@ -9,6 +9,7 @@ import Underline from "@tiptap/extension-underline";
 import { AdminFieldLabel } from "@/components/admin/form-section";
 import { AdminFieldError } from "@/components/admin/form-validation";
 import { cn } from "@/lib/cn";
+import { Tooltip } from "@/components/ui/tooltip";
 import { sanitizeRichHtml } from "@/lib/rich-text";
 
 type Props = {
@@ -41,9 +42,9 @@ function ToolbarButton({
   children: ReactNode;
 }) {
   return (
+    <Tooltip content={label}>
     <button
       type="button"
-      title={label}
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
@@ -57,6 +58,7 @@ function ToolbarButton({
     >
       {children}
     </button>
+    </Tooltip>
   );
 }
 

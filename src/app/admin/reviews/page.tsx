@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useRouter } from "next/navigation";
 import { format, isValid, parseISO } from "date-fns";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
+  AdminActionDivider,
   AdminEmptyState,
   AdminFilterChips,
+  AdminIcon,
+  AdminIconAction,
   AdminNotice,
+  AdminRowActions,
   AdminPageHeader,
   AdminSearchInput,
   AdminStatusBadge,
@@ -281,18 +286,20 @@ export default function AdminReviewsPage() {
                       </span>
                       {r.city ? `, ${r.city}` : ""}
                       {" on "}
-                      <a
-                        href={`/products/${encodeURIComponent(r.productHandle)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-admin-accent hover:underline"
-                      >
+                      <span className="font-semibold text-admin-ink">
                         {productName(r.productHandle)}
-                      </a>
+                      </span>
                       {r.createdAt ? ` · ${formatDay(r.createdAt)}` : ""}
                     </p>
                   </div>
-                  <div className="flex shrink-0 flex-wrap gap-2">
+                  <AdminRowActions className="shrink-0 flex-wrap gap-1 lg:justify-end">
+                    <AdminIconAction
+                      icon="view"
+                      label="View on product page"
+                      ariaLabel={`View ${productName(r.productHandle)} in the store`}
+                      href={`/products/${encodeURIComponent(r.productHandle)}#reviews`}
+                      external
+                    />
                     {r.status !== "published" ? (
                       <Button
                         size="sm"
@@ -300,6 +307,7 @@ export default function AdminReviewsPage() {
                         disabled={busy}
                         onClick={() => setStatus(r, "published")}
                       >
+                        <AdminIcon name="publish" size={16} />
                         Publish
                       </Button>
                     ) : null}
@@ -311,21 +319,24 @@ export default function AdminReviewsPage() {
                         disabled={busy}
                         onClick={() => setStatus(r, "hidden")}
                       >
+                        <AdminIcon name="hide" size={16} />
                         Hide
                       </Button>
                     ) : null}
                     {canDelete ? (
-                      <Button
-                        variant="danger-outline"
-                        size="sm"
-                        className="w-auto!"
-                        disabled={busy}
-                        onClick={() => setDeleteTarget(r)}
-                      >
-                        Delete
-                      </Button>
+                      <>
+                        <AdminActionDivider />
+                        <AdminIconAction
+                          icon="delete"
+                          tone="danger"
+                          label="Delete review"
+                          ariaLabel={`Delete the review from ${r.author}`}
+                          onClick={() => setDeleteTarget(r)}
+                          disabled={busy}
+                        />
+                      </>
                     ) : null}
-                  </div>
+                  </AdminRowActions>
                 </div>
               </li>
             );
@@ -334,9 +345,7 @@ export default function AdminReviewsPage() {
       ) : (
         <div className="rounded-lg border border-admin-line bg-admin-paper shadow-admin">
           {loading ? (
-            <p className="px-6 py-14 text-center text-admin-muted">
-              Loading reviews…
-            </p>
+            <BrandLoaderBlock className="min-h-[40vh]" label="Loading reviews" />
           ) : !items.length ? (
             <AdminEmptyState
               title="No reviews yet"

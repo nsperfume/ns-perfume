@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BrandLoader, BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
@@ -9,7 +10,11 @@ import {
   AdminCard,
   AdminEmptyState,
   AdminFilterChips,
+  AdminIcon,
+  AdminIconAction,
+  AdminModal,
   AdminPageHeader,
+  AdminRowActions,
   AdminStatusBadge,
   AdminTable,
   AdminTd,
@@ -105,27 +110,7 @@ function friendlySendError(message?: string) {
 }
 
 function LoadingCards() {
-  return (
-    <div className="grid gap-6" aria-busy="true">
-      <p className="sr-only" role="status">
-        Loading emails…
-      </p>
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="overflow-hidden rounded-lg border border-admin-line bg-admin-paper shadow-admin"
-        >
-          <div className="flex h-14 items-center border-b border-admin-line px-6">
-            <div className="h-5 w-40 animate-pulse rounded bg-admin-soft" />
-          </div>
-          <div className="space-y-3 px-6 py-6">
-            <div className="h-4 w-3/4 animate-pulse rounded bg-admin-soft" />
-            <div className="h-4 w-1/2 animate-pulse rounded bg-admin-soft" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  return <BrandLoaderBlock className="min-h-[40vh]" label="Loading emails" />;
 }
 
 export default function AdminEmailsPage() {
@@ -144,6 +129,7 @@ export default function AdminEmailsPage() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [testTo, setTestTo] = useState("");
   const [sending, setSending] = useState(false);
+  const [logDetail, setLogDetail] = useState<LogRow | null>(null);
   const tv = useFormValidation(testSchema);
 
   useEffect(() => {
@@ -310,9 +296,18 @@ export default function AdminEmailsPage() {
                         <span className="block text-[0.9375rem] font-semibold text-admin-ink">
                           {t.label}
                         </span>
-                        <span className="mt-0.5 block text-[0.8125rem] text-admin-muted">
+                        <span className="mt-0.5 block pr-7 text-[0.8125rem] text-admin-muted">
                           To {t.audience === "Customer" ? "customer" : "store team"}{" "}
                           · {t.trigger}
+                        </span>
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "absolute right-4 top-1/2 -translate-y-1/2 sm:right-5",
+                            on ? "text-admin-ink" : "text-admin-faint",
+                          )}
+                        >
+                          <AdminIcon name="view" size={17} />
                         </span>
                       </button>
                     </li>
@@ -336,7 +331,9 @@ export default function AdminEmailsPage() {
                     className="h-128 w-full rounded-md border border-admin-line bg-white lg:h-152"
                   />
                 ) : (
-                  <div className="h-128 animate-pulse rounded-md border border-admin-line bg-admin-soft lg:h-152" />
+                  <div className="flex h-128 items-center justify-center rounded-md border border-admin-line bg-admin-soft-2 lg:h-152">
+                    <BrandLoader size={56} label="Loading preview" />
+                  </div>
                 )}
 
                 {user?.isSuperAdmin && data.configured ? (
@@ -398,6 +395,9 @@ export default function AdminEmailsPage() {
                     <AdminTh>Status</AdminTh>
                     <AdminTh>Order</AdminTh>
                     <AdminTh>Sent</AdminTh>
+                    <AdminTh className="w-16 text-right">
+                      <span className="sr-only">Actions</span>
+                    </AdminTh>
                   </tr>
                 </thead>
                 <tbody>
@@ -423,9 +423,7 @@ export default function AdminEmailsPage() {
                         </span>
                       </AdminTd>
                       <AdminTd>
-                        <span title={l.error || undefined}>
-                          <AdminStatusBadge status={l.status} />
-                        </span>
+                        <AdminStatusBadge status={l.status} />
                       </AdminTd>
                       <AdminTd className="whitespace-nowrap">
                         {l.ref === "test" ? (
@@ -443,6 +441,16 @@ export default function AdminEmailsPage() {
                       </AdminTd>
                       <AdminTd className="whitespace-nowrap text-admin-muted">
                         {formatDate(l.createdAt)}
+                      </AdminTd>
+                      <AdminTd className="py-2">
+                        <AdminRowActions>
+                          <AdminIconAction
+                            icon="view"
+                            label="View details"
+                            ariaLabel={`View details of the email to ${l.to}`}
+                            onClick={() => setLogDetail(l)}
+                          />
+                        </AdminRowActions>
                       </AdminTd>
                     </tr>
                   ))}
@@ -486,6 +494,9 @@ export default function AdminEmailsPage() {
                     <AdminTh>Status</AdminTh>
                     <AdminTh>Signed up from</AdminTh>
                     <AdminTh>Joined</AdminTh>
+                    <AdminTh className="w-16 text-right">
+                      <span className="sr-only">Actions</span>
+                    </AdminTh>
                   </tr>
                 </thead>
                 <tbody>
@@ -513,6 +524,16 @@ export default function AdminEmailsPage() {
                         <AdminTd className="whitespace-nowrap text-admin-muted">
                           {formatDate(s.createdAt)}
                         </AdminTd>
+                        <AdminTd className="py-2">
+                          <AdminRowActions>
+                            <AdminIconAction
+                              icon="email"
+                              label="Email"
+                              ariaLabel={`Email ${s.email}`}
+                              href={`mailto:${s.email}`}
+                            />
+                          </AdminRowActions>
+                        </AdminTd>
                       </tr>
                     );
                   })}
@@ -527,6 +548,66 @@ export default function AdminEmailsPage() {
           </AdminCard>
         </div>
       ) : null}
+      <AdminModal
+        open={logDetail !== null}
+        onClose={() => setLogDetail(null)}
+        title="Email details"
+        wide
+      >
+        {logDetail ? (
+          <dl className="divide-y divide-admin-line text-[0.9375rem]">
+            {(
+              [
+                ["Email", sentence(logDetail.template)],
+                ["Subject", logDetail.subject || "No subject"],
+                ["To", logDetail.to],
+                ["Sent", formatDate(logDetail.createdAt)],
+              ] as const
+            ).map(([k, val]) => (
+              <div key={k} className="grid gap-1 py-3 sm:grid-cols-[8rem_1fr] sm:gap-4">
+                <dt className="font-semibold text-admin-muted">{k}</dt>
+                <dd className="min-w-0 break-words text-admin-ink">{val}</dd>
+              </div>
+            ))}
+            <div className="grid gap-1 py-3 sm:grid-cols-[8rem_1fr] sm:gap-4">
+              <dt className="font-semibold text-admin-muted">Status</dt>
+              <dd>
+                <AdminStatusBadge status={logDetail.status} />
+              </dd>
+            </div>
+            {logDetail.ref && logDetail.ref !== "test" ? (
+              <div className="grid gap-1 py-3 sm:grid-cols-[8rem_1fr] sm:gap-4">
+                <dt className="font-semibold text-admin-muted">Order</dt>
+                <dd>
+                  <Link
+                    href={`/admin/orders/${encodeURIComponent(logDetail.ref)}`}
+                    className="font-mono font-semibold text-admin-accent hover:underline"
+                  >
+                    {formatOrderNumber(logDetail.ref)}
+                  </Link>
+                </dd>
+              </div>
+            ) : null}
+            {logDetail.error ? (
+              <div className="grid gap-1 py-3 sm:grid-cols-[8rem_1fr] sm:gap-4">
+                <dt className="font-semibold text-admin-muted">Why it failed</dt>
+                <dd className="min-w-0">
+                  <p className="text-admin-ink">
+                    {/not configured|SMTP|APP_PASSWORD/i.test(logDetail.error)
+                      ? NOT_SET_UP
+                      : "The mail server refused this email. Share the note below with your developer."}
+                  </p>
+                  {!/not configured/i.test(logDetail.error) ? (
+                    <p className="mt-2 whitespace-pre-wrap break-words rounded-md border border-admin-line bg-admin-soft-2 p-3 font-mono text-[0.8125rem] leading-relaxed text-admin-muted">
+                      {logDetail.error}
+                    </p>
+                  ) : null}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : null}
+      </AdminModal>
     </AdminShell>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { DownloadIcon } from "@animateicons/react/lucide";
 import { z } from "zod";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
@@ -11,6 +11,8 @@ import {
   adminFieldClass,
 } from "@/components/admin/form-section";
 import {
+  AdminContactActions,
+  AdminIcon,
   AdminEmptyState,
   AdminPageHeader,
   AdminStatusBadge,
@@ -75,6 +77,17 @@ function fulfillmentFrom(order: AdminOrder): Fulfillment {
 /** Library formatters return a dash for missing values; show nothing instead. */
 function clean(s: string) {
   return s === "—" ? "" : s;
+}
+
+/** Gift lines arrive named "Amber Noir (Gift)" / "(Gift Wrap)"; show the badge instead. */
+function lineName(name?: string) {
+  return (name || "").replace(/\s*\((gift wrap|gift)\)\s*$/i, "");
+}
+function isGiftWrap(l: { name?: string; giftWrap?: boolean }) {
+  return Boolean(l.giftWrap) || /\(gift wrap\)\s*$/i.test(l.name || "");
+}
+function isGift(l: { name?: string; isGift?: boolean }) {
+  return Boolean(l.isGift) || /\(gift\)\s*$/i.test(l.name || "");
 }
 
 function statusLabel(value: string) {
@@ -296,7 +309,7 @@ export default function AdminOrderDetailPage() {
               download
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-admin-ink bg-admin-ink px-5 text-sm font-semibold text-admin-paper transition-colors hover:border-brass hover:bg-brass hover:text-white sm:w-auto"
             >
-              <DownloadIcon size={17} color="currentColor" isAnimated={false} />
+              <AdminIcon name="download" size={17} />
               Download invoice
             </a>
           ) : null
@@ -304,7 +317,7 @@ export default function AdminOrderDetailPage() {
       />
 
       {loading && !order ? (
-        <p className="text-base text-admin-muted">Loading order…</p>
+        <BrandLoaderBlock className="min-h-[40vh]" label="Loading order" />
       ) : error ? (
         <div className="rounded-lg border border-admin-line bg-admin-paper">
           <AdminEmptyState
@@ -324,7 +337,10 @@ export default function AdminOrderDetailPage() {
             <Section
               title="Items"
               action={
-                <span className="text-sm text-admin-muted">
+                <span className="flex items-center gap-3 text-sm text-admin-muted">
+                  {(order.lines || []).some((l) => isGift(l) || isGiftWrap(l) || l.giftMessage) ? (
+                    <AdminStatusBadge status="gift" tone="brass" label="Gift order" />
+                  ) : null}
                   {itemCount} {itemCount === 1 ? "item" : "items"}
                 </span>
               }
@@ -351,32 +367,35 @@ export default function AdminOrderDetailPage() {
                           href={`/admin/products/${encodeURIComponent(l.productHandle)}`}
                           className="text-base font-semibold text-admin-ink hover:underline"
                         >
-                          {l.name}
+                          {lineName(l.name)}
                         </Link>
                       ) : (
                         <p className="text-base font-semibold text-admin-ink">
-                          {l.name}
+                          {lineName(l.name)}
                         </p>
                       )}
-                      <p className="mt-1 text-[0.9375rem] text-admin-muted">
-                        {[
-                          l.sizeMl ? formatSize(l.sizeMl) : "",
-                          l.isGift ? "Gift" : "",
-                          l.giftWrap ? "Gift wrap" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[0.9375rem] text-admin-muted">
+                        {l.sizeMl ? <span>{formatSize(l.sizeMl)}</span> : null}
+                        {isGiftWrap(l) ? (
+                          <AdminStatusBadge status="gift" tone="brass" label="Gift wrap" />
+                        ) : isGift(l) ? (
+                          <AdminStatusBadge status="gift" tone="brass" label="Gift" />
+                        ) : null}
+                      </div>
                       {l.sku ? (
                         <p className="mt-1 font-mono text-[0.8125rem] text-admin-muted">
                           {l.sku}
                         </p>
                       ) : null}
                       {l.giftMessage ? (
-                        <p className="mt-3 rounded-md border border-admin-line bg-admin-soft-2 px-3 py-2.5 text-[0.9375rem] leading-snug text-admin-ink">
-                          <span className="font-semibold">Gift note:</span>{" "}
-                          {l.giftMessage}
-                        </p>
+                        <div className="mt-3 rounded-md border border-(--admin-tone-brass-line) bg-(--admin-tone-brass-bg) px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-(--admin-tone-brass-text)">
+                            Gift message for the card
+                          </p>
+                          <p className="mt-1 whitespace-pre-wrap text-base leading-relaxed text-admin-ink">
+                            {l.giftMessage}
+                          </p>
+                        </div>
                       ) : null}
                     </div>
                     <div className="shrink-0 text-right">
@@ -407,13 +426,26 @@ export default function AdminOrderDetailPage() {
                     </span>
                   </Row>
                 ) : null}
-                <Row label="Shipping">{formatPkr(order.shippingPkr ?? 0)}</Row>
+                <Row label="Shipping">
+                  {(order.shippingPkr ?? 0) === 0 ? "Free" : formatPkr(order.shippingPkr ?? 0)}
+                </Row>
+                {(order.codFeePkr || 0) > 0 ? (
+                  <Row label="Cash on delivery fee">{formatPkr(order.codFeePkr || 0)}</Row>
+                ) : null}
                 {(order.taxPkr || 0) > 0 ? (
-                  <Row label="Tax">{formatPkr(order.taxPkr || 0)}</Row>
+                  <Row label={order.taxLabel || "Tax"}>{formatPkr(order.taxPkr || 0)}</Row>
                 ) : null}
                 <Row label="Total" strong>
                   {formatPkr(order.totalPkr)}
                 </Row>
+                {(order.taxIncludedPkr || 0) > 0 ? (
+                  <p className="text-right text-[0.8125rem] text-admin-muted">
+                    Includes {order.taxLabel || "tax"} of{" "}
+                    <span className="font-mono tabular-nums">
+                      {formatPkr(order.taxIncludedPkr || 0)}
+                    </span>
+                  </p>
+                ) : null}
               </div>
             </Section>
 
@@ -444,6 +476,13 @@ export default function AdminOrderDetailPage() {
                   {order.customerId ? "Has an account" : "Guest checkout"}
                   {order.marketingOptIn ? " · Accepts marketing" : ""}
                 </p>
+                <AdminContactActions
+                  className="mt-4 border-t border-admin-line pt-4"
+                  phone={order.phone}
+                  email={order.email}
+                  whatsappText={`Hello ${order.customerName?.split(" ")[0] || ""}, this is NS Perfume about your order ${ref}.`.replace("Hello ,", "Hello,")}
+                  emailSubject={`Your NS Perfume order ${ref}`}
+                />
               </Section>
 
               <Section title="Delivery">

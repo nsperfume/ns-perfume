@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   AdminEmptyState,
   AdminFilterChips,
+  AdminIconAction,
   AdminNotice,
   AdminPageHeader,
+  AdminRowActions,
   AdminSearchInput,
   AdminStatusBadge,
   AdminTable,
@@ -66,6 +69,30 @@ function StockLabel({ inStock }: { inStock: boolean }) {
     >
       {inStock ? "In stock" : "Out of stock"}
     </span>
+  );
+}
+
+/** View in store (live products only) → Edit. Delete lives in the editor. */
+function ProductActions({ p, editHref }: { p: StoreProduct; editHref: string }) {
+  const live = productStatus(p) === "active";
+  return (
+    <AdminRowActions>
+      {live ? (
+        <AdminIconAction
+          icon="view"
+          label="View in store"
+          ariaLabel={`View ${p.name} in the store`}
+          href={`/products/${encodeURIComponent(p.handle)}`}
+          external
+        />
+      ) : null}
+      <AdminIconAction
+        icon="edit"
+        label="Edit product"
+        ariaLabel={`Edit ${p.name}`}
+        href={editHref}
+      />
+    </AdminRowActions>
   );
 }
 
@@ -214,9 +241,7 @@ export default function AdminProductsPage() {
       {/* Phones: compact cards */}
       <div className="md:hidden">
         {loading ? (
-          <p className="rounded-lg border border-admin-line bg-admin-paper px-4 py-12 text-center text-admin-muted">
-            Loading products…
-          </p>
+          <BrandLoaderBlock className="min-h-[40vh]" label="Loading products" />
         ) : empty ? (
           <div className="rounded-lg border border-admin-line bg-admin-paper">
             {empty}
@@ -224,10 +249,10 @@ export default function AdminProductsPage() {
         ) : (
           <ul className="divide-y divide-admin-line overflow-hidden rounded-lg border border-admin-line bg-admin-paper shadow-admin">
             {filtered.map((p) => (
-              <li key={p.handle}>
+              <li key={p.handle} className="flex items-center gap-1 pr-2">
                 <Link
                   href={editHref(p)}
-                  className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-admin-soft-2"
+                  className="flex min-w-0 flex-1 items-center gap-3 py-3.5 pl-4 pr-2 transition-colors hover:bg-admin-soft-2"
                 >
                   <Thumb src={p.imagePrimary || p.gallery?.[0]} />
                   <div className="min-w-0 flex-1">
@@ -245,6 +270,12 @@ export default function AdminProductsPage() {
                     </span>
                   </div>
                 </Link>
+                <AdminIconAction
+                  icon="edit"
+                  label="Edit product"
+                  ariaLabel={`Edit ${p.name}`}
+                  href={editHref(p)}
+                />
               </li>
             ))}
           </ul>
@@ -258,18 +289,17 @@ export default function AdminProductsPage() {
             <AdminTh>Status</AdminTh>
             <AdminTh>Inventory</AdminTh>
             <AdminTh numeric>Price from</AdminTh>
+            <AdminTh className="w-28 text-right">Actions</AdminTh>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={4} className="px-4 py-14 text-center text-admin-muted">
-                Loading products…
-              </td>
+              <td colSpan={5}><BrandLoaderBlock className="min-h-[40vh]" label="Loading products" /></td>
             </tr>
           ) : empty ? (
             <tr>
-              <td colSpan={4}>{empty}</td>
+              <td colSpan={5}>{empty}</td>
             </tr>
           ) : (
             filtered.map((p) => {
@@ -299,6 +329,9 @@ export default function AdminProductsPage() {
                     <StockLabel inStock={p.inStock} />
                   </AdminTd>
                   <AdminTd numeric>{formatPkr(lowestPrice(p))}</AdminTd>
+                  <AdminTd className="py-2">
+                    <ProductActions p={p} editHref={editHref(p)} />
+                  </AdminTd>
                 </tr>
               );
             })

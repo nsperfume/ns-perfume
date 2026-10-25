@@ -8,7 +8,7 @@ import {
   BookOpenIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
-  ExternalLinkIcon,
+  EyeIcon,
   LayersIcon,
   LayoutDashboardIcon,
   LogOutIcon,
@@ -29,7 +29,7 @@ import {
   AdminThemeProvider,
   useAdminTheme,
 } from "@/context/admin-theme";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
 import { AdminToaster } from "@/components/admin/toast";
 
 type IconProps = {
@@ -110,6 +110,24 @@ const COLLAPSED_KEY = "ns-admin-sidebar-collapsed";
 function isActive(pathname: string, item: NavItem) {
   if (item.exact) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
+/** Tooltip for icon-only sidebar links (collapsed menu). */
+function NavTip({
+  show,
+  label,
+  children,
+}: {
+  show: boolean;
+  label: string;
+  children: React.ReactElement;
+}) {
+  if (!show) return children;
+  return (
+    <Tooltip content={label} side="right">
+      {children}
+    </Tooltip>
+  );
 }
 
 function AdminShellInner({
@@ -251,19 +269,20 @@ function AdminShellInner({
             <LogoMark className="h-8" title="NS Perfume admin" />
           </Link>
         )}
-        <button
-          type="button"
-          onClick={toggleCollapse}
-          className="hidden h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/55 transition-colors hover:bg-white/10 hover:text-white md:flex"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand" : "Collapse"}
-        >
-          {collapsed ? (
-            <ChevronsRightIcon size={18} color="currentColor" isAnimated={false} />
-          ) : (
-            <ChevronsLeftIcon size={18} color="currentColor" isAnimated={false} />
-          )}
-        </button>
+        <Tooltip content={collapsed ? "Expand menu" : "Collapse menu"} side="right">
+          <button
+            type="button"
+            onClick={toggleCollapse}
+            className="hidden h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/55 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-brass/60 md:flex"
+            aria-label={collapsed ? "Expand menu" : "Collapse menu"}
+          >
+            {collapsed ? (
+              <ChevronsRightIcon size={18} color="currentColor" isAnimated={false} />
+            ) : (
+              <ChevronsLeftIcon size={18} color="currentColor" isAnimated={false} />
+            )}
+          </button>
+        </Tooltip>
       </div>
 
       <nav
@@ -288,9 +307,10 @@ function AdminShellInner({
                 const Icon = item.Icon;
                 return (
                   <li key={item.href}>
+                    <NavTip show={collapsed} label={item.label}>
                     <Link
                       href={item.href}
-                      title={item.label}
+                      aria-label={collapsed ? item.label : undefined}
                       className={cn(
                         "flex min-h-11 items-center gap-3 rounded-md text-[0.9375rem] font-medium transition-colors",
                         collapsed ? "justify-center px-2" : "px-3",
@@ -309,6 +329,7 @@ function AdminShellInner({
                         <span className="truncate">{item.label}</span>
                       ) : null}
                     </Link>
+                    </NavTip>
                   </li>
                 );
               })}
@@ -327,7 +348,7 @@ function AdminShellInner({
           )}
           title="Open storefront"
         >
-          <ExternalLinkIcon size={16} color="currentColor" isAnimated={false} />
+          <EyeIcon size={16} color="currentColor" isAnimated={false} />
           {!collapsed ? "View storefront" : null}
         </Link>
         <Button
@@ -401,15 +422,16 @@ function AdminShellInner({
           <Link href="/admin" className="flex text-admin-ink">
             <Logo className="h-5" title="NS Perfume admin" />
           </Link>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={logout}
-            className="w-auto! [&>span:last-child]:px-3!"
-            aria-label="Log out"
-          >
-            <LogOutIcon size={16} color="currentColor" isAnimated={false} />
-          </Button>
+          <Tooltip content="Log out">
+            <button
+              type="button"
+              onClick={logout}
+              aria-label="Log out"
+              className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-admin-line text-admin-muted outline-none transition-colors hover:border-admin-ink hover:text-admin-ink focus-visible:ring-2 focus-visible:ring-brass/60"
+            >
+              <LogOutIcon size={17} color="currentColor" isAnimated={false} />
+            </button>
+          </Tooltip>
         </header>
 
         <main

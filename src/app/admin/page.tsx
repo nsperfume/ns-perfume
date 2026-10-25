@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   AdminCard,
+  AdminIcon,
   AdminPageHeader,
   AdminStatusBadge,
   formatPkr,
@@ -340,7 +342,7 @@ export default function AdminHomePage() {
       />
 
       {loading ? (
-        <p className="text-base text-admin-muted">Loading dashboard…</p>
+        <BrandLoaderBlock className="min-h-[40vh]" label="Loading dashboard" />
       ) : error ? (
         <p className="rounded-lg border border-admin-line bg-admin-paper px-4 py-3 text-base text-admin-ink">
           {error}
@@ -406,8 +408,9 @@ export default function AdminHomePage() {
                           <span className="flex-1 text-[0.9375rem] font-medium text-admin-ink">
                             {a.label}
                           </span>
-                          <span aria-hidden className="text-admin-faint">
-                            →
+                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-admin-accent">
+                            <AdminIcon name="view" size={16} />
+                            Review
                           </span>
                         </Link>
                       </li>
@@ -442,7 +445,7 @@ export default function AdminHomePage() {
                   <li key={o.orderNumber}>
                     <Link
                       href={`/admin/orders/${encodeURIComponent(o.orderNumber)}`}
-                      className="flex min-h-16 items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-admin-soft-2 sm:px-6"
+                      className="group flex min-h-16 items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-admin-soft-2 sm:px-6"
                     >
                       <div className="min-w-0">
                         <p className="font-mono text-[0.9375rem] font-medium text-admin-ink">
@@ -465,6 +468,12 @@ export default function AdminHomePage() {
                           </span>
                         ) : null}
                         <AdminStatusBadge status={o.status} />
+                        <span
+                          className="hidden h-9 w-9 items-center justify-center rounded-md text-admin-faint transition-colors group-hover:text-admin-ink sm:inline-flex"
+                          aria-hidden
+                        >
+                          <AdminIcon name="view" size={17} />
+                        </span>
                       </div>
                     </Link>
                   </li>
@@ -493,7 +502,7 @@ export default function AdminHomePage() {
                   <li key={p.handle}>
                     <Link
                       href={`/admin/products/${p.handle}`}
-                      className="flex min-h-16 items-center gap-3.5 px-5 py-3 transition-colors hover:bg-admin-soft-2 sm:px-6"
+                      className="group flex min-h-16 items-center gap-3.5 px-5 py-3 transition-colors hover:bg-admin-soft-2 sm:px-6"
                     >
                       <div className="h-11 w-11 shrink-0 overflow-hidden rounded-md border border-admin-line bg-admin-soft">
                         {p.image ? (
@@ -520,6 +529,12 @@ export default function AdminHomePage() {
                           </span>
                         ) : null}
                         <AdminStatusBadge status={p.status} />
+                        <span
+                          className="hidden h-9 w-9 items-center justify-center rounded-md text-admin-faint transition-colors group-hover:text-admin-ink sm:inline-flex"
+                          aria-hidden
+                        >
+                          <AdminIcon name="edit" size={17} />
+                        </span>
                       </div>
                     </Link>
                   </li>

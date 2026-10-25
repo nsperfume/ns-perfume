@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -9,8 +10,11 @@ import {
   adminFieldClass,
 } from "@/components/admin/form-section";
 import {
+  AdminActionDivider,
   AdminEmptyState,
   AdminFilterChips,
+  AdminIcon,
+  AdminIconAction,
   AdminModal,
   AdminNotice,
   AdminPageHeader,
@@ -121,6 +125,8 @@ export default function AdminTestimonialsPage() {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [rowDelete, setRowDelete] = useState<T | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
   const v = useFormValidation(testimonialFormSchema);
 
   const canDelete = Boolean(
@@ -250,6 +256,51 @@ export default function AdminTestimonialsPage() {
     }
   }
 
+  async function toggleVisibility(t: T) {
+    const next = t.status === "draft" ? "published" : "draft";
+    setToggling(t._id);
+    try {
+      const res = await fetch(`/api/testimonials/${t._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      const result = await readResult(res);
+      if (!result.ok) {
+        toast.error(result.error || "Could not update the testimonial");
+        return;
+      }
+      toast.success(next === "published" ? "Shown on the homepage" : "Hidden from the homepage");
+      setItems((prev) => prev.map((x) => (x._id === t._id ? { ...x, status: next } : x)));
+    } catch {
+      toast.error("Network error. Nothing was changed.");
+    } finally {
+      setToggling(null);
+    }
+  }
+
+  async function deleteFromList() {
+    if (!rowDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/testimonials/${rowDelete._id}`, {
+        method: "DELETE",
+      });
+      const result = await readResult(res);
+      if (!result.ok) {
+        toast.error(result.error || "Could not delete the testimonial");
+        return;
+      }
+      toast.success("Testimonial deleted");
+      setRowDelete(null);
+      load();
+    } catch {
+      toast.error("Network error. The testimonial was not deleted.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   async function confirmDelete() {
     if (!editing) return;
     setDeleting(true);
@@ -306,17 +357,20 @@ export default function AdminTestimonialsPage() {
       {visible.length ? (
         <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {visible.map((t) => (
-            <li key={t._id}>
+            <li
+              key={t._id}
+              className="flex h-full flex-col rounded-lg border border-admin-line bg-admin-paper shadow-admin transition-colors hover:border-admin-faint"
+            >
               <button
                 type="button"
                 onClick={() => openForm(t)}
-                className="flex h-full w-full cursor-pointer flex-col rounded-lg border border-admin-line bg-admin-paper p-5 text-left shadow-admin transition-colors hover:border-admin-faint"
+                className="flex flex-1 cursor-pointer flex-col p-5 pb-4 text-left"
                 aria-label={`Edit testimonial from ${t.author}`}
               >
                 <p className="flex-1 text-[0.9375rem] leading-relaxed text-admin-ink">
                   “{cleanQuote(richTextToPlain(t.quote))}”
                 </p>
-                <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-admin-line pt-3">
+                <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-semibold text-admin-ink">{t.author}</p>
                     <p className="text-[0.8125rem] text-admin-muted">
@@ -329,15 +383,45 @@ export default function AdminTestimonialsPage() {
                   />
                 </div>
               </button>
+              <div className="flex items-center gap-1 border-t border-admin-line px-3 py-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={toggling === t._id}
+                  onClick={() => toggleVisibility(t)}
+                  className="text-admin-ink!"
+                >
+                  <AdminIcon name={t.status === "draft" ? "publish" : "hide"} size={17} />
+                  {t.status === "draft" ? "Show on homepage" : "Hide"}
+                </Button>
+                <span className="ml-auto flex items-center">
+                  <AdminIconAction
+                    icon="edit"
+                    label="Edit testimonial"
+                    ariaLabel={`Edit testimonial from ${t.author}`}
+                    onClick={() => openForm(t)}
+                  />
+                  {canDelete ? (
+                    <>
+                      <AdminActionDivider />
+                      <AdminIconAction
+                        icon="delete"
+                        tone="danger"
+                        label="Delete testimonial"
+                        ariaLabel={`Delete testimonial from ${t.author}`}
+                        onClick={() => setRowDelete(t)}
+                      />
+                    </>
+                  ) : null}
+                </span>
+              </div>
             </li>
           ))}
         </ul>
       ) : (
         <div className="rounded-lg border border-admin-line bg-admin-paper shadow-admin">
           {loading ? (
-            <p className="px-6 py-14 text-center text-admin-muted">
-              Loading testimonials…
-            </p>
+            <BrandLoaderBlock className="min-h-[40vh]" label="Loading testimonials" />
           ) : items.length ? (
             <AdminEmptyState
               title="Nothing in this filter"
@@ -510,6 +594,22 @@ export default function AdminTestimonialsPage() {
         cancelLabel="Keep testimonial"
         loading={deleting}
         onConfirm={confirmDelete}
+      />
+      <ConfirmDialog
+        open={rowDelete !== null}
+        onOpenChange={(o) => {
+          if (!o && !deleting) setRowDelete(null);
+        }}
+        title="Delete this testimonial?"
+        description={
+          rowDelete
+            ? `The quote from ${rowDelete.author} will be removed. This cannot be undone.`
+            : "This testimonial will be removed."
+        }
+        confirmLabel="Delete testimonial"
+        cancelLabel="Keep it"
+        loading={deleting}
+        onConfirm={deleteFromList}
       />
       {leaveGuard}
     </AdminShell>

@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   AdminCard,
+  AdminContactActions,
   AdminEmptyState,
+  AdminIcon,
+  AdminIconAction,
+  AdminRowActions,
   AdminPageHeader,
   AdminStatusBadge,
   AdminTable,
@@ -131,20 +136,10 @@ export default function AdminCustomerDetailPage() {
         }
         backHref="/admin/customers"
         backLabel="Customers"
-        action={
-          data ? (
-            <a
-              href={`mailto:${data.email}`}
-              className="inline-flex h-11 w-full items-center justify-center rounded-md border border-admin-ink bg-admin-ink px-5 text-sm font-semibold text-admin-paper transition-colors hover:border-brass hover:bg-brass hover:text-white sm:w-auto"
-            >
-              Email customer
-            </a>
-          ) : null
-        }
       />
 
       {loading ? (
-        <p className="text-base text-admin-muted">Loading customer…</p>
+        <BrandLoaderBlock className="min-h-[40vh]" label="Loading customer" />
       ) : error ? (
         <AdminCard>
           <AdminEmptyState
@@ -177,6 +172,9 @@ export default function AdminCustomerDetailPage() {
                       <AdminTh>Status</AdminTh>
                       <AdminTh>Payment</AdminTh>
                       <AdminTh numeric>Total</AdminTh>
+                      <AdminTh className="w-16 text-right">
+                        <span className="sr-only">Actions</span>
+                      </AdminTh>
                     </tr>
                   </thead>
                   <tbody>
@@ -205,6 +203,16 @@ export default function AdminCustomerDetailPage() {
                           <AdminTd numeric className="font-medium">
                             {formatPkr(o.totalPkr)}
                           </AdminTd>
+                          <AdminTd className="py-2">
+                            <AdminRowActions>
+                              <AdminIconAction
+                                icon="view"
+                                label="View order"
+                                ariaLabel={`View order ${formatOrderNumber(o.orderNumber)}`}
+                                href={href}
+                              />
+                            </AdminRowActions>
+                          </AdminTd>
                         </tr>
                       );
                     })}
@@ -227,15 +235,18 @@ export default function AdminCustomerDetailPage() {
                         <span className="min-w-0 truncate text-[0.9375rem] font-semibold text-admin-ink">
                           {p.name}
                         </span>
-                        <span className="shrink-0 text-sm text-admin-muted">
-                          <span className="font-mono tabular-nums text-admin-ink">
-                            {p.totalQuantity}
-                          </span>{" "}
-                          bought in{" "}
-                          <span className="font-mono tabular-nums text-admin-ink">
-                            {p.orderCount}
-                          </span>{" "}
-                          {p.orderCount === 1 ? "order" : "orders"}
+                        <span className="flex shrink-0 items-center gap-3 text-sm text-admin-muted">
+                          <span>
+                            <span className="tabular-nums text-admin-ink">
+                              {p.totalQuantity}
+                            </span>{" "}
+                            bought in{" "}
+                            <span className="tabular-nums text-admin-ink">
+                              {p.orderCount}
+                            </span>{" "}
+                            {p.orderCount === 1 ? "order" : "orders"}
+                          </span>
+                          <AdminIcon name="edit" size={17} className="text-admin-faint" />
                         </span>
                       </Link>
                     </li>
@@ -295,23 +306,21 @@ export default function AdminCustomerDetailPage() {
               }
             >
               <div className="space-y-1.5 px-5 py-5 text-[0.9375rem] sm:px-6">
-                <a
-                  href={`mailto:${data.email}`}
-                  className="block break-all font-medium text-admin-accent hover:underline"
-                >
-                  {data.email}
-                </a>
+                <p className="break-all font-medium text-admin-ink">{data.email}</p>
                 {data.phone ? (
-                  <a
-                    href={`tel:${data.phone}`}
-                    className="block font-mono text-[0.875rem] tabular-nums text-admin-ink hover:underline"
-                  >
+                  <p className="font-mono text-[0.875rem] tabular-nums text-admin-ink">
                     {data.phone}
-                  </a>
+                  </p>
                 ) : null}
                 {data.cities.length ? (
                   <p className="pt-1 text-admin-muted">{data.cities.join(", ")}</p>
                 ) : null}
+                <AdminContactActions
+                  className="pt-3"
+                  phone={data.phone}
+                  email={data.email}
+                  whatsappText={`Hello ${data.name?.split(" ")[0] || ""}, this is NS Perfume.`.replace("Hello ,", "Hello,")}
+                />
               </div>
             </AdminCard>
 

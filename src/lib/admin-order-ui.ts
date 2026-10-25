@@ -42,6 +42,9 @@ export type AdminOrder = {
   discountPkr?: number;
   discountCode?: string;
   taxPkr?: number;
+  codFeePkr?: number;
+  taxIncludedPkr?: number;
+  taxLabel?: string;
   currency?: string;
   paymentMethod?: string;
   cardLast4?: string;
@@ -166,6 +169,9 @@ export function mapAdminOrder(doc: any): AdminOrder {
     discountPkr: doc.discountPkr,
     discountCode: doc.discountCode,
     taxPkr: doc.taxPkr,
+    codFeePkr: Number(doc.codFeePkr) || 0,
+    taxIncludedPkr: Number(doc.taxIncludedPkr) || 0,
+    taxLabel: String(doc.taxLabel || ""),
     currency: doc.currency,
     paymentMethod: doc.paymentMethod,
     cardLast4: doc.cardLast4,

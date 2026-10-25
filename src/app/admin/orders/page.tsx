@@ -1,14 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { DownloadIcon } from "@animateicons/react/lucide";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   AdminEmptyState,
   AdminFilterChips,
+  AdminIconAction,
   AdminPageHeader,
+  AdminRowActions,
   AdminSearchInput,
   AdminTable,
   AdminTd,
@@ -233,9 +235,7 @@ export default function AdminOrdersPage() {
       {/* Phones: one card per order (status and actions without sideways scrolling) */}
       <div className="md:hidden">
         {loading && !orders.length ? (
-          <p className="rounded-lg border border-admin-line bg-admin-paper px-4 py-12 text-center text-admin-muted">
-            Loading orders…
-          </p>
+          <BrandLoaderBlock className="min-h-[40vh]" label="Loading orders" />
         ) : empty ? (
           <div className="rounded-lg border border-admin-line bg-admin-paper">
             {emptyState}
@@ -290,15 +290,21 @@ export default function AdminOrdersPage() {
                       className="min-w-0 flex-1"
                       triggerClassName={selectTrigger}
                     />
-                    <a
-                      href={invoiceHref(o.orderNumber)}
-                      download
-                      aria-label={`Download invoice for ${ref}`}
-                      title="Download invoice"
-                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-admin-line text-admin-muted transition-colors hover:border-admin-ink hover:text-admin-ink"
-                    >
-                      <DownloadIcon size={18} color="currentColor" isAnimated={false} />
-                    </a>
+                    <AdminRowActions className="shrink-0">
+                      <AdminIconAction
+                        icon="view"
+                        label="View order"
+                        ariaLabel={`View order ${ref}`}
+                        href={detailHref}
+                      />
+                      <AdminIconAction
+                        icon="download"
+                        label="Download invoice"
+                        ariaLabel={`Download invoice for ${ref}`}
+                        href={invoiceHref(o.orderNumber)}
+                        download
+                      />
+                    </AdminRowActions>
                   </div>
                 </li>
               );
@@ -316,9 +322,7 @@ export default function AdminOrdersPage() {
             <AdminTh>Payment</AdminTh>
             <AdminTh>Status</AdminTh>
             <AdminTh numeric>Total</AdminTh>
-            <AdminTh className="w-14">
-              <span className="sr-only">Invoice</span>
-            </AdminTh>
+            <AdminTh className="w-28 text-right">Actions</AdminTh>
           </tr>
         </thead>
         <tbody>
@@ -382,25 +386,29 @@ export default function AdminOrdersPage() {
                 <AdminTd numeric className="font-medium">
                   {formatPkr(o.totalPkr)}
                 </AdminTd>
-                <AdminTd className="text-right">
-                  <a
-                    href={invoiceHref(o.orderNumber)}
-                    download
-                    aria-label={`Download invoice for ${ref}`}
-                    title="Download invoice"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-md text-admin-muted transition-colors hover:bg-admin-soft hover:text-admin-ink"
-                  >
-                    <DownloadIcon size={18} color="currentColor" isAnimated={false} />
-                  </a>
+                <AdminTd className="py-2">
+                  <AdminRowActions>
+                    <AdminIconAction
+                      icon="view"
+                      label="View order"
+                      ariaLabel={`View order ${ref}`}
+                      href={detailHref}
+                    />
+                    <AdminIconAction
+                      icon="download"
+                      label="Download invoice"
+                      ariaLabel={`Download invoice for ${ref}`}
+                      href={invoiceHref(o.orderNumber)}
+                      download
+                    />
+                  </AdminRowActions>
                 </AdminTd>
               </tr>
             );
           })}
           {loading && !orders.length ? (
             <tr>
-              <td colSpan={7} className="px-4 py-14 text-center text-admin-muted">
-                Loading orders…
-              </td>
+              <td colSpan={7}><BrandLoaderBlock className="min-h-[40vh]" label="Loading orders" /></td>
             </tr>
           ) : empty ? (
             <tr>
