@@ -1,7 +1,7 @@
 "use client";
 
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { ChevronDownIcon } from "@animateicons/react/lucide";
+import { ChevronDownIcon } from "@/components/ui/icons";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 

@@ -105,7 +105,7 @@ export function Button({
     "pointer-events-none absolute inset-0 z-0 translate-y-[101%] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
     "group-hover/nsbtn:translate-y-0 group-disabled/nsbtn:translate-y-[101%]",
     "motion-reduce:transition-none motion-reduce:group-hover/nsbtn:translate-y-0",
-    isDanger ? "bg-[#9a1b1b]" : "bg-brass",
+    isDanger ? "bg-[#9a1b1b]" : "bg-brass-ink",
   );
 
   const label = cn(

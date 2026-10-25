@@ -5,6 +5,7 @@ import { mapJournal } from "@/lib/mappers";
 import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 import { JournalModel } from "@/models/Journal";
 import slugify from "slugify";
+import { revalidateStorefront } from "@/lib/revalidate";
 
 /** Today's calendar date in Pakistan as yyyy-MM-dd (en-CA formats that way). */
 function todayInKarachi() {
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
       status: body.status === "draft" ? "draft" : "published",
     });
 
+    revalidateStorefront();
     return jsonOk(mapJournal(created.toObject()), { status: 201 });
   } catch (e) {
     console.error(e);

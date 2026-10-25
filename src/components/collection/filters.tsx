@@ -129,11 +129,14 @@ export function CollectionFilters({
       {pageItems.length === 0 ? (
         <p className="mb-24 text-body text-taupe">{pageCopy.emptyFilters}</p>
       ) : (
-        <div className="mb-8 grid grid-cols-2 gap-x-3 gap-y-10 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4 2xl:gap-x-6">
-          {pageItems.map((p) => (
-            <ProductCard key={p.handle} product={p} />
-          ))}
-        </div>
+        <>
+          <h2 className="sr-only">Products</h2>
+          <div className="mb-8 grid grid-cols-2 gap-x-3 gap-y-10 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4 2xl:gap-x-6">
+            {pageItems.map((p) => (
+              <ProductCard key={p.handle} product={p} />
+            ))}
+          </div>
+        </>
       )}
 
       {totalPages > 1 ? (

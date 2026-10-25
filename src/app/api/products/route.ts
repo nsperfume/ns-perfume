@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { mapProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
 import { isDuplicateKey, productCreateSchema, validationError } from "@/lib/validation/catalog";
+import { revalidateStorefront } from "@/lib/revalidate";
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -56,6 +57,7 @@ export async function POST(req: Request) {
     const parsed = productCreateSchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) return validationError(parsed.error);
     const created = await ProductModel.create(parsed.data);
+    revalidateStorefront();
     return jsonOk(mapProduct(created.toObject()), { status: 201 });
   } catch (e) {
     if (isDuplicateKey(e)) {

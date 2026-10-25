@@ -12,7 +12,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
-import { ChevronDownIcon } from "@animateicons/react/lucide";
+import { ChevronDownIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { pageCopy } from "@/data/copy";
 

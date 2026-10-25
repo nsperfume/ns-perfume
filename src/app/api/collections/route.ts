@@ -5,6 +5,7 @@ import { CollectionModel } from "@/models/Collection";
 import { ProductModel } from "@/models/Product";
 import { mapProduct } from "@/lib/mappers";
 import { productsInCollectionQuery } from "@/lib/collection-query";
+import { revalidateStorefront } from "@/lib/revalidate";
 
 export async function GET(req: Request) {
   try {
@@ -62,6 +63,7 @@ export async function POST(req: Request) {
       status,
       bannerTone: body.bannerTone === "deep" ? "deep" : "canvas",
     });
+    revalidateStorefront();
     return jsonOk(created, { status: 201 });
   } catch (e) {
     console.error(e);

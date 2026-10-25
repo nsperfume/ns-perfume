@@ -11,8 +11,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import gsap from "gsap";
-import { SearchIcon, XIcon } from "@animateicons/react/lucide";
+import { animate, EASE, finished } from "@/lib/animate";
+import { SearchIcon, XIcon } from "@/components/ui/icons";
 import { useUi } from "@/context/ui";
 import type { StoreProduct } from "@/lib/mappers";
 import { Price } from "@/components/commerce/price";
@@ -87,26 +87,13 @@ export function SearchSheet() {
     const panel = panelRef.current;
     if (!root || !panel) return;
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    gsap.killTweensOf([root, panel]);
-
-    if (reduced) {
-      gsap.set(root, { autoAlpha: 1 });
-      gsap.set(panel, { y: 0, autoAlpha: 1 });
-      return;
-    }
-
-    gsap.set(root, { autoAlpha: 1 });
-    gsap.fromTo(
-      panel,
-      { y: "-100%", autoAlpha: 0.95 },
-      { y: "0%", autoAlpha: 1, duration: 0.4, ease: "power4.out" },
-    );
-    gsap.fromTo(
-      root.querySelector("[data-search-scrim]"),
-      { autoAlpha: 0 },
-      { autoAlpha: 1, duration: 0.3, ease: "power2.out" },
-    );
+    root.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+    root.style.opacity = "1";
+    root.style.visibility = "visible";
+    animate(panel, [{ transform: "translateY(-100%)", opacity: 0.95 }, { transform: "none", opacity: 1 }], {
+      duration: 400,
+    });
+    animate(root.querySelector("[data-search-scrim]"), [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
   }, []);
 
   const animateClose = useCallback((done?: () => void) => {
@@ -117,26 +104,18 @@ export function SearchSheet() {
       return;
     }
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    gsap.killTweensOf([root, panel]);
-
-    if (reduced) {
-      gsap.set(root, { autoAlpha: 0 });
-      done?.();
-      return;
-    }
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        gsap.set(root, { autoAlpha: 0 });
-        done?.();
-      },
+    root.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+    const exit = { easing: EASE.in, fill: "forwards" as const };
+    const slide = animate(panel, [{ transform: "none" }, { transform: "translateY(-100%)" }], { ...exit, duration: 280 });
+    const fade = animate(root.querySelector("[data-search-scrim]"), [{ opacity: 1 }, { opacity: 0 }], {
+      ...exit,
+      duration: 240,
     });
-    tl.to(panel, { y: "-100%", duration: 0.28, ease: "power3.in" }, 0).to(
-      root.querySelector("[data-search-scrim]"),
-      { autoAlpha: 0, duration: 0.24, ease: "power2.in" },
-      0,
-    );
+    Promise.all([finished(slide), finished(fade)]).then(() => {
+      root.style.opacity = "0";
+      root.style.visibility = "hidden";
+      done?.();
+    });
   }, []);
 
   useEffect(() => {
@@ -177,13 +156,12 @@ export function SearchSheet() {
     if (!mounted || !results.length) return;
     const list = rootRef.current?.querySelectorAll("[data-search-result]");
     if (!list?.length) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
-    gsap.fromTo(
-      list,
-      { opacity: 0, y: 8 },
-      { opacity: 1, y: 0, duration: 0.22, stagger: 0.03, ease: "power2.out" },
-    );
+    list.forEach((item, i) => {
+      animate(item, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], {
+        duration: 220,
+        delay: i * 30,
+      });
+    });
   }, [mounted, results]);
 
   if (!mounted) return null;

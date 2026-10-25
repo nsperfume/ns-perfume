@@ -2,10 +2,10 @@
 
 import { useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
-import gsap from "gsap";
+import { animate } from "@/lib/animate";
 import { SizeSelector } from "@/components/commerce/size-selector";
 import { Button } from "@/components/ui/button";
-import { RichHtml } from "@/components/ui/rich-html";
+import { TrustedHtml as RichHtml } from "@/components/ui/trusted-html";
 import { StickyAddToCart } from "@/components/product/sticky-atc";
 import { Price } from "@/components/commerce/price";
 import { StarRating } from "@/components/ui/star-rating";
@@ -15,16 +15,10 @@ import { useUi } from "@/context/ui";
 import { siteConfig } from "@/data/site";
 import type { StoreProduct } from "@/lib/mappers";
 import { GIFT_WRAP_FEE_PKR } from "@/lib/types";
-import { richTextToPlain } from "@/lib/rich-text";
+import { htmlToPlain as richTextToPlain } from "@/lib/plain-text";
 
 function pressFeedback(e: MouseEvent<HTMLElement>) {
-  const el = e.currentTarget;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  gsap.fromTo(
-    el,
-    { scale: 0.97 },
-    { scale: 1, duration: 0.32, ease: "power2.out", clearProps: "transform" },
-  );
+  animate(e.currentTarget, [{ transform: "scale(0.97)" }, { transform: "scale(1)" }], { duration: 320 });
 }
 
 /** Crisp lucide-style heart. Hard-coded red so Button hover text color cannot wash it out. */

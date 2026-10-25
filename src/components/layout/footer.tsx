@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/cn";
+import { HORIZONTAL } from "@/components/brand/paths";
 
 const iconMap: Record<(typeof socialLinks)[number]["slug"], SimpleIcon> = {
   instagram: siInstagram,
@@ -259,15 +260,14 @@ export function Footer() {
 
       {/* Giant wordmark */}
       <div className="relative overflow-hidden border-t border-white/5 px-4 pb-4 pt-2 sm:pb-6">
-        <p
-          className="select-none text-center font-display font-semibold uppercase leading-[0.85] tracking-[-0.02em] text-paper/[0.08] sm:text-paper/[0.1]"
-          style={{
-            fontSize: "clamp(2.75rem, 14vw, 10.5rem)",
-          }}
-          aria-hidden
+        <svg
+          viewBox={`${HORIZONTAL.rule.x + 26} 8 ${HORIZONTAL.width - HORIZONTAL.rule.x - 26} 80`}
+          className="mx-auto block h-auto w-full max-w-[90rem] select-none fill-paper/[0.08] sm:fill-paper/[0.1]"
+          aria-hidden="true"
+          focusable="false"
         >
-          NS PERFUME
-        </p>
+          <path d={HORIZONTAL.wordmark} />
+        </svg>
         <span className="sr-only">{siteConfig.name}</span>
       </div>
     </footer>

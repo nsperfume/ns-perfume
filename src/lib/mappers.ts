@@ -1,4 +1,4 @@
-import { richTextToPlain, sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
+import { richTextToPlain, safeRichText, sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 
 /** Map DB product to storefront shape (prices still PKR in sizes). */
 export type StoreProduct = {
@@ -45,7 +45,7 @@ export function mapProduct(doc: any): StoreProduct {
     handle: doc.handle,
     name: doc.name,
     descriptor: doc.descriptor || "",
-    description: doc.description || "",
+    description: safeRichText(doc.description),
     concentration: doc.concentration,
     family: doc.family,
     gender: doc.gender,
@@ -65,8 +65,8 @@ export function mapProduct(doc: any): StoreProduct {
     ingredients: doc.ingredients || [],
     containsAlcohol: doc.containsAlcohol !== false,
     countryOfOrigin: doc.countryOfOrigin || "Pakistan",
-    story: doc.story || "",
-    howToWear: doc.howToWear || "",
+    story: safeRichText(doc.story),
+    howToWear: safeRichText(doc.howToWear),
     tags: doc.tags || [],
     collectionHandles: Array.isArray(doc.collectionHandles)
       ? doc.collectionHandles

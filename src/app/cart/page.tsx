@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
+import { animate } from "@/lib/animate";
 import { useCart } from "@/context/cart";
 import { Price } from "@/components/commerce/price";
 import { Button } from "@/components/ui/button";
@@ -20,13 +20,12 @@ export default function CartPage() {
 
   useEffect(() => {
     if (!listRef.current || !lines.length) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
-    gsap.fromTo(
-      listRef.current.querySelectorAll("[data-line]"),
-      { opacity: 0, y: 14 },
-      { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: "power3.out" },
-    );
+    listRef.current.querySelectorAll("[data-line]").forEach((line, i) => {
+      animate(line, [{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }], {
+        duration: 400,
+        delay: i * 60,
+      });
+    });
   }, [lines.length]);
 
   const count = lines.reduce((s, l) => s + l.quantity, 0);

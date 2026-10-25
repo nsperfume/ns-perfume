@@ -8,6 +8,7 @@ import { JournalModel } from "@/models/Journal";
 import { products as fallbackProducts } from "@/data/products";
 import { collections as fallbackCollections } from "@/data/collections";
 import { productsInCollectionQuery } from "@/lib/collection-query";
+import { safeRichText } from "@/lib/rich-text";
 
 function toPkrFallback(p: (typeof fallbackProducts)[0]): StoreProduct {
   return {
@@ -119,7 +120,9 @@ export async function getTestimonials() {
     })
       .sort({ sortOrder: 1 })
       .lean();
-    if (docs.length) return docs;
+    if (docs.length) {
+      return docs.map((d) => ({ ...d, quote: safeRichText(String(d.quote ?? "")) }));
+    }
   } catch (e) {
     console.error("getTestimonials fallback", e);
   }

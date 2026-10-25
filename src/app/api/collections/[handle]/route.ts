@@ -4,6 +4,7 @@ import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
 import { CollectionModel } from "@/models/Collection";
 import { ProductModel } from "@/models/Product";
 import { resolveCollectionProducts } from "@/app/api/collections/route";
+import { revalidateStorefront } from "@/lib/revalidate";
 
 type Ctx = { params: Promise<{ handle: string }> };
 
@@ -71,6 +72,7 @@ export async function PUT(req: Request, ctx: Ctx) {
       runValidators: true,
     }).lean();
     if (!doc) return jsonError("Collection not found", 404);
+    revalidateStorefront();
     return jsonOk(doc);
   } catch (e) {
     console.error(e);
@@ -91,6 +93,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
       { collectionHandles: handle },
       { $pull: { collectionHandles: handle } },
     );
+    revalidateStorefront();
     return jsonOk({ handle });
   } catch (e) {
     console.error(e);

@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/collections" },
 };
 
-export const dynamic = "force-dynamic";
+/** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
+export const revalidate = 300;
 
 const tileImage: Record<string, string> = {
   "for-her": siteImages.shopByCollection.forHer,

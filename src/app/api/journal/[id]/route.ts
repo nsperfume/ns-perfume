@@ -5,6 +5,7 @@ import { mapJournal } from "@/lib/mappers";
 import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 import { JournalModel } from "@/models/Journal";
 import slugify from "slugify";
+import { revalidateStorefront } from "@/lib/revalidate";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -71,6 +72,7 @@ export async function PUT(req: Request, ctx: Ctx) {
     }).lean();
 
     if (!doc) return jsonError("Not found", 404);
+    revalidateStorefront();
     return jsonOk(mapJournal(doc));
   } catch (e) {
     console.error(e);
@@ -86,6 +88,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     const { id } = await ctx.params;
     const doc = await JournalModel.findByIdAndDelete(id).lean();
     if (!doc) return jsonError("Journal post not found", 404);
+    revalidateStorefront();
     return jsonOk({ id });
   } catch (e) {
     console.error(e);

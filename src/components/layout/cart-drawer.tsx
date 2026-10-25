@@ -3,13 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
 import { useCart } from "@/context/cart";
 import { Price } from "@/components/commerce/price";
 import { Button } from "@/components/ui/button";
 import { pageCopy } from "@/data/copy";
 import { FREE_SHIPPING_THRESHOLD_PKR } from "@/lib/checkout";
 import { cn } from "@/lib/cn";
+import { animate, EASE, finished } from "@/lib/animate";
 
 export function CartDrawer() {
   const { lines, isOpen, closeCart, removeItem, updateQuantity, subtotal } =
@@ -31,87 +31,50 @@ export function CartDrawer() {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
     if (!mounted) return;
     const root = rootRef.current;
     const panel = panelRef.current;
     if (!root || !panel) return;
-
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    gsap.killTweensOf([root, panel]);
+    const scrim = root.querySelector("[data-cart-scrim]");
+    root.getAnimations({ subtree: true }).forEach((a) => a.cancel());
 
     if (isOpen) {
-      if (reduced) {
-        gsap.set(root, { autoAlpha: 1 });
-        gsap.set(panel, { x: 0 });
-        return;
-      }
-      gsap.set(root, { autoAlpha: 1 });
-      gsap.fromTo(
-        panel,
-        { x: "100%" },
-        { x: "0%", duration: 0.45, ease: "power4.out" },
-      );
-      gsap.fromTo(
-        root.querySelector("[data-cart-scrim]"),
-        { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 0.35, ease: "power2.out" },
-      );
-      if (listRef.current) {
-        const items = listRef.current.querySelectorAll("[data-cart-line]");
-        if (items.length) {
-          gsap.fromTo(
-            items,
-            { opacity: 0, y: 10 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.3,
-              stagger: 0.04,
-              ease: "power3.out",
-              delay: 0.1,
-            },
-          );
-        }
-      }
-    } else {
-      if (reduced) {
-        gsap.set(root, { autoAlpha: 0 });
-        setMounted(false);
-        return;
-      }
-      gsap.to(panel, {
-        x: "100%",
-        duration: 0.32,
-        ease: "power3.in",
+      root.style.opacity = "1";
+      animate(panel, [{ transform: "translateX(100%)" }, { transform: "translateX(0)" }], { duration: 450 });
+      animate(scrim, [{ opacity: 0 }, { opacity: 1 }], { duration: 350 });
+      listRef.current?.querySelectorAll("[data-cart-line]").forEach((item, i) => {
+        animate(item, [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], {
+          duration: 300,
+          delay: 100 + i * 40,
+        });
       });
-      gsap.to(root.querySelector("[data-cart-scrim]"), {
-        autoAlpha: 0,
-        duration: 0.28,
-        ease: "power2.in",
-        onComplete: () => {
-          gsap.set(root, { autoAlpha: 0 });
-          setMounted(false);
-        },
-      });
+      return;
     }
+
+    const exit = { duration: 300, easing: EASE.in, fill: "forwards" as const };
+    const slide = animate(panel, [{ transform: "translateX(0)" }, { transform: "translateX(100%)" }], exit);
+    const fade = animate(scrim, [{ opacity: 1 }, { opacity: 0 }], exit);
+    let active = true;
+    Promise.all([finished(slide), finished(fade)]).then(() => {
+      if (active) setMounted(false);
+    });
+    return () => {
+      active = false;
+    };
   }, [isOpen, mounted]);
 
   useEffect(() => {
     if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeCart();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [isOpen, closeCart]);
 
   if (!mounted) return null;

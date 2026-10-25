@@ -4,6 +4,7 @@ import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
 import { mapProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
 import { isDuplicateKey, productUpdateSchema, validationError } from "@/lib/validation/catalog";
+import { revalidateStorefront } from "@/lib/revalidate";
 
 type Ctx = { params: Promise<{ handle: string }> };
 
@@ -47,6 +48,7 @@ export async function PUT(req: Request, ctx: Ctx) {
       runValidators: true,
     }).lean();
     if (!doc) return jsonError("Product not found", 404);
+    revalidateStorefront();
     return jsonOk(mapProduct(doc));
   } catch (e) {
     if (isDuplicateKey(e)) {
@@ -67,6 +69,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     const { handle } = await ctx.params;
     const doc = await ProductModel.findOneAndDelete({ handle }).lean();
     if (!doc) return jsonError("Product not found", 404);
+    revalidateStorefront();
     return jsonOk({ handle });
   } catch (e) {
     console.error(e);

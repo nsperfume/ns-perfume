@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import gsap from "gsap";
+import { animate } from "@/lib/animate";
 import { useWishlist, type WishlistItem } from "@/context/wishlist";
 import { useCart } from "@/context/cart";
 import { useUi } from "@/context/ui";
@@ -86,13 +86,12 @@ export function WishlistClient() {
 
   useEffect(() => {
     if (!gridRef.current || !items.length) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
-    gsap.fromTo(
-      gridRef.current.querySelectorAll("[data-card]"),
-      { opacity: 0, y: 18 },
-      { opacity: 1, y: 0, duration: 0.42, stagger: 0.07, ease: "power3.out" },
-    );
+    gridRef.current.querySelectorAll("[data-card]").forEach((card, i) => {
+      animate(card, [{ opacity: 0, transform: "translateY(18px)" }, { opacity: 1, transform: "none" }], {
+        duration: 420,
+        delay: i * 70,
+      });
+    });
   }, [items.length]);
 
   useEffect(() => {

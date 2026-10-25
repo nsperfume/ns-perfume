@@ -431,11 +431,14 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-10 sm:gap-x-5 md:grid-cols-3 2xl:grid-cols-4 2xl:gap-x-6">
-              {pageItems.map((p) => (
-                <ProductCard key={p.handle} product={p} />
-              ))}
-            </div>
+            <>
+              <h2 className="sr-only">Products</h2>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-10 sm:gap-x-5 md:grid-cols-3 2xl:grid-cols-4 2xl:gap-x-6">
+                {pageItems.map((p) => (
+                  <ProductCard key={p.handle} product={p} />
+                ))}
+              </div>
+            </>
           )}
 
           {totalPages > 1 ? (

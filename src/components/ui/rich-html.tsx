@@ -11,21 +11,25 @@ type Props = {
  * Sanitized rich-text render for storefront descriptive copy.
  */
 export function RichHtml({ html, className, as: Tag = "div" }: Props) {
+  const source = (html || "").trim();
+  if (!source) return null;
+
+  // Plain text: React escapes it; sanitizing would turn "&" into a visible "&amp;".
+  if (!isRichHtml(source)) {
+    return (
+      <Tag className={className}>
+        <p>{source}</p>
+      </Tag>
+    );
+  }
+
   let clean = "";
   try {
-    clean = sanitizeRichHtml(html || "");
+    clean = sanitizeRichHtml(source);
   } catch {
     clean = "";
   }
   if (!clean) return null;
-
-  if (!isRichHtml(clean)) {
-    return (
-      <Tag className={className}>
-        <p>{clean}</p>
-      </Tag>
-    );
-  }
 
   return (
     <Tag

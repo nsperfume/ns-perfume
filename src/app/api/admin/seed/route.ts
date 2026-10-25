@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { requireSuperAdmin, hashPassword } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/revalidate";
 import { ProductModel } from "@/models/Product";
 import { CollectionModel } from "@/models/Collection";
 import { TestimonialModel } from "@/models/Testimonial";
@@ -92,6 +93,7 @@ export async function POST(req: Request) {
     if (seedReviewsInserted) await ReviewModel.insertMany(seedReviews);
     await JournalModel.insertMany(seedJournal);
 
+    revalidateStorefront();
     return jsonOk({
       message: "Database seeded",
       products: seedProducts.length,

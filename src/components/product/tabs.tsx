@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ScentPyramid } from "@/components/commerce/scent-pyramid";
-import { RichHtml } from "@/components/ui/rich-html";
+import { TrustedHtml as RichHtml } from "@/components/ui/trusted-html";
 import { cn } from "@/lib/cn";
 import type { StoreProduct } from "@/lib/mappers";
 

@@ -6,12 +6,19 @@ import { PageHero } from "@/components/layout/page-hero";
 import { JsonLd } from "@/components/seo/json-ld";
 import { siteImages } from "@/data/images";
 import { siteConfig } from "@/data/site";
-import { getCollectionWithProducts } from "@/lib/store-data";
+import { getCollectionWithProducts, getCollections } from "@/lib/store-data";
 import { richTextToPlain } from "@/lib/rich-text";
 
 type Props = { params: Promise<{ handle: string }> };
 
-export const dynamic = "force-dynamic";
+/** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
+export const revalidate = 300;
+
+/** Prerender every collection at build; new ones render on first visit. */
+export async function generateStaticParams() {
+  const collections = await getCollections();
+  return collections.map((c) => ({ handle: String(c.handle) }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;

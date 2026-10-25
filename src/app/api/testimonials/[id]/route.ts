@@ -3,6 +3,7 @@ import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
 import { TestimonialModel } from "@/models/Testimonial";
 import { testimonialSchema, validationError } from "@/lib/validation/catalog";
+import { revalidateStorefront } from "@/lib/revalidate";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -19,6 +20,7 @@ export async function PUT(req: Request, ctx: Ctx) {
       runValidators: true,
     }).lean();
     if (!doc) return jsonError("Not found", 404);
+    revalidateStorefront();
     return jsonOk(doc);
   } catch (e) {
     console.error(e);
@@ -34,6 +36,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     const { id } = await ctx.params;
     const doc = await TestimonialModel.findByIdAndDelete(id).lean();
     if (!doc) return jsonError("Testimonial not found", 404);
+    revalidateStorefront();
     return jsonOk({ id });
   } catch (e) {
     console.error(e);

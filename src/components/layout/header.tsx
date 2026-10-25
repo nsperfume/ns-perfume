@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
+import { animate, EASE } from "@/lib/animate";
 import {
   ChevronDownIcon,
   HeartIcon,
@@ -11,7 +11,7 @@ import {
   ShoppingBagIcon,
   UserIcon,
   XIcon,
-} from "@animateicons/react/lucide";
+} from "@/components/ui/icons";
 import { shopMegaMenu, siteConfig } from "@/data/site";
 import { siteImages } from "@/data/images";
 import { useCart } from "@/context/cart";
@@ -69,42 +69,14 @@ export function Header() {
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
-    const prefersReduced =
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return;
-
-    const el = headerRef.current;
-    if (!el) return;
-
-    const ctx = gsap.context(() => {
-      gsap.from(el, {
-        y: -14,
-        duration: 0.5,
-        ease: "power3.out",
-        clearProps: "transform",
-      });
-    }, headerRef);
-    return () => ctx.revert();
-  }, [ready]);
-
-  useEffect(() => {
-    if (!mobilePanelRef.current || !mobileOpen) return;
-    const el = mobilePanelRef.current;
-    gsap.fromTo(
-      el,
-      { height: 0, autoAlpha: 0 },
-      {
-        height: "auto",
-        autoAlpha: 1,
-        duration: 0.4,
-        ease: "power3.out",
-        // GSAP leaves a fixed pixel height after "auto"; clear it so the
-        // accordion can grow and the panel can scroll inside the viewport.
-        onComplete: () => {
-          gsap.set(el, { clearProps: "height,overflow" });
-        },
-      },
+    if (!mobileOpen) return;
+    animate(
+      mobilePanelRef.current,
+      [
+        { opacity: 0, transform: "translateY(-8px)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 320 },
     );
   }, [mobileOpen]);
 
@@ -129,24 +101,22 @@ export function Header() {
 
   useEffect(() => {
     if (!ready) return;
-    if (itemCount > prevCart.current && cartBadgeRef.current) {
-      gsap.fromTo(
-        cartBadgeRef.current,
-        { scale: 0.5 },
-        { scale: 1, duration: 0.4, ease: "back.out(2.2)" },
-      );
+    if (itemCount > prevCart.current) {
+      animate(cartBadgeRef.current, [{ transform: "scale(0.5)" }, { transform: "scale(1)" }], {
+        duration: 400,
+        easing: EASE.back,
+      });
     }
     prevCart.current = itemCount;
   }, [itemCount, ready]);
 
   useEffect(() => {
     if (!ready) return;
-    if (wishCount > prevWish.current && wishBadgeRef.current) {
-      gsap.fromTo(
-        wishBadgeRef.current,
-        { scale: 0.5 },
-        { scale: 1, duration: 0.4, ease: "back.out(2.2)" },
-      );
+    if (wishCount > prevWish.current) {
+      animate(wishBadgeRef.current, [{ transform: "scale(0.5)" }, { transform: "scale(1)" }], {
+        duration: 400,
+        easing: EASE.back,
+      });
     }
     prevWish.current = wishCount;
   }, [wishCount, ready]);

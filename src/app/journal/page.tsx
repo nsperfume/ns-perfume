@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/journal" },
 };
 
-export const dynamic = "force-dynamic";
+/** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
+export const revalidate = 300;
 
 function formatDate(value: string) {
   const d = new Date(value);

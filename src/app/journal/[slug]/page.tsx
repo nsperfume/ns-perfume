@@ -14,7 +14,14 @@ import {
 
 type Props = { params: Promise<{ slug: string }> };
 
-export const dynamic = "force-dynamic";
+/** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
+export const revalidate = 300;
+
+/** Prerender every published article at build; new ones render on first visit. */
+export async function generateStaticParams() {
+  const posts = await getJournalPosts();
+  return posts.map((p) => ({ slug: p.slug }));
+}
 
 function formatDate(value: string) {
   const d = new Date(value);

@@ -118,7 +118,7 @@ export function EmblaCarousel({
                   aria-label={`Go to slide ${i + 1}`}
                   aria-current={i === selected ? "true" : undefined}
                   onClick={() => emblaApi?.scrollTo(i)}
-                  className="group/dot flex h-8 cursor-pointer items-center px-1"
+                  className="group/dot flex h-8 min-w-6 cursor-pointer items-center justify-center px-1"
                 >
                   <span
                     className={cn(

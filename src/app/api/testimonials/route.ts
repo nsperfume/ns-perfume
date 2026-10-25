@@ -3,6 +3,7 @@ import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth";
 import { TestimonialModel } from "@/models/Testimonial";
 import { testimonialSchema, validationError } from "@/lib/validation/catalog";
+import { revalidateStorefront } from "@/lib/revalidate";
 
 export async function GET(req: Request) {
   try {
@@ -31,6 +32,7 @@ export async function POST(req: Request) {
       .safeParse(await req.json().catch(() => null));
     if (!parsed.success) return validationError(parsed.error);
     const created = await TestimonialModel.create(parsed.data);
+    revalidateStorefront();
     return jsonOk(created, { status: 201 });
   } catch (e) {
     console.error(e);

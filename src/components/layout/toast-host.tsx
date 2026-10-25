@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
+import { animate } from "@/lib/animate";
 import { useUi, type ToastItem } from "@/context/ui";
 import { cn } from "@/lib/cn";
 
@@ -9,19 +9,13 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      gsap.set(el, { opacity: 1, y: 0, scale: 1 });
-      return;
-    }
-
-    gsap.fromTo(
-      el,
-      { opacity: 0, y: 16, scale: 0.96 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.38, ease: "power3.out" },
+    animate(
+      ref.current,
+      [
+        { opacity: 0, transform: "translateY(16px) scale(0.96)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 380 },
     );
   }, []);
 

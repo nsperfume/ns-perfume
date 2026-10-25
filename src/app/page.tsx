@@ -27,7 +27,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export const dynamic = "force-dynamic";
+/** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
+export const revalidate = 300;
 
 export default async function HomePage() {
   const [bestsellers, products, testimonials, posts] = await Promise.all([

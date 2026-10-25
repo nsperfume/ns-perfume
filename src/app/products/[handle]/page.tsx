@@ -28,7 +28,14 @@ import { richTextToPlain } from "@/lib/rich-text";
 
 type Props = { params: Promise<{ handle: string }> };
 
-export const dynamic = "force-dynamic";
+/** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
+export const revalidate = 300;
+
+/** Prerender every product at build; new products render on first visit. */
+export async function generateStaticParams() {
+  const products = await getStoreProducts();
+  return products.map((p) => ({ handle: p.handle }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;

@@ -1,8 +1,8 @@
 "use client";
 
 import { EmblaCarousel } from "@/components/ui/embla-carousel";
-import { RichHtml } from "@/components/ui/rich-html";
-import { isRichHtml, richTextToPlain } from "@/lib/rich-text";
+import { TrustedHtml as RichHtml } from "@/components/ui/trusted-html";
+import { htmlToPlain as richTextToPlain, isRichHtml } from "@/lib/plain-text";
 
 export type TestimonialItem = {
   author: string;

@@ -1,6 +1,5 @@
 "use client";
 
-import gsap from "gsap";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/cn";
 
@@ -96,7 +95,7 @@ function MarqueeRow({
       velocityRef.current = dx / dt;
       lastXRef.current = event.clientX;
       lastTRef.current = now;
-      gsap.set(track, { x: offsetRef.current });
+      track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
     };
 
     const endDrag = (event: PointerEvent) => {
@@ -129,15 +128,30 @@ function MarqueeRow({
           offsetRef.current = wrap(offsetRef.current + pxPerFrame * baseDir);
         }
       }
-      gsap.set(track, { x: offsetRef.current });
+      track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
     };
 
-    gsap.ticker.add(tick);
+    // Pause off-screen and in background tabs so the loop never burns CPU unseen.
+    let frame = 0;
+    let visible = true;
+    const loop = () => {
+      tick();
+      frame = requestAnimationFrame(loop);
+    };
+    const io = new IntersectionObserver(([entry]) => {
+      visible = Boolean(entry?.isIntersecting);
+      cancelAnimationFrame(frame);
+      if (visible && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        frame = requestAnimationFrame(loop);
+      }
+    });
+    io.observe(viewport);
     const ro = new ResizeObserver(measure);
     ro.observe(track);
 
     return () => {
-      gsap.ticker.remove(tick);
+      cancelAnimationFrame(frame);
+      io.disconnect();
       ro.disconnect();
       viewport.removeEventListener("pointerdown", onPointerDown);
       viewport.removeEventListener("pointermove", onPointerMove);

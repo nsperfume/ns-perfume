@@ -3,6 +3,7 @@ import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
 import { ReviewModel } from "@/models/Review";
 import { recomputeProductRating } from "@/app/api/reviews/route";
+import { revalidateStorefront } from "@/lib/revalidate";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -34,6 +35,7 @@ export async function PUT(req: Request, ctx: Ctx) {
     });
     if (!doc) return jsonError("Not found", 404);
     await recomputeProductRating(doc.productHandle);
+    revalidateStorefront();
     return jsonOk(doc);
   } catch (e) {
     console.error(e);
@@ -50,6 +52,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     const doc = await ReviewModel.findByIdAndDelete(id);
     if (!doc) return jsonError("Review not found", 404);
     await recomputeProductRating(doc.productHandle);
+    revalidateStorefront();
     return jsonOk({ id });
   } catch (e) {
     console.error(e);
