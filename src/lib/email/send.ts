@@ -68,6 +68,7 @@ const PLAIN_TEXT = {
     { selector: "table.kv", format: "dataTable", options: { colSpacing: 3, uppercaseHeaderCells: false } },
     { selector: "img", format: "skip" },
     { selector: "a.logo", format: "skip" },
+    { selector: "table.social", format: "skip" },
     { selector: "h1", options: { uppercase: false } },
     { selector: "a", options: { hideLinkHrefIfSameAsText: true } },
   ],

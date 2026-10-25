@@ -70,7 +70,13 @@ export function EmailLayout({
   children: ReactNode;
 }) {
   const whatsapp = `https://wa.me/92${siteConfig.phone.replace(/^0/, "")}`;
-  const social = socialLinks.filter((s) => ["instagram", "facebook", "tiktok"].includes(s.slug));
+  // Brand icons (Simple Icons, pre-rendered PNG: Gmail and Outlook do not show SVG).
+  const social = [
+    ...socialLinks
+      .filter((s) => ["instagram", "facebook", "tiktok"].includes(s.slug))
+      .map((s) => ({ key: s.slug, label: s.label, href: s.href })),
+    { key: "whatsapp", label: "WhatsApp", href: whatsapp },
+  ];
   return (
     <Html lang="en">
       <Head>
@@ -127,16 +133,25 @@ export function EmailLayout({
                   </Link>
                   .
                 </Text>
-                <Text style={footerText}>
-                  {social.map((s, i) => (
-                    <span key={s.slug}>
-                      {i > 0 ? " · " : ""}
-                      <Link href={s.href} style={footerLink}>
-                        {s.label}
-                      </Link>
-                    </span>
-                  ))}
-                </Text>
+                <table role="presentation" className="social" cellPadding={0} cellSpacing={0} style={{ margin: "6px 0 14px" }}>
+                  <tbody>
+                    <tr>
+                      {social.map((s) => (
+                        <td key={s.key} style={{ paddingRight: 10 }}>
+                          <Link href={s.href} title={s.label}>
+                            <Img
+                              src={absoluteUrl(`/brand/social/${s.key}.png`)}
+                              width="30"
+                              height="30"
+                              alt={s.label}
+                              style={{ display: "block", border: 0, fontSize: 11, color: colors.muted }}
+                            />
+                          </Link>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
                 <Text style={footerText}>{reason}</Text>
                 <Text style={{ ...footerText, margin: 0 }}>
                   {siteConfig.name} · {siteConfig.location.label}, {siteConfig.location.detail}, Pakistan ·{" "}
