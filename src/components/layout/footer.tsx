@@ -21,6 +21,9 @@ import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/cn";
 import { HORIZONTAL } from "@/components/brand/paths";
+import { BrandIcon } from "@/components/ui/brand-icon";
+import { MailIcon, PhoneIcon } from "@/components/ui/icons";
+import { whatsappUrl } from "@/lib/whatsapp";
 
 const iconMap: Record<(typeof socialLinks)[number]["slug"], SimpleIcon> = {
   instagram: siInstagram,
@@ -122,18 +125,26 @@ export function Footer() {
             <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-body-sm text-paper/70">
               <a
                 href={`mailto:${siteConfig.email}`}
-                className="inline-flex min-h-11 items-center transition-colors hover:text-brass"
+                className="inline-flex min-h-11 items-center gap-2 transition-colors hover:text-brass"
               >
+                <MailIcon size={16} />
                 {siteConfig.email}
               </a>
-              <span className="text-white/20" aria-hidden>
-                ·
-              </span>
               <a
                 href={`tel:${siteConfig.phone.replace(/\s/g, "")}`}
-                className="inline-flex min-h-11 items-center font-mono transition-colors hover:text-brass"
+                className="inline-flex min-h-11 items-center gap-2 font-mono transition-colors hover:text-brass"
               >
+                <PhoneIcon size={16} />
                 {siteConfig.phone}
+              </a>
+              <a
+                href={whatsappUrl(siteConfig.phone, "Hi NS Perfume, I have a question.")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center gap-2 transition-colors hover:text-brass"
+              >
+                <BrandIcon name="whatsapp" size={16} />
+                WhatsApp
               </a>
             </div>
           </div>

@@ -23,6 +23,7 @@ import {
 } from "react-email";
 import { siteConfig, socialLinks } from "@/data/site";
 import { absoluteUrl, siteUrl } from "@/lib/site-url";
+import { whatsappUrl } from "@/lib/whatsapp";
 
 export const colors = {
   page: "#F5F2EC",
@@ -69,7 +70,7 @@ export function EmailLayout({
   internal?: boolean;
   children: ReactNode;
 }) {
-  const whatsapp = `https://wa.me/92${siteConfig.phone.replace(/^0/, "")}`;
+  const whatsapp = whatsappUrl(siteConfig.phone);
   // Brand icons (Simple Icons, pre-rendered PNG: Gmail and Outlook do not show SVG).
   const social = [
     ...socialLinks

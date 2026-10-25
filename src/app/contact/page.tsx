@@ -11,6 +11,25 @@ import { siteConfig } from "@/data/site";
 import { cn } from "@/lib/cn";
 import { CopyableValue } from "@/components/ui/copyable-value";
 import { TransferDetails } from "@/components/commerce/transfer-details";
+import { BrandIcon } from "@/components/ui/brand-icon";
+import {
+  LandmarkIcon,
+  MailIcon,
+  MapPinIcon,
+  PhoneIcon,
+  TruckIcon,
+  UserIcon,
+} from "@/components/ui/icons";
+import { whatsappUrl } from "@/lib/whatsapp";
+
+const ROW_ICONS = {
+  name: UserIcon,
+  phone: PhoneIcon,
+  email: MailIcon,
+  location: MapPinIcon,
+  bank: LandmarkIcon,
+  orders: TruckIcon,
+} as const;
 
 const topics = [
   { value: "order", label: "Order help" },
@@ -107,11 +126,21 @@ export default function ContactPage() {
               Care
             </p>
             <h2 className="text-display-md mb-4">How to reach us</h2>
-            <p className="mb-10 max-w-[32rem] text-body-lg text-taupe">
+            <p className="mb-6 max-w-[32rem] text-body-lg text-taupe">
               Orders, delivery timing, and bottle questions. Use the form or
               write us directly. For live parcel status, tracking is faster than
               email.
             </p>
+            <div className="mb-10 flex flex-col gap-3 sm:flex-row">
+              <Button href={whatsappUrl(siteConfig.phone, "Hi NS Perfume, I have a question.")}>
+                <BrandIcon name="whatsapp" size={18} />
+                Chat on WhatsApp
+              </Button>
+              <Button href={`tel:${siteConfig.phone}`} variant="secondary">
+                <PhoneIcon size={18} />
+                Call {siteConfig.phone}
+              </Button>
+            </div>
             <dl className="grid gap-x-10 gap-y-6 border-t border-hairline pt-8 sm:grid-cols-2">
               {(
                 [
@@ -203,7 +232,9 @@ export default function ContactPage() {
                     ),
                   },
                 ] as const
-              ).map((row) => (
+              ).map((row) => {
+                const Icon = ROW_ICONS[row.key];
+                return (
                 <div
                   key={row.key}
                   className={
@@ -212,12 +243,14 @@ export default function ContactPage() {
                       : undefined
                   }
                 >
-                  <dt className="text-eyebrow text-taupe">
+                  <dt className="flex items-center gap-2 text-eyebrow text-taupe">
+                    <Icon size={16} className="shrink-0 text-brass-ink" />
                     {row.label}
                   </dt>
                   <dd>{row.node}</dd>
                 </div>
-              ))}
+                );
+              })}
             </dl>
           </div>
 

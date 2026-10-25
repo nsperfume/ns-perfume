@@ -16,6 +16,8 @@ import { siteConfig } from "@/data/site";
 import type { StoreProduct } from "@/lib/mappers";
 import { GIFT_WRAP_FEE_PKR } from "@/lib/types";
 import { htmlToPlain as richTextToPlain } from "@/lib/plain-text";
+import { BrandIcon } from "@/components/ui/brand-icon";
+import { whatsappUrl } from "@/lib/whatsapp";
 
 function pressFeedback(e: MouseEvent<HTMLElement>) {
   animate(e.currentTarget, [{ transform: "scale(0.97)" }, { transform: "scale(1)" }], { duration: 320 });
@@ -389,10 +391,18 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
           </a>
         </li>
         <li>
-          <Link href="/contact" className={serviceLink}>
-            <LineIcon name="chat" className="h-5 w-5 shrink-0" />
-            Contact care
-          </Link>
+          <a
+            href={whatsappUrl(
+              siteConfig.phone,
+              `Hi NS Perfume, I would like to order ${product.name}${selected ? ` ${selected.ml} ml` : ""}.`,
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={serviceLink}
+          >
+            <BrandIcon name="whatsapp" size={20} />
+            Order on WhatsApp
+          </a>
         </li>
         <li>
           <Link href="/track-order" className={serviceLink}>
