@@ -1,27 +1,50 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useRouter } from "next/navigation";
 import slugify from "slugify";
 import { z } from "zod";
+import { format, isValid, parseISO } from "date-fns";
+import { ChevronsLeftIcon } from "@animateicons/react/lucide";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminImageField } from "@/components/admin/image-field";
 import { AdminDatePickerField } from "@/components/admin/date-picker-field";
-import { AdminColorPickerField } from "@/components/admin/color-picker-field";
 import {
   AdminSearchableSelect,
   type SearchableOption,
 } from "@/components/admin/searchable-select";
 import { AdminRichTextEditor } from "@/components/admin/rich-text-editor";
 import {
-  AdminCard,
+  AdminFieldLabel,
+  AdminFormSection,
+  adminFieldClass,
+} from "@/components/admin/form-section";
+import {
+  AdminActionDivider,
+  AdminEmptyState,
+  AdminFilterChips,
+  AdminIconAction,
+  AdminNotice,
   AdminPageHeader,
+  AdminRowActions,
+  AdminSearchInput,
   AdminStatusBadge,
+  AdminTable,
+  AdminTd,
+  AdminTh,
+  readAdminJson,
 } from "@/components/admin/ui";
-import { Button } from "@/components/ui/button";
-import { Input, Textarea } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Button } from "@/components/admin/button";
+import { Select } from "@/components/admin/select";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { toast } from "@/components/admin/toast";
+import {
+  AdminFieldError,
+  AdminFormError,
+  useFormValidation,
+} from "@/components/admin/form-validation";
+import { useUnsavedChangesGuard } from "@/components/admin/unsaved-changes";
 import { richTextToPlain, toRichHtml } from "@/lib/rich-text";
 
 type JournalRow = {
@@ -41,45 +64,97 @@ type JournalRow = {
   status: "published" | "draft";
 };
 
-const emptyForm = {
-  title: "",
-  slug: "",
-  excerpt: "",
-  body: "",
-  date: new Date().toISOString().slice(0, 10),
-  readTime: "5 min",
-  category: "",
-  relatedProductHandle: "",
-  relatedCollectionHandle: "",
-  imageUrl: "",
-  imageTone: "#E8DFC8",
-  status: "published" as "published" | "draft",
+type FormState = {
+  title: string;
+  slug: string;
+  excerpt: string;
+  body: string;
+  date: string;
+  category: string;
+  relatedProductHandle: string;
+  relatedCollectionHandle: string;
+  imageUrl: string;
+  status: "published" | "draft";
 };
 
-const schema = z.object({
-  title: z.string().trim().min(4, "Title is required"),
+const CATEGORY_OPTIONS = [
+  { value: "Guides", label: "Guides" },
+  { value: "Wear", label: "Wear" },
+  { value: "Gifting", label: "Gifting" },
+  { value: "Climate", label: "Climate" },
+  { value: "Notes", label: "Notes" },
+];
+
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** Mirrors /api/journal: title and web address required; body and date required for a usable post. */
+const journalSchema = z.object({
+  title: z.string().trim().min(2, "Enter a title"),
   slug: z
     .string()
     .trim()
-    .min(2, "Slug is required")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers, hyphens"),
-  excerpt: z.string().trim().min(20, "Excerpt needs more detail"),
-  body: z.string().trim().min(1, "Add article content"),
-  date: z.string().trim().min(8, "Date is required"),
-  readTime: z.string().trim().min(2),
-  category: z.string().trim().min(1, "Choose a category"),
-  relatedProductHandle: z.string().trim().optional(),
-  relatedCollectionHandle: z.string().trim().optional(),
-  imageUrl: z.string().trim().optional(),
-  imageTone: z
+    .min(2, "Add a web address of at least 2 letters or numbers")
+    .regex(SLUG_RE, "Use lowercase letters, numbers and single hyphens"),
+  bodyText: z
     .string()
     .trim()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "Use a hex color like #E8DFC8"),
-  status: z.enum(["published", "draft"]),
+    .min(1, "Write the post")
+    .min(40, "Write at least a short paragraph (40 characters)"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick the date to show on the post"),
+  excerpt: z.string().trim().max(300, "Keep the summary under 300 characters"),
 });
+
+/** Today's calendar date in Pakistan as yyyy-MM-dd (en-CA formats that way). */
+function todayInKarachi() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Karachi",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function emptyForm(): FormState {
+  return {
+    title: "",
+    slug: "",
+    excerpt: "",
+    body: "",
+    date: todayInKarachi(),
+    category: "Guides",
+    relatedProductHandle: "",
+    relatedCollectionHandle: "",
+    imageUrl: "",
+    status: "published",
+  };
+}
+
+function toSlug(text: string) {
+  return slugify(text, { lower: true, strict: true, trim: true });
+}
+
+/** Reading time from the body (about 200 words a minute). */
+function readTimeFor(plain: string) {
+  const words = plain.split(/\s+/).filter(Boolean).length;
+  return `${Math.max(1, Math.round(words / 200))} min`;
+}
+
+/** Card summary from the opening lines when none is written. */
+function autoExcerpt(plain: string) {
+  const text = plain.replace(/\s+/g, " ").trim();
+  if (text.length <= 180) return text;
+  const cut = text.slice(0, 180);
+  return `${cut.slice(0, cut.lastIndexOf(" ") > 120 ? cut.lastIndexOf(" ") : 180)}…`;
+}
+
+function formatPostDate(iso: string) {
+  const d = parseISO(iso);
+  return isValid(d) ? format(d, "d MMM yyyy") : iso || "";
+}
 
 export default function AdminJournalPage() {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [user, setUser] = useState<{
     email?: string;
     name?: string;
@@ -87,47 +162,49 @@ export default function AdminJournalPage() {
     isSuperAdmin?: boolean;
   } | null>(null);
   const [items, setItems] = useState<JournalRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [productOptions, setProductOptions] = useState<SearchableOption[]>([]);
   const [collectionOptions, setCollectionOptions] = useState<
     SearchableOption[]
   >([]);
-  const [form, setForm] = useState(emptyForm);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("all");
+
+  // Editor
+  const [mode, setMode] = useState<"list" | "edit">("list");
+  const [editing, setEditing] = useState<JournalRow | null>(null);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [baseline, setBaseline] = useState<FormState>(emptyForm);
   const [slugTouched, setSlugTouched] = useState(false);
+  const [urlOpen, setUrlOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [rowDelete, setRowDelete] = useState<JournalRow | null>(null);
+  const v = useFormValidation(journalSchema);
 
   const canDelete = Boolean(
     user?.isSuperAdmin || user?.role === "super_admin",
   );
-
-  const categoryOptions = useMemo(
-    () => [
-      { value: "Guides", label: "Guides" },
-      { value: "Wear", label: "Wear" },
-      { value: "Gifting", label: "Gifting" },
-      { value: "Climate", label: "Climate" },
-      { value: "Notes", label: "Notes" },
-    ],
-    [],
-  );
-
-  const statusOptions = useMemo(
-    () => [
-      { value: "published", label: "Published" },
-      { value: "draft", label: "Draft" },
-    ],
-    [],
-  );
+  const dirty =
+    mode === "edit" && JSON.stringify(form) !== JSON.stringify(baseline);
+  const leaveGuard = useUnsavedChangesGuard(dirty && !saving);
 
   function load() {
+    setLoading(true);
     fetch("/api/journal?all=1")
       .then((r) => r.json())
       .then((j) => {
-        if (j.ok) setItems(j.data);
-      });
+        if (j.ok) {
+          setItems(j.data);
+          setLoadError("");
+        } else setLoadError(j.error || "Could not load posts");
+      })
+      .catch(() => setLoadError("Network error while loading posts"))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
@@ -152,6 +229,9 @@ export default function AdminJournalPage() {
             }),
           ),
         );
+      })
+      .catch(() => {
+        /* picker stays empty */
       });
 
     fetch("/api/collections?all=1")
@@ -163,323 +243,668 @@ export default function AdminJournalPage() {
             (c) => ({
               value: c.handle,
               label: c.title,
-              hint: c.status || undefined,
+              hint: c.status === "draft" ? "Draft" : undefined,
             }),
           ),
         );
+      })
+      .catch(() => {
+        /* picker stays empty */
       });
   }, [router]);
 
-  function resetForm() {
-    setForm(emptyForm);
-    setEditingId(null);
-    setSlugTouched(false);
-    setErrors({});
+  const counts = useMemo(
+    () => ({
+      all: items.length,
+      published: items.filter((p) => p.status === "published").length,
+      draft: items.filter((p) => p.status === "draft").length,
+    }),
+    [items],
+  );
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return items.filter((p) => {
+      if (filter !== "all" && p.status !== filter) return false;
+      if (!q) return true;
+      return (
+        p.title.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+      );
+    });
+  }, [items, query, filter]);
+
+  function scrollTop() {
+    document
+      .getElementById("admin-main-scroll")
+      ?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function startEdit(row: JournalRow) {
-    setEditingId(row.id);
-    setSlugTouched(true);
-    setErrors({});
-    setForm({
+  function rowToForm(row: JournalRow): FormState {
+    return {
       title: row.title,
       slug: row.slug,
       excerpt: row.excerpt,
       body: row.bodyHtml || toRichHtml(row.body),
-      date: row.date,
-      readTime: row.readTime,
-      category: row.category,
+      date: row.date || todayInKarachi(),
+      category: row.category || "Guides",
       relatedProductHandle: row.relatedProductHandle,
       relatedCollectionHandle: row.relatedCollectionHandle,
       imageUrl: row.imageUrl,
-      imageTone: row.imageTone,
       status: row.status,
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+  }
+
+  function openEditor(row: JournalRow | null) {
+    const next = row ? rowToForm(row) : emptyForm();
+    setEditing(row);
+    setForm(next);
+    setBaseline(next);
+    setSlugTouched(Boolean(row));
+    setUrlOpen(false);
+    setFormError("");
+    v.reset();
+    setMode("edit");
+    scrollTop();
+  }
+
+  function closeEditor() {
+    setMode("list");
+    setEditing(null);
+    setDiscardOpen(false);
+    scrollTop();
+  }
+
+  function requestClose() {
+    if (dirty) setDiscardOpen(true);
+    else closeEditor();
+  }
+
+  function validationValues(f: FormState = form) {
+    return {
+      title: f.title,
+      // An unchanged address on an existing post is already live; only check edits.
+      slug:
+        (editing && f.slug === editing.slug) || (!slugTouched && !f.title.trim())
+          ? "unchanged"
+          : f.slug,
+      bodyText: richTextToPlain(f.body),
+      date: f.date,
+      excerpt: f.excerpt,
+    };
+  }
+
+  function update(patch: Partial<FormState>) {
+    const next = { ...form, ...patch };
+    if (patch.title !== undefined && !slugTouched) {
+      next.slug = toSlug(patch.title);
+    }
+    setForm(next);
+    v.revalidate(validationValues(next));
   }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    setErrors({});
-    const plainBody = richTextToPlain(form.body);
-    if (plainBody.length < 40) {
-      setErrors({ body: "Add at least one full paragraph" });
-      return;
-    }
-    const parsed = schema.safeParse(form);
-    if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const k = String(issue.path[0] || "form");
-        if (!next[k]) next[k] = issue.message;
+    setFormError("");
+    const values = validationValues();
+    if (!v.validate(values, formRef.current)) {
+      const parsed = journalSchema.safeParse(values);
+      if (!parsed.success && parsed.error.issues.some((i) => i.path[0] === "slug")) {
+        setUrlOpen(true);
       }
-      setErrors(next);
       return;
     }
+    const plain = richTextToPlain(form.body);
+    const payload = {
+      title: form.title.trim(),
+      slug: form.slug.trim(),
+      excerpt: form.excerpt.trim() || autoExcerpt(plain),
+      body: form.body,
+      date: form.date,
+      readTime: readTimeFor(plain),
+      category: form.category || "Guides",
+      relatedProductHandle: form.relatedProductHandle.trim(),
+      relatedCollectionHandle: form.relatedCollectionHandle.trim(),
+      imageUrl: form.imageUrl.trim(),
+      status: form.status,
+    };
     setSaving(true);
     try {
-      const payload = { ...parsed.data };
       const res = await fetch(
-        editingId ? `/api/journal/${editingId}` : "/api/journal",
+        editing ? `/api/journal/${editing.id}` : "/api/journal",
         {
-          method: editingId ? "PUT" : "POST",
+          method: editing ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },
       );
-      const json = await res.json();
-      if (json.ok) {
-        resetForm();
-        load();
-      } else {
-        setErrors({ form: json.error || "Could not save" });
+      const json = await readAdminJson<JournalRow>(res);
+      if (!json.ok) {
+        const message = json.error || "Could not save the post";
+        setFormError(message);
+        if (/slug/i.test(message)) {
+          setUrlOpen(true);
+          v.setErrors({ slug: "This web address is already used by another post" });
+        }
+        toast.error(message);
+        return;
       }
+      toast.success(
+        editing
+          ? "Post saved"
+          : form.status === "published"
+            ? "Post published"
+            : "Draft saved",
+      );
+      if (json.data) {
+        const next = rowToForm(json.data);
+        setEditing(json.data);
+        setForm(next);
+        setBaseline(next);
+        setSlugTouched(true);
+        setUrlOpen(false);
+      } else {
+        setBaseline(form);
+      }
+      load();
+    } catch {
+      setFormError("Network error. Your text is still here, try again.");
+      toast.error("Network error. The post was not saved.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function confirmDelete() {
-    if (!deleteId) return;
+  async function deleteFromList() {
+    if (!rowDelete) return;
     setDeleting(true);
     try {
-      await fetch(`/api/journal/${deleteId}`, { method: "DELETE" });
-      if (editingId === deleteId) resetForm();
-      setDeleteId(null);
+      const res = await fetch(`/api/journal/${rowDelete.id}`, { method: "DELETE" });
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        toast.error(json.error || "Could not delete the post");
+        return;
+      }
+      toast.success("Post deleted");
+      setRowDelete(null);
       load();
+    } catch {
+      toast.error("Network error. The post was not deleted.");
     } finally {
       setDeleting(false);
     }
   }
 
-  const pending = items.find((t) => t.id === deleteId);
+  async function confirmDelete() {
+    if (!editing) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/journal/${editing.id}`, { method: "DELETE" });
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        toast.error(json.error || "Could not delete the post");
+        return;
+      }
+      toast.success("Post deleted");
+      setDeleteOpen(false);
+      setBaseline(form);
+      closeEditor();
+      load();
+    } catch {
+      toast.error("Network error. The post was not deleted.");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
-  return (
+  const shell = (children: React.ReactNode) => (
     <AdminShell user={user}>
-      <AdminPageHeader
-        title="Journal"
-        description="Editorial notes for the storefront. Published posts appear on Recent notes and /journal."
-      />
+      {children}
+      {leaveGuard}
+    </AdminShell>
+  );
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,28rem)_1fr]">
-        <AdminCard title={editingId ? "Edit post" : "Write post"}>
-          <form className="space-y-4 p-5" onSubmit={save} noValidate>
-            {errors.form ? (
-              <p className="text-sm text-[#b42318]">{errors.form}</p>
-            ) : null}
-            <Input
-              label="Title"
-              required
-              value={form.title}
-              error={errors.title}
-              onChange={(e) => {
-                const title = e.target.value;
-                setForm((prev) => ({
-                  ...prev,
-                  title,
-                  slug: slugTouched
-                    ? prev.slug
-                    : slugify(title, {
-                        lower: true,
-                        strict: true,
-                        trim: true,
-                      }),
-                }));
-              }}
-            />
-            <Input
-              label="Slug"
-              required
-              value={form.slug}
-              error={errors.slug}
-              onChange={(e) => {
-                setSlugTouched(true);
-                setForm({ ...form, slug: e.target.value });
-              }}
-            />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <AdminDatePickerField
-                label="Date"
-                required
-                value={form.date}
-                error={errors.date}
-                onChange={(date) => setForm({ ...form, date })}
-              />
-              <Input
-                label="Read time"
-                value={form.readTime}
-                error={errors.readTime}
-                onChange={(e) =>
-                  setForm({ ...form, readTime: e.target.value })
-                }
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+  /* ---------------------------- Editor view ---------------------------- */
+  if (mode === "edit") {
+    const saveLabel = saving
+      ? "Saving…"
+      : editing
+        ? "Save"
+        : form.status === "published"
+          ? "Publish post"
+          : "Save draft";
+    return shell(
+      <>
+        <button
+          type="button"
+          onClick={requestClose}
+          className="-ml-1.5 mb-3 inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md px-1.5 text-sm font-semibold text-admin-muted transition-colors hover:bg-admin-soft hover:text-admin-ink"
+        >
+          <ChevronsLeftIcon size={16} color="currentColor" isAnimated={false} />
+          Journal
+        </button>
+        <AdminPageHeader
+          title={editing ? editing.title : "New post"}
+          action={
+            <Button
+              type="submit"
+              form="journal-form"
+              disabled={saving || (Boolean(editing) && !dirty)}
+              className="max-sm:hidden!"
+            >
+              {saveLabel}
+            </Button>
+          }
+        />
+
+        <form
+          id="journal-form"
+          ref={formRef}
+          onSubmit={save}
+          noValidate
+          className="grid gap-6 pb-24 sm:pb-0 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start 2xl:grid-cols-[minmax(0,1fr)_24rem]"
+        >
+          <div className="min-w-0 space-y-6">
+            {formError ? <AdminFormError>{formError}</AdminFormError> : null}
+
+            <AdminFormSection title="Post">
               <div>
-                <Select
-                  label="Category"
-                  placeholder="Select category"
-                  value={form.category}
-                  onValueChange={(category) => setForm({ ...form, category })}
-                  options={categoryOptions}
-                  triggerClassName="border-admin-input-border bg-admin-soft-2 text-admin-ink hover:border-admin-muted data-[state=open]:border-brass"
+                <AdminFieldLabel htmlFor="journal-title" required>
+                  Title
+                </AdminFieldLabel>
+                <input
+                  id="journal-title"
+                  name="title"
+                  className={adminFieldClass}
+                  value={form.title}
+                  aria-invalid={v.errors.title ? true : undefined}
+                  onChange={(e) => update({ title: e.target.value })}
+                  onBlur={() => v.revalidate(validationValues())}
+                  placeholder="How to make oud last through a Karachi summer"
+                  maxLength={160}
                 />
-                {errors.category ? (
-                  <p className="mt-1.5 text-sm text-rosewood">
-                    {errors.category}
-                  </p>
-                ) : null}
+                <AdminFieldError message={v.errors.title} />
               </div>
+              <div data-field="bodyText">
+                <AdminRichTextEditor
+                  label="Body"
+                  required
+                  value={form.body}
+                  error={v.errors.bodyText}
+                  minHeightClass="min-h-72"
+                  placeholder="Write the post. Short paragraphs read best."
+                  onChange={(body) => update({ body })}
+                />
+              </div>
+              <div>
+                <AdminFieldLabel htmlFor="journal-excerpt">Summary</AdminFieldLabel>
+                <textarea
+                  id="journal-excerpt"
+                  name="excerpt"
+                  rows={3}
+                  className={`${adminFieldClass} min-h-24 resize-y leading-relaxed`}
+                  value={form.excerpt}
+                  aria-invalid={v.errors.excerpt ? true : undefined}
+                  onChange={(e) => update({ excerpt: e.target.value })}
+                  onBlur={() => v.revalidate(validationValues())}
+                  placeholder="Leave blank to use the opening lines"
+                  maxLength={320}
+                />
+                <AdminFieldError message={v.errors.excerpt} />
+              </div>
+            </AdminFormSection>
+
+            <AdminFormSection title="Related">
+              <div className="grid gap-5 md:grid-cols-2">
+                <AdminSearchableSelect
+                  label="Product"
+                  value={form.relatedProductHandle}
+                  options={productOptions}
+                  placeholder="Search products"
+                  emptyLabel="No matching products."
+                  onChange={(relatedProductHandle) =>
+                    update({ relatedProductHandle })
+                  }
+                />
+                <AdminSearchableSelect
+                  label="Collection"
+                  value={form.relatedCollectionHandle}
+                  options={collectionOptions}
+                  placeholder="Search collections"
+                  emptyLabel="No matching collections."
+                  onChange={(relatedCollectionHandle) =>
+                    update({ relatedCollectionHandle })
+                  }
+                />
+              </div>
+            </AdminFormSection>
+          </div>
+
+          <aside className="min-w-0 space-y-6 lg:sticky lg:top-4">
+            <AdminFormSection title="Visibility">
               <Select
                 label="Status"
                 value={form.status}
-                onValueChange={(status) =>
-                  setForm({
-                    ...form,
-                    status: status as "published" | "draft",
-                  })
+                onValueChange={(s) =>
+                  update({ status: s as "published" | "draft" })
                 }
-                options={statusOptions}
-                triggerClassName="border-admin-input-border bg-admin-soft-2 text-admin-ink hover:border-admin-muted data-[state=open]:border-brass"
+                options={[
+                  { value: "published", label: "Published" },
+                  { value: "draft", label: "Draft (hidden from shop)" },
+                ]}
               />
-            </div>
-            <Textarea
-              label="Excerpt"
-              required
-              rows={5}
-              className="min-h-32"
-              value={form.excerpt}
-              error={errors.excerpt}
-              onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
-            />
-            <AdminRichTextEditor
-              label="Article body"
-              required
-              tip="Full article copy. Use headings and lists when they help scanning."
-              value={form.body}
-              error={errors.body}
-              minHeightClass="min-h-56"
-              onChange={(body) => setForm({ ...form, body })}
-            />
-            <AdminImageField
-              label="Cover image"
-              value={form.imageUrl}
-              aspect="wide"
-              onChange={(imageUrl) => setForm({ ...form, imageUrl })}
-              hint="Optional. Falls back to image tone when empty."
-            />
-            <AdminColorPickerField
-              label="Image tone"
-              tip="Fallback swatch when no cover image is set."
-              value={form.imageTone}
-              error={errors.imageTone}
-              onChange={(imageTone) => setForm({ ...form, imageTone })}
-            />
-            <AdminSearchableSelect
-              label="Related product"
-              tip="Search by name or handle. You can also type a custom handle."
-              value={form.relatedProductHandle}
-              options={productOptions}
-              placeholder="Search products…"
-              onChange={(relatedProductHandle) =>
-                setForm({ ...form, relatedProductHandle })
-              }
-            />
-            <AdminSearchableSelect
-              label="Related collection"
-              tip="Search by title or handle. You can also type a custom handle."
-              value={form.relatedCollectionHandle}
-              options={collectionOptions}
-              placeholder="Search collections…"
-              onChange={(relatedCollectionHandle) =>
-                setForm({ ...form, relatedCollectionHandle })
-              }
-            />
-            <div className="flex flex-wrap gap-2 pt-1">
-              <Button type="submit" disabled={saving} className="min-w-32">
-                {saving
-                  ? "Saving…"
-                  : editingId
-                    ? "Update post"
-                    : "Publish post"}
-              </Button>
-              {editingId ? (
-                <Button type="button" variant="secondary" onClick={resetForm}>
-                  Cancel edit
-                </Button>
-              ) : null}
-            </div>
-          </form>
-        </AdminCard>
-
-        <ul className="space-y-3">
-          {items.map((post) => (
-            <li
-              key={post.id}
-              className="rounded-lg border border-admin-line bg-admin-paper p-5"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-admin-ink">
-                      {post.title}
-                    </p>
-                    <AdminStatusBadge status={post.status} />
-                    <span className="text-xs uppercase tracking-wide text-admin-faint">
-                      {post.category}
-                    </span>
+              <AdminDatePickerField
+                label="Date shown on post"
+                name="date"
+                required
+                value={form.date}
+                error={v.errors.date}
+                onChange={(date) => update({ date })}
+                onBlur={() => v.revalidate(validationValues())}
+              />
+              <Select
+                label="Category"
+                value={form.category}
+                onValueChange={(category) => update({ category })}
+                options={CATEGORY_OPTIONS}
+              />
+              <div>
+                <p className="text-sm font-semibold text-admin-ink">Web address</p>
+                <p className="mt-1 break-all text-[0.9375rem] text-admin-muted">
+                  /journal/{form.slug || "…"}
+                </p>
+                {urlOpen ? (
+                  <div className="mt-3">
+                    <AdminFieldLabel htmlFor="journal-slug">
+                      Edit web address
+                    </AdminFieldLabel>
+                    <input
+                      id="journal-slug"
+                      name="slug"
+                      className={adminFieldClass}
+                      value={form.slug}
+                      aria-invalid={v.errors.slug ? true : undefined}
+                      onChange={(e) => {
+                        setSlugTouched(true);
+                        update({
+                          slug: e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9-]/g, ""),
+                        });
+                      }}
+                      onBlur={() => v.revalidate(validationValues())}
+                      maxLength={100}
+                    />
+                    <AdminFieldError message={v.errors.slug} />
                   </div>
-                  <p className="mt-1 font-mono text-xs text-admin-muted">
-                    /journal/{post.slug} · {post.date} · {post.readTime}
-                  </p>
-                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-admin-muted">
-                    {post.excerpt}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => startEdit(post)}
-                    className="cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.12em] text-admin-muted transition-colors hover:text-admin-ink"
-                  >
-                    Edit
-                  </button>
-                  {canDelete ? (
+                ) : (
+                  <>
                     <button
                       type="button"
-                      onClick={() => setDeleteId(post.id)}
-                      className="cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.12em] text-admin-muted transition-colors hover:text-admin-danger"
+                      onClick={() => setUrlOpen(true)}
+                      className="mt-1 cursor-pointer text-sm font-semibold text-admin-accent hover:underline"
                     >
-                      Delete
+                      Edit web address
                     </button>
-                  ) : null}
-                </div>
+                    <AdminFieldError message={v.errors.slug} />
+                  </>
+                )}
               </div>
-            </li>
-          ))}
-          {!items.length ? (
-            <li className="rounded-lg border border-dashed border-admin-line p-8 text-center text-sm text-admin-muted">
-              No journal posts yet. Write the first note on the left.
-            </li>
-          ) : null}
-        </ul>
+            </AdminFormSection>
+
+            <AdminFormSection title="Cover image">
+              <AdminImageField
+                label="Image"
+                value={form.imageUrl}
+                aspect="wide"
+                onChange={(imageUrl) => update({ imageUrl })}
+              />
+            </AdminFormSection>
+
+            {editing && canDelete ? (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="danger-outline"
+                  size="sm"
+                  className="w-auto!"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  Delete post
+                </Button>
+              </div>
+            ) : null}
+          </aside>
+
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-admin-line bg-admin-paper/95 px-4 py-3 backdrop-blur sm:hidden">
+            <Button
+              type="submit"
+              disabled={saving || (Boolean(editing) && !dirty)}
+              className="w-full"
+            >
+              {saveLabel}
+            </Button>
+          </div>
+        </form>
+
+        <ConfirmDialog
+          open={discardOpen}
+          onOpenChange={setDiscardOpen}
+          title="Discard unsaved changes?"
+          description="Your edits to this post will be lost."
+          confirmLabel="Discard changes"
+          cancelLabel="Keep editing"
+          onConfirm={closeEditor}
+        />
+        <ConfirmDialog
+          open={deleteOpen}
+          onOpenChange={(o) => {
+            if (!o && !deleting) setDeleteOpen(false);
+          }}
+          title="Delete this post?"
+          description={
+            editing
+              ? `"${editing.title}" will be removed from the journal for good.`
+              : "This post will be removed for good."
+          }
+          confirmLabel="Delete post"
+          cancelLabel="Keep post"
+          loading={deleting}
+          onConfirm={confirmDelete}
+        />
+      </>,
+    );
+  }
+
+  /* ----------------------------- List view ----------------------------- */
+  return shell(
+    <>
+      <AdminPageHeader
+        title="Journal"
+        action={
+          <Button type="button" onClick={() => openEditor(null)}>
+            Write post
+          </Button>
+        }
+      />
+
+      {loadError ? (
+        <AdminNotice tone="error" onDismiss={() => setLoadError("")}>
+          {loadError}
+        </AdminNotice>
+      ) : null}
+
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <AdminFilterChips
+          label="Filter posts"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: "all", label: "All", count: counts.all },
+            { value: "published", label: "Published", count: counts.published },
+            { value: "draft", label: "Draft", count: counts.draft },
+          ]}
+        />
+        <AdminSearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Search posts"
+          className="w-full md:w-72"
+        />
       </div>
 
+      <AdminTable compact>
+        <thead>
+          <tr>
+            <AdminTh>Post</AdminTh>
+            <AdminTh className="hidden md:table-cell">Category</AdminTh>
+            <AdminTh className="hidden sm:table-cell">Date</AdminTh>
+            <AdminTh className="w-32">Status</AdminTh>
+            <AdminTh className="w-12 text-right sm:w-40">Actions</AdminTh>
+          </tr>
+        </thead>
+        <tbody>
+          {visible.map((post) => (
+            <tr
+              key={post.id}
+              tabIndex={0}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("[data-row-ignore]")) return;
+                openEditor(post);
+              }}
+              onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openEditor(post);
+                }
+              }}
+              aria-label={`Edit ${post.title}`}
+              className="cursor-pointer outline-none transition-colors hover:bg-admin-soft-2 focus-visible:bg-admin-soft-2"
+            >
+              <AdminTd>
+                <div className="flex items-center gap-3">
+                  <div className="hidden h-11 w-16 shrink-0 overflow-hidden rounded-md border border-admin-line bg-admin-soft sm:block">
+                    {post.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={post.imageUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-admin-ink">{post.title}</p>
+                    <p className="line-clamp-1 text-[0.8125rem] text-admin-muted">
+                      <span className="sm:hidden">
+                        {formatPostDate(post.date)}
+                        {post.excerpt ? " · " : ""}
+                      </span>
+                      {post.excerpt}
+                    </p>
+                  </div>
+                </div>
+              </AdminTd>
+              <AdminTd className="hidden whitespace-nowrap text-admin-muted md:table-cell">
+                {post.category}
+              </AdminTd>
+              <AdminTd className="hidden whitespace-nowrap font-sans tabular-nums text-admin-muted sm:table-cell">
+                {formatPostDate(post.date)}
+              </AdminTd>
+              <AdminTd>
+                <AdminStatusBadge status={post.status} />
+              </AdminTd>
+              <AdminTd className="py-2">
+                <AdminRowActions>
+                  {post.status === "published" ? (
+                    <AdminIconAction
+                      icon="view"
+                      label="View on site"
+                      ariaLabel={`View ${post.title} on the site`}
+                      href={`/journal/${encodeURIComponent(post.slug)}`}
+                      external
+                      className="max-sm:hidden"
+                    />
+                  ) : null}
+                  <AdminIconAction
+                    icon="edit"
+                    label="Edit post"
+                    ariaLabel={`Edit ${post.title}`}
+                    onClick={() => openEditor(post)}
+                  />
+                  {canDelete ? (
+                    <span className="hidden items-center sm:flex">
+                      <AdminActionDivider />
+                      <AdminIconAction
+                        icon="delete"
+                        tone="danger"
+                        label="Delete post"
+                        ariaLabel={`Delete ${post.title}`}
+                        onClick={() => setRowDelete(post)}
+                      />
+                    </span>
+                  ) : null}
+                </AdminRowActions>
+              </AdminTd>
+            </tr>
+          ))}
+          {!visible.length ? (
+            <tr>
+              <td colSpan={5}>
+                {loading ? (
+                  <BrandLoaderBlock className="min-h-[40vh]" label="Loading posts" />
+                ) : items.length ? (
+                  <AdminEmptyState
+                    title="No posts match"
+                    action={
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="w-auto!"
+                        onClick={() => {
+                          setQuery("");
+                          setFilter("all");
+                        }}
+                      >
+                        Clear filters
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <AdminEmptyState
+                    title="No journal posts yet"
+                    description="Share wearing tips, gifting ideas and new arrivals."
+                    action={
+                      <Button type="button" onClick={() => openEditor(null)}>
+                        Write post
+                      </Button>
+                    }
+                  />
+                )}
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+      </AdminTable>
+
       <ConfirmDialog
-        open={Boolean(deleteId)}
-        onOpenChange={(open) => {
-          if (!open) setDeleteId(null);
+        open={rowDelete !== null}
+        onOpenChange={(o) => {
+          if (!o && !deleting) setRowDelete(null);
         }}
-        title="Delete journal post?"
+        title="Delete this post?"
         description={
-          pending
-            ? `Remove “${pending.title}” from the storefront permanently.`
-            : "This cannot be undone."
+          rowDelete
+            ? `${rowDelete.title} will be removed from the journal. This cannot be undone.`
+            : "This post will be removed."
         }
-        confirmLabel="Delete"
+        confirmLabel="Delete post"
+        cancelLabel="Keep post"
         loading={deleting}
-        onConfirm={confirmDelete}
+        onConfirm={deleteFromList}
       />
-    </AdminShell>
+    </>,
   );
 }

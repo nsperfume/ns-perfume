@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Button } from "@/components/ui/button";
 import { RichHtml } from "@/components/ui/rich-html";
+import { siteConfig } from "@/data/site";
 import {
   getJournalPost,
   getJournalPosts,
@@ -13,7 +14,14 @@ import {
 
 type Props = { params: Promise<{ slug: string }> };
 
-export const dynamic = "force-dynamic";
+/** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
+export const revalidate = 300;
+
+/** Prerender every published article at build; new ones render on first visit. */
+export async function generateStaticParams() {
+  const posts = await getJournalPosts();
+  return posts.map((p) => ({ slug: p.slug }));
+}
 
 function formatDate(value: string) {
   const d = new Date(value);
@@ -25,15 +33,38 @@ function formatDate(value: string) {
   });
 }
 
+/** Root layout appends " | NS Perfume"; keep the full title tag under 60 characters. */
+const MAX_TITLE = 59 - ` | ${siteConfig.name}`.length;
+
+/**
+ * Full title with the brand when it fits; the bare title when only that fits;
+ * otherwise cut at a word boundary (no ellipsis, which reads as broken in results).
+ */
+function seoTitle(title: string): Metadata["title"] {
+  if (title.length <= MAX_TITLE) return title;
+  if (title.length <= 60) return { absolute: title };
+  const cut = title.slice(0, 60);
+  const space = cut.lastIndexOf(" ");
+  return { absolute: (space > 36 ? cut.slice(0, space) : cut).replace(/[\s,:;.\-]+$/, "") };
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = await getJournalPost(slug);
   if (!post) return { title: "Journal" };
-  const title =
-    post.title.length > 50 ? `${post.title.slice(0, 47)}...` : post.title;
+  const url = `/journal/${post.slug}`;
   return {
-    title: `${title} | Journal`,
-    description: post.excerpt.slice(0, 154),
+    title: seoTitle(post.title),
+    description: post.excerpt.slice(0, 160),
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      url,
+      title: post.title,
+      description: post.excerpt,
+      publishedTime: post.date || undefined,
+      images: post.imageUrl ? [{ url: post.imageUrl, alt: post.title }] : undefined,
+    },
   };
 }
 
@@ -51,14 +82,27 @@ export default async function JournalArticlePage({ params }: Props) {
 
   const related = more.filter((p) => p.slug !== post.slug).slice(0, 3);
 
+  const pageUrl = `${siteConfig.url}/journal/${post.slug}`;
+  const imageUrl = post.imageUrl
+    ? /^https?:\/\//i.test(post.imageUrl)
+      ? post.imageUrl
+      : `${siteConfig.url}${post.imageUrl.startsWith("/") ? "" : "/"}${post.imageUrl}`
+    : undefined;
   const articleLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
     headline: post.title,
-    datePublished: post.date,
     description: post.excerpt,
-    image: post.imageUrl || undefined,
-    author: { "@type": "Organization", name: "NS Perfume" },
+    datePublished: post.date || undefined,
+    dateModified: post.updatedAt || post.date || undefined,
+    image: imageUrl ? [imageUrl] : undefined,
+    mainEntityOfPage: { "@type": "WebPage", "@id": pageUrl },
+    author: { "@type": "Organization", name: siteConfig.name, url: siteConfig.url },
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      logo: { "@type": "ImageObject", url: `${siteConfig.url}/brand/ns-perfume-logo.svg` },
+    },
   };
 
   return (
@@ -66,23 +110,32 @@ export default async function JournalArticlePage({ params }: Props) {
       <JsonLd data={articleLd} />
 
       <header className="border-b border-hairline">
-        <div className="container-ns max-w-3xl section-y pb-10 pt-12 md:pb-12 md:pt-16">
-          <Link
-            href="/journal"
-            className="mb-6 inline-flex font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe transition-colors hover:text-brass"
-          >
-            Journal
-          </Link>
-          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-brass">
-            {post.category}
+        <div className="container-ns pb-12 pt-12 md:pb-16 md:pt-20">
+          <div className="mx-auto max-w-[46rem]">
+          <p className="mb-5 flex flex-wrap items-center gap-2.5 text-eyebrow">
+            <Link
+              href="/journal"
+              className="inline-flex min-h-8 items-center text-taupe transition-colors hover:text-brass-ink"
+            >
+              Journal
+            </Link>
+            {post.category ? (
+              <>
+                <span className="text-taupe/50" aria-hidden>
+                  /
+                </span>
+                <span className="text-brass-ink">{post.category}</span>
+              </>
+            ) : null}
           </p>
           <h1 className="text-display-lg text-balance text-ink">{post.title}</h1>
-          <p className="mt-5 max-w-2xl font-serif text-[1.15rem] leading-relaxed text-taupe">
+          <p className="mt-6 max-w-[40rem] text-body-lg text-taupe">
             {post.excerpt}
           </p>
-          <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.12em] text-taupe">
+          <p className="mt-6 text-caption text-taupe">
             {formatDate(post.date)} · {post.readTime}
           </p>
+          </div>
         </div>
 
         <div className="relative aspect-16/9 w-full overflow-hidden bg-muted md:aspect-[2.2/1]">
@@ -105,10 +158,11 @@ export default async function JournalArticlePage({ params }: Props) {
         </div>
       </header>
 
-      <div className="container-ns max-w-2xl py-12 md:py-16">
+      <div className="container-ns py-12 md:py-20">
+        <div className="mx-auto max-w-[42rem]">
         <RichHtml
           html={post.bodyHtml}
-          className="font-serif text-[1.15rem] leading-[1.75] text-ink/85"
+          className="text-body-lg text-ink/85"
         />
 
         <div className="mt-12 flex flex-col gap-3 border-t border-hairline pt-8 sm:flex-row sm:flex-wrap sm:items-center">
@@ -125,21 +179,24 @@ export default async function JournalArticlePage({ params }: Props) {
               Browse collection
             </Button>
           ) : null}
-          <Link
-            href="/journal"
-            className="font-display text-[12px] font-medium uppercase tracking-[0.12em] text-brass sm:ml-auto"
-          >
-            All articles
-          </Link>
+          {related.length ? null : (
+            <Link
+              href="/journal"
+              className="inline-flex min-h-11 items-center text-label text-brass-ink underline decoration-brass/40 underline-offset-[6px] sm:ml-auto"
+            >
+              All articles
+            </Link>
+          )}
+        </div>
         </div>
       </div>
 
       {related.length ? (
         <section className="border-t border-hairline bg-muted/40 section-y">
           <div className="container-ns">
-            <div className="mb-8 flex items-end justify-between gap-4">
+            <div className="mb-10 flex items-end justify-between gap-4">
               <div>
-                <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+                <p className="mb-3 text-eyebrow text-taupe">
                   Keep reading
                 </p>
                 <h2 className="text-display-md text-ink">More from the journal</h2>
@@ -148,14 +205,14 @@ export default async function JournalArticlePage({ params }: Props) {
                 View all
               </Button>
             </div>
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-10">
               {related.map((item) => (
                 <Link
                   key={item.slug}
                   href={`/journal/${item.slug}`}
                   className="group flex flex-col"
                 >
-                  <div className="relative mb-4 aspect-16/10 overflow-hidden bg-muted">
+                  <div className="relative mb-5 aspect-16/10 overflow-hidden bg-muted">
                     {item.imageUrl ? (
                       <Image
                         src={item.imageUrl}
@@ -173,10 +230,10 @@ export default async function JournalArticlePage({ params }: Props) {
                       />
                     )}
                   </div>
-                  <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-taupe">
+                  <p className="mb-2 text-caption text-taupe">
                     {formatDate(item.date)} · {item.readTime}
                   </p>
-                  <h3 className="font-display text-[1.1rem] font-medium leading-snug text-ink transition-colors group-hover:text-brass">
+                  <h3 className="text-display-sm text-ink transition-colors group-hover:text-brass-ink">
                     {item.title}
                   </h3>
                 </Link>

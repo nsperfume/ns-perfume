@@ -3,16 +3,30 @@
 import { InfoTip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
 
-const SCALE = [
+type Scale = readonly { n: number; label: string }[];
+
+/** How far the scent reaches (perfumers call it sillage). */
+const PROJECTION_SCALE: Scale = [
   { n: 1, label: "Soft" },
   { n: 2, label: "Light" },
   { n: 3, label: "Moderate" },
   { n: 4, label: "Strong" },
   { n: 5, label: "Bold" },
-] as const;
+];
+
+/** How long it stays on skin. */
+const LONGEVITY_SCALE: Scale = [
+  { n: 1, label: "Brief" },
+  { n: 2, label: "Short" },
+  { n: 3, label: "Moderate" },
+  { n: 4, label: "Long" },
+  { n: 5, label: "All day" },
+];
+
+const SCALE = PROJECTION_SCALE;
 
 const SILLAGE_TIP =
-  "Sillage is how far the scent projects from your skin into the room. Soft stays close. Bold fills more space around you.";
+  "Projection (sillage) is how far the scent reaches from your skin into the room. Soft stays close. Bold fills more space around you.";
 
 const LONGEVITY_TIP =
   "Longevity is how long the scent stays noticeable on skin before it fades. Higher scores last through a longer day or evening.";
@@ -23,6 +37,7 @@ function MeterRow({
   tip,
   tipLabel,
   value,
+  scale,
   compact,
 }: {
   label: string;
@@ -30,15 +45,16 @@ function MeterRow({
   tip: string;
   tipLabel: string;
   value: number;
+  scale: Scale;
   compact?: boolean;
 }) {
   const clamped = Math.min(5, Math.max(1, Math.round(value)));
-  const word = SCALE[clamped - 1]?.label ?? "";
+  const word = scale[clamped - 1]?.label ?? "";
 
   if (compact) {
     return (
       <div className="flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-1.5 font-display text-[10px] font-medium uppercase tracking-[0.12em] text-taupe">
+        <span className="inline-flex items-center gap-1.5 text-eyebrow text-taupe">
           {label}
           <InfoTip content={tip} label={tipLabel} />
         </span>
@@ -54,7 +70,7 @@ function MeterRow({
               />
             ))}
           </div>
-          <span className="font-mono text-[10px] tabular-nums text-taupe">
+          <span className="font-sans tabular-nums text-xs text-taupe">
             {clamped}/5
           </span>
         </div>
@@ -70,19 +86,19 @@ function MeterRow({
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="inline-flex items-center gap-1.5 font-display text-[0.95rem] font-medium text-ink">
+          <p className="inline-flex items-center gap-1.5 text-heading-sm text-ink">
             {label}
             <InfoTip content={tip} label={tipLabel} />
           </p>
-          <p className="mt-0.5 font-serif text-[0.9rem] leading-snug text-taupe">
+          <p className="mt-0.5 text-body-sm leading-snug text-taupe">
             {hint}
           </p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="font-mono text-[1.05rem] font-medium tabular-nums text-ink">
+          <p className="font-sans tabular-nums text-lg font-medium text-ink">
             {clamped}/5
           </p>
-          <p className="mt-0.5 font-display text-[10px] font-medium uppercase tracking-[0.12em] text-taupe">
+          <p className="mt-0.5 text-eyebrow text-taupe">
             {word}
           </p>
         </div>
@@ -99,7 +115,7 @@ function MeterRow({
               <span
                 className={cn(
                   "block w-full max-w-none rounded-sm transition-colors",
-                  on ? "bg-ink" : "bg-hairline",
+                  on ? "bg-brass" : "bg-hairline",
                   step.n === 1 && "h-3",
                   step.n === 2 && "h-4",
                   step.n === 3 && "h-5",
@@ -107,14 +123,7 @@ function MeterRow({
                   step.n === 5 && "h-7",
                 )}
               />
-              <span
-                className={cn(
-                  "font-display text-[9px] uppercase tracking-[0.08em]",
-                  on ? "text-ink/70" : "text-taupe/45",
-                )}
-              >
-                {step.n}
-              </span>
+
             </div>
           );
         })}
@@ -143,30 +152,88 @@ export function PerformanceMeter({
     >
       {!compact ? (
         <div className="border-b border-hairline pb-3">
-          <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+          <p className="text-eyebrow text-taupe">
             Performance
           </p>
-          <p className="mt-1 font-serif text-[0.95rem] text-taupe">
+          <p className="mt-1 text-body-sm text-taupe">
             How far it projects, and how long it stays.
           </p>
         </div>
       ) : null}
       <MeterRow
-        label="Sillage"
-        hint="Projection around you"
+        label="Projection"
+        hint="How far it reaches"
         tip={SILLAGE_TIP}
-        tipLabel="What is sillage?"
+        tipLabel="What is projection?"
         value={sillage}
+        scale={PROJECTION_SCALE}
         compact={compact}
       />
       <MeterRow
         label="Longevity"
-        hint="Hours on skin"
+        hint="How long it lasts on skin"
         tip={LONGEVITY_TIP}
         tipLabel="What is longevity?"
         value={longevity}
+        scale={LONGEVITY_SCALE}
         compact={compact}
       />
+    </div>
+  );
+}
+
+/**
+ * One-line meter for the buy box: label, five brass segments, score.
+ * Same data and scale as PerformanceMeter.
+ */
+export function PerformanceMini({
+  sillage,
+  longevity,
+  className,
+}: {
+  sillage: number;
+  longevity: number;
+  className?: string;
+}) {
+  const rows = [
+    { label: "Projection", value: sillage, scale: PROJECTION_SCALE },
+    { label: "Longevity", value: longevity, scale: LONGEVITY_SCALE },
+  ];
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-x-6 gap-y-2",
+        className,
+      )}
+    >
+      {rows.map((row) => {
+        const clamped = Math.min(5, Math.max(1, Math.round(row.value)));
+        const word = row.scale[clamped - 1]?.label ?? "";
+        return (
+          <div
+            key={row.label}
+            className="inline-flex items-center gap-2.5"
+            role="img"
+            aria-label={`${row.label}: ${clamped} out of 5, ${word}`}
+          >
+            <span className="min-w-[4.25rem] text-caption text-taupe">{row.label}</span>
+            <span className="flex gap-0.5" aria-hidden>
+              {SCALE.map((step) => (
+                <span
+                  key={step.n}
+                  className={cn(
+                    "h-2 w-3.5 rounded-[1px]",
+                    step.n <= clamped ? "bg-brass" : "bg-hairline",
+                  )}
+                />
+              ))}
+            </span>
+            <span className="font-sans tabular-nums text-xs font-medium text-ink">
+              {clamped}/5
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

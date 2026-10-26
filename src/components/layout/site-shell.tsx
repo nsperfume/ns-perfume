@@ -4,8 +4,7 @@ import { usePathname } from "next/navigation";
 import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { CartDrawer } from "@/components/layout/cart-drawer";
-import { SearchSheet } from "@/components/layout/search-sheet";
+import { LazyCartDrawer, LazySearchSheet } from "@/components/layout/lazy-overlays";
 import { ToastHost } from "@/components/layout/toast-host";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,7 +14,14 @@ import { CustomerProvider } from "@/context/customer";
 import { UiProvider } from "@/context/ui";
 import { WishlistProvider } from "@/context/wishlist";
 
-export function SiteShell({ children }: { children: React.ReactNode }) {
+export function SiteShell({
+  children,
+  announcement,
+}: {
+  children: React.ReactNode;
+  /** Announcement bar text from store settings; empty hides the message. */
+  announcement: string;
+}) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
   const isCheckout = pathname?.startsWith("/checkout");
@@ -58,14 +64,14 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                 <ScrollToTop />
                 <div className="fixed inset-x-0 top-0 z-50 overflow-visible">
                   <div data-site-chrome className="overflow-visible">
-                    <AnnouncementBar />
+                    <AnnouncementBar text={announcement} />
                     <Header />
                   </div>
                 </div>
                 <main className="flex-1 pt-chrome-height">{children}</main>
                 <Footer />
-                <CartDrawer />
-                <SearchSheet />
+                <LazyCartDrawer />
+                <LazySearchSheet />
                 <ToastHost />
               </TooltipProvider>
             </UiProvider>

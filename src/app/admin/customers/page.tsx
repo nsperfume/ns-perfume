@@ -1,19 +1,28 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
+  AdminEmptyState,
+  AdminFilterChips,
+  AdminIconAction,
   AdminPageHeader,
+  AdminRowActions,
+  AdminSearchInput,
+  AdminStatusBadge,
   AdminTable,
   AdminTd,
   AdminTh,
   formatPkr,
+  readAdminJson,
+  useRowLink,
+  whatsappHref,
 } from "@/components/admin/ui";
-import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
-import { adminFieldClass } from "@/components/admin/form-section";
-import { cn } from "@/lib/cn";
+import { Button } from "@/components/admin/button";
+import { Select } from "@/components/admin/select";
+import Link from "next/link";
 
 type Row = {
   email: string;
@@ -27,12 +36,43 @@ type Row = {
 };
 
 function formatDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "";
   return new Date(iso).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+}
+
+/** View first, then the ways to reach the customer. */
+function CustomerActions({ row }: { row: Row }) {
+  const who = row.name || row.email;
+  const wa = whatsappHref(row.phone);
+  return (
+    <AdminRowActions>
+      <AdminIconAction
+        icon="view"
+        label="View customer"
+        ariaLabel={`View ${who}`}
+        href={`/admin/customers/${encodeURIComponent(row.email)}`}
+      />
+      {wa ? (
+        <AdminIconAction
+          icon="whatsapp"
+          label="WhatsApp"
+          ariaLabel={`WhatsApp ${who}`}
+          href={wa}
+          external
+        />
+      ) : null}
+      <AdminIconAction
+        icon="email"
+        label="Email"
+        ariaLabel={`Email ${who}`}
+        href={`mailto:${row.email}`}
+      />
+    </AdminRowActions>
+  );
 }
 
 export default function AdminCustomersPage() {
@@ -43,18 +83,24 @@ export default function AdminCustomersPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("lastOrder");
+  const [account, setAccount] = useState("all");
+  const rowLink = useRowLink();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
+    setLoadError(null);
     const params = new URLSearchParams();
     if (q.trim()) params.set("q", q.trim());
     if (sort) params.set("sort", sort);
     fetch(`/api/admin/customers?${params}`)
-      .then((r) => r.json())
+      .then((r) => readAdminJson<Row[]>(r))
       .then((j) => {
-        if (j.ok) setRows(j.data);
+        if (j.ok) setRows(j.data || []);
+        else setLoadError(j.error || "Could not load customers");
       })
+      .catch(() => setLoadError("Could not load customers. Check your connection."))
       .finally(() => setLoading(false));
   }, [q, sort]);
 
@@ -72,136 +118,189 @@ export default function AdminCustomersPage() {
     return () => clearTimeout(t);
   }, [load, q]);
 
+  const counts = {
+    all: rows.length,
+    registered: rows.filter((r) => r.account === "registered").length,
+    guest: rows.filter((r) => r.account === "guest").length,
+  };
+  const visible =
+    account === "all" ? rows : rows.filter((r) => r.account === account);
+
+  const empty = !loading && (visible.length === 0 || Boolean(loadError));
+  const emptyState = loadError ? (
+    <AdminEmptyState
+      title="Customers could not load"
+      description={loadError}
+      action={
+        <Button variant="secondary" onClick={load}>
+          Try again
+        </Button>
+      }
+    />
+  ) : q.trim() || account !== "all" ? (
+    <AdminEmptyState
+      title="No customers match"
+      action={
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setQ("");
+            setAccount("all");
+          }}
+        >
+          Clear filters
+        </Button>
+      }
+    />
+  ) : (
+    <AdminEmptyState
+      title="No customers yet"
+      description="People appear here after they order, sign up or send a message."
+    />
+  );
+
   return (
     <AdminShell user={user}>
-      <AdminPageHeader
-        title="Customers"
-        description="People who ordered, registered, or contacted you. Identity is email."
-      />
+      <AdminPageHeader title="Customers" />
 
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="min-w-0 flex-1">
-          <label className="mb-1.5 block text-[13px] font-semibold text-admin-ink">
-            Search
-          </label>
-          <input
-            className={adminFieldClass}
+      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <AdminFilterChips
+          label="Account type"
+          value={account}
+          onChange={setAccount}
+          options={[
+            { value: "all", label: "All", count: counts.all },
+            { value: "registered", label: "With account", count: counts.registered },
+            { value: "guest", label: "Guests", count: counts.guest },
+          ]}
+        />
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row lg:justify-end">
+          <AdminSearchInput
             value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Name, email, or phone"
+            onChange={setQ}
+            placeholder="Search name, email or phone"
+            label="Search customers"
+            className="w-full lg:max-w-sm"
           />
-        </div>
-        <div className="w-full sm:w-52">
           <Select
-            label="Sort"
+            aria-label="Sort customers"
             value={sort}
             onValueChange={setSort}
             options={[
-              { value: "lastOrder", label: "Last order" },
-              { value: "spend", label: "Lifetime spend" },
-              { value: "orders", label: "Order count" },
+              { value: "lastOrder", label: "Latest order first" },
+              { value: "spend", label: "Highest spend first" },
+              { value: "orders", label: "Most orders first" },
             ]}
-            triggerClassName="border-admin-input-border! bg-admin-soft-2! text-admin-ink!"
+            className="w-full sm:w-56"
           />
         </div>
       </div>
 
-      <AdminTable>
+      {/* Phones: cards */}
+      <div className="md:hidden">
+        {loading ? (
+          <BrandLoaderBlock className="min-h-[40vh]" label="Loading customers" />
+        ) : empty ? (
+          <div className="rounded-lg border border-admin-line bg-admin-paper">{emptyState}</div>
+        ) : (
+          <ul className="space-y-3">
+            {visible.map((r) => (
+              <li
+                key={r.email}
+                className="rounded-lg border border-admin-line bg-admin-paper p-4 shadow-admin"
+              >
+                <Link
+                  href={`/admin/customers/${encodeURIComponent(r.email)}`}
+                  className="block"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-admin-ink">
+                        {r.name || r.email}
+                      </p>
+                      <p className="truncate text-[0.8125rem] text-admin-muted">
+                        {r.email}
+                      </p>
+                    </div>
+                    <p className="shrink-0 font-sans tabular-nums text-[0.9375rem] font-medium text-admin-ink">
+                      {formatPkr(r.lifetimeSpendPkr)}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-[0.8125rem] text-admin-muted">
+                    {r.orderCount} {r.orderCount === 1 ? "order" : "orders"}
+                    {r.lastOrderAt ? ` · last ${formatDate(r.lastOrderAt)}` : ""}
+                  </p>
+                </Link>
+                <div className="mt-3 border-t border-admin-line pt-2">
+                  <CustomerActions row={r} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <AdminTable className="hidden md:block">
         <thead>
           <tr>
             <AdminTh>Customer</AdminTh>
             <AdminTh>Account</AdminTh>
-            <AdminTh className="text-right">Orders</AdminTh>
-            <AdminTh className="text-right">Spend</AdminTh>
+            <AdminTh numeric>Orders</AdminTh>
+            <AdminTh numeric>Total spent</AdminTh>
             <AdminTh>Last order</AdminTh>
-            <AdminTh className="text-right">Messages</AdminTh>
-            <AdminTh className="text-right">Actions</AdminTh>
+            <AdminTh numeric>Messages</AdminTh>
+            <AdminTh className="w-36 text-right">Actions</AdminTh>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
-              <td
-                colSpan={7}
-                className="px-4 py-14 text-center text-admin-muted"
-              >
-                Loading…
-              </td>
+              <td colSpan={7}><BrandLoaderBlock className="min-h-[40vh]" label="Loading customers" /></td>
             </tr>
-          ) : rows.length === 0 ? (
+          ) : empty ? (
             <tr>
-              <td
-                colSpan={7}
-                className="px-4 py-14 text-center text-admin-muted"
-              >
-                No customers yet. Orders, accounts, and contact messages will
-                appear here.
-              </td>
+              <td colSpan={7}>{emptyState}</td>
             </tr>
           ) : (
-            rows.map((r) => (
-              <tr key={r.email} className="hover:bg-admin-soft">
-                <AdminTd>
-                  <p className="font-medium">{r.name || "—"}</p>
-                  <p className="text-[11px] text-admin-muted">
-                    {r.email}
-                  </p>
-                  {r.phone ? (
-                    <p className="text-[11px] tabular-nums text-admin-faint">
-                      {r.phone}
+            visible.map((r) => {
+              const href = `/admin/customers/${encodeURIComponent(r.email)}`;
+              const row = rowLink(href);
+              return (
+                <tr key={r.email} onClick={row.onClick} className={row.className}>
+                  <AdminTd className="max-w-[20rem]">
+                    <Link
+                      href={href}
+                      className="block truncate font-semibold text-admin-ink hover:underline"
+                    >
+                      {r.name || r.email}
+                    </Link>
+                    <p className="truncate text-[0.8125rem] text-admin-muted" title={r.email}>
+                      {r.name ? r.email : r.phone}
                     </p>
-                  ) : null}
-                </AdminTd>
-                <AdminTd>
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-sm border px-2.5 py-1 font-display text-[11px] font-medium uppercase tracking-widest",
-                      r.account === "registered"
-                        ? "border-admin-ink bg-admin-ink text-admin-paper"
-                        : "border-admin-line bg-admin-soft text-admin-muted",
-                    )}
-                  >
-                    {r.account}
-                  </span>
-                </AdminTd>
-                <AdminTd className="text-right font-medium tabular-nums">
-                  {r.orderCount}
-                </AdminTd>
-                <AdminTd className="text-right font-medium tabular-nums">
-                  {formatPkr(r.lifetimeSpendPkr)}
-                </AdminTd>
-                <AdminTd className="text-[13px] text-admin-muted">
-                  {formatDate(r.lastOrderAt)}
-                </AdminTd>
-                <AdminTd className="text-right tabular-nums">
-                  {r.messageCount}
-                </AdminTd>
-                <AdminTd className="text-right">
-                  <Button
-                    href={`/admin/customers/${encodeURIComponent(r.email)}`}
-                    variant="secondary"
-                    className="h-10! min-h-10! w-auto! px-4!"
-                  >
-                    Profile
-                  </Button>
-                </AdminTd>
-              </tr>
-            ))
+                  </AdminTd>
+                  <AdminTd>
+                    <AdminStatusBadge
+                      status={r.account}
+                      label={r.account === "registered" ? "Has account" : "Guest"}
+                    />
+                  </AdminTd>
+                  <AdminTd numeric>{r.orderCount}</AdminTd>
+                  <AdminTd numeric className="font-medium">
+                    {formatPkr(r.lifetimeSpendPkr)}
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap text-admin-muted">
+                    {formatDate(r.lastOrderAt) || "No orders"}
+                  </AdminTd>
+                  <AdminTd numeric>{r.messageCount}</AdminTd>
+                  <AdminTd className="py-2">
+                    <CustomerActions row={r} />
+                  </AdminTd>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </AdminTable>
-
-      {!loading && rows.length > 0 ? (
-        <p className="mt-3 text-sm text-admin-muted">
-          {rows.length} {rows.length === 1 ? "person" : "people"}
-          {q.trim() ? " matching search" : ""}
-          {" · "}
-          {rows.filter((r) => r.account === "registered").length} registered
-          accounts
-          {" · "}
-          {rows.filter((r) => r.account === "guest").length} guests / contacts
-        </p>
-      ) : null}
     </AdminShell>
   );
 }

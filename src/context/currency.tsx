@@ -13,18 +13,25 @@ import {
   CURRENCIES,
   DEFAULT_CURRENCY,
   formatMoney,
+  formatPkr,
+  hasRate,
   type CurrencyCode,
   type RatesMap,
 } from "@/lib/currency";
 
 type CurrencyContextValue = {
+  /** Shopper's saved preference. */
   currency: CurrencyCode;
+  /** What prices are actually shown in: PKR until the preferred rate is loaded. */
+  displayCurrency: CurrencyCode;
   setCurrency: (c: CurrencyCode) => void;
   rates: RatesMap;
   updatedAt: string | null;
   source: string | null;
   loading: boolean;
   format: (amountPkr: number) => string;
+  /** Payable amounts. Orders are charged in PKR whatever the display currency. */
+  formatPkr: (amountPkr: number) => string;
   currencies: typeof CURRENCIES;
 };
 
@@ -61,7 +68,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
           setSource(json.data.source);
         }
       } catch {
-        /* keep PKR 1:1 */
+        /* no rates: prices stay in PKR */
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -80,23 +87,39 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Never label PKR figures with another symbol while rates load or after a failed fetch.
+  const displayCurrency: CurrencyCode = hasRate(currency, rates)
+    ? currency
+    : DEFAULT_CURRENCY;
+
   const format = useCallback(
-    (amountPkr: number) => formatMoney(amountPkr, currency, rates),
-    [currency, rates],
+    (amountPkr: number) => formatMoney(amountPkr, displayCurrency, rates),
+    [displayCurrency, rates],
   );
 
   const value = useMemo(
     () => ({
       currency,
+      displayCurrency,
       setCurrency,
       rates,
       updatedAt,
       source,
       loading,
       format,
+      formatPkr,
       currencies: CURRENCIES,
     }),
-    [currency, setCurrency, rates, updatedAt, source, loading, format],
+    [
+      currency,
+      displayCurrency,
+      setCurrency,
+      rates,
+      updatedAt,
+      source,
+      loading,
+      format,
+    ],
   );
 
   return (

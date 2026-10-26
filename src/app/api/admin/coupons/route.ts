@@ -1,9 +1,24 @@
 import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminWrite, adminDenied } from "@/lib/auth";
 import { CouponModel } from "@/models/Coupon";
 import { ensureDefaultCoupons } from "@/lib/coupons";
+
+/**
+ * "Expires on" is a calendar day in Pakistan. A bare `yyyy-MM-dd` is stored as
+ * the last millisecond of that day in Asia/Karachi (UTC+5, no DST), i.e.
+ * 18:59:59.999Z, so a code stays valid all day for local shoppers.
+ * Full ISO timestamps are kept as sent. Returns undefined when unparseable.
+ */
+function expiryFromInput(value: string): Date | undefined {
+  const v = value.trim();
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  const d = day ? new Date(`${v}T23:59:59.999+05:00`) : new Date(v);
+  if (Number.isNaN(d.getTime())) return undefined;
+  if (day && d.toISOString().slice(0, 10) !== v) return undefined; // e.g. 2026-02-31
+  return d;
+}
 
 function mapCoupon(doc: {
   _id: unknown;
@@ -57,9 +72,14 @@ const createSchema = z.object({
   code: z
     .string()
     .trim()
-    .min(2)
-    .max(32)
-    .transform((s) => s.toUpperCase().replace(/\s+/g, "")),
+    .transform((s) => s.toUpperCase().replace(/\s+/g, ""))
+    .pipe(
+      z
+        .string()
+        .min(3, "Code must be at least 3 characters")
+        .max(20, "Code must be 20 characters or fewer")
+        .regex(/^[A-Z0-9]+$/, "Use letters and numbers only"),
+    ),
   label: z.string().trim().max(80).optional().default(""),
   type: z.enum(["percent", "fixed", "free_shipping"]),
   value: z.number().min(0).max(1000000).optional().default(0),
@@ -82,25 +102,27 @@ const createSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const admin = await requireAdmin();
-  if (!admin) return jsonError("Unauthorized", 401);
+  const admin = await requireAdminWrite();
+  if (!admin) return adminDenied();
   try {
     await connectDB();
     const raw = await req.json();
     const parsed = createSchema.safeParse(raw);
     if (!parsed.success) {
-      return jsonError("Invalid coupon", 400, parsed.error.flatten());
+      return jsonError(parsed.error.issues[0]?.message || "Check the coupon details", 400, parsed.error.flatten());
     }
     const data = parsed.data;
-    if (data.type === "percent" && (data.value < 1 || data.value > 100)) {
-      return jsonError("Percent discounts must be between 1 and 100", 400);
-    }
-    if (data.type === "fixed" && data.value < 1) {
-      return jsonError("Fixed discount must be at least 1 PKR", 400);
-    }
+    const valueError = couponValueError(data.type, data.value);
+    if (valueError) return jsonError(valueError, 400);
     if (data.type === "free_shipping") data.value = 0;
     if (data.posterBgMode === "image" && !data.posterImageUrl) {
       // allow save without image yet; studio can assign later
+    }
+    let expiresAt: Date | null = null;
+    if (data.expiresAt) {
+      const parsedExpiry = expiryFromInput(data.expiresAt);
+      if (!parsedExpiry) return jsonError("Enter a valid expiry date", 400);
+      expiresAt = parsedExpiry;
     }
 
     const exists = await CouponModel.findOne({ code: data.code });
@@ -114,7 +136,7 @@ export async function POST(req: Request) {
       active: data.active,
       minSubtotalPkr: data.minSubtotalPkr,
       usageLimit: data.usageLimit ?? null,
-      expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      expiresAt,
       usedCount: 0,
       posterBgMode: data.posterBgMode,
       posterBgColor: data.posterBgColor,
@@ -129,9 +151,18 @@ export async function POST(req: Request) {
   }
 }
 
+/** Same rules as the admin form: percent 1 to 90, fixed at least Rs 1, whole numbers. */
+function couponValueError(type: string, value: number): string | null {
+  if (type === "free_shipping") return null;
+  if (!Number.isInteger(value)) return "Use a whole number";
+  if (type === "percent" && (value < 1 || value > 90)) return "Percent discounts must be between 1 and 90";
+  if (type === "fixed" && value < 1) return "Fixed discounts must be at least Rs 1";
+  return null;
+}
+
 export async function PUT(req: Request) {
-  const admin = await requireAdmin();
-  if (!admin) return jsonError("Unauthorized", 401);
+  const admin = await requireAdminWrite();
+  if (!admin) return adminDenied();
   try {
     await connectDB();
     const body = await req.json();
@@ -140,15 +171,28 @@ export async function PUT(req: Request) {
     const updates: Record<string, unknown> = {};
     if (typeof body.label === "string") updates.label = body.label.trim();
     if (typeof body.active === "boolean") updates.active = body.active;
-    if (typeof body.value === "number") updates.value = body.value;
-    if (typeof body.minSubtotalPkr === "number")
-      updates.minSubtotalPkr = body.minSubtotalPkr;
+    if (body.value !== undefined) {
+      const existing = await CouponModel.findById(id).select("type").lean<{ type?: string }>();
+      if (!existing) return jsonError("Coupon not found", 404);
+      const value = Number(body.value);
+      const valueError = couponValueError(String(existing.type), value);
+      if (valueError) return jsonError(valueError, 400);
+      updates.value = value;
+    }
+    if (body.minSubtotalPkr !== undefined) {
+      const min = Number(body.minSubtotalPkr);
+      if (!Number.isInteger(min) || min < 0) return jsonError("Minimum order must be a whole rupee amount", 400);
+      updates.minSubtotalPkr = min;
+    }
     if (body.usageLimit === null) updates.usageLimit = null;
     else if (typeof body.usageLimit === "number" && body.usageLimit > 0)
       updates.usageLimit = Math.floor(body.usageLimit);
-    if (body.expiresAt === null) updates.expiresAt = null;
-    else if (typeof body.expiresAt === "string" && body.expiresAt)
-      updates.expiresAt = new Date(body.expiresAt);
+    if (body.expiresAt === null || body.expiresAt === "") updates.expiresAt = null;
+    else if (typeof body.expiresAt === "string") {
+      const parsedExpiry = expiryFromInput(body.expiresAt);
+      if (!parsedExpiry) return jsonError("Enter a valid expiry date", 400);
+      updates.expiresAt = parsedExpiry;
+    }
     if (typeof body.type === "string") updates.type = body.type;
     if (body.posterBgMode === "color" || body.posterBgMode === "image")
       updates.posterBgMode = body.posterBgMode;

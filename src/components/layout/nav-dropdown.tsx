@@ -12,7 +12,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
-import { ChevronDownIcon } from "@animateicons/react/lucide";
+import { ChevronDownIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { pageCopy } from "@/data/copy";
 
@@ -35,10 +35,10 @@ type NavDropdownProps = {
 };
 
 const triggerClass =
-  "group inline-flex cursor-pointer items-center gap-1.5 rounded-xs px-2 py-2 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-paper/85 outline-none transition-colors duration-300 hover:text-white focus-visible:text-white aria-expanded:text-white xl:text-[13px]";
+  "group inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xs px-3 text-label text-paper/85 outline-none transition-colors duration-300 hover:text-white focus-visible:text-white aria-expanded:text-white xl:px-4";
 
 const linkRowClass =
-  "group/link relative z-10 flex cursor-pointer items-center justify-between gap-2 rounded-sm px-1.5 py-1.5 font-serif text-[15px] font-semibold leading-snug text-ink/90 outline-none transition-colors duration-200 hover:bg-muted hover:text-ink focus-visible:bg-muted";
+  "group/link relative z-10 flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xs px-2 py-1.5 text-[0.9375rem] font-medium leading-snug text-ink/85 outline-none transition-colors duration-200 hover:bg-muted hover:text-ink focus-visible:bg-muted";
 
 function chromeBottom(): number {
   const chrome = document.querySelector<HTMLElement>("[data-site-chrome]");
@@ -63,13 +63,19 @@ export function NavDropdown({
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [top, setTop] = useState(108);
+  const [anchorX, setAnchorX] = useState<number | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverOpenedAt = useRef(0);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
 
   useEffect(() => setMounted(true), []);
 
   const syncTop = useCallback(() => {
     setTop(Math.round(chromeBottom()));
+    const r = triggerRef.current?.getBoundingClientRect();
+    if (r) setAnchorX(Math.round(r.left + r.width / 2));
   }, []);
 
   const clearClose = useCallback(() => {
@@ -85,6 +91,11 @@ export function NavDropdown({
     setOpen(true);
   }, [clearClose, syncTop]);
 
+  const openOnHover = useCallback(() => {
+    if (!open) hoverOpenedAt.current = Date.now();
+    openMenu();
+  }, [open, openMenu]);
+
   const scheduleClose = useCallback(() => {
     clearClose();
     /* Longer grace so moving from trigger → panel does not flash closed */
@@ -96,11 +107,36 @@ export function NavDropdown({
     setOpen(false);
   }, [clearClose]);
 
+  /** Close and hand focus back to the trigger (keyboard paths). */
+  const closeToTrigger = useCallback(() => {
+    closeNow();
+    triggerRef.current?.focus();
+  }, [closeNow]);
+
+  const panelFocusables = () =>
+    Array.from(panelRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") ?? []);
+
+  // The panel is portaled to <body>, so keep Tab order sane by hand:
+  // Tab past the last link or Shift+Tab before the first returns to the trigger.
+  const onPanelKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "Tab") return;
+    const items = panelFocusables();
+    if (!items.length) return;
+    const first = items[0]!;
+    const last = items[items.length - 1]!;
+    if ((!e.shiftKey && document.activeElement === last) || (e.shiftKey && document.activeElement === first)) {
+      e.preventDefault();
+      closeToTrigger();
+    }
+  };
+
   useEffect(() => {
     if (!open) return;
     syncTop();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeNow();
+      if (e.key !== "Escape") return;
+      if (panelRef.current?.contains(document.activeElement)) closeToTrigger();
+      else closeNow();
     };
     window.addEventListener("resize", syncTop);
     window.addEventListener("scroll", syncTop, { passive: true });
@@ -110,19 +146,16 @@ export function NavDropdown({
       window.removeEventListener("scroll", syncTop);
       window.removeEventListener("keydown", onKey);
     };
-  }, [open, syncTop, closeNow]);
+  }, [open, syncTop, closeNow, closeToTrigger]);
 
   let body: ReactNode = null;
 
   if (wide && columns) {
     body = (
       <div className="mx-auto w-full max-w-[80rem] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper text-ink shadow-[0_24px_48px_rgba(0,0,0,0.24)]">
-        <div className="flex flex-col gap-2.5 border-b border-hairline bg-[#FAF8F4] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex flex-col gap-3 border-b border-hairline bg-[#FAF8F4] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="min-w-0">
-            <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
-              {label}
-            </p>
-            <p className="mt-0.5 font-serif text-[15px] font-medium text-ink/70">
+            <p className="text-body-sm text-ink/75">
               {pageCopy.shopMegaHint}
             </p>
           </div>
@@ -133,7 +166,8 @@ export function NavDropdown({
                   key={link.href}
                   href={link.href}
                   variant={i === 0 ? "primary" : "secondary"}
-                  className="h-10! min-h-10! w-auto max-w-none px-4"
+                  size="sm"
+                  className="w-auto max-w-none"
                   onClick={closeNow}
                 >
                   {link.label}
@@ -144,14 +178,14 @@ export function NavDropdown({
         </div>
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_13.5rem] xl:grid-cols-[minmax(0,1fr)_14.5rem]">
-          <div className="grid sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {columns.map((col) => (
               <nav
                 key={col.title}
                 aria-label={col.title}
-                className="border-b border-hairline px-4 py-4 sm:border-r sm:[&:nth-child(2n)]:border-r-0 xl:border-r xl:[&:nth-child(4n)]:border-r-0"
+                className="border-b border-r border-hairline px-5 py-5 xl:border-b-0 xl:last:border-r-0"
               >
-                <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+                <p className="mb-3 px-2 text-eyebrow text-taupe">
                   {col.title}
                 </p>
                 <ul className="flex flex-col">
@@ -165,7 +199,7 @@ export function NavDropdown({
                         <span>{item.label}</span>
                         <span
                           aria-hidden
-                          className="text-[11px] text-ink/0 transition-colors duration-200 group-hover/link:text-ink/35"
+                          className="text-xs text-ink/0 transition-colors duration-200 group-hover/link:text-ink/35"
                         >
                           →
                         </span>
@@ -199,11 +233,11 @@ export function NavDropdown({
                   className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"
                   aria-hidden
                 />
-                <span className="absolute inset-x-0 bottom-0 p-3.5">
-                  <span className="block font-display text-[10px] font-medium uppercase tracking-[0.14em] text-paper/75">
-                    Featured Look
+                <span className="absolute inset-x-0 bottom-0 p-4">
+                  <span className="block text-eyebrow text-paper/75">
+                    Not sure yet?
                   </span>
-                  <span className="mt-1 block font-display text-[12px] font-medium tracking-[0.06em] text-paper">
+                  <span className="mt-1 block text-sm font-semibold text-paper">
                     {panelImage.cta ?? "Shop the collection →"}
                   </span>
                 </span>
@@ -212,23 +246,11 @@ export function NavDropdown({
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-1.5 border-t border-hairline px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="font-serif text-[13px] font-medium tracking-wide text-taupe">
-            Nationwide delivery · clear sizes
-          </p>
-          <Link
-            href="/find-your-scent"
-            onClick={closeNow}
-            className="inline-flex min-h-8 cursor-pointer items-center font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-brass"
-          >
-            Find Your Scent →
-          </Link>
-        </div>
       </div>
     );
   } else if (items) {
     body = (
-      <div className="mx-auto w-full max-w-[17rem] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper p-1.5 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
+      <div className="w-[17rem] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper p-2 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
         <ul className="flex flex-col">
           {items.map((item) => (
             <li key={item.href}>
@@ -249,15 +271,23 @@ export function NavDropdown({
   return (
     <div
       className="relative"
-      onMouseEnter={openMenu}
+      onMouseEnter={openOnHover}
       onMouseLeave={scheduleClose}
     >
       <button
+        ref={triggerRef}
         type="button"
         className={triggerClass}
         aria-expanded={open}
         aria-controls={panelId}
-        onClick={() => (open ? closeNow() : openMenu())}
+        onClick={(e) => {
+          // A click right after hover-open is the same intent: keep it open.
+          if (open && Date.now() - hoverOpenedAt.current < 600) return;
+          if (open) return closeNow();
+          openMenu();
+          // Keyboard activation (Enter/Space reports detail 0): move into the panel.
+          if (e.detail === 0) requestAnimationFrame(() => panelFocusables()[0]?.focus());
+        }}
       >
         {label}
         <ChevronDownIcon
@@ -273,20 +303,23 @@ export function NavDropdown({
       {mounted && body
         ? createPortal(
             <div
+              ref={panelRef}
               id={panelId}
               role="region"
               aria-label={label}
               aria-hidden={!open}
               className={cn(
-                "fixed inset-x-0 z-60 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none",
-                wide ? "px-3 sm:px-5 lg:px-6" : "flex justify-center px-3",
+                "fixed z-60 transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none",
+                // Wide panels span the page; small ones sit centred under their trigger.
+                wide ? "inset-x-0 px-3 sm:px-5 lg:px-6" : "-translate-x-1/2",
                 open
                   ? "pointer-events-auto visible translate-y-0 opacity-100"
                   : "pointer-events-none invisible -translate-y-1 opacity-0",
               )}
-              style={{ top }}
+              style={wide || anchorX === null ? { top } : { top, left: anchorX }}
               onMouseEnter={openMenu}
               onMouseLeave={scheduleClose}
+              onKeyDown={onPanelKeyDown}
             >
               {/* Invisible bridge so the cursor can cross from nav into the panel */}
               <div className="absolute inset-x-0 -top-3 h-3" aria-hidden />

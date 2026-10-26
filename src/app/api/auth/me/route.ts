@@ -35,6 +35,7 @@ export async function GET() {
         avatarUrl: doc.avatarUrl || "",
         hasPassword: Boolean(doc.passwordHash),
         hasGoogle: Boolean(doc.googleId),
+        emailVerified: Boolean(doc.emailVerified),
       },
       googleEnabled: googleOAuthConfigured(),
     });

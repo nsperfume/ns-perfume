@@ -3,10 +3,12 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { CartLine } from "@/lib/types";
-import { formatSize } from "@/lib/format";
 import { useCurrency } from "@/context/currency";
-import { FREE_SHIPPING_THRESHOLD_PKR } from "@/lib/checkout";
+import { useCheckoutConfig } from "@/context/checkout-config";
+import { freeShippingGap, taxLineLabel } from "@/lib/checkout-config";
 import { cn } from "@/lib/cn";
+import { giftLineLabel } from "@/lib/checkout";
+import { PayableAmount } from "@/components/commerce/price";
 
 type SummaryProps = {
   lines: CartLine[];
@@ -15,6 +17,14 @@ type SummaryProps = {
   discountCode: string;
   shippingPkr: number | null;
   shippingLabel?: string;
+  /** A discount code that includes free standard shipping. */
+  freeShippingCoupon?: boolean;
+  /** Cash-on-delivery fee once the shopper is on the payment step. */
+  codFeePkr?: number;
+  /** Tax added on top (exclusive). */
+  taxPkr?: number;
+  /** Tax already inside prices (inclusive), shown as a note. */
+  taxIncludedPkr?: number;
   totalPkr: number;
   onApplyDiscount: (code: string) => string | null | Promise<string | null>;
   onRemoveDiscount: () => void;
@@ -28,11 +38,15 @@ export function CheckoutOrderSummary({
   discountCode,
   shippingPkr,
   shippingLabel,
+  freeShippingCoupon = false,
+  codFeePkr = 0,
+  taxPkr = 0,
+  taxIncludedPkr = 0,
   totalPkr,
   onApplyDiscount,
   onRemoveDiscount,
 }: SummaryProps) {
-  const { format, currency } = useCurrency();
+  const { format, formatPkr } = useCurrency();
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState<string | null>(null);
   const [openMobile, setOpenMobile] = useState(false);
@@ -50,14 +64,15 @@ export function CheckoutOrderSummary({
     }
   };
 
-  const freeShipGap = Math.max(0, FREE_SHIPPING_THRESHOLD_PKR - (subtotalPkr - discountPkr));
+  const config = useCheckoutConfig();
+  const freeShipGap = freeShippingGap(config, subtotalPkr - discountPkr);
 
   const body = (
     <>
       <ul className="max-h-[40vh] space-y-5 overflow-y-auto pr-1 lg:max-h-none">
         {lines.map((line) => (
           <li key={line.sku} className="flex gap-3.5">
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-hairline bg-paper">
+            <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xs border border-hairline bg-paper">
               <Image
                 src={line.image}
                 alt=""
@@ -67,26 +82,25 @@ export function CheckoutOrderSummary({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-display text-base font-medium leading-snug text-ink">
+              <p className="text-base font-semibold leading-snug text-ink">
                 {line.name}
-                {line.isGift ? " (Gift)" : ""}
               </p>
-              <p className="mt-0.5 text-sm text-taupe">
+              <p className="mt-0.5 font-sans text-sm tabular-nums text-taupe">
                 Qty {line.quantity}
-                {line.sizeMl > 0 ? ` · ${formatSize(line.sizeMl)}` : ` · ${line.sku}`}
-                {line.giftWrap ? " · Gift wrap" : line.isGift ? " · Gift" : ""}
+                {line.sizeMl > 0 ? ` · ${line.sizeMl} ml` : ""}
               </p>
-              {line.giftWrap ? (
-                <p className="mt-1 text-sm text-taupe">Gift wrap included</p>
+              {giftLineLabel(line) ? (
+                <p className="mt-1 text-sm font-medium text-brass-ink">
+                  {giftLineLabel(line)}
+                </p>
               ) : null}
               {line.giftMessage ? (
                 <p className="mt-1 text-sm leading-snug text-taupe">
-                  <span className="text-taupe">Gift note: </span>
-                  {line.giftMessage}
+                  Gift note: {line.giftMessage}
                 </p>
               ) : null}
             </div>
-            <p className="shrink-0 font-display text-base tabular-nums text-ink">
+            <p className="shrink-0 font-sans tabular-nums text-base font-medium text-ink">
               {format(line.price * line.quantity)}
             </p>
           </li>
@@ -94,36 +108,41 @@ export function CheckoutOrderSummary({
       </ul>
 
       <div className="mt-5 flex gap-2">
-        <input
-          type="text"
-          value={codeInput}
-          onChange={(e) => {
-            setCodeInput(e.target.value);
-            setCodeError(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              apply();
-            }
-          }}
-          placeholder="Discount code or gift card"
-          className="min-h-12 flex-1 rounded-md border border-hairline bg-paper px-3 font-serif text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
-        />
+        {/* Summary renders twice (mobile + desktop), so wrap instead of id-based htmlFor. */}
+        <label className="flex min-w-0 flex-1">
+          <span className="sr-only">Discount code</span>
+          <input
+            type="text"
+            autoComplete="off"
+            value={codeInput}
+            onChange={(e) => {
+              setCodeInput(e.target.value);
+              setCodeError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                apply();
+              }
+            }}
+            placeholder="Discount code"
+            className="min-h-12 min-w-0 flex-1 rounded-xs border border-[#d6cfbf] bg-paper px-4 text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/25"
+          />
+        </label>
         <button
           type="button"
           onClick={apply}
-          className="min-h-12 cursor-pointer rounded-md border border-ink bg-ink px-5 font-display text-sm font-medium uppercase tracking-[0.12em] text-paper transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="min-h-12 cursor-pointer rounded-xs border border-ink bg-ink px-6 text-label text-paper transition-colors hover:border-brass hover:bg-brass hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
           disabled={!codeInput.trim() || applying}
         >
           {applying ? "…" : "Apply"}
         </button>
       </div>
       {codeError ? (
-        <p className="mt-2 font-display text-sm text-rosewood">{codeError}</p>
+        <p className="mt-2 font-sans text-sm text-rosewood">{codeError}</p>
       ) : null}
       {discountCode ? (
-        <div className="mt-3 flex items-center justify-between rounded-md bg-paper px-3 py-2 text-sm">
+        <div className="mt-3 flex items-center justify-between rounded-xs bg-paper px-3 py-2 text-sm">
           <span className="font-medium text-ink">
             {discountCode}
             <button
@@ -135,36 +154,37 @@ export function CheckoutOrderSummary({
               ×
             </button>
           </span>
-          <span className="text-ink">−{format(discountPkr)}</span>
+          <span className="font-sans tabular-nums text-ink">−{format(discountPkr)}</span>
         </div>
       ) : null}
 
-      {freeShipGap > 0 ? (
+      {freeShipGap === null ? null : freeShipGap > 0 && !freeShippingCoupon ? (
         <p className="mt-4 text-sm leading-snug text-taupe">
-          Add {format(freeShipGap)} more for complimentary standard shipping.
+          Add <span className="font-sans tabular-nums">{format(freeShipGap)}</span> more
+          for free standard shipping.
         </p>
       ) : (
         <p className="mt-4 text-sm leading-snug text-taupe">
-          Your order qualifies for complimentary standard shipping.
+          Your order qualifies for free standard shipping.
         </p>
       )}
 
       <div className="mt-5 space-y-2 border-t border-hairline pt-4 text-base">
         <div className="flex justify-between text-taupe">
           <span>Subtotal</span>
-          <span className="text-ink">{format(subtotalPkr)}</span>
+          <span className="font-sans tabular-nums text-ink">{format(subtotalPkr)}</span>
         </div>
         {discountPkr > 0 ? (
           <div className="flex justify-between text-taupe">
             <span>Discount</span>
-            <span className="text-ink">−{format(discountPkr)}</span>
+            <span className="font-sans tabular-nums text-ink">−{format(discountPkr)}</span>
           </div>
         ) : null}
         <div className="flex justify-between text-taupe">
           <span>Shipping</span>
-          <span className="text-ink">
+          <span className="text-right font-sans tabular-nums text-ink">
             {shippingPkr === null
-              ? "Enter shipping address"
+              ? "Calculated at next step"
               : shippingPkr === 0
                 ? "Free"
                 : format(shippingPkr)}
@@ -175,21 +195,33 @@ export function CheckoutOrderSummary({
             ) : null}
           </span>
         </div>
-        <div className="flex justify-between text-taupe">
-          <span>Estimated taxes</span>
-          <span className="text-ink">{format(0)}</span>
-        </div>
+        {codFeePkr > 0 ? (
+          <div className="flex justify-between text-taupe">
+            <span>Cash on delivery fee</span>
+            <span className="font-sans tabular-nums text-ink">{format(codFeePkr)}</span>
+          </div>
+        ) : null}
+        {config.tax.mode === "exclusive" ? (
+          <div className="flex justify-between text-taupe">
+            <span>{taxLineLabel(config)}</span>
+            <span className="font-sans tabular-nums text-ink">{format(taxPkr)}</span>
+          </div>
+        ) : null}
       </div>
 
-      <div className="mt-4 flex items-end justify-between border-t border-hairline pt-4">
-        <span className="font-display text-base font-medium text-ink">Total</span>
-        <div className="text-right">
-          <span className="mr-2 font-display text-xs text-taupe">{currency}</span>
-          <span className="font-display text-2xl font-medium tracking-tight text-ink">
-            {format(totalPkr)}
-          </span>
-        </div>
+      <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
+        <span className="text-base font-semibold text-ink">Total</span>
+        <PayableAmount
+          amountPkr={totalPkr}
+          variant="stacked"
+          className="items-end text-right font-sans tabular-nums text-2xl font-medium tracking-tight text-ink"
+        />
       </div>
+      {taxIncludedPkr > 0 ? (
+        <p className="mt-2 text-right text-caption text-taupe">
+          Includes {taxLineLabel(config)} of {format(taxIncludedPkr)}
+        </p>
+      ) : null}
     </>
   );
 
@@ -202,14 +234,14 @@ export function CheckoutOrderSummary({
           onClick={() => setOpenMobile((v) => !v)}
           aria-expanded={openMobile}
         >
-          <span className="font-display text-sm font-medium text-brass">
+          <span className="font-sans text-sm font-semibold text-brass-ink">
             {openMobile ? "Hide order summary" : "Show order summary"}
-            <span className="ml-1 inline-block text-[10px] opacity-80">
+            <span className="ml-1 inline-block text-xs opacity-80">
               {openMobile ? "▴" : "▾"}
             </span>
           </span>
-          <span className="font-display text-base font-medium text-ink">
-            {format(totalPkr)}
+          <span className="font-sans text-base font-semibold tabular-nums text-ink">
+            {formatPkr(totalPkr)}
           </span>
         </button>
         <div
@@ -224,7 +256,7 @@ export function CheckoutOrderSummary({
 
       {/* Desktop sticky summary */}
       <aside className="hidden h-full border-l border-hairline bg-canvas-deep lg:block">
-        <div className="sticky top-0 max-h-dvh overflow-y-auto px-10 py-10 xl:px-14">
+        <div className="sticky top-0 max-h-dvh overflow-y-auto py-12 pl-14 pr-[var(--gutter)] scrollbar-panel xl:pl-20">
           {body}
         </div>
       </aside>

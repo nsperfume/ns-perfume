@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { TrackOrderClient } from "@/components/track/track-order-client";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 
 export const metadata: Metadata = {
   title: "Track your order",
@@ -11,14 +12,15 @@ export const metadata: Metadata = {
 
 export default function TrackOrderPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-canvas font-serif text-base text-taupe">
-          Loading…
-        </div>
-      }
-    >
-      <TrackOrderClient />
-    </Suspense>
+    <>
+      {/* The client view renders the visible H1 (lookup form or order status). */}
+      <Suspense
+        fallback={
+          <BrandLoaderBlock className="min-h-dvh bg-canvas" label="Loading order tracking" />
+        }
+      >
+        <TrackOrderClient />
+      </Suspense>
+    </>
   );
 }

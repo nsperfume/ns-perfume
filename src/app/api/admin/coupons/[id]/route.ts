@@ -1,13 +1,13 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireSuperAdmin } from "@/lib/auth";
+import { requireSuperAdmin, adminDenied } from "@/lib/auth";
 import { CouponModel } from "@/models/Coupon";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function DELETE(_req: Request, ctx: Ctx) {
   const admin = await requireSuperAdmin();
-  if (!admin) return jsonError("Forbidden", 403);
+  if (!admin) return adminDenied();
   try {
     const { id } = await ctx.params;
     await connectDB();

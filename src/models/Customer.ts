@@ -16,6 +16,11 @@ const CustomerSchema = new Schema(
     googleId: { type: String, default: "", index: true },
     avatarUrl: { type: String, default: "" },
     emailVerified: { type: Boolean, default: false },
+    /** SHA-256 hashes of single-use email link tokens (never the raw token). */
+    emailVerifyTokenHash: { type: String, default: "", select: false },
+    emailVerifyExpires: { type: Date, default: null, select: false },
+    passwordResetTokenHash: { type: String, default: "", select: false },
+    passwordResetExpires: { type: Date, default: null, select: false },
   },
   { timestamps: true },
 );

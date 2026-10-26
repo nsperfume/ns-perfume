@@ -70,7 +70,7 @@ export type CartLine = {
   sku: string;
   quantity: number;
   image: string;
-  /** Marked as a gift at add-to-bag time */
+  /** Marked as a gift at add-to-cart time */
   isGift?: boolean;
   /** Optional note printed / included for the recipient */
   giftMessage?: string;
@@ -79,7 +79,6 @@ export type CartLine = {
 };
 
 /** Fixed gift-wrap add-on in PKR (included in line price when selected). */
-export const GIFT_WRAP_FEE_PKR = 800;
 
 export type Review = {
   id: string;

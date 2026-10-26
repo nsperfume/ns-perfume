@@ -5,6 +5,8 @@ import { cn } from "@/lib/cn";
 
 type Props = {
   value: string;
+  /** What to show when it differs from what is copied (e.g. "0306 7861412"). */
+  display?: string;
   /** Optional link (e.g. tel: or mailto:) wrapping the value text. */
   href?: string;
   className?: string;
@@ -54,6 +56,7 @@ function CheckGlyph({ className }: { className?: string }) {
  */
 export function CopyableValue({
   value,
+  display,
   href,
   className,
   valueClassName,
@@ -71,18 +74,24 @@ export function CopyableValue({
     }
   }
 
+  // IBANs read and wrap in groups of four; each group stays whole.
+  const iban = /^[A-Z]{2}\d{2}[A-Z0-9]{10,}$/.test(value.replace(/\s+/g, ""));
+  const groups = iban ? value.replace(/\s+/g, "").match(/.{1,4}/g) ?? [value] : null;
   const text = (
     <span
       className={cn(
-        "block font-sans text-[1rem] font-medium leading-8 text-ink",
-        "break-all tabular-nums tracking-normal [font-variant-numeric:lining-nums_tabular-nums]",
+        "block font-sans text-base font-medium leading-8 tabular-nums tracking-normal text-ink [font-variant-numeric:lining-nums_]",
+        groups ? "" : "break-all",
         valueClassName,
       )}
-      style={{
-        fontFamily: "var(--font-ubuntu), Ubuntu, system-ui, sans-serif",
-      }}
     >
-      {value}
+      {groups
+        ? groups.map((g, i) => (
+            <span key={i} className="inline-block whitespace-nowrap pr-[0.4em] last:pr-0">
+              {g}
+            </span>
+          ))
+        : (display ?? value)}
     </span>
   );
 
@@ -107,9 +116,9 @@ export function CopyableValue({
         type="button"
         onClick={copy}
         className={cn(
-          "inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-hairline bg-paper text-ink transition-colors",
+          "inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border bg-paper transition-colors",
           "hover:border-ink/30 hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
-          copied && "border-brass/40 text-brass",
+          copied ? "border-brass/40 text-brass" : "border-hairline text-ink",
         )}
         aria-label={copied ? "Copied" : `${label}: ${value}`}
         title={copied ? "Copied" : label}

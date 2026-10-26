@@ -24,6 +24,7 @@ export function StarRating({
   return (
     <span
       className={cn("inline-flex items-center gap-2", className)}
+      role="img"
       aria-label={`${clamped.toFixed(1)} out of 5 stars`}
     >
       <span className="inline-flex items-center gap-0.5" aria-hidden>
@@ -40,7 +41,7 @@ export function StarRating({
         })}
       </span>
       {showValue ? (
-        <span className="font-mono text-[13px] tabular-nums text-taupe">
+        <span className="font-sans tabular-nums text-[0.8125rem] text-taupe">
           {clamped.toFixed(1)}
         </span>
       ) : null}

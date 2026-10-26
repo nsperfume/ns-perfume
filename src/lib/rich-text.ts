@@ -79,6 +79,15 @@ export function isRichHtml(value: string): boolean {
   return /<[a-z][\s\S]*>/i.test(value || "");
 }
 
+/**
+ * Sanitize markup but leave plain text untouched (sanitizing plain text would
+ * escape "&" to "&amp;", which then shows literally when rendered as text).
+ */
+export function safeRichText(value: string | null | undefined): string {
+  const v = value || "";
+  return isRichHtml(v) ? sanitizeRichHtml(v) : v;
+}
+
 /** Strip tags for validation / excerpts / search. */
 export function richTextToPlain(html: string): string {
   if (!html) return "";

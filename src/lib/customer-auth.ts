@@ -1,9 +1,12 @@
+import { createHmac } from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { hashPassword, verifyPassword } from "@/lib/auth";
+import { adminSecretKey } from "@/lib/admin-token";
 
 const COOKIE = "ns_customer_session";
+const CUSTOMER_AUDIENCE = "ns-perfume:customer";
 
 export type CustomerSession = {
   sub: string;
@@ -11,13 +14,16 @@ export type CustomerSession = {
   name: string;
 };
 
-function secret() {
-  const s =
-    process.env.CUSTOMER_JWT_SECRET ||
-    process.env.ADMIN_JWT_SECRET ||
-    process.env.MONGODB_URI ||
-    "dev-customer-secret";
-  return new TextEncoder().encode(s.slice(0, 64));
+/**
+ * Customer sessions never share the admin key: use CUSTOMER_JWT_SECRET, or derive
+ * a separate key from the admin secret so one token type can't pass as the other.
+ */
+function secret(): Uint8Array {
+  const own = process.env.CUSTOMER_JWT_SECRET?.trim();
+  if (own) return new TextEncoder().encode(own);
+  return createHmac("sha256", adminSecretKey())
+    .update("ns-perfume:customer-session")
+    .digest();
 }
 
 export async function createCustomerToken(payload: {
@@ -31,6 +37,7 @@ export async function createCustomerToken(payload: {
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.sub)
+    .setAudience(CUSTOMER_AUDIENCE)
     .setIssuedAt()
     .setExpirationTime("30d")
     .sign(secret());
@@ -39,7 +46,10 @@ export async function createCustomerToken(payload: {
 export async function verifyCustomerToken(
   token: string,
 ): Promise<CustomerSession> {
-  const { payload } = await jwtVerify(token, secret());
+  const { payload } = await jwtVerify(token, secret(), {
+    audience: CUSTOMER_AUDIENCE,
+    algorithms: ["HS256"],
+  });
   return {
     sub: String(payload.sub || ""),
     email: String(payload.email || ""),

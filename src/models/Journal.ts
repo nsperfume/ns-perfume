@@ -23,4 +23,7 @@ const JournalSchema = new Schema(
   { timestamps: true },
 );
 
+// Journal list: published posts by date.
+JournalSchema.index({ status: 1, date: -1 });
+
 export const JournalModel = models.Journal || model("Journal", JournalSchema);

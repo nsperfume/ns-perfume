@@ -1,61 +1,69 @@
-import type { Metadata } from "next";
-import { EB_Garamond, IBM_Plex_Mono, Ubuntu } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { SiteShell } from "@/components/layout/site-shell";
+import { CheckoutConfigProvider } from "@/context/checkout-config";
+import { getSiteSettings } from "@/lib/site-settings";
 import { siteConfig } from "@/data/site";
 import "./globals.css";
 
-/* Display / headline face */
-const ubuntu = Ubuntu({
-  variable: "--font-ubuntu",
+/* Display: headings, product names, pull quotes (24px and up only) */
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  display: "swap",
-});
-
-/* Editorial body copy */
-const ebGaramond = EB_Garamond({
-  variable: "--font-eb-garamond",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["500", "600"],
   style: ["normal", "italic"],
   display: "swap",
 });
 
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-ibm-plex-mono",
+/* UI and body copy: nav, buttons, forms, paragraphs */
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
   display: "swap",
 });
+
+/* Numerals: prices, ml sizes, SKUs, order numbers */
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} | Modern Luxury Fragrance`,
+    default: `${siteConfig.name} | Perfumes in Pakistan`,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
   openGraph: {
     siteName: siteConfig.name,
     type: "website",
+    locale: "en_PK",
+  },
+  twitter: {
+    card: "summary_large_image",
   },
 };
 
-export default function RootLayout({
+export const viewport: Viewport = {
+  themeColor: "#0b0b0b",
+};
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Store charges are edited in admin; cached pages refresh when settings are saved.
+  const { checkout, topbarText, topbarEnabled } = await getSiteSettings();
   return (
     <html
       lang="en"
-      className={`${ubuntu.variable} ${ebGaramond.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${manrope.variable} h-full antialiased`}
     >
       <body
         className="flex min-h-full flex-col bg-canvas text-ink"
         suppressHydrationWarning
       >
-        <SiteShell>{children}</SiteShell>
+        <CheckoutConfigProvider value={checkout}>
+          <SiteShell announcement={topbarEnabled ? topbarText : ""}>{children}</SiteShell>
+        </CheckoutConfigProvider>
       </body>
     </html>
   );

@@ -6,12 +6,13 @@ import { siteImages } from "@/data/images";
 import { getStoreProducts } from "@/lib/store-data";
 
 export const metadata: Metadata = {
-  title: "All Products | NS Perfume",
+  title: "All perfumes",
   description: pageCopy.products.metaDescription,
   alternates: { canonical: "/products" },
 };
 
-export const dynamic = "force-dynamic";
+/** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
+export const revalidate = 300;
 
 export default async function ProductsIndexPage() {
   const products = await getStoreProducts();

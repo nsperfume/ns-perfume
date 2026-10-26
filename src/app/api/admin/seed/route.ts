@@ -1,12 +1,13 @@
+import { timingSafeEqual } from "node:crypto";
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin, hashPassword } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/revalidate";
 import { ProductModel } from "@/models/Product";
 import { CollectionModel } from "@/models/Collection";
 import { TestimonialModel } from "@/models/Testimonial";
 import { ReviewModel } from "@/models/Review";
 import { JournalModel } from "@/models/Journal";
-import { AdminUserModel } from "@/models/AdminUser";
 import {
   seedProducts,
   seedCollections,
@@ -15,90 +16,74 @@ import {
   seedJournal,
 } from "@/data/seed-catalog";
 
-async function ensureAdmin() {
-  const email = (
-    process.env.ADMIN_EMAIL || "admin@nsperfume.com"
-  ).toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "ChangeMeNSAdmin123!";
-  const passwordHash = await hashPassword(password);
 
-  const existing = await AdminUserModel.findOne({ email });
-  if (!existing) {
-    await AdminUserModel.create({
-      email,
-      name: "Store Owner",
-      passwordHash,
-      role: "owner",
-    });
-    return { email, created: true };
-  }
-
-  existing.passwordHash = passwordHash;
-  existing.name = existing.name || "Store Owner";
-  await existing.save();
-  return { email, created: false };
-}
-
-function allowSeedSecret(req: Request) {
+function hasSeedSecret(req: Request) {
   const secret = process.env.SEED_SECRET;
-  if (!secret) return false;
-  return req.headers.get("x-seed-secret") === secret;
+  const sent = req.headers.get("x-seed-secret");
+  if (!secret || !sent) return false;
+  const a = Buffer.from(sent);
+  const b = Buffer.from(secret);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
+/**
+ * Seeds the demo catalog.
+ * - Empty catalog: super admin session or x-seed-secret.
+ * - Replace (?force=1) wipes products, collections, testimonials and journal. It needs
+ *   x-seed-secret and is refused in production unless ALLOW_DESTRUCTIVE_SEED=1.
+ * - Customer reviews are never deleted.
+ */
 export async function POST(req: Request) {
   try {
+    const secretOk = hasSeedSecret(req);
+    if (!secretOk && !(await requireSuperAdmin())) {
+      return jsonError("Unauthorized", 401);
+    }
+
     await connectDB();
     const force = new URL(req.url).searchParams.get("force") === "1";
     const productCount = await ProductModel.countDocuments();
-    const hasSeedSecret = allowSeedSecret(req);
 
-    if (productCount > 0 && !force && !hasSeedSecret) {
-      const admin = await requireAdmin();
-      if (!admin) {
-        return jsonError(
-          "Unauthorized — login, or POST with ?force=1 after login, or send x-seed-secret",
-          401,
-        );
-      }
+    if (productCount > 0 && !force) {
+      return jsonError("Catalog already seeded. Use ?force=1 to replace.", 409);
     }
 
-    if ((productCount > 0 && force) || hasSeedSecret) {
-      if (!hasSeedSecret) {
-        const admin = await requireAdmin();
-        if (!admin) return jsonError("Unauthorized", 401);
+    if (productCount > 0 && force) {
+      if (!secretOk) {
+        return jsonError("Replacing the catalog requires the x-seed-secret header.", 403);
+      }
+      if (
+        process.env.NODE_ENV === "production" &&
+        process.env.ALLOW_DESTRUCTIVE_SEED !== "1"
+      ) {
+        return jsonError("Catalog replacement is disabled in production.", 403);
       }
       await Promise.all([
         ProductModel.deleteMany({}),
         CollectionModel.deleteMany({}),
         TestimonialModel.deleteMany({}),
-        ReviewModel.deleteMany({}),
         JournalModel.deleteMany({}),
       ]);
-    } else if (productCount > 0) {
-      return jsonError("Catalog already seeded. Use ?force=1 to replace.", 409);
     }
-
-    const admin = await ensureAdmin();
 
     await ProductModel.insertMany(seedProducts);
     await CollectionModel.insertMany(seedCollections);
     await TestimonialModel.insertMany(seedTestimonials);
-    await ReviewModel.insertMany(seedReviews);
+    const seedReviewsInserted = (await ReviewModel.countDocuments()) === 0;
+    if (seedReviewsInserted) await ReviewModel.insertMany(seedReviews);
     await JournalModel.insertMany(seedJournal);
 
+    revalidateStorefront();
     return jsonOk({
       message: "Database seeded",
       products: seedProducts.length,
       collections: seedCollections.length,
       testimonials: seedTestimonials.length,
-      reviews: seedReviews.length,
+      reviews: seedReviewsInserted ? seedReviews.length : 0,
       journal: seedJournal.length,
-      adminEmail: admin.email,
-      adminCreated: admin.created,
-      adminPasswordSynced: true,
     });
   } catch (e) {
     console.error(e);
-    return jsonError("Seed failed", 500, String(e));
+    return jsonError("Seed failed", 500);
   }
 }

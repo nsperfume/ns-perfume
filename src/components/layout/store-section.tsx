@@ -19,19 +19,19 @@ export function StoreSectionHeader({
   return (
     <div
       className={cn(
-        "mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between",
+        "mb-8 flex flex-col gap-4 sm:mb-12 sm:flex-row sm:items-end sm:justify-between sm:gap-10",
         className,
       )}
     >
-      <div className="max-w-2xl">
+      <div className="max-w-[44rem]">
         {eyebrow ? (
-          <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+          <p className="mb-3 text-eyebrow text-taupe">
             {eyebrow}
           </p>
         ) : null}
         <h2 className="text-display-md text-balance text-ink">{title}</h2>
         {description ? (
-          <p className="mt-2 max-w-xl text-pretty font-serif text-[1.05rem] leading-relaxed text-taupe">
+          <p className="mt-4 max-w-[38rem] text-pretty text-body-lg text-taupe">
             {description}
           </p>
         ) : null}
@@ -43,33 +43,39 @@ export function StoreSectionHeader({
 
 export function StoreBreadcrumb({
   items,
+  className = "mb-6",
 }: {
   items: { label: string; href?: string }[];
+  className?: string;
 }) {
   return (
-    <nav
-      aria-label="Breadcrumb"
-      className="mb-8 flex flex-wrap items-center gap-x-2 gap-y-1 font-display text-[11px] uppercase tracking-[0.12em] text-taupe"
-    >
-      {items.map((item, i) => (
-        <span key={`${item.label}-${i}`} className="inline-flex items-center gap-2">
-          {i > 0 ? (
-            <span className="text-hairline" aria-hidden>
-              /
-            </span>
-          ) : null}
-          {item.href ? (
-            <Link
-              href={item.href}
-              className="cursor-pointer transition-colors hover:text-ink"
-            >
-              {item.label}
-            </Link>
-          ) : (
-            <span className="text-ink">{item.label}</span>
-          )}
-        </span>
-      ))}
+    <nav aria-label="Breadcrumb" className={className}>
+      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-taupe">
+        {items.map((item, i) => {
+          const last = i === items.length - 1;
+          return (
+            <li key={`${item.label}-${i}`} className="inline-flex items-center gap-2">
+              {i > 0 ? (
+                <span className="text-taupe/50" aria-hidden="true">
+                  /
+                </span>
+              ) : null}
+              {item.href && !last ? (
+                <Link
+                  href={item.href}
+                  className="inline-flex min-h-8 cursor-pointer items-center transition-colors hover:text-ink"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <span className="text-ink" aria-current={last ? "page" : undefined}>
+                  {item.label}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </nav>
   );
 }

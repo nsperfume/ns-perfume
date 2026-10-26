@@ -2,6 +2,8 @@ import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { requireCustomer } from "@/lib/customer-auth";
 import { OrderModel } from "@/models/Order";
+import { CustomerModel } from "@/models/Customer";
+import { invoicePath } from "@/lib/invoice/access";
 
 export async function GET() {
   try {
@@ -9,12 +11,14 @@ export async function GET() {
     if (!session) return jsonError("Sign in to view your orders", 401);
 
     await connectDB();
-    const orders = await OrderModel.find({
-      $or: [
-        { customerId: session.sub },
-        { email: session.email.toLowerCase() },
-      ],
-    })
+    // Guest orders are matched by email only once that email is proven (Google sign-in).
+    // Otherwise anyone could register someone else's address and read their orders.
+    const customer = await CustomerModel.findById(session.sub)
+      .select("emailVerified")
+      .lean<{ emailVerified?: boolean }>();
+    const owned: Record<string, string>[] = [{ customerId: session.sub }];
+    if (customer?.emailVerified) owned.push({ email: session.email.toLowerCase() });
+    const orders = await OrderModel.find({ $or: owned })
       .sort({ createdAt: -1 })
       .limit(40)
       .lean();
@@ -23,6 +27,7 @@ export async function GET() {
       orders.map((o) => ({
         id: String(o._id),
         orderNumber: o.orderNumber,
+        invoiceUrl: invoicePath(String(o.orderNumber)),
         status: o.status,
         totalPkr: o.totalPkr,
         currency: o.currency || "PKR",

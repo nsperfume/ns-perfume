@@ -1,10 +1,21 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminWrite, adminDenied } from "@/lib/auth";
 import { mapJournal } from "@/lib/mappers";
 import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 import { JournalModel } from "@/models/Journal";
 import slugify from "slugify";
+import { revalidateStorefront } from "@/lib/revalidate";
+
+/** Today's calendar date in Pakistan as yyyy-MM-dd (en-CA formats that way). */
+function todayInKarachi() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Karachi",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
 
 export async function GET(req: Request) {
   try {
@@ -26,8 +37,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) return jsonError("Unauthorized", 401);
+    const admin = await requireAdminWrite();
+    if (!admin) return adminDenied();
     await connectDB();
     const body = await req.json();
     const title = String(body.title || "").trim();
@@ -47,7 +58,7 @@ export async function POST(req: Request) {
       title,
       excerpt: String(body.excerpt || "").trim(),
       body: sanitizeRichHtml(toRichHtml(body.body)),
-      date: String(body.date || new Date().toISOString().slice(0, 10)),
+      date: String(body.date || "").trim() || todayInKarachi(),
       readTime: String(body.readTime || "5 min").trim(),
       category: String(body.category || "Guides").trim(),
       relatedProductHandle: String(body.relatedProductHandle || "").trim(),
@@ -59,6 +70,7 @@ export async function POST(req: Request) {
       status: body.status === "draft" ? "draft" : "published",
     });
 
+    revalidateStorefront();
     return jsonOk(mapJournal(created.toObject()), { status: 201 });
   } catch (e) {
     console.error(e);

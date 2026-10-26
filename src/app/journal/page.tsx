@@ -6,12 +6,14 @@ import { siteImages } from "@/data/images";
 import { PageHero } from "@/components/layout/page-hero";
 
 export const metadata: Metadata = {
-  title: "Journal - scent guides and notes",
+  title: "Journal: scent guides and notes",
   description:
     "NS Perfume journal on scent pyramids, heat, office wear, layering, and gifting in plain language.",
+  alternates: { canonical: "/journal" },
 };
 
-export const dynamic = "force-dynamic";
+/** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
+export const revalidate = 300;
 
 function formatDate(value: string) {
   const d = new Date(value);
@@ -40,7 +42,7 @@ export default async function JournalIndexPage() {
       <section className="bg-canvas section-y">
         <div className="container-ns">
           {!posts.length ? (
-            <p className="font-serif text-[1.15rem] text-taupe">
+            <p className="text-body-lg text-taupe">
               New notes are on the way. Check back soon.
             </p>
           ) : null}
@@ -48,7 +50,7 @@ export default async function JournalIndexPage() {
           {feature ? (
             <Link
               href={`/journal/${feature.slug}`}
-              className="group mb-14 grid gap-6 border-b border-hairline pb-12 md:mb-16 md:grid-cols-2 md:gap-12 md:pb-16"
+              className="group mb-14 grid gap-7 border-b border-hairline pb-12 md:mb-20 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:items-center md:gap-12 md:pb-20 lg:gap-16"
             >
               <div className="relative aspect-16/10 overflow-hidden bg-muted">
                 {feature.imageUrl ? (
@@ -67,35 +69,35 @@ export default async function JournalIndexPage() {
                     style={{ backgroundColor: feature.imageTone }}
                   />
                 )}
-                <span className="absolute left-4 top-4 font-mono text-[10px] uppercase tracking-[0.14em] text-paper/90 mix-blend-difference">
+                <span className="absolute left-4 top-4 bg-paper/90 px-2.5 py-1 text-eyebrow text-ink">
                   {feature.category}
                 </span>
               </div>
               <div className="flex flex-col justify-center">
-                <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.12em] text-taupe">
+                <p className="mb-4 text-caption text-taupe">
                   {formatDate(feature.date)} · {feature.readTime}
                 </p>
-                <h2 className="text-display-md text-balance transition-colors group-hover:text-brass">
+                <h2 className="text-display-md text-balance transition-colors group-hover:text-brass-ink">
                   {feature.title}
                 </h2>
-                <p className="mt-4 max-w-md font-serif text-[1.1rem] leading-relaxed text-taupe">
+                <p className="mt-5 max-w-[34rem] text-body-lg text-taupe">
                   {feature.excerpt}
                 </p>
-                <span className="mt-6 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors group-hover:text-brass">
+                <span className="mt-7 inline-flex self-start text-label text-ink underline decoration-ink/25 underline-offset-[6px] transition-colors group-hover:text-brass-ink group-hover:decoration-brass">
                   Read article
                 </span>
               </div>
             </Link>
           ) : null}
 
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-            {rest.map((post, i) => (
+          <div className="grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-10">
+            {rest.map((post) => (
               <Link
                 key={post.slug}
                 href={`/journal/${post.slug}`}
                 className="group flex flex-col"
               >
-                <div className="relative mb-4 aspect-16/10 overflow-hidden bg-muted">
+                <div className="relative mb-5 aspect-16/10 overflow-hidden bg-muted">
                   {post.imageUrl ? (
                     <Image
                       src={post.imageUrl}
@@ -112,20 +114,17 @@ export default async function JournalIndexPage() {
                       style={{ backgroundColor: post.imageTone }}
                     />
                   )}
-                  <span className="absolute left-3 top-3 font-mono text-[11px] text-paper/85 mix-blend-difference">
-                    {String(i + 2).padStart(2, "0")}
-                  </span>
                 </div>
-                <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.14em] text-brass">
+                <p className="mb-2 text-eyebrow text-brass-ink">
                   {post.category}
                 </p>
-                <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-taupe">
+                <p className="mb-3 text-caption text-taupe">
                   {formatDate(post.date)} · {post.readTime}
                 </p>
-                <h2 className="font-display text-[1.2rem] font-medium leading-snug text-ink transition-colors group-hover:text-brass">
+                <h2 className="text-display-sm text-ink transition-colors group-hover:text-brass-ink">
                   {post.title}
                 </h2>
-                <p className="mt-2 line-clamp-3 font-serif text-[1rem] text-taupe">
+                <p className="mt-3 line-clamp-3 text-body text-taupe">
                   {post.excerpt}
                 </p>
               </Link>

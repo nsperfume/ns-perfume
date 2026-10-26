@@ -3,41 +3,51 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
 import { useCart } from "@/context/cart";
-import { formatSize } from "@/lib/format";
+import { useCurrency } from "@/context/currency";
 import { Price } from "@/components/commerce/price";
 import { Button } from "@/components/ui/button";
-import { pageCopy } from "@/data/copy";
-import { FREE_SHIPPING_THRESHOLD_PKR } from "@/lib/checkout";
 import { cn } from "@/lib/cn";
+import { giftLineLabel } from "@/lib/checkout";
+import { animate, EASE, finished } from "@/lib/animate";
+import { useCheckoutConfig } from "@/context/checkout-config";
+import { freeShippingGap } from "@/lib/checkout-config";
 
 export function CartDrawer() {
   const { lines, isOpen, closeCart, removeItem, updateQuantity, subtotal } =
     useCart();
+  const { format } = useCurrency();
   const [mounted, setMounted] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  /** Element that had focus when the drawer opened; focus goes back there on close. */
+  const openerRef = useRef<HTMLElement | null>(null);
 
   const itemCount = lines.reduce((s, l) => s + l.quantity, 0);
-  const freeShipRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD_PKR - subtotal);
-  const freeShipProgress = Math.min(
-    100,
-    Math.round((subtotal / FREE_SHIPPING_THRESHOLD_PKR) * 100),
-  );
+  const checkoutConfig = useCheckoutConfig();
+  // null when the free-shipping offer is switched off in admin.
+  const freeShipRemaining = freeShippingGap(checkoutConfig, subtotal);
+  const freeShipProgress =
+    freeShipRemaining === null
+      ? 100
+      : Math.min(100, Math.round((subtotal / checkoutConfig.freeShippingThresholdPkr) * 100));
 
   useEffect(() => {
     if (isOpen) setMounted(true);
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    if (isOpen) {
+      const active = document.activeElement;
+      openerRef.current =
+        active instanceof HTMLElement && active !== document.body ? active : null;
+      return;
+    }
+    const opener = openerRef.current;
+    openerRef.current = null;
+    if (opener?.isConnected) opener.focus({ preventScroll: true });
   }, [isOpen]);
 
   useEffect(() => {
@@ -45,74 +55,73 @@ export function CartDrawer() {
     const root = rootRef.current;
     const panel = panelRef.current;
     if (!root || !panel) return;
-
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    gsap.killTweensOf([root, panel]);
+    const scrim = root.querySelector("[data-cart-scrim]");
+    root.getAnimations({ subtree: true }).forEach((a) => a.cancel());
 
     if (isOpen) {
-      if (reduced) {
-        gsap.set(root, { autoAlpha: 1 });
-        gsap.set(panel, { x: 0 });
-        return;
-      }
-      gsap.set(root, { autoAlpha: 1 });
-      gsap.fromTo(
-        panel,
-        { x: "100%" },
-        { x: "0%", duration: 0.45, ease: "power4.out" },
-      );
-      gsap.fromTo(
-        root.querySelector("[data-cart-scrim]"),
-        { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 0.35, ease: "power2.out" },
-      );
-      if (listRef.current) {
-        const items = listRef.current.querySelectorAll("[data-cart-line]");
-        if (items.length) {
-          gsap.fromTo(
-            items,
-            { opacity: 0, y: 10 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.3,
-              stagger: 0.04,
-              ease: "power3.out",
-              delay: 0.1,
-            },
-          );
-        }
-      }
-    } else {
-      if (reduced) {
-        gsap.set(root, { autoAlpha: 0 });
-        setMounted(false);
-        return;
-      }
-      gsap.to(panel, {
-        x: "100%",
-        duration: 0.32,
-        ease: "power3.in",
+      root.style.opacity = "1";
+      closeRef.current?.focus({ preventScroll: true });
+      animate(panel, [{ transform: "translateX(100%)" }, { transform: "translateX(0)" }], { duration: 450 });
+      animate(scrim, [{ opacity: 0 }, { opacity: 1 }], { duration: 350 });
+      listRef.current?.querySelectorAll("[data-cart-line]").forEach((item, i) => {
+        animate(item, [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], {
+          duration: 300,
+          delay: 100 + i * 40,
+        });
       });
-      gsap.to(root.querySelector("[data-cart-scrim]"), {
-        autoAlpha: 0,
-        duration: 0.28,
-        ease: "power2.in",
-        onComplete: () => {
-          gsap.set(root, { autoAlpha: 0 });
-          setMounted(false);
-        },
-      });
+      return;
     }
+
+    const exit = { duration: 300, easing: EASE.in, fill: "forwards" as const };
+    const slide = animate(panel, [{ transform: "translateX(0)" }, { transform: "translateX(100%)" }], exit);
+    const fade = animate(scrim, [{ opacity: 1 }, { opacity: 0 }], exit);
+    let active = true;
+    Promise.all([finished(slide), finished(fade)]).then(() => {
+      if (active) setMounted(false);
+    });
+    return () => {
+      active = false;
+    };
   }, [isOpen, mounted]);
 
   useEffect(() => {
     if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeCart();
+      if (e.key === "Escape") {
+        closeCart();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      // Keep Tab inside the drawer while it is open.
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusables = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.getClientRects().length > 0);
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (!panel.contains(active)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [isOpen, closeCart]);
 
   if (!mounted) return null;
@@ -123,34 +132,36 @@ export function CartDrawer() {
       className="fixed inset-0 z-80 flex justify-end opacity-0"
       role="dialog"
       aria-modal="true"
-      aria-label="Your bag"
+      aria-label="Your cart"
     >
       <button
         type="button"
         data-cart-scrim
+        tabIndex={-1}
         aria-label="Close cart"
         className="absolute inset-0 cursor-pointer bg-ink/40 backdrop-blur-[2px]"
         onClick={closeCart}
       />
       <aside
         ref={panelRef}
-        className="relative flex h-full w-full max-w-[26rem] flex-col bg-paper shadow-modal"
+        className="relative flex h-full w-full max-w-[28rem] flex-col bg-paper shadow-modal 2xl:max-w-[30rem]"
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-hairline px-5 py-4 sm:px-6">
-          <h2 className="flex items-baseline gap-2.5 font-display text-lg font-medium tracking-tight text-ink">
-            Your Bag
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-hairline px-5 py-3 sm:px-7">
+          <h2 className="flex items-center gap-3 text-display-sm text-ink">
+            Your cart
             {itemCount > 0 ? (
-              <span className="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1.5 font-mono text-[11px] font-medium text-paper">
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-ink px-1.5 font-sans tabular-nums text-xs font-medium text-paper">
                 {itemCount}
               </span>
             ) : null}
           </h2>
           <button
+            ref={closeRef}
             type="button"
             onClick={closeCart}
-            className="flex h-9 w-9 cursor-pointer items-center justify-center text-taupe transition-colors hover:bg-muted hover:text-ink"
-            aria-label="Close"
+            className="-mr-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-xs text-taupe transition-colors hover:bg-muted hover:text-ink"
+            aria-label="Close cart"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
               <path
@@ -166,35 +177,22 @@ export function CartDrawer() {
         {/* Lines / empty body */}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto scrollbar-panel">
           {lines.length === 0 ? (
-            <div className="flex flex-1 flex-col px-5 pt-6 pb-4 sm:px-6">
-              <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
-                Empty
-              </p>
-              <p className="mt-3 max-w-none font-serif text-[1.1rem] leading-relaxed text-ink/85">
-                {pageCopy.cartEmpty}
-              </p>
-              <div className="mt-8 flex flex-col gap-3">
-                <Button
-                  href="/products"
-                  className="w-full sm:w-full"
-                  onClick={closeCart}
-                >
-                  Shop all
-                </Button>
+            <div className="flex flex-1 flex-col px-5 pt-8 pb-4 sm:px-7">
+              <p className="text-body-lg text-ink">Your cart is empty</p>
+              <div className="mt-6 flex flex-col gap-3">
                 <Button
                   href="/collections/bestsellers"
-                  variant="secondary"
                   className="w-full sm:w-full"
                   onClick={closeCart}
                 >
-                  Bestsellers
+                  Shop bestsellers
                 </Button>
               </div>
-              <div className="mt-auto border-t border-hairline pt-5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+              <div className="mt-auto border-t border-hairline pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <Link
                   href="/wishlist"
                   onClick={closeCart}
-                  className="font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+                  className="inline-flex min-h-11 items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass"
                 >
                   View wishlist
                 </Link>
@@ -206,11 +204,12 @@ export function CartDrawer() {
                 <li
                   key={line.sku}
                   data-cart-line
-                  className="grid grid-cols-[4.25rem_minmax(0,1fr)] gap-3.5 px-5 py-4 sm:grid-cols-[4.75rem_minmax(0,1fr)] sm:gap-4 sm:px-6 sm:py-5"
+                  className="grid grid-cols-[5rem_minmax(0,1fr)] gap-4 px-5 py-5 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:gap-5 sm:px-7"
                 >
                   <Link
                     href={`/products/${line.productHandle}`}
                     onClick={closeCart}
+                    aria-label={`View ${line.name}`}
                     className="relative aspect-square overflow-hidden bg-muted"
                   >
                     <Image
@@ -230,36 +229,41 @@ export function CartDrawer() {
                         <Link
                           href={`/products/${line.productHandle}`}
                           onClick={closeCart}
-                          className="line-clamp-2 font-display text-[0.95rem] font-medium leading-snug text-ink transition-colors hover:text-brass"
+                          className="line-clamp-2 text-base font-semibold leading-snug text-ink transition-colors hover:text-brass-ink"
                         >
                           {line.name}
-                          {line.isGift ? " (Gift)" : ""}
                         </Link>
-                        <p className="mt-0.5 font-mono text-[11px] tracking-wide text-taupe">
-                          {line.sizeMl > 0 ? formatSize(line.sizeMl) : line.sku}
-                          {line.giftWrap ? " · Wrap" : ""}
-                        </p>
+                        {line.sizeMl > 0 ? (
+                          <p className="mt-1 font-sans tabular-nums text-xs text-taupe">
+                            {line.sizeMl} ml
+                          </p>
+                        ) : null}
+                        {giftLineLabel(line) ? (
+                          <p className="mt-1 text-caption font-medium text-brass-ink">
+                            {giftLineLabel(line)}
+                          </p>
+                        ) : null}
                         {line.giftMessage ? (
-                          <p className="mt-1 line-clamp-2 font-serif text-[0.8rem] leading-snug text-taupe">
-                            Note: {line.giftMessage}
+                          <p className="mt-1 line-clamp-2 text-caption leading-snug text-taupe">
+                            Gift note: {line.giftMessage}
                           </p>
                         ) : null}
                       </div>
                       <Price
                         amountPkr={line.price * line.quantity}
-                        className="shrink-0 text-[0.95rem] font-medium tabular-nums"
+                        className="shrink-0 text-base"
                       />
                     </div>
 
                     <div className="mt-3 flex items-center justify-between gap-3">
                       <div
-                        className="inline-flex h-8 items-stretch overflow-hidden border border-hairline"
+                        className="inline-flex h-10 items-stretch overflow-hidden rounded-xs border border-[#d6cfbf]"
                         role="group"
                         aria-label={`Quantity for ${line.name}`}
                       >
                         <button
                           type="button"
-                          className="flex w-8 cursor-pointer items-center justify-center text-sm text-ink transition-colors hover:bg-muted"
+                          className="flex w-10 cursor-pointer items-center justify-center text-base text-ink transition-colors hover:bg-muted"
                           onClick={() =>
                             updateQuantity(line.sku, line.quantity - 1)
                           }
@@ -267,12 +271,12 @@ export function CartDrawer() {
                         >
                           −
                         </button>
-                        <span className="flex min-w-8 items-center justify-center border-x border-hairline font-mono text-[12px] tabular-nums">
+                        <span className="flex min-w-9 items-center justify-center font-sans tabular-nums text-sm ">
                           {line.quantity}
                         </span>
                         <button
                           type="button"
-                          className="flex w-8 cursor-pointer items-center justify-center text-sm text-ink transition-colors hover:bg-muted"
+                          className="flex w-10 cursor-pointer items-center justify-center text-base text-ink transition-colors hover:bg-muted"
                           onClick={() =>
                             updateQuantity(line.sku, line.quantity + 1)
                           }
@@ -283,7 +287,7 @@ export function CartDrawer() {
                       </div>
                       <button
                         type="button"
-                        className="cursor-pointer font-display text-[11px] uppercase tracking-widest text-taupe transition-colors hover:text-ink"
+                        className="inline-flex min-h-10 cursor-pointer items-center text-caption text-taupe underline decoration-hairline underline-offset-4 transition-colors hover:text-ink"
                         onClick={() => removeItem(line.sku)}
                       >
                         Remove
@@ -296,50 +300,54 @@ export function CartDrawer() {
           )}
         </div>
 
-        {/* Footer (filled bag only) */}
+        {/* Footer (filled cart only) */}
         {lines.length > 0 ? (
-          <div className="shrink-0 border-t border-hairline bg-muted/50 px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-5">
-            <div className="mb-4" aria-label="Free shipping progress">
-              <div className="mb-1.5 flex justify-between gap-2 font-serif text-[13px] text-taupe">
-                <span>
-                  {freeShipRemaining > 0
-                    ? "Toward free shipping"
-                    : "Free standard shipping"}
-                </span>
+          <div className="shrink-0 border-t border-hairline bg-muted/50 px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-7">
+            {freeShipRemaining !== null ? (
+            <div className="mb-4">
+              <p className="mb-2 text-caption text-taupe">
                 {freeShipRemaining > 0 ? (
-                  <Price
-                    amountPkr={freeShipRemaining}
-                    className="text-[13px] text-taupe"
-                  />
-                ) : null}
-              </div>
+                  <>
+                    Add{" "}
+                    <span className="whitespace-nowrap font-sans tabular-nums text-ink">
+                      {format(freeShipRemaining)}
+                    </span>{" "}
+                    more for free standard shipping
+                  </>
+                ) : (
+                  "Your order qualifies for free standard shipping"
+                )}
+              </p>
               <div className="h-1 overflow-hidden bg-hairline">
                 <div
                   className={cn(
-                    "h-full bg-ink transition-[width] duration-500 ease-out",
-                    freeShipRemaining === 0 && "bg-brass",
+                    "h-full transition-[width] duration-500 ease-out",
+                    freeShipRemaining === 0 ? "bg-brass" : "bg-ink",
                   )}
                   style={{ width: `${freeShipProgress}%` }}
                 />
               </div>
             </div>
+            ) : null}
 
             <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                <p className="text-eyebrow text-taupe">
                   Subtotal
                 </p>
-                <p className="mt-0.5 font-serif text-[12px] text-taupe">
-                  Shipping at checkout
+                <p className="mt-0.5 text-caption text-taupe">
+                  {freeShipRemaining === 0
+                    ? "Free standard shipping"
+                    : "Shipping calculated at checkout"}
                 </p>
               </div>
               <Price
                 amountPkr={subtotal}
-                className="text-xl font-medium tabular-nums text-ink"
+                className="text-xl text-ink"
               />
             </div>
 
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="mt-5 flex flex-col gap-2.5">
               <Button
                 href="/checkout"
                 className="w-full sm:w-full"
@@ -353,7 +361,7 @@ export function CartDrawer() {
                 className="w-full sm:w-full"
                 onClick={closeCart}
               >
-                View full bag
+                View cart
               </Button>
             </div>
           </div>

@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import { AdminFieldLabel } from "@/components/admin/form-section";
+import { AdminFieldError } from "@/components/admin/form-validation";
+import { Button } from "@/components/admin/button";
+import { adminFieldClass } from "@/components/admin/form-section";
 import { cn } from "@/lib/cn";
+import { Tooltip } from "@/components/ui/tooltip";
 import { sanitizeRichHtml } from "@/lib/rich-text";
 
 type Props = {
@@ -21,6 +26,9 @@ type Props = {
   className?: string;
   /** Tailwind min-height for the editing surface */
   minHeightClass?: string;
+  /** Field key for validation focus */
+  name?: string;
+  onBlur?: () => void;
 };
 
 function ToolbarButton({
@@ -28,23 +36,28 @@ function ToolbarButton({
   disabled,
   onClick,
   label,
+  wide,
   children,
 }: {
   active?: boolean;
   disabled?: boolean;
   onClick: () => void;
   label: string;
+  /** Text button (e.g. "Heading") instead of a 36px icon square */
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
+    <Tooltip content={label}>
     <button
       type="button"
-      title={label}
       aria-label={label}
+      aria-pressed={active ? true : undefined}
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded transition-colors",
+        "inline-flex h-9 cursor-pointer items-center justify-center rounded-md transition-colors",
+        wide ? "px-2.5" : "w-9",
         active
           ? "bg-admin-ink text-admin-paper"
           : "text-admin-muted hover:bg-admin-soft hover:text-admin-ink",
@@ -53,6 +66,7 @@ function ToolbarButton({
     >
       {children}
     </button>
+    </Tooltip>
   );
 }
 
@@ -92,15 +106,11 @@ function IconUnderline() {
     </svg>
   );
 }
-function IconH2() {
-  return (
-    <span className="font-display text-[11px] font-bold leading-none">H2</span>
-  );
+function TextHeading() {
+  return <span className="text-[0.875rem] font-bold leading-none">Heading</span>;
 }
-function IconH3() {
-  return (
-    <span className="font-display text-[10px] font-bold leading-none">H3</span>
-  );
+function TextSubheading() {
+  return <span className="text-[0.8125rem] font-semibold leading-none">Subheading</span>;
 }
 function IconList() {
   return (
@@ -161,17 +171,169 @@ function IconSeparator() {
     </svg>
   );
 }
+/** Eraser: clear formatting (not the bin, which means delete). */
 function IconClear() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M5 7h14M9 7V5h6v2M8 7l1 12h6l1-12"
+        d="M7 21h13M5.6 15.4l8.5-8.5a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L12.4 18.6a2 2 0 0 1-1.4.6H8.2a2 2 0 0 1-1.4-.6l-1.2-1.2a1.4 1.4 0 0 1 0-2zM9.5 11.5l5 5"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+/**
+ * Turn what the owner types into a link the store can use: web addresses
+ * (https:// is added when missing), email addresses, or store pages ("/shop").
+ * Returns null when it is not a usable link.
+ */
+function normalizeLink(raw: string): string | null {
+  const v = raw.trim();
+  if (!v || /\s/.test(v)) return null;
+  if (v.startsWith("/") && !v.startsWith("//")) return v;
+  if (/^mailto:[^@\s]+@[^@\s]+\.[^@\s]+$/i.test(v)) return v;
+  if (/^[^@\s/:]+@[^@\s/]+\.[^@\s/]+$/.test(v)) return `mailto:${v}`;
+  const withScheme = /^https?:\/\//i.test(v) ? v : /^[a-z][a-z0-9+.-]*:(?!\d)/i.test(v) ? null : `https://${v.replace(/^\/+/, "")}`;
+  if (!withScheme) return null;
+  try {
+    const u = new URL(withScheme);
+    if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+    if (!/^[^.]+(\.[^.]+)+$/.test(u.hostname)) return null;
+    return withScheme;
+  } catch {
+    return null;
+  }
+}
+
+/** Small in-app dialog for adding, changing or removing a link. */
+function LinkDialog({
+  open,
+  initial,
+  editing,
+  onClose,
+  onApply,
+  onRemove,
+  onAfterClose,
+}: {
+  open: boolean;
+  initial: string;
+  /** The cursor is on an existing link */
+  editing: boolean;
+  onClose: () => void;
+  onApply: (href: string) => void;
+  onRemove: () => void;
+  /** Runs once the dialog has let go of focus, so the editor can take it back. */
+  onAfterClose: () => void;
+}) {
+  const inputId = useId();
+  const [value, setValue] = useState(initial);
+  const [error, setError] = useState("");
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setContainer(document.querySelector<HTMLElement>(".admin-app"));
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    setValue(initial);
+    setError("");
+  }, [open, initial]);
+
+  function apply() {
+    if (!value.trim()) {
+      setError("Enter a web address");
+      return;
+    }
+    const href = normalizeLink(value);
+    if (!href) {
+      setError("Enter a web address like nsperfume.pk/shop, or an email address");
+      return;
+    }
+    onApply(href);
+  }
+
+  return (
+    <AlertDialog.Root open={open} onOpenChange={(o) => (!o ? onClose() : undefined)}>
+      <AlertDialog.Portal container={container ?? undefined}>
+        <AlertDialog.Overlay className="fixed inset-0 z-100 bg-black/45 backdrop-blur-[1px]" />
+        <AlertDialog.Content
+          className="fixed left-1/2 top-1/2 z-101 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-admin-line bg-admin-paper p-6 text-admin-ink shadow-modal outline-none"
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            const el = document.getElementById(inputId) as HTMLInputElement | null;
+            el?.focus();
+            el?.select();
+          }}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            onAfterClose();
+          }}
+        >
+          <AlertDialog.Title className="text-lg font-semibold text-admin-ink">
+            {editing ? "Edit link" : "Add link"}
+          </AlertDialog.Title>
+          <AlertDialog.Description className="mt-1.5 text-[0.9375rem] leading-relaxed text-admin-muted">
+            Paste a web address or an email address. The selected words become the link.
+          </AlertDialog.Description>
+          <div className="mt-5">
+            <AdminFieldLabel htmlFor={inputId} required>
+              Web address
+            </AdminFieldLabel>
+            <input
+              id={inputId}
+              className={adminFieldClass}
+              value={value}
+              inputMode="url"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="nsperfume.pk/shop"
+              aria-invalid={error ? true : undefined}
+              onChange={(e) => {
+                setValue(e.target.value);
+                if (error) setError("");
+              }}
+              onKeyDown={(e) => {
+                // No <form> here: this dialog can sit inside a product form.
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  apply();
+                }
+              }}
+            />
+            <AdminFieldError message={error} />
+          </div>
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+            {editing ? (
+              <Button
+                type="button"
+                variant="danger-outline"
+                size="sm"
+                className="sm:mr-auto sm:w-auto"
+                onClick={onRemove}
+              >
+                Remove link
+              </Button>
+            ) : null}
+            <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
+              <AlertDialog.Cancel asChild>
+                <Button type="button" variant="secondary" size="sm" className="sm:w-auto">
+                  Cancel
+                </Button>
+              </AlertDialog.Cancel>
+              <Button type="button" size="sm" className="sm:w-auto" onClick={apply}>
+                {editing ? "Save link" : "Add link"}
+              </Button>
+            </div>
+          </div>
+        </AlertDialog.Content>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
   );
 }
 
@@ -188,6 +350,8 @@ export function AdminRichTextEditor({
   required,
   className,
   minHeightClass = "min-h-52",
+  name,
+  onBlur,
 }: Props) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -214,13 +378,17 @@ export function AdminRichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          "admin-rich-editor prose-ns max-w-none px-3.5 py-3 text-base text-admin-ink outline-none",
+          // Console UI type (the storefront renders this copy in its own faces)
+          "admin-rich-editor prose-ns max-w-none px-3.5 py-3 text-base text-admin-ink outline-none font-sans! [&_h2]:font-sans! [&_h3]:font-sans! [&_h4]:font-sans!",
           minHeightClass,
         ),
       },
     },
     onUpdate: ({ editor: ed }) => {
       onChange(sanitizeRichHtml(ed.getHTML()));
+    },
+    onBlur: () => {
+      onBlur?.();
     },
   });
 
@@ -233,26 +401,48 @@ export function AdminRichTextEditor({
     }
   }, [editor, value]);
 
-  function setLink() {
+  const [linkDialog, setLinkDialog] = useState<{ href: string; editing: boolean } | null>(
+    null,
+  );
+
+  function openLinkDialog() {
     if (!editor) return;
-    const previous = editor.getAttributes("link").href as string | undefined;
-    const url = window.prompt("Link URL", previous || "https://");
-    if (url === null) return;
-    const trimmed = url.trim();
-    if (!trimmed) {
-      editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      return;
-    }
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange("link")
-      .setLink({ href: trimmed })
-      .run();
+    const previous = (editor.getAttributes("link").href as string | undefined) || "";
+    setLinkDialog({ href: previous, editing: Boolean(previous) });
+  }
+
+  // Editor changes wait until the dialog has closed and released focus.
+  const afterLinkDialog = useRef<(() => void) | null>(null);
+
+  function closeLinkDialog(then: () => void) {
+    afterLinkDialog.current = then;
+    setLinkDialog(null);
+  }
+
+  function applyLink(href: string) {
+    closeLinkDialog(() => {
+      if (!editor) return;
+      const chain = editor.chain().focus().extendMarkRange("link");
+      if (editor.state.selection.empty && !editor.isActive("link")) {
+        // Nothing selected: insert the address itself as the link text.
+        const text = href.replace(/^mailto:/i, "");
+        chain
+          .insertContent({ type: "text", text, marks: [{ type: "link", attrs: { href } }] })
+          .run();
+        return;
+      }
+      chain.setLink({ href }).run();
+    });
+  }
+
+  function removeLink() {
+    closeLinkDialog(() => {
+      editor?.chain().focus().extendMarkRange("link").unsetLink().run();
+    });
   }
 
   return (
-    <div className={cn("block", className)}>
+    <div className={cn("block", className)} data-field={name}>
       <AdminFieldLabel tip={tip} required={required}>
         {label}
       </AdminFieldLabel>
@@ -260,10 +450,10 @@ export function AdminRichTextEditor({
         className={cn(
           "admin-rte-shell overflow-hidden rounded-md border border-admin-input-border bg-admin-soft-2",
           "focus-within:border-brass focus-within:ring-2 focus-within:ring-brass/20",
-          error && "border-rosewood focus-within:ring-rosewood/20",
+          error && "border-admin-danger! focus-within:ring-admin-danger/20",
         )}
       >
-        <div className="flex flex-wrap items-center gap-0.5 border-b border-admin-line px-1.5 py-1.5">
+        <div className="flex flex-wrap items-center gap-0.5 border-b border-admin-line bg-admin-paper px-1.5 py-1">
           <ToolbarButton
             label="Bold"
             active={editor?.isActive("bold")}
@@ -290,24 +480,26 @@ export function AdminRichTextEditor({
           </ToolbarButton>
           <span className="mx-1 h-5 w-px bg-admin-line" aria-hidden />
           <ToolbarButton
-            label="Heading 2"
+            label="Heading"
+            wide
             active={editor?.isActive("heading", { level: 2 })}
             disabled={!editor}
             onClick={() =>
               editor?.chain().focus().toggleHeading({ level: 2 }).run()
             }
           >
-            <IconH2 />
+            <TextHeading />
           </ToolbarButton>
           <ToolbarButton
-            label="Heading 3"
+            label="Subheading"
+            wide
             active={editor?.isActive("heading", { level: 3 })}
             disabled={!editor}
             onClick={() =>
               editor?.chain().focus().toggleHeading({ level: 3 }).run()
             }
           >
-            <IconH3 />
+            <TextSubheading />
           </ToolbarButton>
           <span className="mx-1 h-5 w-px bg-admin-line" aria-hidden />
           <ToolbarButton
@@ -347,7 +539,7 @@ export function AdminRichTextEditor({
             label="Link"
             active={editor?.isActive("link")}
             disabled={!editor}
-            onClick={setLink}
+            onClick={openLinkDialog}
           >
             <IconLink />
           </ToolbarButton>
@@ -363,9 +555,21 @@ export function AdminRichTextEditor({
         </div>
         <EditorContent editor={editor} className={cn("block", minHeightClass)} />
       </div>
-      {error ? (
-        <p className="mt-1.5 text-sm text-rosewood">{error}</p>
-      ) : null}
+      <AdminFieldError message={error} />
+      <LinkDialog
+        open={linkDialog !== null}
+        initial={linkDialog?.href ?? ""}
+        editing={linkDialog?.editing ?? false}
+        onClose={() => closeLinkDialog(() => editor?.commands.focus())}
+        onApply={applyLink}
+        onRemove={removeLink}
+        onAfterClose={() => {
+          const run = afterLinkDialog.current;
+          afterLinkDialog.current = null;
+          if (run) run();
+          else editor?.commands.focus();
+        }}
+      />
     </div>
   );
 }

@@ -1,27 +1,23 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
+import { animate } from "@/lib/animate";
 import { useUi, type ToastItem } from "@/context/ui";
+import { useCart } from "@/context/cart";
+import { XIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 
 function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      gsap.set(el, { opacity: 1, y: 0, scale: 1 });
-      return;
-    }
-
-    gsap.fromTo(
-      el,
-      { opacity: 0, y: 16, scale: 0.96 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.38, ease: "power3.out" },
+    animate(
+      ref.current,
+      [
+        { opacity: 0, transform: "translateY(16px) scale(0.96)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 380 },
     );
   }, []);
 
@@ -42,22 +38,26 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
         )}
         aria-hidden
       />
-      <p className="flex-1 font-serif text-[0.95rem] font-medium leading-snug">
+      <p className="flex-1 text-body-sm font-medium leading-snug">
         {toast.message}
       </p>
       <button
         type="button"
         onClick={onDismiss}
-        className="shrink-0 cursor-pointer font-display text-[10px] uppercase tracking-[0.12em] text-taupe hover:text-ink"
+        aria-label="Dismiss"
+        className="-mr-1.5 inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-taupe transition-colors hover:bg-muted hover:text-ink"
       >
-        Close
+        <XIcon size={16} />
       </button>
     </div>
   );
 }
 
 export function ToastHost() {
-  const { toasts, dismissToast } = useUi();
+  const { toasts: all, dismissToast } = useUi();
+  const { isOpen: cartOpen } = useCart();
+  // The open drawer already confirms an add; a cart toast on top of it covers Check out on phones.
+  const toasts = cartOpen ? all.filter((t) => t.kind !== "cart") : all;
 
   if (!toasts.length) return null;
 

@@ -32,7 +32,7 @@ export function PageHero({
         className,
       )}
     >
-      <div className="relative min-h-[17rem] w-full sm:min-h-[20rem] md:min-h-[22rem] lg:min-h-[24rem] xl:min-h-[26rem]">
+      <div className="relative min-h-[18rem] w-full sm:min-h-[21rem] md:min-h-[23rem] lg:min-h-[26rem] 2xl:min-h-[28rem]">
         <Image
           src={image}
           alt={alt}
@@ -47,10 +47,10 @@ export function PageHero({
           className="absolute inset-0 bg-linear-to-r from-black/75 via-black/50 to-black/20"
           aria-hidden
         />
-        <div className="container-ns relative z-10 flex min-h-[17rem] flex-col justify-end pb-8 pt-[calc(var(--spacing-chrome-height)+1.5rem)] sm:min-h-[20rem] sm:pb-10 md:min-h-[22rem] lg:min-h-[24rem] lg:pb-12 xl:min-h-[26rem]">
-          <h1 className="text-display-lg max-w-2xl text-balance text-paper">{title}</h1>
+        <div className="container-ns relative z-10 flex min-h-[18rem] flex-col justify-end pb-9 pt-[calc(var(--spacing-chrome-height)+1.5rem)] sm:min-h-[21rem] sm:pb-12 md:min-h-[23rem] lg:min-h-[26rem] lg:pb-14 2xl:min-h-[28rem]">
+          <h1 className="max-w-[44rem] text-display-lg text-balance text-paper">{title}</h1>
           {description ? (
-            <p className="measure mt-3 line-clamp-3 max-w-xl font-serif text-[1.02rem] font-medium leading-relaxed text-white/95 sm:mt-4 sm:line-clamp-4 sm:text-[1.2rem] sm:leading-relaxed md:line-clamp-none">
+            <p className="mt-4 line-clamp-3 max-w-[38rem] text-body text-white/90 sm:mt-5 sm:line-clamp-4 sm:text-body-lg md:line-clamp-none">
               {description}
             </p>
           ) : null}

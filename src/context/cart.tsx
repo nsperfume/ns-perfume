@@ -10,6 +10,26 @@ import {
   type ReactNode,
 } from "react";
 import type { CartLine } from "@/lib/types";
+import { lineDisplayName } from "@/lib/checkout";
+
+/**
+ * Keep cart lines tidy:
+ * - The name is the product name only. Gift details live in isGift / giftWrap,
+ *   so a name like "Amber Noir (Gift Wrap)" (product page, repeat order) is cleaned.
+ * - A gift without wrap shares the bottle's SKU, so it would merge with a normal
+ *   copy of the same size and lose its gift details. Give it its own line key.
+ *   The order API strips the suffix and prices from the catalog.
+ */
+function normalizeLine<
+  T extends { name: string; sku: string; isGift?: boolean; giftWrap?: boolean },
+>(line: T): T {
+  const name = lineDisplayName(line.name);
+  const sku =
+    line.isGift && !line.giftWrap && !/-GIFT(-NOTE)?$/.test(line.sku)
+      ? `${line.sku}-GIFT-NOTE`
+      : line.sku;
+  return name === line.name && sku === line.sku ? line : { ...line, name, sku };
+}
 
 type CartContextValue = {
   lines: CartLine[];
@@ -39,7 +59,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setLines(JSON.parse(raw) as CartLine[]);
+      if (raw) {
+        // Gift cards were never issued; drop lines saved by the old gift card page.
+        const saved = (JSON.parse(raw) as CartLine[])
+          .filter((l) => l.productHandle !== "gift-card")
+          .map(normalizeLine);
+        setLines(saved);
+      }
     } catch {
       /* ignore */
     }
@@ -56,7 +82,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const toggleCart = useCallback(() => setIsOpen((v) => !v), []);
 
   const addItem = useCallback(
-    (line: Omit<CartLine, "quantity">, quantity = 1) => {
+    (raw: Omit<CartLine, "quantity">, quantity = 1) => {
+      const line = normalizeLine(raw);
       setLines((prev) => {
         const existing = prev.find((l) => l.sku === line.sku);
         if (existing) {
@@ -78,7 +105,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         let next = [...prev];
         for (const item of items) {
           const quantity = item.quantity ?? 1;
-          const { quantity: _q, ...line } = item;
+          const { quantity: _q, ...rawLine } = item;
+          const line = normalizeLine(rawLine);
           const existing = next.find((l) => l.sku === line.sku);
           if (existing) {
             next = next.map((l) =>

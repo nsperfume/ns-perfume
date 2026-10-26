@@ -4,7 +4,9 @@ const ContactMessageSchema = new Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, index: true },
+    phone: { type: String, default: "" },
     topic: { type: String, default: "general" },
+    orderNumber: { type: String, default: "" },
     message: { type: String, required: true },
     status: {
       type: String,

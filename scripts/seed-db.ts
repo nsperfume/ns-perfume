@@ -1,12 +1,12 @@
 /**
- * Direct Mongo seed (no HTTP). Syncs admin from .env and replaces catalog.
- * Usage: pnpm seed:db
+ * Direct Mongo seed (no HTTP). Replaces the demo catalog only.
+ * Admin accounts are managed with `pnpm admin:user` and in Admin > Settings > Team.
+ * Usage: pnpm seed:db --yes
  */
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
 import {
   seedProducts,
   seedCollections,
@@ -45,30 +45,17 @@ async function main() {
   if (!uri) throw new Error("MONGODB_URI missing");
 
   const dbName = process.env.MONGODB_DB || "ns-perfume";
+  const host = uri.replace(/^mongodb(\+srv)?:\/\/([^@]*@)?/, "").split(/[/?]/)[0];
+  if (!process.argv.includes("--yes")) {
+    console.error(
+      `This wipes products, collections, testimonials, reviews and journal in "${dbName}" on ${host}.\n` +
+        "Re-run with --yes to confirm: pnpm seed:db -- --yes",
+    );
+    process.exit(1);
+  }
   await mongoose.connect(uri, { dbName });
   const db = mongoose.connection.db;
   if (!db) throw new Error("No db");
-
-  const email = (
-    process.env.ADMIN_EMAIL || "admin@nsperfume.com"
-  ).toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "ChangeMeNSAdmin123!";
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  await db.collection("adminusers").updateOne(
-    { email },
-    {
-      $set: {
-        email,
-        name: "Store Owner",
-        passwordHash,
-        role: "owner",
-        updatedAt: new Date(),
-      },
-      $setOnInsert: { createdAt: new Date() },
-    },
-    { upsert: true },
-  );
 
   for (const name of [
     "products",
@@ -100,9 +87,7 @@ async function main() {
     testimonials: seedTestimonials.length,
     reviews: seedReviews.length,
     journal: seedJournal.length,
-    adminEmail: email,
   });
-  console.log("Admin password synced from ADMIN_PASSWORD in .env.local");
 
   await mongoose.disconnect();
 }

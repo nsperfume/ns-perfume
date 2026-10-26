@@ -5,6 +5,7 @@ import { DayPicker } from "react-day-picker";
 import { format, isValid, parseISO } from "date-fns";
 import * as Popover from "@radix-ui/react-popover";
 import { AdminFieldLabel } from "@/components/admin/form-section";
+import { AdminFieldError } from "@/components/admin/form-validation";
 import { cn } from "@/lib/cn";
 
 type Props = {
@@ -15,6 +16,14 @@ type Props = {
   tip?: string;
   required?: boolean;
   className?: string;
+  /** Field key for validation focus (matches the error map key) */
+  name?: string;
+  /** Show a "Clear" action for optional dates */
+  clearable?: boolean;
+  placeholder?: string;
+  /** Earliest selectable day (yyyy-MM-dd) */
+  min?: string;
+  onBlur?: () => void;
 };
 
 function toDate(value: string) {
@@ -53,12 +62,18 @@ export function AdminDatePickerField({
   tip,
   required,
   className,
+  name,
+  clearable,
+  placeholder = "Pick a date",
+  min,
+  onBlur,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
-  const [panelBg, setPanelBg] = useState("#181b22");
+  const [panelBg, setPanelBg] = useState("#ffffff");
   const selected = useMemo(() => toDate(value), [value]);
-  const display = selected ? format(selected, "d MMM yyyy") : "Pick a date";
+  const display = selected ? format(selected, "d MMM yyyy") : placeholder;
+  const minDate = useMemo(() => (min ? toDate(min) : undefined), [min]);
 
   useEffect(() => {
     const app = document.querySelector(".admin-app") as HTMLElement | null;
@@ -72,20 +87,28 @@ export function AdminDatePickerField({
   }, []);
 
   return (
-    <div className={cn("relative block", className)}>
+    <div className={cn("relative block", className)} data-field={name}>
       <AdminFieldLabel tip={tip} required={required}>
         {label}
       </AdminFieldLabel>
-      <Popover.Root open={open} onOpenChange={setOpen} modal>
+      <Popover.Root
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) onBlur?.();
+        }}
+        modal
+      >
         <Popover.Trigger asChild>
           <button
             type="button"
+            aria-invalid={error ? true : undefined}
+            aria-label={`${label}: ${display}`}
             className={cn(
-              "flex h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-md border bg-admin-soft-2 px-3.5 text-left text-sm outline-none transition-colors",
-              "border-admin-input-border text-admin-ink",
+              "flex h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-md border bg-admin-soft-2 px-3.5 text-left text-base outline-none transition-colors",
+              error ? "border-rosewood focus-visible:ring-rosewood/20" : "border-admin-input-border",
+              selected ? "text-admin-ink" : "text-admin-faint",
               "hover:border-admin-muted focus-visible:border-brass focus-visible:ring-2 focus-visible:ring-brass/20",
-              error && "border-rosewood focus-visible:ring-rosewood/20",
-              !selected && "text-admin-faint",
             )}
           >
             <span className="truncate">{display}</span>
@@ -122,7 +145,8 @@ export function AdminDatePickerField({
             <DayPicker
               mode="single"
               selected={selected}
-              defaultMonth={selected}
+              defaultMonth={selected ?? minDate}
+              disabled={minDate ? { before: minDate } : undefined}
               onSelect={(day) => {
                 if (!day) return;
                 onChange(format(day, "yyyy-MM-dd"));
@@ -135,7 +159,7 @@ export function AdminDatePickerField({
                 month_caption:
                   "relative flex h-10 items-center justify-center px-10",
                 caption_label:
-                  "font-display text-sm font-semibold tracking-wide text-admin-ink",
+                  "font-sans text-sm font-semibold tracking-wide text-admin-ink",
                 nav: "absolute inset-x-0 top-0 flex h-10 items-center justify-between",
                 button_previous:
                   "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-admin-ink hover:bg-admin-soft",
@@ -144,13 +168,13 @@ export function AdminDatePickerField({
                 month_grid: "w-full border-collapse",
                 weekdays: "grid w-full grid-cols-7",
                 weekday:
-                  "h-8 text-center font-display text-[10px] font-medium uppercase tracking-wide text-admin-faint",
+                  "h-8 text-center font-sans text-xs font-semibold text-admin-muted",
                 weeks: "w-full",
                 week: "mt-1 grid w-full grid-cols-7",
                 day: "relative flex items-center justify-center p-0 text-center",
                 day_button: cn(
                   "inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md",
-                  "font-serif text-sm text-admin-ink",
+                  "font-sans text-sm text-admin-ink",
                   "hover:bg-admin-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/50",
                 ),
                 selected:
@@ -163,12 +187,24 @@ export function AdminDatePickerField({
                 chevron: "fill-admin-ink",
               }}
             />
+            {clearable && selected ? (
+              <div className="mt-2 flex justify-end border-t border-admin-line pt-2">
+                <button
+                  type="button"
+                  className="min-h-9 cursor-pointer rounded-md px-3 text-sm font-semibold text-admin-muted hover:bg-admin-soft hover:text-admin-ink"
+                  onClick={() => {
+                    onChange("");
+                    setOpen(false);
+                  }}
+                >
+                  Clear date
+                </button>
+              </div>
+            ) : null}
           </Popover.Content>
         </Popover.Portal>
       </Popover.Root>
-      {error ? (
-        <p className="mt-1.5 text-sm text-rosewood">{error}</p>
-      ) : null}
+      <AdminFieldError message={error} />
     </div>
   );
 }

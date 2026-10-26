@@ -76,21 +76,36 @@ export async function fetchPkrRates(): Promise<{
   }
 }
 
+/** True when a usable PKR → `code` rate is loaded. PKR always converts 1:1. */
+export function hasRate(code: string, rates: RatesMap): boolean {
+  if (code === BASE_CURRENCY) return true;
+  const rate = rates[code];
+  return typeof rate === "number" && Number.isFinite(rate) && rate > 0;
+}
+
+/** Returns null when the rate is missing, so callers never label PKR as another currency. */
 export function convertFromPkr(
   amountPkr: number,
   to: string,
   rates: RatesMap,
-): number {
-  const rate = rates[to] ?? rates.PKR ?? 1;
-  return amountPkr * rate;
+): number | null {
+  if (!hasRate(to, rates)) return null;
+  return to === BASE_CURRENCY ? amountPkr : amountPkr * rates[to];
 }
 
+/** Orders are charged in PKR, so payable amounts always use this. */
+export function formatPkr(amountPkr: number): string {
+  return formatMoney(amountPkr, BASE_CURRENCY, { [BASE_CURRENCY]: 1 });
+}
+
+/** Formats a PKR amount in `currency`, falling back to PKR when that rate is not loaded. */
 export function formatMoney(
   amountPkr: number,
   currency: string,
   rates: RatesMap,
 ): string {
   const value = convertFromPkr(amountPkr, currency, rates);
+  if (value === null) return formatPkr(amountPkr);
   const meta = CURRENCIES.find((c) => c.code === currency);
   const locale = meta?.locale || "en-PK";
   const fraction = currency === "PKR" ? 0 : 2;

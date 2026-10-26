@@ -1,10 +1,11 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminWrite, adminDenied } from "@/lib/auth";
 import { CollectionModel } from "@/models/Collection";
 import { ProductModel } from "@/models/Product";
 import { mapProduct } from "@/lib/mappers";
 import { productsInCollectionQuery } from "@/lib/collection-query";
+import { revalidateStorefront } from "@/lib/revalidate";
 
 export async function GET(req: Request) {
   try {
@@ -31,8 +32,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) return jsonError("Unauthorized", 401);
+    const admin = await requireAdminWrite();
+    if (!admin) return adminDenied();
     await connectDB();
     const body = await req.json();
     const title = String(body.title || "").trim();
@@ -62,6 +63,7 @@ export async function POST(req: Request) {
       status,
       bannerTone: body.bannerTone === "deep" ? "deep" : "canvas",
     });
+    revalidateStorefront();
     return jsonOk(created, { status: 201 });
   } catch (e) {
     console.error(e);

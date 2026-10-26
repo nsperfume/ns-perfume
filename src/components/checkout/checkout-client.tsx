@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useCart } from "@/context/cart";
 import { useCurrency } from "@/context/currency";
 import { useCustomer } from "@/context/customer";
 import {
   CHECKOUT_ORDER_STORAGE_KEY,
   emptyAddress,
+  formatPkMobile,
+  normalizePkMobile,
   PAYMENT_METHODS,
+  PK_MOBILE_ERROR,
   PK_PROVINCES,
-  SHIPPING_METHODS,
-  shippingPricePkr,
   type CheckoutAddress,
   type CompletedOrderSnapshot,
   type PaymentMethodId,
@@ -21,22 +22,68 @@ import {
 import { cn } from "@/lib/cn";
 import {
   CheckoutCheckbox,
-  CheckoutError,
   CheckoutField,
   CheckoutSelect,
 } from "@/components/checkout/fields";
 import { CheckoutOrderSummary } from "@/components/checkout/order-summary";
-import { TransferDetails } from "@/components/commerce/transfer-details";
+import { BankDetails } from "@/components/checkout/bank-details";
+import { PayableAmount } from "@/components/commerce/price";
+import { Logo } from "@/components/brand/logo";
 import { siteConfig } from "@/data/site";
+import { BrandLoaderBlock } from "@/components/brand/brand-loader";
+import { useCheckoutConfig } from "@/context/checkout-config";
+import { computeTotals, enabledShippingMethods, shippingFor } from "@/lib/checkout-config";
+import { estimateDeliveryRange } from "@/lib/order-status";
 
 type Step = "information" | "shipping" | "payment";
 
 type FieldErrors = Record<string, string>;
 
-function breadcrumbs(
-  step: Step,
-  onGo: (s: Step) => void,
-) {
+/** Field ids in the order they appear, so focus lands on the first problem. */
+const INFORMATION_FIELDS = [
+  "email",
+  "phone",
+  "firstName",
+  "lastName",
+  "address1",
+  "city",
+  "province",
+] as const;
+const BILLING_FIELDS = ["bfirstName", "blastName", "baddress1", "bcity", "bprovince"] as const;
+
+const DRAFT_KEY = "ns-checkout-draft";
+
+const primaryButton =
+  "min-h-14 cursor-pointer rounded-xs bg-ink px-8 text-label text-paper transition-colors hover:bg-brass hover:text-ink focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
+const backLink =
+  "inline-flex min-h-11 cursor-pointer items-center justify-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline sm:justify-start";
+const stepHeading = "text-heading-sm text-ink outline-none";
+
+function formatDay(iso: string) {
+  // e.g. "Thu 29 Oct"
+  return new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  })
+    .format(new Date(iso))
+    .replace(",", "");
+}
+
+function expectedDelivery(methodId: ShippingMethodId, description: string) {
+  const { from, to } = estimateDeliveryRange(new Date(), methodId, description);
+  const a = formatDay(from);
+  const b = formatDay(to);
+  return a === b ? `Expected ${a}` : `Expected ${a} to ${b}`;
+}
+
+function addressLine(a: CheckoutAddress) {
+  return [a.address1, a.address2, a.city, a.province, a.postalCode, "Pakistan"]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function breadcrumbs(step: Step, onGo: (s: Step) => void) {
   const items: { id: Step | "cart"; label: string; href?: string }[] = [
     { id: "cart", label: "Cart", href: "/cart" },
     { id: "information", label: "Information" },
@@ -46,36 +93,34 @@ function breadcrumbs(
   const order = ["cart", "information", "shipping", "payment"] as const;
   const currentIdx = order.indexOf(step);
   return (
-    <nav aria-label="Checkout steps" className="mb-6 font-display text-sm text-taupe">
+    <nav aria-label="Checkout steps" className="mb-8 text-sm text-taupe">
       <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
         {items.map((item, i) => {
           const active = item.id === step;
           const pastIdx = order.indexOf(item.id as (typeof order)[number]);
           const canNavigate =
-            item.id !== "cart" &&
-            pastIdx >= 0 &&
-            pastIdx < currentIdx &&
-            (item.id as Step);
+            item.id !== "cart" && pastIdx >= 0 && pastIdx < currentIdx;
           return (
             <li key={item.id} className="flex items-center gap-1.5">
-              {i > 0 ? <span className="text-hairline-dark/30">›</span> : null}
+              {i > 0 ? <span className="text-taupe/60" aria-hidden>›</span> : null}
               {item.href ? (
                 <Link
                   href={item.href}
-                  className="text-brass hover:underline"
+                  className="text-brass-ink underline-offset-4 hover:underline"
                 >
                   {item.label}
                 </Link>
               ) : canNavigate ? (
                 <button
                   type="button"
-                  className="cursor-pointer text-brass hover:underline"
+                  className="cursor-pointer text-brass-ink underline-offset-4 hover:underline"
                   onClick={() => onGo(item.id as Step)}
                 >
                   {item.label}
                 </button>
               ) : (
                 <span
+                  aria-current={active ? "step" : undefined}
                   className={cn(active && "font-medium text-ink")}
                 >
                   {item.label}
@@ -89,19 +134,60 @@ function breadcrumbs(
   );
 }
 
+/** One row of the "Contact / Ship to / Method" review box. */
+function ReviewRow({
+  label,
+  changeLabel,
+  onChange,
+  last,
+  children,
+}: {
+  label: string;
+  changeLabel: string;
+  onChange: () => void;
+  last?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-start justify-between gap-3 px-4 py-3",
+        last ? "" : "border-b border-hairline",
+      )}
+    >
+      <div className="min-w-0">
+        <p className="text-eyebrow text-taupe">{label}</p>
+        <div className="mt-0.5 text-ink">{children}</div>
+      </div>
+      <button
+        type="button"
+        className="inline-flex min-h-10 shrink-0 cursor-pointer items-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline"
+        onClick={onChange}
+        aria-label={changeLabel}
+      >
+        Change
+      </button>
+    </div>
+  );
+}
+
 export function CheckoutClient() {
   const router = useRouter();
   const { lines, subtotal, clearCart, closeCart } = useCart();
-  const { currency } = useCurrency();
+  const { displayCurrency } = useCurrency();
   const { user } = useCustomer();
 
   const [hydrated, setHydrated] = useState(false);
   const [step, setStep] = useState<Step>("information");
   const [email, setEmail] = useState("");
-  const [marketing, setMarketing] = useState(true);
+  // Marketing consent is never assumed: unticked until the shopper ticks it.
+  const [marketing, setMarketing] = useState(false);
   const [address, setAddress] = useState<CheckoutAddress>(emptyAddress);
-  const [shippingMethodId, setShippingMethodId] =
-    useState<ShippingMethodId>("standard");
+  const checkoutConfig = useCheckoutConfig();
+  const shippingMethods = enabledShippingMethods(checkoutConfig);
+  const [shippingMethodId, setShippingMethodId] = useState<ShippingMethodId>(
+    () => shippingMethods[0]?.id ?? "standard",
+  );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("cod");
   const [billingSame, setBillingSame] = useState(true);
   const [billing, setBilling] = useState<CheckoutAddress>(emptyAddress);
@@ -110,30 +196,31 @@ export function CheckoutClient() {
   const [freeShipPromo, setFreeShipPromo] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [notes, setNotes] = useState("");
-  const [card, setCard] = useState({
-    number: "",
-    name: "",
-    exp: "",
-    cvc: "",
-  });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  /** Field to focus once the current step has rendered. */
+  const [focusField, setFocusField] = useState<string | null>(null);
+
+  const headingRefs = {
+    information: useRef<HTMLHeadingElement>(null),
+    shipping: useRef<HTMLHeadingElement>(null),
+    payment: useRef<HTMLHeadingElement>(null),
+  };
+  const stepChanged = useRef(false);
 
   useEffect(() => {
     closeCart();
     setHydrated(true);
     try {
-      const saved = localStorage.getItem("ns-checkout-draft");
+      const saved = localStorage.getItem(DRAFT_KEY);
       if (saved) {
         const d = JSON.parse(saved) as {
           email?: string;
           address?: CheckoutAddress;
-          marketing?: boolean;
         };
         if (d.email) setEmail(d.email);
-        if (d.address) setAddress({ ...emptyAddress(), ...d.address });
-        if (typeof d.marketing === "boolean") setMarketing(d.marketing);
+        if (d.address) setAddress({ ...emptyAddress(), ...d.address, company: "", country: "PK" });
       }
     } catch {
       /* ignore */
@@ -160,35 +247,67 @@ export function CheckoutClient() {
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(
-        "ns-checkout-draft",
-        JSON.stringify({ email, address, marketing }),
-      );
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ email, address }));
     } catch {
       /* ignore */
     }
-  }, [email, address, marketing, hydrated]);
+  }, [email, address, hydrated]);
+
+  // After a failed Continue: focus the first invalid field and bring it into view.
+  useEffect(() => {
+    if (!focusField) return;
+    const el = document.getElementById(focusField);
+    setFocusField(null);
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+  }, [focusField, step]);
+
+  // When the step changes, move focus to the new step's heading.
+  useEffect(() => {
+    if (!stepChanged.current) return;
+    stepChanged.current = false;
+    if (focusField) return;
+    headingRefs[step].current?.focus({ preventScroll: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refs are stable
+  }, [step]);
 
   const afterDiscount = Math.max(0, subtotal - discountPkr);
-  const shippingPkr = useMemo(() => {
-    if (step === "information") return null;
-    let price = shippingPricePkr(shippingMethodId, afterDiscount);
-    if (freeShipPromo && shippingMethodId === "standard") price = 0;
-    return price;
-  }, [step, shippingMethodId, afterDiscount, freeShipPromo]);
+  // Same rules the order API applies when it prices the order.
+  const totals = computeTotals(checkoutConfig, {
+    subtotalPkr: subtotal,
+    discountPkr,
+    shippingMethodId,
+    paymentMethod,
+    freeShippingCoupon: freeShipPromo,
+  });
+  // Before the shipping step, only show a price when it is already settled (free).
+  const shippingPkr =
+    step === "information" ? (totals.shippingPkr === 0 ? 0 : null) : totals.shippingPkr;
+  // The cash-on-delivery fee applies once the shopper is choosing how to pay.
+  const codFeePkr = step === "payment" ? totals.codFeePkr : 0;
+  const totalPkr = afterDiscount + (shippingPkr ?? 0) + totals.taxPkr + codFeePkr;
 
-  const totalPkr =
-    afterDiscount + (shippingPkr === null ? 0 : shippingPkr);
+  const shippingLabel = checkoutConfig.shipping[shippingMethodId]?.title;
+  const customerName = [address.firstName, address.lastName].filter(Boolean).join(" ");
 
-  const shippingLabel = SHIPPING_METHODS.find(
-    (m) => m.id === shippingMethodId,
-  )?.title;
+  const clearError = (key: string) =>
+    setErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
 
   const setAddr =
-    (setter: typeof setAddress) =>
+    (setter: typeof setAddress, prefix = "") =>
     (key: keyof CheckoutAddress, value: string) => {
       setter((prev) => ({ ...prev, [key]: value }));
+      clearError(`${prefix}${key}`);
     };
+  const setShip = setAddr(setAddress);
+  const setBill = setAddr(setBilling, "b");
 
   const applyDiscount = async (code: string): Promise<string | null> => {
     if (!code.trim()) return "Enter a discount code";
@@ -198,7 +317,7 @@ export function CheckoutClient() {
       );
       const json = await res.json();
       if (!json.ok || !json.data) {
-        return json.error || "Enter a valid discount code or gift card";
+        return json.error || "Enter a valid discount code";
       }
       setDiscountCode(json.data.code);
       setDiscountPkr(json.data.amountPkr || 0);
@@ -209,35 +328,23 @@ export function CheckoutClient() {
     }
   };
 
-  const validateInformation = (): boolean => {
+  const informationErrors = (): FieldErrors => {
     const next: FieldErrors = {};
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       next.email = "Enter a valid email";
     }
+    if (!address.phone.trim()) next.phone = "Enter your mobile number";
+    else if (!normalizePkMobile(address.phone)) next.phone = PK_MOBILE_ERROR;
     if (!address.firstName.trim()) next.firstName = "Enter a first name";
     if (!address.lastName.trim()) next.lastName = "Enter a last name";
     if (!address.address1.trim()) next.address1 = "Enter an address";
     if (!address.city.trim()) next.city = "Enter a city";
     if (!address.province.trim()) next.province = "Select a province";
-    if (!address.phone.trim() && !email) {
-      next.phone = "Enter a phone number";
-    }
-    if (!address.phone.trim()) next.phone = "Enter a phone number for delivery";
-    setErrors(next);
-    return Object.keys(next).length === 0;
+    return next;
   };
 
-  const validatePayment = (): boolean => {
+  const billingErrors = (): FieldErrors => {
     const next: FieldErrors = {};
-    if (paymentMethod === "card") {
-      const digits = card.number.replace(/\s/g, "");
-      if (digits.length < 13) next.cardNumber = "Enter a valid card number";
-      if (!card.name.trim()) next.cardName = "Enter the name on the card";
-      if (!/^\d{2}\s*\/\s*\d{2}$/.test(card.exp.trim())) {
-        next.cardExp = "Enter a valid expiry (MM / YY)";
-      }
-      if (!/^\d{3,4}$/.test(card.cvc.trim())) next.cardCvc = "Enter CVV";
-    }
     if (!billingSame) {
       if (!billing.firstName.trim()) next.bfirstName = "Enter a first name";
       if (!billing.lastName.trim()) next.blastName = "Enter a last name";
@@ -245,24 +352,52 @@ export function CheckoutClient() {
       if (!billing.city.trim()) next.bcity = "Enter a city";
       if (!billing.province.trim()) next.bprovince = "Select a province";
     }
+    return next;
+  };
+
+  /** Show errors and focus the first one. Returns true when there are none. */
+  const report = (next: FieldErrors, order: readonly string[]) => {
     setErrors(next);
-    return Object.keys(next).length === 0;
+    const first = order.find((k) => next[k]);
+    if (first) setFocusField(first);
+    return !first;
+  };
+
+  const changeStep = (next: Step) => {
+    if (next !== step) stepChanged.current = true;
+    setFormError(null);
+    setStep(next);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
   };
 
   const goToStep = (next: Step) => {
     if (next === "shipping" || next === "payment") {
-      if (!validateInformation()) {
-        setStep("information");
+      const errs = informationErrors();
+      if (Object.keys(errs).length) {
+        if (step !== "information") {
+          stepChanged.current = true;
+          setStep("information");
+        }
+        report(errs, INFORMATION_FIELDS);
         return;
       }
+      // Show the number in one tidy form ("0300 1234567"); it is sent as 03001234567.
+      const pretty = formatPkMobile(address.phone);
+      if (pretty !== address.phone) setAddress((prev) => ({ ...prev, phone: pretty }));
+      setErrors({});
     }
-    setFormError(null);
-    setStep(next);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    changeStep(next);
   };
 
   const submitOrder = async () => {
-    if (!validatePayment()) return;
+    const infoErrs = informationErrors();
+    if (Object.keys(infoErrs).length) {
+      goToStep("shipping");
+      return;
+    }
+    if (!report(billingErrors(), BILLING_FIELDS)) return;
+    const phone = normalizePkMobile(address.phone) as string;
     setSubmitting(true);
     setFormError(null);
     try {
@@ -270,8 +405,8 @@ export function CheckoutClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
-          phone: address.phone,
+          email: email.trim(),
+          phone,
           lines: lines.map((l) => ({
             productHandle: l.productHandle,
             name: l.name,
@@ -284,31 +419,37 @@ export function CheckoutClient() {
             giftMessage: l.giftMessage,
             giftWrap: l.giftWrap,
           })),
-          shippingAddress: address,
-          billingAddress: billingSame ? undefined : billing,
+          shippingAddress: { ...address, company: "", country: "PK", phone },
+          billingAddress: billingSame
+            ? undefined
+            : { ...billing, company: "", country: "PK" },
           billingSameAsShipping: billingSame,
           shippingMethodId,
           paymentMethod,
           discountCode,
           marketingOptIn: marketing,
           notes,
-          currency,
-          cardLast4:
-            paymentMethod === "card"
-              ? card.number.replace(/\s/g, "").slice(-4)
-              : "",
+          currency: displayCurrency,
         }),
       });
       const json = await res.json();
       if (!json.ok) {
-        setFormError(json.error || "Could not place order. Try again.");
         setSubmitting(false);
+        if (json.error === PK_MOBILE_ERROR) {
+          stepChanged.current = true;
+          setStep("information");
+          report({ phone: PK_MOBILE_ERROR }, INFORMATION_FIELDS);
+          return;
+        }
+        setFormError(json.error || "Could not place order. Try again.");
         return;
       }
 
       const data = json.data;
       const snapshot: CompletedOrderSnapshot = {
         orderNumber: data.orderNumber,
+        invoiceUrl:
+          typeof data.invoiceUrl === "string" ? data.invoiceUrl : undefined,
         email: data.email,
         phone: data.phone,
         customerName: data.customerName,
@@ -316,11 +457,15 @@ export function CheckoutClient() {
         subtotalPkr: data.subtotalPkr,
         shippingPkr: data.shippingPkr,
         discountPkr: data.discountPkr || 0,
+        codFeePkr: data.codFeePkr || 0,
+        taxPkr: data.taxPkr || 0,
+        taxIncludedPkr: data.taxIncludedPkr || 0,
+        taxLabel: data.taxLabel || "",
         discountCode: data.discountCode,
         currency: data.currency,
         paymentMethod: data.paymentMethod,
         shippingMethodTitle: data.shippingMethod?.title || "Standard",
-        shippingAddress: address,
+        shippingAddress: { ...address, phone },
         lines: (data.lines || []).map(
           (l: {
             productHandle: string;
@@ -347,6 +492,7 @@ export function CheckoutClient() {
           }),
         ),
         createdAt: data.createdAt || new Date().toISOString(),
+        confirmationEmail: Boolean(data.confirmationEmail),
       };
 
       sessionStorage.setItem(
@@ -356,7 +502,7 @@ export function CheckoutClient() {
       clearCart();
       if (!rememberMe) {
         try {
-          localStorage.removeItem("ns-checkout-draft");
+          localStorage.removeItem(DRAFT_KEY);
         } catch {
           /* ignore */
         }
@@ -370,81 +516,67 @@ export function CheckoutClient() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-canvas font-serif text-base text-taupe">
-        Loading checkout…
-      </div>
+      <BrandLoaderBlock className="min-h-dvh bg-canvas" label="Loading checkout" />
     );
   }
 
   if (lines.length === 0) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas px-6 text-center">
-        <p className="font-display text-lg text-ink">Your cart is empty</p>
+        <p className="font-sans text-lg text-ink">Your cart is empty</p>
         <Link
-          href="/products"
-          className="font-display text-sm font-medium text-brass hover:underline"
+          href="/collections/bestsellers"
+          className="font-sans text-sm font-semibold text-brass-ink hover:underline"
         >
-          Continue shopping
+          Shop bestsellers
         </Link>
       </div>
     );
   }
 
+  const reviewContact = (
+    <ReviewRow
+      label="Contact"
+      changeLabel="Change contact details"
+      onChange={() => changeStep("information")}
+    >
+      <p className="break-words">{email}</p>
+      <p className="font-sans tabular-nums">{formatPkMobile(address.phone)}</p>
+    </ReviewRow>
+  );
+  const reviewShipTo = (last: boolean) => (
+    <ReviewRow
+      label="Ship to"
+      changeLabel="Change delivery address"
+      onChange={() => changeStep("information")}
+      last={last}
+    >
+      <p className="font-medium">{customerName}</p>
+      <p className="text-taupe">{addressLine(address)}</p>
+    </ReviewRow>
+  );
+
   return (
-    <div className="min-h-dvh bg-canvas font-serif text-base leading-relaxed text-ink antialiased">
-      <div className="mx-auto grid min-h-dvh max-w-[1100px] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+    <div className="min-h-dvh bg-canvas text-base leading-relaxed text-ink antialiased lg:bg-[linear-gradient(90deg,var(--color-canvas)_50%,var(--color-canvas-deep)_50%)]">
+      <div className="mx-auto grid min-h-dvh max-w-[1240px] lg:grid-cols-2 2xl:max-w-[1360px]">
         {/* Form column */}
-        <div className="order-2 px-5 pb-16 pt-6 sm:px-8 lg:order-1 lg:px-12 lg:pt-10 xl:px-16">
+        <div className="order-2 bg-canvas px-5 pb-16 pt-6 sm:px-8 lg:order-1 lg:pl-[var(--gutter)] lg:pr-14 lg:pt-12 xl:pr-20">
           <header className="mb-8 text-center lg:text-left">
             <Link
               href="/"
-              className="inline-block font-display text-2xl font-medium tracking-tight text-ink"
+              aria-label={`${siteConfig.name} home`}
+              className="inline-block text-ink"
             >
-              NS Perfume
+              <Logo className="h-7 sm:h-8 lg:h-9" />
             </Link>
           </header>
-
-          {/* Express wallets (Shop Pay / Apple Pay / GPay) — disabled until a gateway is connected.
-          <section className="mb-6">
-            <p className="mb-3 text-center text-sm text-taupe">
-              Express checkout
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: "Shop Pay", className: "bg-brass text-paper" },
-                { label: "Apple Pay", className: "bg-ink text-paper" },
-                { label: "GPay", className: "bg-paper text-ink border border-hairline" },
-              ].map((btn) => (
-                <button
-                  key={btn.label}
-                  type="button"
-                  disabled
-                  title="Connect a payment provider to enable express checkout"
-                  className={cn(
-                    "flex h-11 cursor-not-allowed items-center justify-center rounded-md text-sm font-semibold opacity-90",
-                    btn.className,
-                  )}
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
-            <div className="my-5 flex items-center gap-3">
-              <div className="h-px flex-1 bg-hairline" />
-              <span className="font-display text-xs uppercase tracking-wide text-taupe">
-                OR
-              </span>
-              <div className="h-px flex-1 bg-hairline" />
-            </div>
-          </section>
-          */}
 
           <div>{breadcrumbs(step, goToStep)}</div>
 
           {formError ? (
             <div
               role="alert"
-              className="mb-5 rounded-md border border-rosewood/30 bg-rosewood/10 px-4 py-3 text-[14px] text-rosewood"
+              className="mb-5 rounded-xs border border-rosewood/30 bg-rosewood/10 px-4 py-3 text-sm font-medium text-rosewood"
             >
               {formError}
             </div>
@@ -452,232 +584,191 @@ export function CheckoutClient() {
 
           {/* INFORMATION */}
           {step === "information" ? (
-            <div className="space-y-6">
-              <section>
+            <form
+              noValidate
+              className="space-y-6"
+              onSubmit={(e) => {
+                e.preventDefault();
+                goToStep("shipping");
+              }}
+            >
+              <section aria-labelledby="checkout-contact">
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
-                  <h2 className="font-display text-xl font-medium text-ink">
+                  <h2
+                    id="checkout-contact"
+                    ref={headingRefs.information}
+                    tabIndex={-1}
+                    className={stepHeading}
+                  >
                     Contact
                   </h2>
-                  <p className="text-[13px] text-taupe">
-                    Already have an account?{" "}
-                    <Link href="/account" className="text-brass hover:underline">
-                      Log in
-                    </Link>
-                  </p>
+                  {!user ? (
+                    <p className="text-[0.8125rem] text-taupe">
+                      Already have an account?{" "}
+                      <Link
+                        href={`/account?next=${encodeURIComponent("/checkout")}`}
+                        className="text-brass-ink underline-offset-4 hover:underline"
+                      >
+                        Log in
+                      </Link>
+                    </p>
+                  ) : null}
                 </div>
-                <CheckoutField
-                  id="email"
-                  label="Email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <CheckoutError message={errors.email} />
+                <div className="space-y-3">
+                  <CheckoutField
+                    id="email"
+                    label="Email"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    error={errors.email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      clearError("email");
+                    }}
+                  />
+                  <CheckoutField
+                    id="phone"
+                    label="Mobile number"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    required
+                    value={address.phone}
+                    error={errors.phone}
+                    hint="For delivery updates and WhatsApp"
+                    onChange={(e) => setShip("phone", e.target.value)}
+                    onBlur={(e) => {
+                      const n = normalizePkMobile(e.target.value);
+                      if (n) setShip("phone", formatPkMobile(n));
+                    }}
+                  />
+                </div>
                 <CheckoutCheckbox
                   id="marketing"
-                  className="mt-3"
+                  className="mt-2"
                   label="Email me with news and offers"
                   checked={marketing}
                   onChange={setMarketing}
                 />
               </section>
 
-              <section>
-                <h2 className="mb-3 font-display text-xl font-medium text-ink">
+              <section aria-labelledby="checkout-delivery">
+                <h2 id="checkout-delivery" className="text-heading-sm text-ink">
                   Delivery
                 </h2>
+                <p className="mb-3 mt-1 text-sm text-taupe">
+                  We deliver across Pakistan.
+                </p>
                 <div className="space-y-3">
-                  <CheckoutSelect
-                    id="country"
-                    label="Country / region"
-                    value={address.country}
-                    onChange={(e) => setAddr(setAddress)("country", e.target.value)}
-                  >
-                    <option value="PK">Pakistan</option>
-                  </CheckoutSelect>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <CheckoutField
-                        id="firstName"
-                        label="First name"
-                        autoComplete="given-name"
-                        value={address.firstName}
-                        onChange={(e) =>
-                          setAddr(setAddress)("firstName", e.target.value)
-                        }
-                      />
-                      <CheckoutError message={errors.firstName} />
-                    </div>
-                    <div>
-                      <CheckoutField
-                        id="lastName"
-                        label="Last name"
-                        autoComplete="family-name"
-                        value={address.lastName}
-                        onChange={(e) =>
-                          setAddr(setAddress)("lastName", e.target.value)
-                        }
-                      />
-                      <CheckoutError message={errors.lastName} />
-                    </div>
+                    <CheckoutField
+                      id="firstName"
+                      label="First name"
+                      autoComplete="given-name"
+                      required
+                      value={address.firstName}
+                      error={errors.firstName}
+                      onChange={(e) => setShip("firstName", e.target.value)}
+                    />
+                    <CheckoutField
+                      id="lastName"
+                      label="Last name"
+                      autoComplete="family-name"
+                      required
+                      value={address.lastName}
+                      error={errors.lastName}
+                      onChange={(e) => setShip("lastName", e.target.value)}
+                    />
                   </div>
                   <CheckoutField
-                    id="company"
-                    label="Company (optional)"
-                    autoComplete="organization"
-                    value={address.company}
-                    onChange={(e) => setAddr(setAddress)("company", e.target.value)}
+                    id="address1"
+                    label="Address"
+                    autoComplete="address-line1"
+                    required
+                    value={address.address1}
+                    error={errors.address1}
+                    onChange={(e) => setShip("address1", e.target.value)}
                   />
-                  <div>
-                    <CheckoutField
-                      id="address1"
-                      label="Address"
-                      autoComplete="address-line1"
-                      value={address.address1}
-                      onChange={(e) =>
-                        setAddr(setAddress)("address1", e.target.value)
-                      }
-                    />
-                    <CheckoutError message={errors.address1} />
-                  </div>
                   <CheckoutField
                     id="address2"
-                    label="Apartment, suite, etc. (optional)"
+                    label="House, flat or nearest landmark (optional)"
                     autoComplete="address-line2"
                     value={address.address2}
-                    onChange={(e) =>
-                      setAddr(setAddress)("address2", e.target.value)
-                    }
+                    onChange={(e) => setShip("address2", e.target.value)}
                   />
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <div className="min-w-0">
-                      <CheckoutField
-                        id="city"
-                        label="City"
-                        autoComplete="address-level2"
-                        value={address.city}
-                        onChange={(e) =>
-                          setAddr(setAddress)("city", e.target.value)
-                        }
-                      />
-                      <CheckoutError message={errors.city} />
-                    </div>
-                    <div className="min-w-0">
-                      <CheckoutSelect
-                        id="province"
-                        label="Province"
-                        value={address.province}
-                        onChange={(e) =>
-                          setAddr(setAddress)("province", e.target.value)
-                        }
-                      >
-                        <option value="">Select</option>
-                        {PK_PROVINCES.map((p) => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        ))}
-                      </CheckoutSelect>
-                      <CheckoutError message={errors.province} />
-                    </div>
-                    <div className="min-w-0">
-                      <CheckoutField
-                        id="postalCode"
-                        label="Postal code (optional)"
-                        autoComplete="postal-code"
-                        value={address.postalCode}
-                        onChange={(e) =>
-                          setAddr(setAddress)("postalCode", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div>
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <CheckoutField
-                      id="phone"
-                      label="Phone"
-                      type="tel"
-                      autoComplete="tel"
-                      value={address.phone}
-                      onChange={(e) => setAddr(setAddress)("phone", e.target.value)}
+                      id="city"
+                      className="min-w-0"
+                      label="City"
+                      autoComplete="address-level2"
+                      required
+                      value={address.city}
+                      error={errors.city}
+                      onChange={(e) => setShip("city", e.target.value)}
                     />
-                    <CheckoutError message={errors.phone} />
+                    <CheckoutSelect
+                      id="province"
+                      className="min-w-0"
+                      label="Province"
+                      autoComplete="address-level1"
+                      required
+                      value={address.province}
+                      error={errors.province}
+                      onChange={(e) => setShip("province", e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      {PK_PROVINCES.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </CheckoutSelect>
+                    <CheckoutField
+                      id="postalCode"
+                      className="min-w-0"
+                      label="Postal code (optional)"
+                      autoComplete="postal-code"
+                      inputMode="numeric"
+                      value={address.postalCode}
+                      onChange={(e) => setShip("postalCode", e.target.value)}
+                    />
                   </div>
                 </div>
               </section>
 
               <div className="flex flex-col-reverse items-stretch justify-between gap-4 pt-2 sm:flex-row sm:items-center">
-                <Link
-                  href="/cart"
-                  className="text-center text-[14px] text-brass hover:underline sm:text-left"
-                >
+                <Link href="/cart" className={backLink}>
                   ‹ Return to cart
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => goToStep("shipping")}
-                  className="min-h-14 cursor-pointer rounded-md bg-ink px-8 font-display text-sm font-medium uppercase tracking-[0.12em] text-paper transition-opacity hover:opacity-90"
-                >
+                <button type="submit" className={primaryButton}>
                   Continue to shipping
                 </button>
               </div>
-            </div>
+            </form>
           ) : null}
 
           {/* SHIPPING */}
           {step === "shipping" ? (
             <div className="space-y-6">
-              <section className="rounded-md border border-hairline text-[14px]">
-                <div className="flex flex-wrap items-start justify-between gap-2 border-b border-hairline px-4 py-3">
-                  <div>
-                    <p className="text-[12px] text-taupe">Contact</p>
-                    <p className="text-ink">{email}</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="cursor-pointer text-[13px] text-brass hover:underline"
-                    onClick={() => setStep("information")}
-                  >
-                    Change
-                  </button>
-                </div>
-                <div className="flex flex-wrap items-start justify-between gap-2 px-4 py-3">
-                  <div>
-                    <p className="text-[12px] text-taupe">Ship to</p>
-                    <p className="text-ink">
-                      {[
-                        address.address1,
-                        address.address2,
-                        address.city,
-                        address.province,
-                        address.postalCode,
-                        address.country === "PK" ? "Pakistan" : address.country,
-                      ]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="cursor-pointer text-[13px] text-brass hover:underline"
-                    onClick={() => setStep("information")}
-                  >
-                    Change
-                  </button>
-                </div>
+              <section aria-label="Your details" className="rounded-xs border border-hairline text-body-sm">
+                {reviewContact}
+                {reviewShipTo(true)}
               </section>
 
-              <section>
-                <h2 className="mb-3 font-display text-xl font-medium text-ink">
-                  Shipping method
-                </h2>
-                <div className="overflow-hidden rounded-md border border-hairline">
-                  {SHIPPING_METHODS.map((method, idx) => {
-                    const price = shippingPricePkr(method.id, afterDiscount);
-                    const free =
-                      (method.id === "standard" && price === 0) ||
-                      (freeShipPromo && method.id === "standard");
+              <fieldset className="min-w-0">
+                <legend className="mb-3 p-0">
+                  <h2 ref={headingRefs.shipping} tabIndex={-1} className={stepHeading}>
+                    Shipping method
+                  </h2>
+                </legend>
+                <div className="overflow-hidden rounded-xs border border-hairline">
+                  {shippingMethods.map((method, idx) => {
+                    const price = shippingFor(checkoutConfig, method.id, afterDiscount, freeShipPromo);
+                    const free = price === 0;
                     const selected = shippingMethodId === method.id;
                     return (
                       <label
@@ -691,42 +782,43 @@ export function CheckoutClient() {
                         <input
                           type="radio"
                           name="shipping"
+                          value={method.id}
                           checked={selected}
                           onChange={() => setShippingMethodId(method.id)}
-                          className="h-4 w-4 accent-brass"
+                          className="h-4 w-4 shrink-0 accent-brass"
                         />
-                        <span className="flex-1">
+                        <span className="min-w-0 flex-1">
                           <span className="block font-medium text-ink">
                             {method.title}
                           </span>
-                          <span className="block text-[13px] text-taupe">
+                          <span className="block text-[0.8125rem] text-taupe">
                             {method.description}
                           </span>
+                          <span className="mt-0.5 block text-[0.8125rem] text-ink">
+                            {expectedDelivery(method.id, method.description)}
+                          </span>
                         </span>
-                        <span className="text-[14px] font-medium text-ink">
-                          {free ? "Free" : null}
-                          {!free ? (
-                            <PriceInline pkr={price} />
-                          ) : null}
+                        <span className="shrink-0 font-sans text-sm font-medium tabular-nums text-ink">
+                          {free ? "Free" : <PriceInline pkr={price} />}
                         </span>
                       </label>
                     );
                   })}
                 </div>
-              </section>
+              </fieldset>
 
               <div className="flex flex-col-reverse items-stretch justify-between gap-4 pt-2 sm:flex-row sm:items-center">
                 <button
                   type="button"
-                  onClick={() => setStep("information")}
-                  className="cursor-pointer text-center text-[14px] text-brass hover:underline sm:text-left"
+                  onClick={() => changeStep("information")}
+                  className={backLink}
                 >
                   ‹ Return to information
                 </button>
                 <button
                   type="button"
                   onClick={() => goToStep("payment")}
-                  className="min-h-14 cursor-pointer rounded-md bg-ink px-8 font-display text-sm font-medium uppercase tracking-[0.12em] text-paper transition-opacity hover:opacity-90"
+                  className={primaryButton}
                 >
                   Continue to payment
                 </button>
@@ -737,70 +829,45 @@ export function CheckoutClient() {
           {/* PAYMENT */}
           {step === "payment" ? (
             <div className="space-y-6">
-              <section className="rounded-md border border-hairline text-[14px]">
-                <div className="flex flex-wrap items-start justify-between gap-2 border-b border-hairline px-4 py-3">
-                  <div>
-                    <p className="text-[12px] text-taupe">Contact</p>
-                    <p>{email}</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="cursor-pointer text-[13px] text-brass hover:underline"
-                    onClick={() => setStep("information")}
-                  >
-                    Change
-                  </button>
-                </div>
-                <div className="flex flex-wrap items-start justify-between gap-2 border-b border-hairline px-4 py-3">
-                  <div>
-                    <p className="text-[12px] text-taupe">Ship to</p>
-                    <p>
-                      {[address.address1, address.city, address.province]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="cursor-pointer text-[13px] text-brass hover:underline"
-                    onClick={() => setStep("information")}
-                  >
-                    Change
-                  </button>
-                </div>
-                <div className="flex flex-wrap items-start justify-between gap-2 px-4 py-3">
-                  <div>
-                    <p className="text-[12px] text-taupe">Method</p>
-                    <p>
-                      {shippingLabel}
-                      {shippingPkr === 0
-                        ? " · Free"
-                        : shippingPkr != null
-                          ? ` · `
-                          : ""}
-                      {shippingPkr != null && shippingPkr > 0 ? (
+              <section aria-label="Your details" className="rounded-xs border border-hairline text-body-sm">
+                {reviewContact}
+                {reviewShipTo(false)}
+                <ReviewRow
+                  label="Method"
+                  changeLabel="Change shipping method"
+                  onChange={() => changeStep("shipping")}
+                  last
+                >
+                  <p>
+                    {shippingLabel}
+                    {" · "}
+                    {shippingPkr === 0 ? (
+                      "Free"
+                    ) : shippingPkr != null ? (
+                      <span className="font-sans tabular-nums">
                         <PriceInline pkr={shippingPkr} />
-                      ) : null}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="cursor-pointer text-[13px] text-brass hover:underline"
-                    onClick={() => setStep("shipping")}
-                  >
-                    Change
-                  </button>
-                </div>
+                      </span>
+                    ) : null}
+                  </p>
+                  <p className="text-taupe">
+                    {expectedDelivery(
+                      shippingMethodId,
+                      checkoutConfig.shipping[shippingMethodId]?.description ?? "",
+                    )}
+                  </p>
+                </ReviewRow>
               </section>
 
-              <section>
-                <h2 className="mb-1 font-display text-xl font-medium text-ink">
-                  Payment
-                </h2>
+              <fieldset className="min-w-0">
+                <legend className="mb-1 p-0">
+                  <h2 ref={headingRefs.payment} tabIndex={-1} className={stepHeading}>
+                    Payment
+                  </h2>
+                </legend>
                 <p className="mb-3 text-sm text-taupe">
-                  Choose cash on delivery or bank transfer. Online card will be available once a payment gateway is connected.
+                  Pay cash on delivery, or by bank transfer, JazzCash or Easypaisa.
                 </p>
-                <div className="overflow-hidden rounded-md border border-hairline">
+                <div className="overflow-hidden rounded-xs border border-hairline">
                   {PAYMENT_METHODS.map((method, idx) => {
                     const selected = paymentMethod === method.id;
                     return (
@@ -815,6 +882,7 @@ export function CheckoutClient() {
                           <input
                             type="radio"
                             name="payment"
+                            value={method.id}
                             checked={selected}
                             onChange={() => setPaymentMethod(method.id)}
                             className="mt-1 h-4 w-4 shrink-0 accent-brass"
@@ -825,89 +893,79 @@ export function CheckoutClient() {
                                 {method.title}
                               </span>
                               {method.badge ? (
-                                <span className="rounded bg-ink px-1.5 py-0.5 font-display text-[10px] font-semibold uppercase tracking-wide text-paper">
+                                <span className="rounded-xs bg-ink px-1.5 py-0.5 text-eyebrow text-paper">
                                   {method.badge}
                                 </span>
                               ) : null}
                             </span>
-                            <span className="mt-0.5 block text-[13px] text-taupe">
+                            <span className="mt-0.5 block text-[0.8125rem] text-taupe">
                               {method.description}
                             </span>
                           </span>
                         </label>
 
                         {selected && method.id === "cod" ? (
-                          <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4 text-[13px] leading-relaxed text-taupe">
+                          <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4 text-[0.8125rem] leading-relaxed text-taupe">
                             <p className="font-medium text-ink">
                               How cash on delivery works
                             </p>
                             <ul className="list-disc space-y-1.5 pl-4">
                               <li>
-                                Pay the courier in cash for your order total (
-                                <span className="font-medium text-ink">
-                                  <PriceInline pkr={totalPkr} />
-                                </span>
-                                ).
+                                We will call or WhatsApp you to confirm before dispatch.
                               </li>
                               <li>
-                                Keep exact change ready when possible. The courier may call before delivery.
+                                Pay the courier{" "}
+                                <PayableAmount
+                                  amountPkr={totalPkr}
+                                  className="font-sans font-medium tabular-nums text-ink"
+                                />{" "}
+                                in cash when your order arrives. Keep exact change
+                                ready if you can.
                               </li>
-                              <li>
-                                Order is confirmed immediately. No online payment is taken now.
-                              </li>
+                              <li>Nothing is charged online.</li>
                             </ul>
                           </div>
                         ) : null}
 
                         {selected && method.id === "bank" ? (
-                          <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4 text-[13px] leading-relaxed text-taupe">
+                          <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4 text-[0.8125rem] leading-relaxed text-taupe">
                             <p className="font-medium text-ink">
                               Pay to this account or wallet
                             </p>
-                            <TransferDetails />
-                            <div className="rounded-md border border-hairline bg-paper px-3 py-2.5">
-                              <p className="text-[11px] uppercase tracking-wide text-taupe">
+                            <BankDetails />
+                            <div className="rounded-xs border border-hairline bg-paper px-3 py-2.5">
+                              <p className="text-eyebrow text-taupe">
                                 Amount to transfer
                               </p>
-                              <p className="mt-0.5 text-[15px] font-semibold text-ink">
-                                <PriceInline pkr={totalPkr} />
+                              <p className="mt-0.5 font-sans text-[0.9375rem] font-semibold tabular-nums text-ink">
+                                <PayableAmount
+                                  amountPkr={totalPkr}
+                                  variant="stacked"
+                                />
                               </p>
                             </div>
-                            <ul className="list-disc space-y-1.5 pl-4">
-                              <li>
-                                Place the order first so you receive an order
-                                number. Use that number as the transfer
-                                reference.
-                              </li>
-                              <li>{siteConfig.bankTransfer.note}</li>
-                              <li>
-                                We confirm the transfer and then process
-                                shipping. Status may show as confirmed once
-                                recorded.
-                              </li>
-                            </ul>
+                            <p>
+                              Place your order to get an order number. Use it as
+                              the transfer reference, then send the receipt to us
+                              on WhatsApp at{" "}
+                              <span className="font-sans font-medium tabular-nums text-ink">
+                                {formatPkMobile(siteConfig.phone)}
+                              </span>
+                              . We ship once the payment is confirmed.
+                            </p>
                           </div>
-                        ) : null}
-
-                        {selected && method.id === "card" ? (
-                          /* Online card (Visa / Mastercard) — UI kept for when a gateway goes live.
-                          <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4">
-                            ...
-                          </div>
-                          */
-                          null
                         ) : null}
                       </div>
                     );
                   })}
                 </div>
-              </section>
+              </fieldset>
 
-              <section>
-                <h2 className="mb-3 font-display text-xl font-medium text-ink">
-                  Billing address
-                </h2>
-                <div className="overflow-hidden rounded-md border border-hairline">
+              <fieldset className="min-w-0">
+                <legend className="mb-3 p-0">
+                  <h2 className="text-heading-sm text-ink">Billing address</h2>
+                </legend>
+                <div className="overflow-hidden rounded-xs border border-hairline">
                   <label
                     className={cn(
                       "flex cursor-pointer items-center gap-3 px-4 py-4",
@@ -921,7 +979,7 @@ export function CheckoutClient() {
                       onChange={() => setBillingSame(true)}
                       className="h-4 w-4 accent-brass"
                     />
-                    <span className="text-[14px]">Same as shipping address</span>
+                    <span className="text-sm">Same as shipping address</span>
                   </label>
                   <label
                     className={cn(
@@ -936,90 +994,72 @@ export function CheckoutClient() {
                       onChange={() => setBillingSame(false)}
                       className="h-4 w-4 accent-brass"
                     />
-                    <span className="text-[14px]">Use a different billing address</span>
+                    <span className="text-sm">Use a different billing address</span>
                   </label>
                   {!billingSame ? (
                     <div className="space-y-3 border-t border-hairline bg-canvas-deep px-4 py-4">
-                      <CheckoutSelect
-                        id="bcountry"
-                        label="Country / region"
-                        value={billing.country}
-                        onChange={(e) =>
-                          setAddr(setBilling)("country", e.target.value)
-                        }
-                      >
-                        <option value="PK">Pakistan</option>
-                      </CheckoutSelect>
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <CheckoutField
-                            id="bfirstName"
-                            label="First name"
-                            value={billing.firstName}
-                            onChange={(e) =>
-                              setAddr(setBilling)("firstName", e.target.value)
-                            }
-                          />
-                          <CheckoutError message={errors.bfirstName} />
-                        </div>
-                        <div>
-                          <CheckoutField
-                            id="blastName"
-                            label="Last name"
-                            value={billing.lastName}
-                            onChange={(e) =>
-                              setAddr(setBilling)("lastName", e.target.value)
-                            }
-                          />
-                          <CheckoutError message={errors.blastName} />
-                        </div>
-                      </div>
-                      <div>
                         <CheckoutField
-                          id="baddress1"
-                          label="Address"
-                          value={billing.address1}
-                          onChange={(e) =>
-                            setAddr(setBilling)("address1", e.target.value)
-                          }
+                          id="bfirstName"
+                          label="First name"
+                          autoComplete="billing given-name"
+                          required
+                          value={billing.firstName}
+                          error={errors.bfirstName}
+                          onChange={(e) => setBill("firstName", e.target.value)}
                         />
-                        <CheckoutError message={errors.baddress1} />
+                        <CheckoutField
+                          id="blastName"
+                          label="Last name"
+                          autoComplete="billing family-name"
+                          required
+                          value={billing.lastName}
+                          error={errors.blastName}
+                          onChange={(e) => setBill("lastName", e.target.value)}
+                        />
                       </div>
+                      <CheckoutField
+                        id="baddress1"
+                        label="Address"
+                        autoComplete="billing address-line1"
+                        required
+                        value={billing.address1}
+                        error={errors.baddress1}
+                        onChange={(e) => setBill("address1", e.target.value)}
+                      />
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <CheckoutField
-                            id="bcity"
-                            label="City"
-                            value={billing.city}
-                            onChange={(e) =>
-                              setAddr(setBilling)("city", e.target.value)
-                            }
-                          />
-                          <CheckoutError message={errors.bcity} />
-                        </div>
-                        <div>
-                          <CheckoutSelect
-                            id="bprovince"
-                            label="Province"
-                            value={billing.province}
-                            onChange={(e) =>
-                              setAddr(setBilling)("province", e.target.value)
-                            }
-                          >
-                            <option value="">Select</option>
-                            {PK_PROVINCES.map((p) => (
-                              <option key={p} value={p}>
-                                {p}
-                              </option>
-                            ))}
-                          </CheckoutSelect>
-                          <CheckoutError message={errors.bprovince} />
-                        </div>
+                        <CheckoutField
+                          id="bcity"
+                          className="min-w-0"
+                          label="City"
+                          autoComplete="billing address-level2"
+                          required
+                          value={billing.city}
+                          error={errors.bcity}
+                          onChange={(e) => setBill("city", e.target.value)}
+                        />
+                        <CheckoutSelect
+                          id="bprovince"
+                          className="min-w-0"
+                          label="Province"
+                          autoComplete="billing address-level1"
+                          required
+                          value={billing.province}
+                          error={errors.bprovince}
+                          onChange={(e) => setBill("province", e.target.value)}
+                        >
+                          <option value="">Select</option>
+                          {PK_PROVINCES.map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))}
+                        </CheckoutSelect>
                       </div>
                     </div>
                   ) : null}
                 </div>
-              </section>
+              </fieldset>
 
               <section>
                 <CheckoutCheckbox
@@ -1028,7 +1068,7 @@ export function CheckoutClient() {
                   checked={rememberMe}
                   onChange={setRememberMe}
                 />
-                <label className="mt-4 block text-[13px] text-taupe" htmlFor="notes">
+                <label className="mt-4 block text-sm font-semibold text-ink/80" htmlFor="notes">
                   Order notes (optional)
                 </label>
                 <textarea
@@ -1036,16 +1076,17 @@ export function CheckoutClient() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  className="mt-1.5 w-full rounded-md border border-hairline bg-paper px-3 py-2.5 font-serif text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
-                  placeholder="Delivery instructions, gift timing, etc."
+                  maxLength={1000}
+                  className="mt-2 w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/25"
+                  placeholder="Delivery instructions or gift timing"
                 />
               </section>
 
               <div className="flex flex-col-reverse items-stretch justify-between gap-4 pt-2 sm:flex-row sm:items-center">
                 <button
                   type="button"
-                  onClick={() => setStep("shipping")}
-                  className="cursor-pointer text-center text-[14px] text-brass hover:underline sm:text-left"
+                  onClick={() => changeStep("shipping")}
+                  className={backLink}
                 >
                   ‹ Return to shipping
                 </button>
@@ -1053,38 +1094,18 @@ export function CheckoutClient() {
                   type="button"
                   disabled={submitting}
                   onClick={submitOrder}
-                  className="min-h-12 cursor-pointer rounded-md bg-ink px-6 font-display text-sm font-medium uppercase tracking-[0.08em] text-paper transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 sm:min-h-14 sm:px-8 sm:tracking-[0.12em]"
+                  className={primaryButton}
                 >
-                  {submitting
-                    ? "Processing…"
-                    : paymentMethod === "cod"
-                      ? (
-                          <>
-                            <span className="sm:hidden">Complete order</span>
-                            <span className="hidden sm:inline">
-                              Complete order · COD
-                            </span>
-                          </>
-                        )
-                      : paymentMethod === "bank"
-                        ? (
-                            <>
-                              <span className="sm:hidden">Place order</span>
-                              <span className="hidden sm:inline">
-                                Place order · Bank transfer
-                              </span>
-                            </>
-                          )
-                        : "Pay now"}
+                  {submitting ? "Placing order…" : "Place order"}
                 </button>
               </div>
             </div>
           ) : null}
 
           <footer className="mt-12 border-t border-hairline pt-5">
-            <ul className="flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-brass">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-caption text-brass-ink">
               <li>
-                <Link href="/policies/refund-policy" className="hover:underline">
+                <Link href="/policies/refund" className="hover:underline">
                   Refund policy
                 </Link>
               </li>
@@ -1094,12 +1115,12 @@ export function CheckoutClient() {
                 </Link>
               </li>
               <li>
-                <Link href="/policies/privacy-policy" className="hover:underline">
+                <Link href="/policies/privacy" className="hover:underline">
                   Privacy policy
                 </Link>
               </li>
               <li>
-                <Link href="/policies/terms-of-service" className="hover:underline">
+                <Link href="/policies/terms" className="hover:underline">
                   Terms of service
                 </Link>
               </li>
@@ -1115,7 +1136,11 @@ export function CheckoutClient() {
             discountPkr={discountPkr}
             discountCode={discountCode}
             shippingPkr={shippingPkr}
-            shippingLabel={step === "information" ? undefined : shippingLabel}
+            shippingLabel={shippingPkr === null ? undefined : shippingLabel}
+            freeShippingCoupon={freeShipPromo}
+            codFeePkr={codFeePkr}
+            taxPkr={totals.taxPkr}
+            taxIncludedPkr={totals.taxIncludedPkr}
             totalPkr={totalPkr}
             onApplyDiscount={applyDiscount}
             onRemoveDiscount={() => {

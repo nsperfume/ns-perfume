@@ -1,7 +1,7 @@
 "use client";
 
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { ChevronDownIcon } from "@animateicons/react/lucide";
+import { ChevronDownIcon } from "@/components/ui/icons";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -45,11 +45,11 @@ export function Select({
   const dark = tone === "dark";
 
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
+    <div className={cn("flex flex-col gap-2", className)}>
       {label ? (
         <label
           htmlFor={id}
-          className="font-display text-sm font-medium text-ink/80"
+          className="text-sm font-semibold text-ink/80"
         >
           {label}
         </label>
@@ -63,16 +63,19 @@ export function Select({
           id={id}
           aria-label={ariaLabel ?? label}
           className={cn(
-            "group inline-flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-md border px-3.5 py-2.5 font-display text-base font-medium outline-none transition-colors",
-            "focus-visible:ring-2 focus-visible:ring-brass/25 disabled:cursor-not-allowed disabled:opacity-50",
+            "group inline-flex min-h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-xs border px-4 py-2.5 font-sans text-base font-medium outline-none transition-colors",
+            "focus-visible:ring-2 focus-visible:ring-brass/40 disabled:cursor-not-allowed disabled:opacity-50",
             "data-[placeholder]:text-[#9aa1ad]",
             dark
               ? "border-white/25 bg-white/5 text-paper backdrop-blur-md hover:border-white/50 data-[state=open]:border-white/50"
-              : "border-[#d8dbe2] bg-paper text-ink hover:border-ink/30 data-[state=open]:border-brass",
+              : "border-[#d6cfbf] bg-paper text-ink hover:border-ink/40 data-[state=open]:border-brass",
             triggerClassName,
           )}
         >
-          <SelectPrimitive.Value placeholder={placeholder} />
+          {/* Render the selected label ourselves so it shows before the item list mounts. */}
+          <SelectPrimitive.Value placeholder={placeholder}>
+            {options.find((o) => o.value === value)?.label}
+          </SelectPrimitive.Value>
           <SelectPrimitive.Icon asChild>
             <ChevronDownIcon
               size={16}
@@ -104,7 +107,7 @@ export function Select({
                   value={opt.value}
                   disabled={opt.disabled}
                   className={cn(
-                    "relative flex cursor-pointer select-none items-center rounded-xs px-3 py-2.5 font-serif text-[15px] font-medium outline-none",
+                    "relative flex min-h-11 cursor-pointer select-none items-center rounded-xs px-3 py-2.5 text-body-sm font-medium outline-none",
                     "data-[highlighted]:bg-ink data-[highlighted]:text-paper",
                     "data-[state=checked]:bg-ink data-[state=checked]:text-paper",
                     "data-[disabled]:pointer-events-none data-[disabled]:opacity-40",

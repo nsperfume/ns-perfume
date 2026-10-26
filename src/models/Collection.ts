@@ -20,5 +20,8 @@ const CollectionSchema = new Schema(
   { timestamps: true },
 );
 
+// Storefront collection list in display order.
+CollectionSchema.index({ status: 1, sortOrder: 1 });
+
 export const CollectionModel =
   models.Collection || model("Collection", CollectionSchema);

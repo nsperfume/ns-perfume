@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product/gallery";
 import { ProductPurchasePanel } from "@/components/product/purchase-panel";
 import { ProductCharacterWear } from "@/components/product/character-wear";
-import { ProductTrustProcess } from "@/components/product/trust-process";
+import { ProductDetailsAccordion } from "@/components/product/details-accordion";
 import { ProductReviewsSection } from "@/components/product/reviews-section";
 import { RecentlyViewed } from "@/components/product/recently-viewed";
 import { ProductCard } from "@/components/commerce/product-card";
@@ -17,31 +17,67 @@ import {
   StoreSectionHeader,
 } from "@/components/layout/store-section";
 import { siteImages } from "@/data/images";
+import { siteConfig } from "@/data/site";
 import {
   getProductReviews,
   getStoreProduct,
   getStoreProducts,
 } from "@/lib/store-data";
-import type { StoreProduct } from "@/lib/mappers";
+import { cardProduct, type StoreProduct } from "@/lib/mappers";
+import { getSiteSettings } from "@/lib/site-settings";
 import { richTextToPlain } from "@/lib/rich-text";
+import { TrustedHtml as RichHtml } from "@/components/ui/trusted-html";
 
 type Props = { params: Promise<{ handle: string }> };
 
-export const dynamic = "force-dynamic";
+/** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
+export const revalidate = 300;
+
+/** Prerender every product at build; new products render on first visit. */
+export async function generateStaticParams() {
+  const products = await getStoreProducts();
+  return products.map((p) => ({ handle: p.handle }));
+}
+
+const CONCENTRATION_NAMES: Record<string, string> = {
+  EDP: "Eau de Parfum",
+  EDT: "Eau de Toilette",
+  EDC: "Eau de Cologne",
+  PARFUM: "Parfum",
+  EXTRAIT: "Extrait de Parfum",
+};
+const concentrationName = (c: string) => CONCENTRATION_NAMES[c.toUpperCase()] ?? c;
+const audience = (gender: string) =>
+  gender === "him" ? "for men" : gender === "her" ? "for women" : "for men and women";
+const genderLabel = (gender: string) =>
+  gender === "him" ? "For him" : gender === "her" ? "For her" : "Unisex";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
   const product = await getStoreProduct(handle);
   if (!product) return { title: "Product" };
-  const fromAdmin = richTextToPlain(product.description || "").trim();
-  const metaDescription = (
-    fromAdmin ||
-    `${product.descriptor}. ${product.concentration} with real note layers and sillage ratings from NS Perfume.`
-  ).slice(0, 155);
+  const prices = product.prices.map((p) => p.price).filter((n) => n > 0);
+  const from = prices.length ? ` Price in Pakistan from Rs ${Math.min(...prices).toLocaleString("en-US")}.` : "";
+  const title =
+    product.seoTitle ||
+    `${product.name} ${concentrationName(product.concentration)} ${audience(product.gender)}`;
+  const description = (
+    product.seoDescription ||
+    `${product.descriptor.replace(/\.?$/, ".")} ${concentrationName(product.concentration)} ${audience(product.gender)}.${from} Cash on delivery across Pakistan.`
+  ).slice(0, 160);
+  const url = `/products/${product.handle}`;
   return {
-    title: `${product.name} ${product.concentration} perfume`,
-    description: metaDescription,
-    alternates: { canonical: `/products/${product.handle}` },
+    title,
+    description,
+    alternates: { canonical: url },
+    // WhatsApp and Instagram previews show the bottle, not the site banner.
+    openGraph: {
+      title,
+      description,
+      url,
+      type: "website",
+      images: product.imagePrimary ? [{ url: product.imagePrimary, alt: `${product.name} bottle` }] : undefined,
+    },
   };
 }
 
@@ -50,18 +86,67 @@ export default async function ProductPage({ params }: Props) {
   const product = await getStoreProduct(handle);
   if (!product) notFound();
 
-  const all = await getStoreProducts();
+  const [all, { checkout }] = await Promise.all([getStoreProducts(), getSiteSettings()]);
   const related = product.relatedHandles
     .map((h) => all.find((p) => p.handle === h))
     .filter((p): p is StoreProduct => Boolean(p))
     .slice(0, 4);
-  const fallbackRelated =
-    related.length > 0
-      ? related
-      : all.filter((p) => p.handle !== product.handle).slice(0, 4);
+  // Curated picks first, then the closest matches: same wearer, then family, then concentration.
+  const similarity = (p: StoreProduct) =>
+    (p.gender === product.gender ? 4 : p.gender === "unisex" || product.gender === "unisex" ? 2 : 0) +
+    (p.family === product.family ? 3 : 0) +
+    (p.concentration === product.concentration ? 1 : 0) +
+    (p.inStock ? 1 : 0);
+  const fallbackRelated = [
+    ...related,
+    ...all
+      .filter(
+        (p) =>
+          p.handle !== product.handle &&
+          !related.some((r) => r.handle === p.handle),
+      )
+      .sort((a, b) => similarity(b) - similarity(a)),
+  ]
+    .slice(0, 4)
+    .map(cardProduct);
+  const descriptionHtml = richTextToPlain(product.description || "").trim()
+    ? product.description
+    : "";
   const productReviews = await getProductReviews(product.handle);
-  const price = product.prices[0]?.price ?? 0;
 
+  // Structured data needs absolute URLs; uploaded images may already be absolute.
+  const absoluteUrl = (path: string) =>
+    /^https?:\/\//i.test(path)
+      ? path
+      : `${siteConfig.url}${path.startsWith("/") ? "" : "/"}${path}`;
+  const productUrl = absoluteUrl(`/products/${product.handle}`);
+
+  // Shopping-ready markup: one Offer per size in PKR with delivery and return terms.
+  const standard = checkout.shipping.standard;
+  const transit = standard.description.match(/(\d+)\D+(\d+)/);
+  const shippingDetails = {
+    "@type": "OfferShippingDetails",
+    shippingRate: { "@type": "MonetaryAmount", value: standard.pricePkr, currency: "PKR" },
+    shippingDestination: { "@type": "DefinedRegion", addressCountry: "PK" },
+    deliveryTime: {
+      "@type": "ShippingDeliveryTime",
+      handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 2, unitCode: "DAY" },
+      transitTime: {
+        "@type": "QuantitativeValue",
+        minValue: transit ? Number(transit[1]) : 3,
+        maxValue: transit ? Number(transit[2]) : 5,
+        unitCode: "DAY",
+      },
+    },
+  };
+  const returnPolicy = {
+    "@type": "MerchantReturnPolicy",
+    applicableCountry: "PK",
+    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+    merchantReturnDays: 30,
+    returnMethod: "https://schema.org/ReturnByMail",
+  };
+  const priceValidUntil = `${new Date().getFullYear() + 1}-12-31`;
   const productLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -69,16 +154,26 @@ export default async function ProductPage({ params }: Props) {
     description:
       richTextToPlain(product.description || "").trim() || product.descriptor,
     sku: product.prices[0]?.sku,
-    brand: { "@type": "Brand", name: "NS Perfume" },
-    image: product.gallery?.[0] || product.imagePrimary,
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "PKR",
-      price: String(price),
-      availability: product.inStock
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
-    },
+    brand: { "@type": "Brand", name: siteConfig.name },
+    image: product.gallery.slice(0, 4).map((src) => absoluteUrl(src)),
+    url: productUrl,
+    offers: product.prices
+      .filter((p) => p.price > 0)
+      .map((p) => ({
+        "@type": "Offer",
+        sku: p.sku,
+        name: `${product.name} ${p.ml} ml`,
+        price: String(p.price),
+        priceCurrency: "PKR",
+        priceValidUntil,
+        itemCondition: "https://schema.org/NewCondition",
+        availability: product.inStock
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+        url: productUrl,
+        shippingDetails,
+        hasMerchantReturnPolicy: returnPolicy,
+      })),
     aggregateRating:
       product.reviewCount > 0
         ? {
@@ -89,251 +184,185 @@ export default async function ProductPage({ params }: Props) {
         : undefined,
   };
 
+  // One trail for the visible breadcrumb and the BreadcrumbList markup.
+  const familyLabel = product.family
+    ? product.family.charAt(0).toUpperCase() + product.family.slice(1)
+    : "";
+  const trail: { label: string; href?: string }[] = [
+    { label: "Home", href: "/" },
+    { label: "Shop all", href: "/products" },
+    ...(familyLabel ? [{ label: familyLabel, href: `/collections/${product.family}` }] : []),
+    { label: product.name },
+  ];
   const breadcrumbLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "/" },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Products",
-        item: "/products",
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: product.name,
-        item: `/products/${product.handle}`,
-      },
-    ],
+    itemListElement: trail.map((t, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: t.label,
+      item: t.href ? absoluteUrl(t.href) : productUrl,
+    })),
   };
 
   return (
     <>
       <JsonLd data={[productLd, breadcrumbLd]} />
 
-      {/* Hero: gallery + buy */}
+      {/* Gallery + buy box (sticky on desktop while the gallery scrolls) */}
       <section className="border-b border-hairline bg-canvas">
-        <div className="container-ns pb-10 pt-6 md:pb-14 md:pt-8 lg:pb-16">
-          <StoreBreadcrumb
-            items={[
-              { label: "Home", href: "/" },
-              { label: "Shop", href: "/products" },
-              {
-                label: product.family,
-                href: `/collections/${product.family}`,
-              },
-              { label: product.name },
-            ]}
-          />
+        <div className="container-ns pb-12 pt-6 md:pb-16 md:pt-8">
+          <StoreBreadcrumb items={trail} />
 
-          <div className="mt-6 grid items-start gap-8 md:gap-12 lg:mt-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] lg:items-stretch lg:gap-14 xl:gap-16">
+          <div className="mt-2 grid items-start gap-8 md:gap-12 lg:mt-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:gap-14 xl:gap-20">
             <ProductGallery images={product.gallery} name={product.name} />
-            <div className="min-h-0 lg:h-full">
+            <div className="scrollbar-panel min-w-0 lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.5rem)] lg:-mr-3 lg:max-h-[calc(100dvh-var(--spacing-chrome-height)-2.5rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-3">
               <ProductPurchasePanel product={product} />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Notes */}
-      <section className="border-b border-hairline bg-paper">
-        <div className="container-ns py-12 md:py-16">
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-16">
+      {/* The scent: notes and performance in one place */}
+      <section
+        id="notes"
+        className="scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] border-b border-hairline bg-paper py-14 lg:py-20"
+      >
+        <div className="container-ns">
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-20">
             <div>
-              <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
-                Composition
-              </p>
-              <h2 className="text-display-md text-balance">
-                Notes on {product.name}
+              <p className="mb-3 text-eyebrow text-taupe">The scent</p>
+              <h2 className="text-display-md text-balance text-ink">
+                How {product.name} wears
               </h2>
-              <p className="mt-3 max-w-md font-serif text-[1.05rem] leading-relaxed text-taupe">
-                How this bottle opens, develops, and finishes. Match it to heat,
-                fabric layers, and how close you sit to other people.
-              </p>
+              <ScentPyramid
+                variant="inline"
+                className="mt-6"
+                topNotes={product.topNotes}
+                heartNotes={product.heartNotes}
+                baseNotes={product.baseNotes}
+              />
             </div>
-            <ScentPyramid
-              variant="inline"
-              topNotes={product.topNotes}
-              heartNotes={product.heartNotes}
-              baseNotes={product.baseNotes}
-            />
+            <div>
+              <PerformanceMeter
+                sillage={product.sillage}
+                longevity={product.longevity}
+              />
+              <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-hairline pt-5">
+                <div>
+                  <dt className="text-eyebrow text-taupe">Concentration</dt>
+                  <dd className="mt-1 text-body font-semibold text-ink">
+                    {product.concentration}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-eyebrow text-taupe">Sizes</dt>
+                  <dd className="mt-1 flex flex-wrap gap-x-2 font-sans tabular-nums text-sm text-ink">
+                    {product.prices.map((p, i) => (
+                      <span key={p.ml} className="whitespace-nowrap">
+                        {i > 0 ? "· " : ""}
+                        {p.ml} ml
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+                {product.countryOfOrigin ? (
+                  <div>
+                    <dt className="text-eyebrow text-taupe">Origin</dt>
+                    <dd className="mt-1 text-body font-semibold text-ink">
+                      {product.countryOfOrigin}
+                    </dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt className="text-eyebrow text-taupe">Family</dt>
+                  <dd className="mt-1 text-body font-semibold text-ink">
+                    <span className="capitalize">{product.family}</span> · {genderLabel(product.gender)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Atmosphere band */}
-      <section className="relative isolate overflow-hidden border-b border-hairline">
-        <div className="relative min-h-[16rem] w-full sm:min-h-0 sm:aspect-video">
+      {/* Social proof, right after the scent details */}
+      <ProductReviewsSection
+        productHandle={product.handle}
+        productName={product.name}
+        rating={product.rating}
+        reviewCount={product.reviewCount}
+        reviews={productReviews}
+      />
+
+      {/* Story and wear: atmosphere image beside the story on desktop */}
+      <section className="border-b border-hairline bg-canvas lg:grid lg:grid-cols-2">
+        <div className="relative isolate h-[18rem] w-full overflow-hidden sm:h-[22rem] lg:h-auto lg:min-h-[28rem]">
           <Image
             src={siteImages.productAtmosphere}
             alt="Perfume atmosphere for wearing NS Perfume"
             fill
             quality={85}
-            sizes="100vw"
+            sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover object-center"
           />
           <div
-            className="absolute inset-0 bg-linear-to-r from-ink/80 via-ink/55 to-ink/25"
+            className="absolute inset-0 bg-linear-to-t from-ink/80 via-ink/40 to-ink/10"
             aria-hidden
           />
-          <div className="absolute inset-0 z-10 flex items-end">
-            <div className="container-ns w-full py-7 sm:py-10 md:py-14 lg:py-16">
-              <div className="max-w-xl">
-                <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-paper/70">
-                  Wear it in
-                </p>
-                <h2 className="mt-2 font-display text-[1.35rem] font-medium leading-snug text-balance text-paper sm:mt-3 sm:text-[2rem] sm:leading-tight md:text-[2.35rem]">
-                  {product.name} for rooms that hold a conversation
-                </h2>
-                <p className="mt-2 line-clamp-3 max-w-md font-serif text-[0.98rem] leading-relaxed text-paper/85 sm:mt-4 sm:line-clamp-none sm:text-[1.1rem]">
-                  {product.descriptor}. Built for Pakistani heat, layered
-                  fabric, and evenings that run long.
-                </p>
-              </div>
-            </div>
+          <div className="absolute inset-x-0 bottom-0 z-10 px-[var(--gutter)] pb-8 sm:pb-10 lg:pb-14 lg:pl-[max(var(--gutter),calc((100vw-var(--container-max))/2))] lg:pr-12">
+            <p className="text-eyebrow text-paper/80">Wear it in</p>
+            <h2 className="mt-3 max-w-[30rem] text-display-md text-balance text-paper">
+              {product.name} for rooms that hold a conversation
+            </h2>
+            <p className="mt-3 max-w-[30rem] text-body text-paper/90">
+              Built for Pakistani heat, layered fabric, and evenings that run
+              long.
+            </p>
           </div>
         </div>
-      </section>
-
-      {/* Character and wear */}
-      <section className="border-b border-hairline bg-canvas section-y">
-        <div className="container-ns">
-          <StoreSectionHeader
-            eyebrow="Details"
-            title="Character and wear"
-            description="The story behind the formula, and how to wear it day to evening."
-          />
+        <div className="px-[var(--gutter)] py-12 sm:py-14 lg:py-16 lg:pl-12 lg:pr-[max(var(--gutter),calc((100vw-var(--container-max))/2))] xl:pl-16">
+          {descriptionHtml ? (
+            <RichHtml
+              html={descriptionHtml}
+              className="mb-10 max-w-[40rem] text-body-lg text-ink/85 [&_li]:my-1 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
+            />
+          ) : null}
           <ProductCharacterWear product={product} />
         </div>
       </section>
 
-      {/* Specs */}
-      <section className="border-b border-hairline bg-muted/30">
-        <div className="container-ns py-12 md:py-14">
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start lg:gap-12 xl:gap-16">
-            <PerformanceMeter
-              sillage={product.sillage}
-              longevity={product.longevity}
-            />
-            <dl className="grid gap-6 sm:grid-cols-2">
-              <div className="border-t border-hairline pt-4">
-                <dt className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
-                  Concentration
-                </dt>
-                <dd className="mt-2 font-display text-xl font-medium text-ink">
-                  {product.concentration}
-                </dd>
-                <dd className="mt-1 font-serif text-[1rem] text-taupe">
-                  {product.prices.map((p) => `${p.ml}ml`).join(" · ")}
-                </dd>
-              </div>
-              <div className="border-t border-hairline pt-4">
-                <dt className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
-                  Origin
-                </dt>
-                <dd className="mt-2 font-display text-xl font-medium text-ink">
-                  {product.countryOfOrigin}
-                </dd>
-                <dd className="mt-1 font-serif text-[1rem] capitalize text-taupe">
-                  {product.family} · {product.gender}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-      </section>
-
-      {/* Order flow (once) */}
-      <section className="border-b border-hairline bg-canvas section-y">
-        <div className="container-ns">
-          <StoreSectionHeader
-            eyebrow="After checkout"
-            title="How your order moves"
-            description="Four steps from bag to door. Payment options are chosen at checkout."
-          />
-          <ProductTrustProcess />
-        </div>
-      </section>
-
-      {/* Ingredients */}
-      <section className="border-b border-hairline bg-paper section-y">
-        <div className="container-ns grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-          <div>
-            <StoreSectionHeader
-              eyebrow="Formula"
-              title="Ingredients and sourcing"
-              className="mb-0"
-            />
-            <p className="mt-4 max-w-md font-serif text-[1.1rem] leading-relaxed text-taupe">
-              Country of origin: {product.countryOfOrigin}.
-              {product.containsAlcohol
-                ? " Core materials used in this formula are listed for transparency, not as full IFRA paperwork."
-                : " This bottle is alcohol-free. Core materials are listed for transparency, not as full IFRA paperwork."}
-            </p>
-            {!product.containsAlcohol ? (
-              <p className="mt-3 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink">
-                Alcohol-free formula
-              </p>
-            ) : null}
-          </div>
-          {product.ingredients.length ? (
-            <ul className="columns-1 gap-x-10 sm:columns-2">
-              {product.ingredients.map((ing) => (
-                <li
-                  key={ing}
-                  className="mb-3 break-inside-avoid border-b border-hairline pb-3 font-serif text-[1.05rem] text-ink/85"
-                >
-                  {ing}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="font-serif text-[1.05rem] text-taupe">
-              {product.containsAlcohol
-                ? "Ingredient details for this bottle are available on the packing insert."
-                : "Alcohol-free formula. Full material notes are available on the packing insert."}
-            </p>
-          )}
-        </div>
-      </section>
-
-      <div className="container-ns">
-        <ProductReviewsSection
-          productHandle={product.handle}
-          productName={product.name}
-          rating={product.rating}
-          reviewCount={product.reviewCount}
-          reviews={productReviews}
-        />
-      </div>
+      <ProductDetailsAccordion product={product} />
 
       {fallbackRelated.length ? (
-        <section className="border-t border-hairline bg-muted/30 section-y">
+        <section className="bg-muted/30 py-14 lg:py-20">
           <div className="container-ns">
             <StoreSectionHeader
-              eyebrow="Next bottles"
               title="You may also like"
               action={
                 <Link
                   href="/products"
-                  className="font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+                  className="inline-flex min-h-11 items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:text-brass-ink hover:decoration-brass"
                 >
                   Shop all
                 </Link>
               }
             />
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <ul className="-mx-[var(--gutter)] flex snap-x snap-mandatory gap-3 overflow-x-auto px-[var(--gutter)] pb-2 md:mx-0 md:grid md:snap-none md:grid-cols-3 md:gap-x-5 md:gap-y-10 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4 2xl:gap-x-6">
               {fallbackRelated.map((p) => (
-                <ProductCard key={p.handle} product={p} showMeter />
+                <li
+                  key={p.handle}
+                  className="w-[62%] shrink-0 snap-start sm:w-[40%] md:w-auto"
+                >
+                  <ProductCard product={p} showMeter />
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </section>
       ) : null}
 
-      <RecentlyViewed currentHandle={product.handle} catalog={all} />
+      <RecentlyViewed currentHandle={product.handle} catalog={all.map(cardProduct)} />
     </>
   );
 }

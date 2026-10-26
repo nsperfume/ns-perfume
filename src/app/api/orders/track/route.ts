@@ -1,6 +1,8 @@
+import { siteConfig } from "@/data/site";
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { OrderModel } from "@/models/Order";
+import { limitByIp } from "@/lib/rate-limit";
 import {
   buildTimeline,
   estimateDeliveryRange,
@@ -9,6 +11,7 @@ import {
   statusSubcopy,
   type OrderStatus,
 } from "@/lib/order-status";
+import { invoicePath } from "@/lib/invoice/access";
 
 function normalizeOrderNumber(raw: string) {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
@@ -16,6 +19,8 @@ function normalizeOrderNumber(raw: string) {
 
 export async function POST(req: Request) {
   try {
+    const limited = limitByIp(req, "track", 20, 10 * 60_000);
+    if (limited) return limited;
     await connectDB();
     const body = await req.json();
     const orderNumber = normalizeOrderNumber(String(body.orderNumber || ""));
@@ -24,13 +29,9 @@ export async function POST(req: Request) {
       return jsonError("Order number and email are required");
     }
 
-    // Allow NS- prefix or plain digits
-    const variants = [
-      orderNumber,
-      orderNumber.replace(/^#/, ""),
-      orderNumber.startsWith("NS") ? orderNumber : `NS${orderNumber}`,
-      orderNumber.replace(/^NS-?/, "NS"),
-    ];
+    // Accept "NS-4821", "NS4821", "#4821" or "4821" (stored as NS-XXXX; legacy NS772829567).
+    const core = orderNumber.replace(/^#/, "").replace(/^NS-?/, "");
+    const variants = [orderNumber, `NS-${core}`, `NS${core}`];
 
     const order = await OrderModel.findOne({
       email,
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
 
     if (!order) {
       return jsonError(
-        "We couldn’t find an order with that number and email. Check both and try again, or email care@nsperfume.com.",
+        `We couldn't find an order with that number and email. Check both and try again, or email ${siteConfig.email}.`,
         404,
       );
     }
@@ -74,6 +75,7 @@ export async function POST(req: Request) {
         : estimateDeliveryRange(
             order.createdAt || new Date(),
             order.shippingMethod?.id,
+            order.shippingMethod?.description,
           );
 
     const timeline = buildTimeline(status, {
@@ -86,6 +88,7 @@ export async function POST(req: Request) {
 
     return jsonOk({
       orderNumber: order.orderNumber,
+      invoiceUrl: invoicePath(String(order.orderNumber)),
       status,
       headline: statusHeadline(status),
       subcopy: statusSubcopy(status),
@@ -100,6 +103,9 @@ export async function POST(req: Request) {
       discountCode: order.discountCode || "",
       shippingPkr: order.shippingPkr,
       taxPkr: order.taxPkr || 0,
+      codFeePkr: order.codFeePkr || 0,
+      taxIncludedPkr: order.taxIncludedPkr || 0,
+      taxLabel: order.taxLabel || "",
       totalPkr: order.totalPkr,
       paymentMethod: order.paymentMethod,
       shippingMethod: order.shippingMethod,

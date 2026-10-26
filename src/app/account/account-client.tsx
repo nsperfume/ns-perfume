@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/cart";
@@ -10,6 +10,62 @@ import { useCurrency } from "@/context/currency";
 import { useCustomer } from "@/context/customer";
 import { useUi } from "@/context/ui";
 import { cn } from "@/lib/cn";
+import { BrandLoader, BrandLoaderBlock } from "@/components/brand/brand-loader";
+import { lineDisplayName } from "@/lib/checkout";
+
+/** Where to return after Google sign-in, which always lands back on /account. */
+const NEXT_KEY = "ns-auth-next";
+const NEXT_TTL_MS = 15 * 60_000;
+
+/**
+ * `next` from the URL, accepted only as a same-origin path ("/checkout"), never
+ * "//evil.com", "https://..." or another account page.
+ */
+function safeNext(raw: string | null | undefined): string | null {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
+    return null;
+  }
+  try {
+    const base = "https://store.invalid";
+    const url = new URL(raw, base);
+    if (url.origin !== base || url.pathname.startsWith("/account")) return null;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return null;
+  }
+}
+
+function rememberNext(path: string | null) {
+  if (!path) return;
+  try {
+    sessionStorage.setItem(NEXT_KEY, JSON.stringify({ path, at: Date.now() }));
+  } catch {
+    /* ignore */
+  }
+}
+
+function readRememberedNext(): string | null {
+  try {
+    const raw = sessionStorage.getItem(NEXT_KEY);
+    if (!raw) return null;
+    const { path, at } = JSON.parse(raw) as { path?: string; at?: number };
+    if (!at || Date.now() - at > NEXT_TTL_MS) {
+      sessionStorage.removeItem(NEXT_KEY);
+      return null;
+    }
+    return safeNext(path);
+  } catch {
+    return null;
+  }
+}
+
+function forgetNext() {
+  try {
+    sessionStorage.removeItem(NEXT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 type OrderLine = {
   productHandle: string;
@@ -27,6 +83,8 @@ type OrderLine = {
 type AccountOrder = {
   id: string;
   orderNumber: string;
+  /** Signed PDF invoice URL from /api/account/orders. */
+  invoiceUrl?: string;
   status: string;
   totalPkr: number;
   currency: string;
@@ -37,7 +95,7 @@ type AccountOrder = {
 function authErrorMessage(code: string | null) {
   switch (code) {
     case "google_not_configured":
-      return "Google sign-in is ready in the product. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable it.";
+      return "Google sign-in is not available right now. Sign in with email instead.";
     case "google_state":
     case "google_token":
     case "google_profile":
@@ -64,10 +122,11 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-function AuthPanel() {
+function AuthPanel({ next }: { next: string | null }) {
   const search = useSearchParams();
   const { refresh, googleEnabled } = useCustomer();
-  const [mode, setMode] = useState<"signin" | "register">("signin");
+  const [mode, setMode] = useState<"signin" | "register" | "forgot">("signin");
+  const [notice, setNotice] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -82,8 +141,20 @@ function AuthPanel() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setNotice("");
     setSaving(true);
     try {
+      if (mode === "forgot") {
+        const res = await fetch("/api/auth/password/forgot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const json = await res.json();
+        if (json.ok) setNotice(json.data.message);
+        else setError(json.error || "Something went wrong");
+        return;
+      }
       const endpoint =
         mode === "register" ? "/api/auth/register" : "/api/auth/login";
       const body =
@@ -111,24 +182,25 @@ function AuthPanel() {
   return (
     <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-14">
       <div>
-        <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+        <p className="mb-2 text-eyebrow text-taupe">
           Account
         </p>
-        <h1 className="text-display-lg text-balance text-ink">
+        {/* Page H1 is server-rendered in app/account/page.tsx */}
+        <h2 className="text-display-lg text-balance text-ink">
           Sign in without the fuss
-        </h1>
-        <p className="mt-4 max-w-md font-serif text-[1.1rem] leading-relaxed text-taupe">
+        </h2>
+        <p className="mt-4 max-w-md text-body-lg text-taupe">
           One place for order history, repeat orders, and a saved profile.
           Guest checkout still works if you prefer.
         </p>
-        <ul className="mt-8 space-y-3 border-t border-hairline pt-6 font-serif text-[1.05rem] text-ink/80">
+        <ul className="mt-8 space-y-3 border-t border-hairline pt-6 text-body text-ink/80">
           <li>See past orders by the email you used</li>
-          <li>Repeat an order into your bag in one tap</li>
+          <li>Reorder a past order in one tap</li>
           <li>Track parcels without digging through inbox threads</li>
         </ul>
       </div>
 
-      <div className="border border-hairline bg-paper p-6 sm:p-8">
+      <div className="border border-hairline bg-paper p-6 sm:p-10">
         <div className="mb-6 flex w-full gap-1 border-b border-hairline pb-1">
           {(
             [
@@ -142,10 +214,11 @@ function AuthPanel() {
               onClick={() => {
                 setMode(id);
                 setError("");
+                setNotice("");
               }}
               className={cn(
-                "flex-1 cursor-pointer border-b-2 px-2 pb-3 text-center font-display text-[11px] font-medium uppercase tracking-[0.08em] transition-colors sm:px-3 sm:text-[12px] sm:tracking-[0.12em]",
-                mode === id
+                "min-h-12 flex-1 cursor-pointer border-b-2 px-2 pb-3 pt-2 text-center text-eyebrow transition-colors sm:px-3",
+                mode === id || (mode === "forgot" && id === "signin")
                   ? "border-ink text-ink"
                   : "border-transparent text-taupe hover:text-ink",
               )}
@@ -155,26 +228,25 @@ function AuthPanel() {
           ))}
         </div>
 
-        <a
-          href="/api/auth/google"
-          className="mb-5 flex min-h-12 w-full items-center justify-center gap-3 border border-hairline bg-canvas px-4 font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:border-ink/40"
-        >
-          <GoogleIcon className="h-6 w-6" />
-          Continue with Google
-        </a>
-        {!googleEnabled ? (
-          <p className="mb-5 font-serif text-[0.95rem] text-taupe">
-            Google button is live. Connect your Google OAuth keys when you are
-            ready.
-          </p>
-        ) : null}
+        {googleEnabled && mode !== "forgot" ? (
+          <>
+            <a
+              href="/api/auth/google"
+              onClick={() => rememberNext(next)}
+              className="mb-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xs border border-[#d6cfbf] bg-paper px-4 text-label text-ink transition-colors hover:border-ink/50"
+            >
+              <GoogleIcon className="h-6 w-6" />
+              Continue with Google
+            </a>
 
-        <div className="relative mb-5 text-center">
-          <span className="absolute inset-x-0 top-1/2 h-px bg-hairline" />
-          <span className="relative bg-paper px-3 font-display text-[10px] uppercase tracking-[0.14em] text-taupe">
-            Or email
-          </span>
-        </div>
+            <div className="relative mb-5 text-center">
+              <span className="absolute inset-x-0 top-1/2 h-px bg-hairline" />
+              <span className="relative bg-paper px-3 text-eyebrow text-taupe">
+                Or email
+              </span>
+            </div>
+          </>
+        ) : null}
 
         <form className="space-y-4" onSubmit={submit} noValidate>
           {mode === "register" ? (
@@ -194,33 +266,141 @@ function AuthPanel() {
             autoComplete="email"
             required
           />
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete={
-              mode === "register" ? "new-password" : "current-password"
-            }
-            required
-          />
+          {mode === "forgot" ? (
+            <p className="text-body-sm text-taupe">
+              Enter the email on your account and we will send a link to choose
+              a new password.
+            </p>
+          ) : (
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete={
+                mode === "register" ? "new-password" : "current-password"
+              }
+              hint={mode === "register" ? "Use at least 8 characters" : undefined}
+              required
+            />
+          )}
+          {mode === "signin" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("forgot");
+                setError("");
+                setNotice("");
+              }}
+              className="ml-auto flex min-h-10 cursor-pointer items-center text-body-sm text-taupe underline underline-offset-4 hover:text-ink"
+            >
+              Forgot your password?
+            </button>
+          ) : null}
           {mode === "register" ? (
-            <p className="font-serif text-[0.9rem] text-taupe">
-              Use at least 8 characters. That is all.
+            <p className="text-body-sm text-taupe">
+              By creating an account you agree to our{" "}
+              <Link
+                href="/policies/terms"
+                className="text-ink underline underline-offset-4 hover:text-brass-ink"
+              >
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/policies/privacy"
+                className="text-ink underline underline-offset-4 hover:text-brass-ink"
+              >
+                Privacy policy
+              </Link>
+              .
             </p>
           ) : null}
           {error ? (
-            <p className="font-serif text-[0.95rem] text-rosewood">{error}</p>
+            <p className="text-body-sm text-rosewood" role="alert">
+              {error}
+            </p>
           ) : null}
-          <Button type="submit" disabled={saving} className="w-full">
+          {notice ? (
+            <p className="text-body-sm text-ink" role="status">
+              {notice}
+            </p>
+          ) : null}
+          <Button type="submit" disabled={saving} className="w-full sm:w-full">
             {saving
               ? "Please wait…"
               : mode === "register"
                 ? "Create account"
-                : "Sign in"}
+                : mode === "forgot"
+                  ? "Send reset link"
+                  : "Sign in"}
           </Button>
+          {mode === "forgot" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signin");
+                setError("");
+                setNotice("");
+              }}
+              className="min-h-11 w-full cursor-pointer text-body-sm text-taupe underline underline-offset-4 hover:text-ink"
+            >
+              Back to sign in
+            </button>
+          ) : null}
         </form>
       </div>
+    </div>
+  );
+}
+
+function VerifyEmailBanner() {
+  const search = useSearchParams();
+  const { user } = useCustomer();
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const verify = search.get("verify");
+
+  if (verify === "done") {
+    return (
+      <p className="mb-8 border border-hairline bg-muted px-4 py-3 text-body text-ink" role="status">
+        Your email is confirmed. Orders placed with this address now appear below.
+      </p>
+    );
+  }
+  if (!user || user.emailVerified) return null;
+
+  async function resend() {
+    setState("sending");
+    try {
+      const res = await fetch("/api/auth/verify-email/resend", { method: "POST" });
+      const json = await res.json();
+      setState(json.ok ? "sent" : "error");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <div className="mb-8 flex flex-col gap-3 border border-hairline bg-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between" role="status">
+      <p className="text-body text-ink">
+        {verify === "invalid"
+          ? "That confirmation link is invalid or has expired."
+          : "Confirm your email to see orders you placed as a guest with this address."}
+      </p>
+      <button
+        type="button"
+        onClick={resend}
+        disabled={state === "sending" || state === "sent"}
+        className="inline-flex min-h-11 shrink-0 cursor-pointer items-center text-label text-ink underline underline-offset-4 hover:text-brass-ink disabled:cursor-default disabled:no-underline disabled:opacity-70"
+      >
+        {state === "sent"
+          ? "Link sent. Check your inbox"
+          : state === "sending"
+            ? "Sending…"
+            : state === "error"
+              ? "Try again"
+              : "Send confirmation link"}
+      </button>
     </div>
   );
 }
@@ -293,7 +473,7 @@ function ProfilePanel() {
         giftWrap: l.giftWrap,
       })),
     );
-    showToast(`Order ${order.orderNumber} added to bag`, "cart");
+    showToast(`Order ${order.orderNumber} added to your cart`, "cart");
     setRepeating(null);
   }
 
@@ -301,11 +481,11 @@ function ProfilePanel() {
     <div className="container-ns">
       <header className="mb-10 flex flex-col gap-4 border-b border-hairline pb-8 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+          <p className="mb-2 text-eyebrow text-taupe">
             Your account
           </p>
-          <h1 className="text-display-lg text-ink">Hello, {greeting}</h1>
-          <p className="mt-2 font-serif text-[1.05rem] text-taupe">
+          <h2 className="text-display-lg text-ink">Hello, {greeting}</h2>
+          <p className="mt-2 text-body text-taupe">
             {user?.email}
           </p>
         </div>
@@ -325,12 +505,14 @@ function ProfilePanel() {
         </div>
       </header>
 
+      <VerifyEmailBanner />
+
       <div className="grid gap-10 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-12">
         <form
           onSubmit={saveProfile}
           className="h-fit space-y-4 border border-hairline bg-paper p-6 sm:p-7"
         >
-          <p className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+          <p className="text-eyebrow text-taupe">
             Profile
           </p>
           <Input
@@ -353,25 +535,27 @@ function ProfilePanel() {
         <section>
           <div className="mb-6 flex items-end justify-between gap-3">
             <div>
-              <p className="mb-1 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+              <p className="mb-1 text-eyebrow text-taupe">
                 Orders
               </p>
-              <h2 className="font-display text-[1.35rem] font-medium text-ink">
+              <h2 className="text-display-sm text-ink">
                 Recent purchases
               </h2>
             </div>
           </div>
 
           {loadingOrders ? (
-            <p className="font-serif text-taupe">Loading orders…</p>
+            <div className="flex justify-center py-10">
+              <BrandLoader size={64} label="Loading orders" />
+            </div>
           ) : null}
 
           {!loadingOrders && !orders.length ? (
             <div className="border border-dashed border-hairline bg-muted/40 p-8">
-              <p className="font-serif text-[1.1rem] text-ink/80">
+              <p className="text-body-lg text-ink/80">
                 No orders on this account yet.
               </p>
-              <p className="mt-2 font-serif text-[1rem] text-taupe">
+              <p className="mt-2 text-body text-taupe">
                 When you place an order while signed in, it shows up here. You
                 can also track a guest order anytime.
               </p>
@@ -392,10 +576,10 @@ function ProfilePanel() {
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="font-display text-[0.95rem] font-medium text-ink">
+                    <p className="font-sans tabular-nums text-base font-medium text-ink">
                       {order.orderNumber}
                     </p>
-                    <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-taupe">
+                    <p className="mt-1 text-caption capitalize text-taupe">
                       {new Date(order.createdAt).toLocaleDateString("en-GB", {
                         day: "numeric",
                         month: "short",
@@ -403,18 +587,19 @@ function ProfilePanel() {
                       })}{" "}
                       · {order.status}
                     </p>
-                    <p className="mt-3 font-serif text-[1.05rem] text-ink">
+                    <p className="mt-3 font-sans tabular-nums text-lg font-medium text-ink">
                       {format(order.totalPkr)}
                     </p>
-                    <p className="mt-2 line-clamp-2 font-serif text-[0.95rem] text-taupe">
+                    <p className="mt-2 line-clamp-2 text-body-sm text-taupe">
                       {order.lines
-                        .map((l) => `${l.name} × ${l.quantity}`)
+                        .map((l) => `${lineDisplayName(l.name)}${l.isGift ? " (gift)" : ""} × ${l.quantity}`)
                         .join(" · ")}
                     </p>
                   </div>
-                  <div className="flex flex-col gap-2 sm:items-end">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
                     <Button
                       type="button"
+                      size="sm"
                       onClick={() => repeatOrder(order)}
                       disabled={repeating === order.orderNumber}
                     >
@@ -422,12 +607,23 @@ function ProfilePanel() {
                         ? "Adding…"
                         : "Repeat order"}
                     </Button>
-                    <Link
-                      href={`/track-order?order=${encodeURIComponent(order.orderNumber)}&email=${encodeURIComponent(user?.email || "")}`}
-                      className="font-display text-[11px] font-medium uppercase tracking-[0.12em] text-brass"
-                    >
-                      Track
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-x-5">
+                      <Link
+                        href={`/track-order?order=${encodeURIComponent(order.orderNumber)}&email=${encodeURIComponent(user?.email || "")}`}
+                        className="inline-flex min-h-11 items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:text-brass-ink hover:decoration-brass"
+                      >
+                        Track
+                      </Link>
+                      {order.invoiceUrl ? (
+                        <a
+                          href={order.invoiceUrl}
+                          download={`${order.orderNumber}-invoice.pdf`}
+                          className="inline-flex min-h-11 items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:text-brass-ink hover:decoration-brass"
+                        >
+                          Download invoice
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </li>
@@ -439,20 +635,49 @@ function ProfilePanel() {
   );
 }
 
+/** Visible from the first paint: the caption shows while the animated mark loads. */
+export function AccountLoading({ caption = "Loading your account" }: { caption?: string }) {
+  return <BrandLoaderBlock label={caption} caption={caption} />;
+}
+
 export default function AccountPage() {
   const { user, loading } = useCustomer();
+  const search = useSearchParams();
+  const router = useRouter();
+  const urlNext = safeNext(search.get("next"));
+  const [rememberedNext, setRememberedNext] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRememberedNext(readRememberedNext());
+  }, []);
+
+  const next = urlNext ?? rememberedNext;
+  const returning = Boolean(user && next);
+
+  // Signed in (email, new account, or back from Google): return to where they came from.
+  useEffect(() => {
+    if (!user || !next) return;
+    forgetNext();
+    router.replace(next);
+  }, [user, next, router]);
 
   return (
     <section className="bg-canvas section-y">
-      {loading ? (
-        <div className="container-ns max-w-lg">
-          <p className="font-serif text-taupe">Loading your account…</p>
-        </div>
+      {loading || returning ? (
+        <AccountLoading
+          caption={
+            !returning
+              ? undefined
+              : next?.startsWith("/checkout")
+                ? "Signed in. Taking you back to checkout"
+                : "Signed in. Taking you back"
+          }
+        />
       ) : user ? (
         <ProfilePanel />
       ) : (
         <div className="container-ns">
-          <AuthPanel />
+          <AuthPanel next={next} />
         </div>
       )}
     </section>

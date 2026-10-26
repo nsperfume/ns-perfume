@@ -1,34 +1,47 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminWrite, adminDenied } from "@/lib/auth";
 import { mapProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
+import { isDuplicateKey, productCreateSchema, validationError } from "@/lib/validation/catalog";
+import { revalidateStorefront } from "@/lib/revalidate";
+
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export async function GET(req: Request) {
   try {
     await connectDB();
     const { searchParams } = new URL(req.url);
-    const q = searchParams.get("q")?.trim();
-    const status = searchParams.get("status") || "active";
+    const q = searchParams.get("q")?.trim().slice(0, 80);
     const tag = searchParams.get("tag");
-    const all = searchParams.get("all") === "1";
+    const wantsHidden =
+      searchParams.get("all") === "1" ||
+      (searchParams.has("status") && searchParams.get("status") !== "active");
+    // Drafts and archived products are admin-only.
+    const isAdmin = wantsHidden ? Boolean(await requireAdmin()) : false;
+    const all = isAdmin && searchParams.get("all") === "1";
+    const status = isAdmin ? searchParams.get("status") || "active" : "active";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: any = {};
     if (!all) filter.status = status;
     if (tag) filter.tags = tag;
     if (q) {
+      const pattern = { $regex: escapeRegex(q), $options: "i" };
       filter.$or = [
-        { name: { $regex: q, $options: "i" } },
-        { descriptor: { $regex: q, $options: "i" } },
-        { handle: { $regex: q, $options: "i" } },
-        { "topNotes": { $regex: q, $options: "i" } },
-        { "heartNotes": { $regex: q, $options: "i" } },
-        { "baseNotes": { $regex: q, $options: "i" } },
+        { name: pattern },
+        { descriptor: pattern },
+        { handle: pattern },
+        { topNotes: pattern },
+        { heartNotes: pattern },
+        { baseNotes: pattern },
       ];
     }
 
-    const docs = await ProductModel.find(filter).sort({ updatedAt: -1 }).lean();
+    const docs = await ProductModel.find(filter)
+      .sort({ updatedAt: -1 })
+      .limit(500)
+      .lean();
     return jsonOk(docs.map(mapProduct));
   } catch (e) {
     console.error(e);
@@ -38,17 +51,21 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) return jsonError("Unauthorized", 401);
+    const admin = await requireAdminWrite();
+    if (!admin) return adminDenied();
     await connectDB();
-    const body = await req.json();
-    if (!body.handle || !body.name) {
-      return jsonError("handle and name are required");
-    }
-    const created = await ProductModel.create(body);
+    const parsed = productCreateSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return validationError(parsed.error);
+    const created = await ProductModel.create(parsed.data);
+    revalidateStorefront();
     return jsonOk(mapProduct(created.toObject()), { status: 201 });
   } catch (e) {
+    if (isDuplicateKey(e)) {
+      return jsonError("Another product already uses this URL. Change the name or URL.", 409, {
+        fieldErrors: { handle: "Already in use" },
+      });
+    }
     console.error(e);
-    return jsonError("Failed to create product", 500, String(e));
+    return jsonError("Failed to create product", 500);
   }
 }

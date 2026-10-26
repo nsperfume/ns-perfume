@@ -1,73 +1,81 @@
-"use client";
-
-import { useState } from "react";
+import type { Metadata } from "next";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Price } from "@/components/commerce/price";
 import { PageHero } from "@/components/layout/page-hero";
-import { useCart } from "@/context/cart";
-import { useUi } from "@/context/ui";
 import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
+import { siteConfig } from "@/data/site";
 
-const amounts = [5000, 10000, 15000, 25000];
+export const metadata: Metadata = {
+  title: "Gift cards",
+  description:
+    "Digital NS Perfume gift cards are coming soon. Until then, give the Discovery Set or a gift set, or ask our team to help you choose.",
+  alternates: { canonical: "/gift-cards" },
+  // Placeholder until gift cards launch: keep it out of search results.
+  robots: { index: false, follow: true },
+};
 
+/**
+ * Informational until gift card codes can be issued and redeemed at checkout.
+ * Nothing on this page adds to the cart.
+ */
 export default function GiftCardsPage() {
-  const { addItem } = useCart();
-  const { showToast } = useUi();
-  const [amount, setAmount] = useState(10000);
-
   return (
     <>
       <PageHero
         title={pageCopy.giftCards.title}
-        description={pageCopy.giftCards.description}
+        description="Digital gift cards are on the way. Until then, a Discovery Set or gift set lets them find a scent that fits their climate and wardrobe."
         image={siteImages.giftCards}
         alt="NS Perfume gift card presentation with bottles in soft light"
         objectPosition="center 45%"
       />
       <section className="bg-canvas section-y">
-        <div className="container-ns grid gap-12 lg:grid-cols-2">
-          <div className="flex min-h-80 items-center justify-center rounded-lg border border-hairline bg-paper p-12">
+        <div className="container-ns grid gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="flex min-h-80 items-center justify-center rounded-xs border border-hairline bg-paper p-12">
             <div className="text-center">
-              <p className="text-display-md">Gift Card</p>
-              <div className="mt-4 text-2xl">
-                <Price amountPkr={amount} />
-              </div>
+              <p className="text-eyebrow text-brass-ink">
+                Coming soon
+              </p>
+              <h2 className="mt-3 text-display-md">Digital gift cards</h2>
+              <p className="mx-auto mt-4 max-w-sm text-body text-taupe">
+                We are not selling gift cards yet. Check back soon, or choose
+                one of the gifting options on this page.
+              </p>
             </div>
           </div>
           <div>
-            <p className="mb-2 text-caption text-taupe">Amount</p>
-            <div className="mb-8 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-              {amounts.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setAmount(a)}
-                  className={`min-h-11 w-full rounded-xs border px-3 font-mono text-sm tabular-nums sm:w-auto sm:px-4 ${
-                    amount === a
-                      ? "border-ink bg-ink text-paper"
-                      : "border-hairline text-taupe"
-                  }`}
-                >
-                  <Price amountPkr={a} className="text-sm" />
-                </button>
-              ))}
+            <h2 className="text-heading-sm text-ink">Gifting today</h2>
+            <p className="mt-3 max-w-[38rem] text-body-lg text-taupe">
+              The Discovery Set is the easy choice when you do not know their
+              favourite yet. Six perfumes to wear for a few days each, so they
+              can settle on a full bottle later. You can add gift wrap and a
+              short note on any product page.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button href="/products/discovery-set-six">
+                Shop the Discovery Set
+              </Button>
+              <Button href="/collections/gift-sets" variant="secondary">
+                Browse gift sets
+              </Button>
             </div>
-            <Button
-              onClick={() => {
-                addItem({
-                  productHandle: "gift-card",
-                  name: "Gift Card",
-                  sizeMl: 0,
-                  price: amount,
-                  sku: `NS-GC-${amount}`,
-                  image: siteImages.giftCards,
-                });
-                showToast("Gift card added to your bag", "cart");
-              }}
-            >
-              Add Gift Card
-            </Button>
+            <p className="mt-8 text-body text-taupe">
+              Buying for a team or an occasion?{" "}
+              <Link
+                href="/contact"
+                className="font-semibold text-brass-ink underline underline-offset-4"
+              >
+                Contact care
+              </Link>{" "}
+              or call{" "}
+              <a
+                href={`tel:${siteConfig.phoneDisplay}`}
+                className="font-semibold text-brass-ink underline underline-offset-4"
+              >
+                {siteConfig.phone}
+              </a>{" "}
+              and we will help you choose.
+            </p>
           </div>
         </div>
       </section>

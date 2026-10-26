@@ -1,6 +1,9 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import slugify from "slugify";
+import { z } from "zod";
+import { XIcon } from "@animateicons/react/lucide";
 import type { StoreProduct } from "@/lib/mappers";
 import { AdminImageField } from "@/components/admin/image-field";
 import { AdminRichTextEditor } from "@/components/admin/rich-text-editor";
@@ -9,16 +12,27 @@ import {
   AdminFormSection,
   adminFieldClass,
 } from "@/components/admin/form-section";
-import { Select } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Select } from "@/components/admin/select";
+import { Button } from "@/components/admin/button";
+import { AdminIconAction } from "@/components/admin/ui";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { toast } from "@/components/admin/toast";
+import {
+  AdminFieldError,
+  AdminFormError,
+  focusFirstError,
+  useFormValidation,
+  type FieldErrors,
+} from "@/components/admin/form-validation";
+import { useUnsavedChangesGuard } from "@/components/admin/unsaved-changes";
 import { cn } from "@/lib/cn";
 import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 
 type Props = {
   initial: StoreProduct | null;
   isNew: boolean;
-  onSaved: () => void;
+  /** Called after a successful save or delete with the saved product (null after delete). */
+  onSaved: (product: StoreProduct | null, meta: { created: boolean; deleted: boolean }) => void;
   canDelete?: boolean;
 };
 
@@ -38,7 +52,142 @@ const SCENT_FAMILIES = [
   { value: "aromatic", label: "Aromatic" },
 ] as const;
 
-const empty = {
+/** ml / price are NaN while the field is empty so validation can flag it. */
+type SizeRow = { ml: number; price: number; sku: string; compareAt?: number };
+
+/* Mirrors src/lib/validation/catalog.ts (not imported: it pulls server code). */
+const HANDLE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_NOTES = 12;
+const MAX_INGREDIENTS = 60;
+const MAX_IMAGES = 12;
+const MAX_SIZES = 8;
+
+const sizeRule = z
+  .object({
+    ml: z
+      .number({ error: "Enter the size in ml" })
+      .int("Use whole millilitres")
+      .min(1, "Enter the size in ml")
+      .max(1000, "Use 1000 ml or less"),
+    price: z
+      .number({ error: "Enter a price" })
+      .int("Use a whole rupee amount")
+      .min(1, "Enter a price above zero")
+      .max(10_000_000, "Price is too high"),
+    compareAt: z.number().optional(),
+  })
+  .superRefine((s, ctx) => {
+    if (s.compareAt != null && Number.isFinite(s.compareAt) && s.compareAt > 0) {
+      if (Number.isFinite(s.price) && s.compareAt <= s.price) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["compareAt"],
+          message: "Must be higher than the price",
+        });
+      }
+    }
+  });
+
+const productSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Enter the product name")
+      .min(2, "Use at least 2 characters")
+      .max(80, "Keep the name under 80 characters"),
+    // Format is checked below, only once there is a name to build it from.
+    handle: z.string().max(80, "Keep the web address under 80 characters"),
+    descriptor: z.string().max(160, "Keep this under 160 characters"),
+    countryOfOrigin: z.string().max(60, "Keep this under 60 characters"),
+    prices: z
+      .array(sizeRule)
+      .min(1, "Add at least one size")
+      .max(MAX_SIZES, `Add up to ${MAX_SIZES} sizes`),
+    gallery: z.array(z.string()).max(MAX_IMAGES, `Add up to ${MAX_IMAGES} images`),
+    status: z.string(),
+  })
+  .superRefine((f, ctx) => {
+    if (handleProblem(f.name, f.handle)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["handle"],
+        message: handleProblem(f.name, f.handle) as string,
+      });
+    }
+    const seen = new Set<number>();
+    f.prices.forEach((p, i) => {
+      if (!Number.isFinite(p.ml)) return;
+      if (seen.has(p.ml)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["prices", i, "ml"],
+          message: "This size is already listed",
+        });
+      }
+      seen.add(p.ml);
+    });
+    if (f.status === "active" && f.gallery.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["gallery"],
+        message: "Add a main image to publish, or save as a draft",
+      });
+    }
+  });
+
+/**
+ * Web address problem, if any. A blank name already has its own error, so
+ * the empty web address made from it does not get a second one.
+ */
+function handleProblem(name: string, handle: string): string | null {
+  if (HANDLE_RE.test(handle)) return null;
+  if (!handle) return name.trim() ? "Enter a web address" : null;
+  return "Use lowercase letters, numbers and dashes";
+}
+
+function toHandle(name: string) {
+  return slugify(name, { lower: true, strict: true, trim: true })
+    .slice(0, 80)
+    .replace(/-+$/g, "");
+}
+
+function autoSku(handle: string, ml: number) {
+  return `NS-${handle}-${ml}`
+    .toUpperCase()
+    .replace(/[^A-Z0-9._-]/g, "-")
+    .slice(0, 60);
+}
+
+type FormState = {
+  handle: string;
+  name: string;
+  descriptor: string;
+  description: string;
+  concentration: string;
+  family: string;
+  gender: string;
+  prices: SizeRow[];
+  topNotes: string[];
+  heartNotes: string[];
+  baseNotes: string[];
+  sillage: number;
+  longevity: number;
+  ingredients: string[];
+  containsAlcohol: boolean;
+  countryOfOrigin: string;
+  story: string;
+  howToWear: string;
+  tags: string[];
+  collectionHandles: string[];
+  badges: string[];
+  gallery: string[];
+  relatedHandles: string[];
+  inStock: boolean;
+  status: string;
+};
+
+const EMPTY: FormState = {
   handle: "",
   name: "",
   descriptor: "",
@@ -46,29 +195,62 @@ const empty = {
   concentration: "EDP",
   family: "fresh",
   gender: "unisex",
-  prices: [{ ml: 50, price: 15000, sku: "" }],
-  topNotes: [] as string[],
-  heartNotes: [] as string[],
-  baseNotes: [] as string[],
+  prices: [{ ml: 50, price: Number.NaN, sku: "" }],
+  topNotes: [],
+  heartNotes: [],
+  baseNotes: [],
   sillage: 3,
   longevity: 3,
-  ingredients: [] as string[],
+  ingredients: [],
   containsAlcohol: true,
-  countryOfOrigin: "—",
+  countryOfOrigin: "",
   story: "",
   howToWear: "",
-  tags: [] as string[],
-  collectionHandles: [] as string[],
-  badges: [] as string[],
-  gallery: [] as string[],
-  relatedHandles: [] as string[],
+  tags: [],
+  collectionHandles: [],
+  badges: [],
+  gallery: [],
+  relatedHandles: [],
   inStock: true,
-  status: "active",
+  status: "draft",
 };
 
 function initialGallery(product: StoreProduct) {
   if (product.gallery?.length) return [...product.gallery];
   return [product.imagePrimary, product.imageSecondary].filter(Boolean);
+}
+
+function fromProduct(p: StoreProduct): FormState {
+  return {
+    handle: p.handle,
+    name: p.name,
+    descriptor: p.descriptor,
+    description: toRichHtml(p.description || ""),
+    concentration: p.concentration,
+    family: p.family,
+    gender: p.gender,
+    prices: p.prices.map((s) => ({ ...s })),
+    topNotes: [...p.topNotes],
+    heartNotes: [...p.heartNotes],
+    baseNotes: [...p.baseNotes],
+    sillage: p.sillage,
+    longevity: p.longevity,
+    ingredients: [...p.ingredients],
+    containsAlcohol: p.containsAlcohol !== false,
+    // Older records stored a dash placeholder for "not set"
+    countryOfOrigin: /^[\u2013\u2014-]$/.test(p.countryOfOrigin?.trim() || "")
+      ? ""
+      : p.countryOfOrigin || "",
+    story: toRichHtml(p.story),
+    howToWear: toRichHtml(p.howToWear),
+    tags: [...p.tags],
+    collectionHandles: [...(p.collectionHandles || [])],
+    badges: [...p.badges],
+    gallery: initialGallery(p),
+    relatedHandles: [...p.relatedHandles],
+    inStock: p.inStock,
+    status: p.status || "active",
+  };
 }
 
 function familyOptions(current: string) {
@@ -85,25 +267,13 @@ function familyOptions(current: string) {
   return list;
 }
 
-function parseNotes(value: string) {
-  return value
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
 /** Drop alcohol carrier lines when marking a bottle alcohol-free. */
 function withoutAlcoholIngredients(list: string[]) {
   return list.filter((item) => !/alcohol/i.test(item));
 }
 
-function buildTags(form: {
-  gender: string;
-  family: string;
-  concentration: string;
-  badges: string[];
-  tags: string[];
-}) {
+/** Filter tags are derived from the scent profile; owners never type them. */
+function buildTags(form: FormState) {
   const auto = [
     `gender:${form.gender}`,
     `family:${form.family}`,
@@ -120,10 +290,261 @@ function buildTags(form: {
   return Array.from(new Set([...auto, ...keep]));
 }
 
-const selectTrigger =
-  "border-admin-input-border! bg-admin-soft-2! text-admin-ink! hover:border-brass! data-[state=open]:border-brass!";
-const selectClass =
-  "[&_label]:text-[13px]! [&_label]:font-semibold! [&_label]:text-admin-ink!";
+/** Map API field keys (sizes.0.pricePkr, imagePrimary…) onto form field keys. */
+function mapServerErrors(fieldErrors: Record<string, string> | undefined) {
+  const out: FieldErrors = {};
+  if (!fieldErrors) return out;
+  for (const [raw, message] of Object.entries(fieldErrors)) {
+    let key = raw
+      .replace(/^sizes\b/, "prices")
+      .replace(/\.pricePkr$/, ".price")
+      .replace(/\.compareAtPkr$/, ".compareAt");
+    if (/^(imagePrimary|imageSecondary|gallery)/.test(key)) key = "gallery";
+    if (/^prices\.\d+\.sku$/.test(key)) key = "prices";
+    if (!out[key]) out[key] = message;
+  }
+  return out;
+}
+
+const selectLabel =
+  "[&_label]:text-sm! [&_label]:font-semibold! [&_label]:text-admin-ink!";
+
+/* ---------- small field controls ---------- */
+
+function NumberInput({
+  name,
+  label,
+  value,
+  onChange,
+  onBlur,
+  prefix,
+  suffix,
+  placeholder,
+  invalid,
+}: {
+  name: string;
+  label: string;
+  value: number | undefined;
+  onChange: (n: number) => void;
+  onBlur?: () => void;
+  prefix?: string;
+  suffix?: string;
+  placeholder?: string;
+  invalid?: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  const has = value != null && Number.isFinite(value);
+  const shown = has
+    ? focused
+      ? String(value)
+      : (value as number).toLocaleString("en-PK")
+    : "";
+  return (
+    <div className="relative">
+      {prefix ? (
+        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[0.9375rem] text-admin-muted">
+          {prefix}
+        </span>
+      ) : null}
+      <input
+        name={name}
+        aria-label={label}
+        inputMode="numeric"
+        autoComplete="off"
+        value={shown}
+        onFocus={() => setFocused(true)}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
+          onChange(digits === "" ? Number.NaN : Number(digits));
+        }}
+        onBlur={() => {
+          setFocused(false);
+          onBlur?.();
+        }}
+        placeholder={placeholder}
+        aria-invalid={invalid || undefined}
+        className={cn(
+          adminFieldClass,
+          "tabular-nums placeholder:font-sans",
+          prefix && "pl-10",
+          suffix && "pr-11",
+        )}
+      />
+      {suffix ? (
+        <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[0.9375rem] text-admin-muted">
+          {suffix}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/** Type a value and press Enter (or a comma) to add it as a chip. */
+function ChipsField({
+  label,
+  name,
+  values,
+  onChange,
+  placeholder,
+  max,
+  maxLength,
+}: {
+  label: string;
+  name: string;
+  values: string[];
+  onChange: (next: string[]) => void;
+  placeholder: string;
+  max: number;
+  maxLength: number;
+}) {
+  const id = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [draft, setDraft] = useState("");
+  const full = values.length >= max;
+
+  function add(raw: string) {
+    const parts = raw
+      .split(",")
+      .map((s) => s.trim().slice(0, maxLength))
+      .filter(Boolean);
+    setDraft("");
+    if (!parts.length) return;
+    const next = [...values];
+    for (const p of parts) {
+      if (next.length >= max) break;
+      if (!next.some((v) => v.toLowerCase() === p.toLowerCase())) next.push(p);
+    }
+    if (next.length !== values.length) onChange(next);
+  }
+
+  return (
+    <div data-field={name}>
+      <AdminFieldLabel htmlFor={id}>{label}</AdminFieldLabel>
+      <div
+        className="flex min-h-11 cursor-text flex-wrap items-center gap-1.5 rounded-md border border-admin-input-border bg-admin-soft-2 px-2 py-1.5 transition-colors focus-within:border-brass focus-within:ring-2 focus-within:ring-brass/20"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {values.map((v, i) => (
+          <span
+            key={`${v}-${i}`}
+            className="inline-flex items-center gap-0.5 rounded-full border border-admin-line bg-admin-paper py-0.5 pl-3 pr-0.5 text-sm font-medium text-admin-ink"
+          >
+            {v}
+            <button
+              type="button"
+              aria-label={`Remove ${v}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(values.filter((_, j) => j !== i));
+              }}
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-admin-muted hover:bg-admin-soft hover:text-admin-ink"
+            >
+              <XIcon size={14} color="currentColor" isAnimated={false} />
+            </button>
+          </span>
+        ))}
+        {!full ? (
+          <input
+            ref={inputRef}
+            id={id}
+            value={draft}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v.includes(",")) add(v);
+              else setDraft(v);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                add(draft);
+              } else if (e.key === "Backspace" && !draft && values.length) {
+                onChange(values.slice(0, -1));
+              }
+            }}
+            onBlur={() => add(draft)}
+            placeholder={values.length ? "Add another" : placeholder}
+            className="min-w-36 flex-1 bg-transparent px-1.5 py-1 text-base text-admin-ink outline-none placeholder:text-admin-faint"
+          />
+        ) : (
+          <span className="px-1.5 text-sm text-admin-muted">Limit reached</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** 1 to 5 segmented scale with plain-language ends. */
+function ScaleField({
+  label,
+  value,
+  onChange,
+  low,
+  high,
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+  low: string;
+  high: string;
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-sm font-semibold text-admin-ink">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="grid grid-cols-5 gap-1 rounded-md border border-admin-input-border bg-admin-soft-2 p-1"
+      >
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            role="radio"
+            aria-checked={value === n}
+            aria-label={`${label} ${n} of 5`}
+            onClick={() => onChange(n)}
+            className={cn(
+              "h-9 cursor-pointer rounded font-sans tabular-nums text-sm font-semibold transition-colors",
+              value === n
+                ? "bg-admin-ink text-admin-paper"
+                : "text-admin-muted hover:bg-admin-soft hover:text-admin-ink",
+            )}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+      <div className="mt-1.5 flex justify-between text-[0.8125rem] text-admin-muted">
+        <span>{low}</span>
+        <span>{high}</span>
+      </div>
+    </div>
+  );
+}
+
+function CheckRow({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
+  return (
+    <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 text-[0.9375rem] font-medium text-admin-ink transition-colors hover:border-admin-muted">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-4.5 w-4.5 shrink-0 cursor-pointer accent-brass"
+      />
+      {label}
+    </label>
+  );
+}
+
+/* ---------- form ---------- */
 
 export function ProductForm({
   initial,
@@ -131,41 +552,41 @@ export function ProductForm({
   onSaved,
   canDelete = false,
 }: Props) {
-  const [form, setForm] = useState(() => {
-    if (!initial) return empty;
-    return {
-      handle: initial.handle,
-      name: initial.name,
-      descriptor: initial.descriptor,
-      description: toRichHtml(initial.description || ""),
-      concentration: initial.concentration,
-      family: initial.family,
-      gender: initial.gender,
-      prices: initial.prices,
-      topNotes: initial.topNotes,
-      heartNotes: initial.heartNotes,
-      baseNotes: initial.baseNotes,
-      sillage: initial.sillage,
-      longevity: initial.longevity,
-      ingredients: initial.ingredients,
-      containsAlcohol: initial.containsAlcohol !== false,
-      countryOfOrigin: initial.countryOfOrigin,
-      story: toRichHtml(initial.story),
-      howToWear: toRichHtml(initial.howToWear),
-      tags: initial.tags,
-      collectionHandles: initial.collectionHandles || [],
-      badges: initial.badges,
-      gallery: initialGallery(initial),
-      relatedHandles: initial.relatedHandles,
-      inStock: initial.inStock,
-      status: initial.status || "active",
-    };
-  });
+  const formRef = useRef<HTMLFormElement>(null);
+  const [form, setForm] = useState<FormState>(() =>
+    initial ? fromProduct(initial) : EMPTY,
+  );
+  const [snapshot, setSnapshot] = useState(() => JSON.stringify(form));
+  const [handleEdited, setHandleEdited] = useState(!isNew);
+  const [urlOpen, setUrlOpen] = useState(false);
   const [collections, setCollections] = useState<CollectionOption[]>([]);
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const v = useFormValidation(productSchema);
+
+  const dirty = JSON.stringify(form) !== snapshot;
+  const leaveGuard = useUnsavedChangesGuard(dirty && !saving && !deleting);
+
+  const validationInput = useMemo(
+    () => ({
+      name: form.name,
+      handle: form.handle,
+      descriptor: form.descriptor,
+      countryOfOrigin: form.countryOfOrigin,
+      prices: form.prices,
+      gallery: form.gallery,
+      status: form.status,
+    }),
+    [form],
+  );
+
+  // After the first submit attempt, errors update as fields change.
+  const { submitted, revalidate } = v;
+  useEffect(() => {
+    if (submitted) revalidate(validationInput);
+  }, [submitted, revalidate, validationInput]);
 
   useEffect(() => {
     fetch("/api/collections?all=1")
@@ -183,50 +604,104 @@ export function ProductForm({
         );
       })
       .catch(() => {
-        /* ignore */
+        /* list stays empty */
       });
   }, []);
 
-  function setField<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
+  function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function toggleCollection(handle: string) {
+  function setName(name: string) {
+    setForm((f) => ({
+      ...f,
+      name,
+      handle: isNew && !handleEdited ? toHandle(name) : f.handle,
+    }));
+  }
+
+  function setSize(index: number, patch: Partial<SizeRow>) {
     setForm((f) => {
-      const has = f.collectionHandles.includes(handle);
-      return {
-        ...f,
-        collectionHandles: has
-          ? f.collectionHandles.filter((h) => h !== handle)
-          : [...f.collectionHandles, handle],
-      };
+      const prices = [...f.prices];
+      const row = prices[index];
+      const next = { ...row, ...patch };
+      // Auto SKUs follow the size; custom SKUs from older records are kept.
+      if (patch.ml !== undefined && row.sku && row.sku === autoSku(f.handle, row.ml)) {
+        next.sku = "";
+      }
+      prices[index] = next;
+      return { ...f, prices };
+    });
+  }
+
+  function toggleCollection(handle: string) {
+    setForm((f) => ({
+      ...f,
+      collectionHandles: f.collectionHandles.includes(handle)
+        ? f.collectionHandles.filter((h) => h !== handle)
+        : [...f.collectionHandles, handle],
+    }));
+  }
+
+  function setGalleryItem(index: number, url: string) {
+    setForm((f) => {
+      const gallery = [...f.gallery];
+      if (!url.trim()) gallery.splice(index, 1);
+      else gallery[index] = url.trim();
+      return { ...f, gallery };
+    });
+  }
+
+  function removeGalleryItem(index: number) {
+    setForm((f) => ({ ...f, gallery: f.gallery.filter((_, i) => i !== index) }));
+  }
+
+  function makeMain(index: number) {
+    setForm((f) => {
+      const gallery = [...f.gallery];
+      const [picked] = gallery.splice(index, 1);
+      return { ...f, gallery: [picked, ...gallery] };
     });
   }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
-    setError("");
-    const gallery = form.gallery.map((u) => u.trim()).filter(Boolean);
-    if (!gallery.length) {
-      setSaving(false);
-      setError("Add at least one gallery image (first image is the product card).");
+    if (saving) return;
+    setServerError("");
+    if (!v.validate(validationInput, formRef.current)) {
+      if (handleProblem(form.name, form.handle)) setUrlOpen(true);
+      toast.error("Check the highlighted fields");
       return;
     }
 
+    const gallery = form.gallery.map((u) => u.trim()).filter(Boolean);
+    const used = new Set<string>();
+    const sizes = form.prices.map((p) => {
+      const base = p.sku || autoSku(form.handle, p.ml);
+      let sku = base;
+      let n = 2;
+      while (used.has(sku.toLowerCase())) sku = `${base}-${n++}`.slice(0, 60);
+      used.add(sku.toLowerCase());
+      return {
+        ml: p.ml,
+        pricePkr: p.price,
+        sku,
+        // Keep the sale "was" price; omit when blank so it is cleared.
+        ...(p.compareAt != null && Number.isFinite(p.compareAt) && p.compareAt > 0
+          ? { compareAtPkr: p.compareAt }
+          : {}),
+      };
+    });
+
     const payload = {
       handle: form.handle,
-      name: form.name,
-      descriptor: form.descriptor,
+      name: form.name.trim(),
+      descriptor: form.descriptor.trim(),
       description: sanitizeRichHtml(toRichHtml(form.description)),
       concentration: form.concentration,
       family: form.family,
       gender: form.gender,
-      sizes: form.prices.map((p) => ({
-        ml: p.ml,
-        pricePkr: p.price,
-        sku: p.sku || `NS-${form.handle}-${p.ml}`.toUpperCase(),
-      })),
+      sizes,
       topNotes: form.topNotes,
       heartNotes: form.heartNotes,
       baseNotes: form.baseNotes,
@@ -236,228 +711,389 @@ export function ProductForm({
         ? form.ingredients
         : withoutAlcoholIngredients(form.ingredients),
       containsAlcohol: form.containsAlcohol,
-      countryOfOrigin: form.countryOfOrigin,
+      // Left blank means "not shown"; never store a placeholder dash.
+      countryOfOrigin: form.countryOfOrigin.trim(),
       story: sanitizeRichHtml(toRichHtml(form.story)),
       howToWear: sanitizeRichHtml(toRichHtml(form.howToWear)),
       tags: buildTags(form),
       collectionHandles: form.collectionHandles,
       badges: form.badges,
       // First gallery image = card/hero primary; second = hover.
-      imagePrimary: gallery[0],
-      imageSecondary: gallery[1] || gallery[0],
+      imagePrimary: gallery[0] || "",
+      imageSecondary: gallery[1] || gallery[0] || "",
       gallery,
       relatedHandles: form.relatedHandles,
       inStock: form.inStock,
       status: form.status,
     };
 
-    const res = await fetch(
-      isNew ? "/api/products" : `/api/products/${form.handle}`,
-      {
-        method: isNew ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    );
-    const json = await res.json();
-    setSaving(false);
-    if (!json.ok) {
-      setError(json.error || "Save failed");
-      return;
+    setSaving(true);
+    try {
+      const res = await fetch(
+        isNew
+          ? "/api/products"
+          : `/api/products/${encodeURIComponent(initial?.handle || form.handle)}`,
+        {
+          method: isNew ? "POST" : "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+      const json = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        data?: StoreProduct;
+        error?: string;
+        details?: { fieldErrors?: Record<string, string> };
+      } | null;
+      if (!json?.ok) {
+        const message =
+          json?.error ||
+          (res.status === 401 || res.status === 403
+            ? "Your session ended. Sign in again."
+            : "Could not save the product. Try again.");
+        const fieldErrors = mapServerErrors(json?.details?.fieldErrors);
+        setServerError(message);
+        toast.error(message);
+        if (Object.keys(fieldErrors).length) {
+          v.setErrors(fieldErrors);
+          if (fieldErrors.handle) setUrlOpen(true);
+          requestAnimationFrame(() =>
+            focusFirstError(Object.keys(fieldErrors), formRef.current),
+          );
+        }
+        return;
+      }
+      setSnapshot(JSON.stringify(form));
+      toast.success(isNew ? "Product created" : "Product saved");
+      onSaved(json.data ?? null, { created: isNew, deleted: false });
+    } catch {
+      const message = "Network error. Check your connection and try again.";
+      setServerError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
     }
-    onSaved();
   }
 
   async function remove() {
     setDeleting(true);
-    setError("");
     try {
-      const res = await fetch(`/api/products/${form.handle}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
-      if (json.ok) {
+      const res = await fetch(
+        `/api/products/${encodeURIComponent(initial?.handle || form.handle)}`,
+        { method: "DELETE" },
+      );
+      const json = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+      } | null;
+      if (json?.ok) {
         setDeleteOpen(false);
-        onSaved();
+        setSnapshot(JSON.stringify(form));
+        toast.success(`${form.name || "Product"} deleted`);
+        onSaved(null, { created: false, deleted: true });
       } else {
-        setError(json.error || "Delete failed");
+        toast.error(json?.error || "Could not delete the product");
       }
     } catch {
-      setError("Network error while deleting");
+      toast.error("Network error. The product was not deleted.");
     } finally {
       setDeleting(false);
     }
   }
 
-  function setGalleryItem(index: number, url: string) {
-    const next = [...form.gallery];
-    if (!url.trim()) next.splice(index, 1);
-    else next[index] = url.trim();
-    setField("gallery", next.filter(Boolean));
-  }
-
-  function removeSize(index: number) {
-    if (form.prices.length <= 1) return;
-    setField(
-      "prices",
-      form.prices.filter((_, i) => i !== index),
-    );
-  }
-
-  function removeGallerySlot(index: number) {
-    setField(
-      "gallery",
-      form.gallery.filter((_, i) => i !== index),
-    );
-  }
+  const err = v.errors;
+  const publishNeedsImage = form.status === "active" && form.gallery.length === 0;
 
   return (
-    <form onSubmit={save} className="w-full max-w-none">
-      <div className="grid gap-5 pb-4 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start xl:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
-        {/* Left: Basics, Images, Story, Sizes */}
-        <div className="min-w-0 space-y-5">
-          <AdminFormSection
-            title="Basics"
-            description="Name and URL customers see on the product page."
-            tip="The handle becomes /products/your-handle. Keep it short and stable. Once created, the handle cannot change."
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <AdminFieldLabel
-                  tip="Shown as the main product title on the storefront."
-                  required
-                >
-                  Product name
-                </AdminFieldLabel>
-                <input
-                  className={adminFieldClass}
-                  required
-                  value={form.name}
-                  onChange={(e) => {
-                    setField("name", e.target.value);
-                    if (isNew) {
-                      setField(
-                        "handle",
-                        e.target.value
-                          .toLowerCase()
-                          .replace(/[^a-z0-9]+/g, "-")
-                          .replace(/^-|-$/g, ""),
-                      );
-                    }
-                  }}
-                  placeholder="e.g. Amber Noir"
-                />
+    <form ref={formRef} onSubmit={save} noValidate className="w-full">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
+        {/* Main column */}
+        <div className="min-w-0 space-y-6">
+          <AdminFormSection title="Product details">
+            <div>
+              <AdminFieldLabel htmlFor="product-name" required>
+                Name
+              </AdminFieldLabel>
+              <input
+                id="product-name"
+                name="name"
+                className={adminFieldClass}
+                value={form.name}
+                maxLength={80}
+                onChange={(e) => setName(e.target.value)}
+                aria-invalid={err.name ? true : undefined}
+                placeholder="Amber Noir"
+              />
+              <AdminFieldError message={err.name} />
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] text-admin-muted">
+                <span className="min-w-0 truncate">
+                  Web address:{" "}
+                  <span className="text-admin-ink">
+                    /products/{form.handle || "your-product"}
+                  </span>
+                </span>
+                {isNew ? (
+                  <button
+                    type="button"
+                    onClick={() => setUrlOpen((o) => !o)}
+                    className="cursor-pointer font-semibold text-admin-accent hover:underline"
+                    aria-expanded={urlOpen}
+                  >
+                    {urlOpen ? "Done" : "Edit web address"}
+                  </button>
+                ) : null}
               </div>
-              <div>
-                <AdminFieldLabel
-                  tip="URL slug only: lowercase letters, numbers, hyphens. Locked after create."
-                  required
-                >
-                  Handle (URL)
-                </AdminFieldLabel>
-                <input
-                  className={adminFieldClass}
-                  required
-                  disabled={!isNew}
-                  value={form.handle}
-                  onChange={(e) =>
-                    setField(
-                      "handle",
-                      e.target.value.toLowerCase().replace(/\s+/g, "-"),
-                    )
-                  }
-                  placeholder="amber-noir"
-                />
-              </div>
-              <div>
-                <AdminFieldLabel tip="One short line under the title on product cards.">
-                  Short descriptor
-                </AdminFieldLabel>
-                <input
-                  className={adminFieldClass}
-                  value={form.descriptor}
-                  onChange={(e) => setField("descriptor", e.target.value)}
-                  placeholder="Warm amber with a cedar trail"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <AdminRichTextEditor
-                  label="Product description"
-                  tip="Shown in the buy column on the product page, under the short descriptor."
-                  value={form.description}
-                  minHeightClass="min-h-32"
-                  placeholder="What it smells like, when it suits, and how it wears."
-                  onChange={(description) => setField("description", description)}
-                />
-              </div>
+              {isNew && urlOpen ? (
+                <div className="mt-3">
+                  <AdminFieldLabel htmlFor="product-handle" required>
+                    Web address
+                  </AdminFieldLabel>
+                  <div className="flex items-stretch overflow-hidden rounded-md border border-admin-input-border bg-admin-soft-2 focus-within:border-brass focus-within:ring-2 focus-within:ring-brass/20">
+                    <span className="flex items-center border-r border-admin-line bg-admin-soft px-3 text-[0.9375rem] text-admin-muted">
+                      /products/
+                    </span>
+                    <input
+                      id="product-handle"
+                      name="handle"
+                      className="min-h-11 min-w-0 flex-1 bg-transparent px-3 text-base text-admin-ink outline-none"
+                      value={form.handle}
+                      maxLength={80}
+                      aria-invalid={err.handle ? true : undefined}
+                      onChange={(e) => {
+                        setHandleEdited(true);
+                        setField(
+                          "handle",
+                          e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9-]+/g, "-")
+                            .replace(/-{2,}/g, "-"),
+                        );
+                      }}
+                      onBlur={() =>
+                        setField("handle", form.handle.replace(/^-+|-+$/g, ""))
+                      }
+                    />
+                  </div>
+                  <AdminFieldError message={err.handle} />
+                </div>
+              ) : !isNew ? null : (
+                <AdminFieldError message={err.handle} />
+              )}
             </div>
+
+            <div>
+              <AdminFieldLabel htmlFor="product-descriptor">
+                Short description
+              </AdminFieldLabel>
+              <input
+                id="product-descriptor"
+                name="descriptor"
+                className={adminFieldClass}
+                value={form.descriptor}
+                maxLength={160}
+                aria-invalid={err.descriptor ? true : undefined}
+                onChange={(e) => setField("descriptor", e.target.value)}
+                placeholder="Warm amber with a cedar trail"
+              />
+              <AdminFieldError message={err.descriptor} />
+            </div>
+
+            <AdminRichTextEditor
+              label="Description"
+              value={form.description}
+              minHeightClass="min-h-36"
+              placeholder="What it smells like and when to wear it."
+              onChange={(description) => setField("description", description)}
+            />
           </AdminFormSection>
 
           <AdminFormSection
             title="Images"
-            description="Gallery only. The first image is the card and hero. The second is the card hover."
-            tip="Drop a file, click to upload, or paste a URL under each slot. Add at least one image."
+            description="The first image is the main photo. The second shows when shoppers hover."
           >
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <div>
-                <p className="font-display text-base font-semibold text-admin-ink">
-                  Gallery
+            <div
+              data-field="gallery"
+              className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 xl:grid-cols-3"
+            >
+              {form.gallery.map((url, i) => (
+                <AdminImageField
+                  key={`${i}-${url}`}
+                  label={
+                    i === 0 ? "Main image" : i === 1 ? "Hover image" : `Image ${i + 1}`
+                  }
+                  density="compact"
+                  aspect="square"
+                  value={url}
+                  onChange={(next) => setGalleryItem(i, next)}
+                  onRemoveSlot={() => removeGalleryItem(i)}
+                  actions={
+                    i > 0 ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => makeMain(i)}
+                        className="px-2! no-underline!"
+                      >
+                        Make main
+                      </Button>
+                    ) : undefined
+                  }
+                />
+              ))}
+              {form.gallery.length < MAX_IMAGES ? (
+                <AdminImageField
+                  key={`add-${form.gallery.length}`}
+                  label={form.gallery.length === 0 ? "Main image" : "Add image"}
+                  required={form.gallery.length === 0 && form.status === "active"}
+                  density="compact"
+                  aspect="square"
+                  value=""
+                  onChange={(url) => {
+                    if (url) setField("gallery", [...form.gallery, url]);
+                  }}
+                />
+              ) : null}
+            </div>
+            <AdminFieldError message={err.gallery} />
+          </AdminFormSection>
+
+          <AdminFormSection title="Sizes and prices">
+            <div data-field="prices" className="space-y-3">
+              <div className="hidden grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_2.75rem] gap-3 sm:grid">
+                <p className="text-sm font-semibold text-admin-ink">
+                  Size <span className="text-admin-danger" aria-hidden>*</span>
                 </p>
-                <p className="text-[13px] text-admin-muted">
-                  1st = primary · 2nd = hover · rest = product page
+                <p className="text-sm font-semibold text-admin-ink">
+                  Price <span className="text-admin-danger" aria-hidden>*</span>
                 </p>
+                <p className="text-sm font-semibold text-admin-ink">
+                  Was price
+                </p>
+                <span className="sr-only">Remove</span>
               </div>
+              {form.prices.map((size, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-2 gap-3 rounded-md border border-admin-line p-3 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_2.75rem] sm:items-start sm:border-0 sm:p-0"
+                >
+                  <div>
+                    <p className="mb-1.5 text-sm font-semibold text-admin-ink sm:hidden">
+                      Size <span className="text-admin-danger" aria-hidden>*</span>
+                    </p>
+                    <NumberInput
+                      name={`prices.${i}.ml`}
+                      label={`Size ${i + 1} in ml`}
+                      value={size.ml}
+                      suffix="ml"
+                      placeholder="50"
+                      invalid={Boolean(err[`prices.${i}.ml`])}
+                      onChange={(ml) => setSize(i, { ml })}
+                    />
+                    <AdminFieldError message={err[`prices.${i}.ml`]} />
+                  </div>
+                  <div>
+                    <p className="mb-1.5 text-sm font-semibold text-admin-ink sm:hidden">
+                      Price <span className="text-admin-danger" aria-hidden>*</span>
+                    </p>
+                    <NumberInput
+                      name={`prices.${i}.price`}
+                      label={`Size ${i + 1} price in rupees`}
+                      value={size.price}
+                      prefix="Rs"
+                      placeholder="15000"
+                      invalid={Boolean(err[`prices.${i}.price`])}
+                      onChange={(price) => setSize(i, { price })}
+                    />
+                    <AdminFieldError message={err[`prices.${i}.price`]} />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="mb-1.5 text-sm font-semibold text-admin-ink sm:hidden">
+                      Was price
+                    </p>
+                    <NumberInput
+                      name={`prices.${i}.compareAt`}
+                      label={`Size ${i + 1} was price`}
+                      value={size.compareAt}
+                      prefix="Rs"
+                      placeholder="Optional"
+                      invalid={Boolean(err[`prices.${i}.compareAt`])}
+                      onChange={(n) =>
+                        setSize(i, { compareAt: Number.isFinite(n) ? n : undefined })
+                      }
+                    />
+                    <AdminFieldError message={err[`prices.${i}.compareAt`]} />
+                  </div>
+                  <div className="col-span-2 flex justify-end sm:col-span-1">
+                    <AdminIconAction
+                      icon="delete"
+                      tone="danger"
+                      label="Remove size"
+                      ariaLabel={`Remove size ${i + 1}`}
+                      disabled={form.prices.length <= 1}
+                      className="h-11! w-11!"
+                      onClick={() =>
+                        setField(
+                          "prices",
+                          form.prices.filter((_, j) => j !== i),
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
+              <AdminFieldError message={err.prices} />
+            </div>
+            {form.prices.length < MAX_SIZES ? (
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setField("gallery", [...form.gallery, ""])}
-                className="h-9! min-h-9! w-auto! px-3! text-sm"
+                size="sm"
+                className="w-auto!"
+                onClick={() =>
+                  setField("prices", [
+                    ...form.prices,
+                    { ml: Number.NaN, price: Number.NaN, sku: "" },
+                  ])
+                }
               >
-                + Add
+                Add size
               </Button>
-            </div>
-            {form.gallery.length ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {form.gallery.map((url, i) => (
-                  <AdminImageField
-                    key={`gallery-${i}-${url || "empty"}`}
-                    label={
-                      i === 0
-                        ? "1 · Primary"
-                        : i === 1
-                          ? "2 · Hover"
-                          : `Gallery ${i + 1}`
-                    }
-                    hint={
-                      i === 0
-                        ? "Card and product hero"
-                        : i === 1
-                          ? "Shown on product card hover"
-                          : undefined
-                    }
-                    density="compact"
-                    aspect="square"
-                    value={url}
-                    onChange={(next) => setGalleryItem(i, next)}
-                    onRemoveSlot={() => removeGallerySlot(i)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="rounded-md border border-dashed border-admin-line bg-admin-soft-2 px-3 py-4 text-center text-sm text-admin-muted">
-                Add a gallery image to publish this bottle.
-              </p>
-            )}
+            ) : null}
           </AdminFormSection>
 
-          <AdminFormSection
-            title="Story"
-            description="Longer copy for people who scroll the product page."
-            tip="Aim for at least a short paragraph. This helps SEO and sets expectations for wear."
-          >
+          <AdminFormSection title="Scent notes">
+            <ChipsField
+              label="Top notes"
+              name="topNotes"
+              values={form.topNotes}
+              onChange={(next) => setField("topNotes", next)}
+              placeholder="Type a note and press Enter"
+              max={MAX_NOTES}
+              maxLength={60}
+            />
+            <ChipsField
+              label="Heart notes"
+              name="heartNotes"
+              values={form.heartNotes}
+              onChange={(next) => setField("heartNotes", next)}
+              placeholder="Type a note and press Enter"
+              max={MAX_NOTES}
+              maxLength={60}
+            />
+            <ChipsField
+              label="Base notes"
+              name="baseNotes"
+              values={form.baseNotes}
+              onChange={(next) => setField("baseNotes", next)}
+              placeholder="Type a note and press Enter"
+              max={MAX_NOTES}
+              maxLength={60}
+            />
+          </AdminFormSection>
+
+          <AdminFormSection title="Product page">
             <AdminRichTextEditor
-              label="Product story"
-              tip="What it smells like, when to wear it, who it suits."
+              label="Story"
               value={form.story}
               minHeightClass="min-h-40"
               placeholder="Opens with… settles into…"
@@ -465,385 +1101,221 @@ export function ProductForm({
             />
             <AdminRichTextEditor
               label="How to wear"
-              tip="Optional. Practical guidance shown near purchase."
               value={form.howToWear}
               minHeightClass="min-h-28"
-              placeholder="Two sprays on pulse points for evening…"
+              placeholder="Two sprays on pulse points for evening."
               onChange={(howToWear) => setField("howToWear", howToWear)}
             />
           </AdminFormSection>
-
-          <AdminFormSection
-            title="Sizes and pricing"
-            description="All amounts in PKR. Storefront converts for other currencies."
-            tip="Add one row per bottle size. SKU can be left blank to auto-generate."
-          >
-            {form.prices.map((size, i) => (
-              <div
-                key={i}
-                className="rounded-md border border-admin-line bg-admin-soft-2 p-3"
-              >
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="font-display text-sm font-semibold text-admin-ink">
-                    Size {i + 1}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => removeSize(i)}
-                    disabled={form.prices.length <= 1}
-                    title={
-                      form.prices.length <= 1
-                        ? "At least one size is required"
-                        : "Remove this size"
-                    }
-                    className={cn(
-                      "cursor-pointer font-display text-[11px] font-medium uppercase tracking-wide transition-colors",
-                      form.prices.length <= 1
-                        ? "cursor-not-allowed text-admin-faint opacity-50"
-                        : "text-admin-muted hover:text-rosewood",
-                    )}
-                  >
-                    Remove
-                  </button>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <AdminFieldLabel tip="Bottle size in millilitres.">
-                      ML
-                    </AdminFieldLabel>
-                    <input
-                      type="number"
-                      className={adminFieldClass}
-                      value={size.ml}
-                      onChange={(e) => {
-                        const prices = [...form.prices];
-                        prices[i] = { ...size, ml: Number(e.target.value) };
-                        setField("prices", prices);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <AdminFieldLabel tip="Base price in Pakistani rupees.">
-                      Price (PKR)
-                    </AdminFieldLabel>
-                    <input
-                      type="number"
-                      className={adminFieldClass}
-                      value={size.price}
-                      onChange={(e) => {
-                        const prices = [...form.prices];
-                        prices[i] = { ...size, price: Number(e.target.value) };
-                        setField("prices", prices);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <AdminFieldLabel tip="Inventory code. Auto-built if empty.">
-                      SKU
-                    </AdminFieldLabel>
-                    <input
-                      className={adminFieldClass}
-                      value={size.sku}
-                      onChange={(e) => {
-                        const prices = [...form.prices];
-                        prices[i] = { ...size, sku: e.target.value };
-                        setField("prices", prices);
-                      }}
-                      placeholder="Auto"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() =>
-                setField("prices", [
-                  ...form.prices,
-                  { ml: 100, price: 20000, sku: "" },
-                ])
-              }
-              className="sm:w-auto"
-            >
-              + Add size
-            </Button>
-          </AdminFormSection>
         </div>
 
-        {/* Right: Publish, Categories, Scent profile */}
-        <div className="min-w-0 space-y-5 lg:sticky lg:top-4 lg:self-start">
-          <AdminFormSection
-            title="Publish"
-            description="Visibility and stock on the storefront."
-          >
+        {/* Sidebar */}
+        <aside className="min-w-0 space-y-6">
+          <AdminFormSection title="Status">
             <Select
               label="Visibility"
               value={form.status}
-              onValueChange={(v) => setField("status", v)}
+              onValueChange={(next) => setField("status", next)}
               options={[
                 { value: "active", label: "Published" },
                 { value: "draft", label: "Draft (hidden)" },
-                { value: "archived", label: "Archived" },
+                { value: "archived", label: "Archived (hidden)" },
               ]}
-              triggerClassName={selectTrigger}
-              className={selectClass}
+              className={selectLabel}
             />
-            <div>
-              <AdminFieldLabel tip="Uncheck to show Out of stock on the storefront.">
-                Stock
-              </AdminFieldLabel>
-              <label className="mt-1 flex min-h-12 cursor-pointer items-center gap-2.5 rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 text-base text-admin-ink">
-                <input
-                  type="checkbox"
-                  checked={form.inStock}
-                  onChange={(e) => setField("inStock", e.target.checked)}
-                  className="h-4 w-4 accent-brass"
-                />
-                In stock and sellable
-              </label>
-            </div>
-          </AdminFormSection>
-
-          <AdminFormSection
-            title="Categories"
-            description="Collections this bottle appears in on the storefront."
-            tip="Tick any collection. Gender and family collections also pick products up from scent profile tags."
-          >
-            {collections.length === 0 ? (
-              <p className="text-sm text-admin-muted">
-                No collections yet. Create one under Collections first.
-              </p>
-            ) : (
-              <ul className="max-h-[16rem] space-y-1 overflow-y-auto pr-1">
-                {collections.map((c) => {
-                  const checked = form.collectionHandles.includes(c.handle);
-                  return (
-                    <li key={c.handle}>
-                      <label
-                        className={cn(
-                          "flex cursor-pointer items-start gap-2.5 rounded-md border px-3 py-2.5 text-[15px] transition-colors",
-                          checked
-                            ? "border-admin-ink bg-admin-soft"
-                            : "border-admin-line bg-admin-soft-2 hover:border-admin-muted",
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleCollection(c.handle)}
-                          className="mt-0.5 h-4 w-4 shrink-0 accent-brass"
-                        />
-                        <span className="min-w-0">
-                          <span className="block font-medium text-admin-ink">
-                            {c.title}
-                          </span>
-                          <span className="block font-mono text-xs text-admin-faint">
-                            /collections/{c.handle}
-                            {c.status === "draft" ? " · draft" : ""}
-                          </span>
-                        </span>
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            {form.collectionHandles.length > 0 ? (
-              <p className="text-[13px] text-admin-muted">
-                {form.collectionHandles.length} selected
+            {publishNeedsImage ? (
+              <p className="-mt-2 text-[0.8125rem] font-medium text-(--admin-tone-amber-text)">
+                Add a main image before publishing.
               </p>
             ) : null}
+            <CheckRow
+              checked={form.inStock}
+              onChange={(next) => setField("inStock", next)}
+              label="In stock"
+            />
           </AdminFormSection>
 
-          <AdminFormSection
-            title="Scent profile"
-            description="How we filter and describe the bottle."
-            tip="Family and gender also feed collection filters on the storefront."
-          >
+          <AdminFormSection title="Organization">
             <Select
               label="Concentration"
               value={form.concentration}
-              onValueChange={(v) => setField("concentration", v)}
+              onValueChange={(next) => setField("concentration", next)}
               options={[
-                { value: "EDP", label: "EDP" },
-                { value: "EDT", label: "EDT" },
-                { value: "PARFUM", label: "PARFUM" },
+                { value: "EDP", label: "Eau de parfum (EDP)" },
+                { value: "EDT", label: "Eau de toilette (EDT)" },
+                { value: "PARFUM", label: "Parfum" },
               ]}
-              triggerClassName={selectTrigger}
-              className={selectClass}
+              className={selectLabel}
             />
             <Select
-              label="Family"
+              label="Scent family"
               value={form.family}
-              onValueChange={(v) => setField("family", v)}
+              onValueChange={(next) => setField("family", next)}
               options={familyOptions(form.family)}
-              triggerClassName={selectTrigger}
-              className={selectClass}
+              className={selectLabel}
             />
             <Select
-              label="Gender"
+              label="For"
               value={form.gender}
-              onValueChange={(v) => setField("gender", v)}
+              onValueChange={(next) => setField("gender", next)}
               options={[
                 { value: "her", label: "Her" },
                 { value: "him", label: "Him" },
-                { value: "unisex", label: "Unisex" },
+                { value: "unisex", label: "Everyone (unisex)" },
               ]}
-              triggerClassName={selectTrigger}
-              className={selectClass}
+              className={selectLabel}
             />
             <div>
-              <AdminFieldLabel tip="First impression notes. Comma-separated.">
-                Top notes
-              </AdminFieldLabel>
-              <input
-                className={adminFieldClass}
-                value={form.topNotes.join(", ")}
-                onChange={(e) =>
-                  setField("topNotes", parseNotes(e.target.value))
-                }
-                placeholder="Bergamot, Pink pepper"
-              />
+              <p className="mb-2 text-sm font-semibold text-admin-ink">
+                Collections
+              </p>
+              {collections.length === 0 ? (
+                <p className="text-[0.9375rem] text-admin-muted">
+                  No collections yet.
+                </p>
+              ) : (
+                <ul className="max-h-64 space-y-1.5 overflow-y-auto pr-1">
+                  {collections.map((c) => {
+                    const checked = form.collectionHandles.includes(c.handle);
+                    return (
+                      <li key={c.handle}>
+                        <label
+                          className={cn(
+                            "flex min-h-11 cursor-pointer items-center gap-3 rounded-md border px-3 text-[0.9375rem] transition-colors",
+                            checked
+                              ? "border-admin-ink bg-admin-soft"
+                              : "border-admin-line bg-admin-soft-2 hover:border-admin-muted",
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleCollection(c.handle)}
+                            className="h-4.5 w-4.5 shrink-0 cursor-pointer accent-brass"
+                          />
+                          <span className="min-w-0 flex-1 truncate font-medium text-admin-ink">
+                            {c.title}
+                          </span>
+                          {c.status === "draft" ? (
+                            <span className="text-[0.8125rem] text-admin-muted">
+                              Hidden
+                            </span>
+                          ) : null}
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
+          </AdminFormSection>
+
+          <AdminFormSection title="Performance">
+            <ScaleField
+              label="Projection (sillage)"
+              value={form.sillage}
+              onChange={(n) => setField("sillage", n)}
+              low="Close to skin"
+              high="Fills a room"
+            />
+            <ScaleField
+              label="Longevity"
+              value={form.longevity}
+              onChange={(n) => setField("longevity", n)}
+              low="A few hours"
+              high="All day"
+            />
+          </AdminFormSection>
+
+          <AdminFormSection title="Ingredients">
+            <ChipsField
+              label="Ingredients"
+              name="ingredients"
+              values={form.ingredients}
+              onChange={(next) => setField("ingredients", next)}
+              placeholder="Type one and press Enter"
+              max={MAX_INGREDIENTS}
+              maxLength={80}
+            />
+            <CheckRow
+              checked={form.containsAlcohol}
+              onChange={(next) =>
+                setForm((f) => ({
+                  ...f,
+                  containsAlcohol: next,
+                  ingredients: next
+                    ? f.ingredients
+                    : withoutAlcoholIngredients(f.ingredients),
+                }))
+              }
+              label="Contains alcohol"
+            />
             <div>
-              <AdminFieldLabel tip="Heart of the fragrance after the open softens.">
-                Heart notes
-              </AdminFieldLabel>
-              <input
-                className={adminFieldClass}
-                value={form.heartNotes.join(", ")}
-                onChange={(e) =>
-                  setField("heartNotes", parseNotes(e.target.value))
-                }
-                placeholder="Rose, Iris"
-              />
-            </div>
-            <div>
-              <AdminFieldLabel tip="Drydown that lingers.">
-                Base notes
-              </AdminFieldLabel>
-              <input
-                className={adminFieldClass}
-                value={form.baseNotes.join(", ")}
-                onChange={(e) =>
-                  setField("baseNotes", parseNotes(e.target.value))
-                }
-                placeholder="Amber, Cedar, Musk"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <AdminFieldLabel tip="How far the scent projects (1 soft, 5 room-filling).">
-                  Sillage (1-5)
-                </AdminFieldLabel>
-                <input
-                  type="number"
-                  min={1}
-                  max={5}
-                  className={adminFieldClass}
-                  value={form.sillage}
-                  onChange={(e) => setField("sillage", Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <AdminFieldLabel tip="How long it tends to last on skin (1 short, 5 all day).">
-                  Longevity (1-5)
-                </AdminFieldLabel>
-                <input
-                  type="number"
-                  min={1}
-                  max={5}
-                  className={adminFieldClass}
-                  value={form.longevity}
-                  onChange={(e) =>
-                    setField("longevity", Number(e.target.value))
-                  }
-                />
-              </div>
-            </div>
-            <div>
-              <AdminFieldLabel tip="Shown on the product page. Leave blank if you do not want an ingredients list.">
-                Ingredients
-              </AdminFieldLabel>
-              <input
-                className={adminFieldClass}
-                value={form.ingredients.join(", ")}
-                onChange={(e) =>
-                  setField("ingredients", parseNotes(e.target.value))
-                }
-                placeholder={
-                  form.containsAlcohol
-                    ? "Alcohol denat., Parfum, Linalool"
-                    : "Parfum, Essential oils, Carrier oil"
-                }
-              />
-            </div>
-            <div>
-              <AdminFieldLabel tip="Uncheck for oil or attar formulas with no alcohol carrier. Storefront will label them alcohol-free.">
-                Alcohol
-              </AdminFieldLabel>
-              <label className="mt-1 flex min-h-12 cursor-pointer items-center gap-2.5 rounded-md border border-admin-input-border bg-admin-soft-2 px-3.5 text-base text-admin-ink">
-                <input
-                  type="checkbox"
-                  checked={form.containsAlcohol}
-                  onChange={(e) => {
-                    const next = e.target.checked;
-                    setForm((f) => ({
-                      ...f,
-                      containsAlcohol: next,
-                      ingredients: next
-                        ? f.ingredients
-                        : withoutAlcoholIngredients(f.ingredients),
-                    }));
-                  }}
-                  className="h-4 w-4 accent-brass"
-                />
-                Formula contains alcohol
-              </label>
-            </div>
-            <div>
-              <AdminFieldLabel tip="Country shown under ingredients and specs.">
+              <AdminFieldLabel htmlFor="product-country">
                 Country of origin
               </AdminFieldLabel>
               <input
+                id="product-country"
+                name="countryOfOrigin"
                 className={adminFieldClass}
                 value={form.countryOfOrigin}
+                maxLength={60}
+                aria-invalid={err.countryOfOrigin ? true : undefined}
                 onChange={(e) => setField("countryOfOrigin", e.target.value)}
                 placeholder="Pakistan"
               />
+              <AdminFieldError message={err.countryOfOrigin} />
             </div>
           </AdminFormSection>
-        </div>
+        </aside>
       </div>
 
-      {error ? (
-        <p className="mb-3 text-base text-rosewood">{error}</p>
+      {serverError ? (
+        <div className="mt-6">
+          <AdminFormError>{serverError}</AdminFormError>
+        </div>
       ) : null}
 
-      <div className="sticky bottom-0 z-10 -mx-1 border-t border-admin-line bg-admin-page/95 px-1 py-3 backdrop-blur-sm supports-backdrop-filter:bg-admin-page/85">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[15px] text-admin-muted">
-            {form.status === "active"
-              ? "Will be live when saved."
-              : form.status === "draft"
-                ? "Draft stays hidden from the storefront."
-                : "Archived and not listed for sale."}
+      {/* Save bar */}
+      <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-admin-line bg-admin-paper/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 2xl:-mx-10 2xl:px-10">
+        <div className="flex items-center justify-between gap-3">
+          <p
+            className={cn(
+              "items-center gap-2 text-[0.9375rem] text-admin-muted",
+              dirty ? "hidden min-[480px]:flex" : "hidden sm:flex",
+            )}
+            aria-live="polite"
+          >
+            {dirty ? (
+              <>
+                <span className="h-2 w-2 rounded-full bg-brass" aria-hidden />
+                Unsaved changes
+              </>
+            ) : isNew ? (
+              "New product"
+            ) : (
+              "All changes saved"
+            )}
           </p>
-          <div className="flex flex-wrap gap-3">
-            <Button type="submit" disabled={saving || deleting}>
-              {saving ? "Saving…" : "Save product"}
-            </Button>
+          <div className="flex flex-1 gap-2 sm:flex-none sm:justify-end">
             {!isNew && canDelete ? (
               <Button
                 type="button"
-                variant="danger"
+                variant="danger-outline"
+                className="w-auto! shrink-0"
                 disabled={saving || deleting}
                 onClick={() => setDeleteOpen(true)}
               >
                 Delete
               </Button>
             ) : null}
+            <Button
+              type="submit"
+              className="flex-1 sm:w-auto! sm:min-w-36 sm:flex-none"
+              disabled={saving || deleting || (!isNew && !dirty)}
+            >
+              {saving ? "Saving…" : isNew ? "Create product" : "Save changes"}
+            </Button>
           </div>
         </div>
       </div>
@@ -852,12 +1324,13 @@ export function ProductForm({
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Delete this product?"
-        description={`${form.name || "This product"} will be removed from the storefront and admin. This cannot be undone.`}
+        description={`${form.name || "This product"} will be removed from your store. This cannot be undone.`}
         confirmLabel="Delete product"
         cancelLabel="Keep product"
         loading={deleting}
         onConfirm={remove}
       />
+      {leaveGuard}
     </form>
   );
 }

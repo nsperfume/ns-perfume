@@ -1,8 +1,9 @@
 "use client";
 
 import { EmblaCarousel } from "@/components/ui/embla-carousel";
-import { RichHtml } from "@/components/ui/rich-html";
-import { isRichHtml, richTextToPlain } from "@/lib/rich-text";
+import { StarRating } from "@/components/ui/star-rating";
+import { TrustedHtml as RichHtml } from "@/components/ui/trusted-html";
+import { htmlToPlain as richTextToPlain, isRichHtml } from "@/lib/plain-text";
 
 export type TestimonialItem = {
   author: string;
@@ -28,16 +29,14 @@ export function TestimonialsCarousel({ items }: { items: TestimonialItem[] }) {
       {items.map((t) => (
         <figure
           key={`${t.author}-${richTextToPlain(t.quote).slice(0, 24)}`}
-          className="flex h-full min-h-[14rem] flex-col justify-between border-t border-hairline pt-8 sm:min-h-[16rem]"
+          className="flex h-full min-h-[14rem] flex-col justify-between border-t border-hairline pt-8 sm:min-h-[17rem] lg:pr-8"
         >
           {t.rating ? (
-            <p className="mb-4 font-mono text-[12px] tabular-nums text-brass">
-              {t.rating}/5
-            </p>
+            <StarRating rating={t.rating} size="sm" className="mb-5" />
           ) : (
             <div className="mb-4 h-px w-8 bg-brass" aria-hidden />
           )}
-          <blockquote className="flex-1 font-serif text-[1.2rem] leading-relaxed text-ink sm:text-[1.35rem]">
+          <blockquote className="flex-1 font-serif text-[1.5rem] font-medium italic leading-[1.3] text-ink sm:text-[1.75rem] 2xl:text-[1.875rem]">
             {isRichHtml(t.quote) ? (
               <RichHtml html={t.quote} />
             ) : (
@@ -45,10 +44,10 @@ export function TestimonialsCarousel({ items }: { items: TestimonialItem[] }) {
             )}
           </blockquote>
           <figcaption className="mt-8">
-            <p className="font-display text-[0.95rem] font-medium text-ink">
+            <p className="text-base font-semibold text-ink">
               {t.author}
             </p>
-            <p className="mt-0.5 font-serif text-[0.9rem] text-taupe">
+            <p className="mt-0.5 text-body-sm text-taupe">
               {[t.city, t.productName].filter(Boolean).join(" · ")}
             </p>
           </figcaption>

@@ -57,7 +57,7 @@ export function Tooltip({
           align={align}
           sideOffset={6}
           className={cn(
-            "z-120 max-w-[16rem] rounded-md border border-black/10 bg-ink px-2.5 py-1.5 font-display text-xs font-medium leading-snug text-paper shadow-modal",
+            "z-120 max-w-[16rem] rounded-md border border-black/10 bg-ink px-2.5 py-1.5 font-sans text-xs font-medium leading-snug text-paper shadow-modal",
             className,
           )}
         >
@@ -81,7 +81,7 @@ export function FieldHint({
     <Tooltip content={content} aria-label={label}>
       <button
         type="button"
-        className="inline-flex h-5 w-5 shrink-0 cursor-help items-center justify-center rounded-full border border-admin-line bg-admin-soft font-display text-[10px] font-semibold text-admin-muted transition-colors hover:border-admin-muted hover:text-admin-ink"
+        className="inline-flex h-5 w-5 shrink-0 cursor-help items-center justify-center rounded-full border border-admin-line bg-admin-soft font-sans text-xs font-semibold text-admin-muted transition-colors hover:border-admin-muted hover:text-admin-ink"
       >
         ?
       </button>
@@ -128,7 +128,7 @@ export function InfoTip({
       content={content}
       aria-label={label}
       side="top"
-      className="max-w-[15.5rem] px-3 py-2 font-serif text-[0.8rem] font-normal leading-snug tracking-normal"
+      className="max-w-[15.5rem] px-3 py-2 text-caption font-normal leading-snug tracking-normal"
     >
       <button
         type="button"

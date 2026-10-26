@@ -1,4 +1,22 @@
 import type { StoreProduct } from "@/lib/mappers";
+import { isSetProduct } from "@/lib/search";
+
+/** Product fields the guide scores on (full products and search rows both fit). */
+export type ScentCandidate = Pick<
+  StoreProduct,
+  | "handle"
+  | "name"
+  | "tags"
+  | "gender"
+  | "family"
+  | "concentration"
+  | "sillage"
+  | "longevity"
+  | "badges"
+  | "rating"
+  | "reviewCount"
+  | "inStock"
+>;
 
 export type ScentGuideAnswers = {
   wearer?: string;
@@ -21,12 +39,18 @@ export type ScentGuideStep = {
   options: ScentGuideOption[];
 };
 
-export type ScentMatch = {
-  product: StoreProduct;
+export type ScentMatch<T extends ScentCandidate = StoreProduct> = {
+  product: T;
   score: number;
   maxScore: number;
   rankLabel: "Best match" | "Strong match" | "Also try";
   reasons: string[];
+};
+
+export type ScentResults<T extends ScentCandidate = StoreProduct> = {
+  matches: ScentMatch<T>[];
+  /** Plain note shown above the matches, e.g. when no men's florals exist yet. */
+  note: string | null;
 };
 
 /** Fixed quiz steps. Matching uses catalog fields only (no AI). */
@@ -34,34 +58,34 @@ export const SCENT_GUIDE_STEPS: ScentGuideStep[] = [
   {
     id: "wearer",
     question: "Who is this bottle for?",
-    help: "We weight gender tags on each formula. Unisex stays open to either side.",
+    help: "Pick who will wear it. Unisex perfumes suit anyone.",
     options: [
       {
         id: "her",
         label: "For her",
-        hint: "Formulas filed under her, plus unisex options",
+        hint: "Women’s perfumes, plus unisex ones",
       },
       {
         id: "him",
         label: "For him",
-        hint: "Formulas filed under him, plus unisex options",
+        hint: "Men’s perfumes, plus unisex ones",
       },
       {
         id: "unisex",
         label: "Unisex",
-        hint: "Shared bottles that sit between both wardrobes",
+        hint: "Perfumes made to suit anyone",
       },
       {
         id: "open",
         label: "Open to anything",
-        hint: "No gender filter. We score on climate and trail only",
+        hint: "No preference. We match on your other answers",
       },
     ],
   },
   {
     id: "climate",
     question: "Where will you wear it most?",
-    help: "Heat, AC, and evening air change how notes open. We match concentration and family to that.",
+    help: "Heat, AC and evening air change how a perfume smells. We match the strength and scent type to it.",
     options: [
       {
         id: "heat",
@@ -88,7 +112,7 @@ export const SCENT_GUIDE_STEPS: ScentGuideStep[] = [
   {
     id: "family",
     question: "Which direction smells right?",
-    help: "Pick the family you already lean toward. We match the catalog family field exactly.",
+    help: "Pick the type of scent you already like.",
     options: [
       {
         id: "fresh",
@@ -120,29 +144,29 @@ export const SCENT_GUIDE_STEPS: ScentGuideStep[] = [
   {
     id: "trail",
     question: "How far should the trail travel?",
-    help: "Matched to each bottle’s sillage rating (1 soft to 5 room-filling).",
+    help: "Matched to each perfume’s projection, how far it reaches from your skin, from 1 close to skin to 5 filling the room.",
     options: [
       {
         id: "soft",
         label: "Close to skin",
-        hint: "Sillage 1 to 2. Noticeable when someone leans in",
+        hint: "Projection 1 to 2. Noticed when someone leans in",
       },
       {
         id: "moderate",
         label: "Present in the room",
-        hint: "Sillage 3. Clear without filling the whole floor",
+        hint: "Projection 3. Clear without filling the whole floor",
       },
       {
         id: "strong",
         label: "Fills the space",
-        hint: "Sillage 4 to 5. Leaves a trail in hallways and cars",
+        hint: "Projection 4 to 5. Leaves a trail in hallways and cars",
       },
     ],
   },
   {
     id: "stay",
     question: "How long should it last on skin?",
-    help: "Matched to each bottle’s longevity rating and concentration.",
+    help: "Matched to how long each perfume lasts on skin, rated 1 to 5.",
     options: [
       {
         id: "short",
@@ -165,57 +189,76 @@ export const SCENT_GUIDE_STEPS: ScentGuideStep[] = [
 
 const MAX_SCORE = 14;
 
-function isDiscoveryOrSet(p: StoreProduct) {
-  const h = p.handle.toLowerCase();
-  const n = p.name.toLowerCase();
-  return (
-    h.includes("discovery") ||
-    h.includes("set") ||
-    n.includes("discovery") ||
-    n.includes("set of")
-  );
+export function familyLabel(id: string) {
+  const step = SCENT_GUIDE_STEPS.find((s) => s.id === "family");
+  const label = step?.options.find((o) => o.id === id)?.label;
+  if (label) return label;
+  return id ? id.charAt(0).toUpperCase() + id.slice(1).toLowerCase() : id;
 }
 
-function familyLabel(id: string) {
-  const step = SCENT_GUIDE_STEPS.find((s) => s.id === "family");
-  return step?.options.find((o) => o.id === id)?.label || id;
+/** "florals", "woody scents": used in the plain note when a gender has none. */
+const FAMILY_PLURAL: Record<string, string> = {
+  fresh: "fresh scents",
+  floral: "florals",
+  woody: "woody scents",
+  oriental: "amber scents",
+  gourmand: "sweet scents",
+};
+
+/**
+ * When the shopper picks For her or For him plus a family that has no bottle
+ * for that gender, say so plainly instead of quietly showing something else.
+ */
+function familyGapNote(pool: ScentCandidate[], answers: ScentGuideAnswers): string | null {
+  const { wearer, family } = answers;
+  if (!family || (wearer !== "her" && wearer !== "him")) return null;
+  if (pool.some((p) => p.gender === wearer && p.family === family)) return null;
+  const who = wearer === "him" ? "men’s" : "women’s";
+  const plural = FAMILY_PLURAL[family] ?? `${familyLabel(family).toLowerCase()} scents`;
+  const unisex = pool.filter((p) => p.gender === "unisex" && p.family === family).length;
+  if (unisex >= 3) return `No ${who} ${plural} yet, here are unisex ${plural}.`;
+  if (unisex > 0) return `No ${who} ${plural} yet, here are unisex ${plural} and the closest matches.`;
+  return `No ${plural} for ${wearer === "him" ? "men" : "women"} yet, here are the closest matches.`;
 }
 
 /**
- * Deterministic ranking from quiz answers against catalog fields.
- * Returns top matches with plain-language reasons (no AI).
+ * Deterministic ranking from quiz answers against product details.
+ * For her / For him never recommends the other gender; unisex stays in.
+ * Returns top matches with plain-language reasons.
  */
-export function rankScentMatches(
-  catalog: StoreProduct[],
+export function rankScentMatches<T extends ScentCandidate>(
+  catalog: T[],
   answers: ScentGuideAnswers,
   limit = 3,
-): ScentMatch[] {
-  const scored = catalog
+): ScentResults<T> {
+  const wearer = answers.wearer;
+  const gendered = wearer === "her" || wearer === "him";
+  const pool = catalog
     .filter((p) => p.inStock !== false)
-    .filter((p) => !isDiscoveryOrSet(p))
+    .filter((p) => !isSetProduct(p))
+    .filter((p) => !gendered || p.gender === wearer || p.gender === "unisex");
+
+  const scored = pool
     .map((p) => {
       let score = 0;
       const reasons: string[] = [];
 
-      // Wearer / gender
-      const wearer = answers.wearer;
+      // Wearer / gender (the other gender is already filtered out)
       if (wearer && wearer !== "open") {
         if (wearer === "unisex") {
           if (p.gender === "unisex") {
             score += 3;
-            reasons.push("Filed as unisex in the catalog");
+            reasons.push("A unisex perfume");
           } else {
             score += 1;
-            reasons.push("Can still work as a shared bottle");
+            reasons.push("Can still be shared");
           }
         } else if (p.gender === wearer) {
           score += 3;
-          reasons.push(
-            wearer === "her" ? "Matched to her formulas" : "Matched to him formulas",
-          );
+          reasons.push(wearer === "her" ? "Made for women" : "Made for men");
         } else if (p.gender === "unisex") {
           score += 2;
-          reasons.push("Unisex option that fits either wardrobe");
+          reasons.push("Unisex, suits men and women");
         }
       }
 
@@ -223,7 +266,7 @@ export function rankScentMatches(
       const family = answers.family;
       if (family && p.family === family) {
         score += 4;
-        reasons.push(`Scent family: ${familyLabel(family)}`);
+        reasons.push(`${familyLabel(family)}, as you picked`);
       } else if (family) {
         // Soft adjacent matches
         if (
@@ -231,21 +274,21 @@ export function rankScentMatches(
           (family === "floral" && p.family === "fresh")
         ) {
           score += 1;
-          reasons.push("Nearby family that still leans clean");
+          reasons.push("Close to your pick and still clean");
         }
         if (
           (family === "oriental" && p.family === "gourmand") ||
           (family === "gourmand" && p.family === "oriental")
         ) {
           score += 1;
-          reasons.push("Nearby warm family");
+          reasons.push("Close to your pick and also warm");
         }
         if (
           (family === "woody" && p.family === "oriental") ||
           (family === "oriental" && p.family === "woody")
         ) {
           score += 1;
-          reasons.push("Nearby dry-warm family");
+          reasons.push("Close to your pick, dry and warm");
         }
       }
 
@@ -254,30 +297,34 @@ export function rankScentMatches(
       if (climate === "heat") {
         if (p.family === "fresh" || p.family === "floral") {
           score += 2;
-          reasons.push("Lighter family for outdoor heat");
+          reasons.push("Light scent for outdoor heat");
         }
         if (p.concentration === "EDT") {
           score += 1;
-          reasons.push("EDT concentration for warmer air");
+          reasons.push("Lighter EDT strength for warm days");
         }
         if (p.sillage <= 3) score += 1;
       } else if (climate === "office") {
         if (p.sillage <= 3) {
           score += 2;
-          reasons.push("Controlled trail for shared rooms");
+          reasons.push("Soft trail for shared rooms");
         }
         if (p.family === "fresh" || p.family === "floral" || p.family === "woody") {
           score += 1;
-          reasons.push("Office-friendly family");
+          reasons.push("Easy to wear at the office");
         }
       } else if (climate === "evening") {
         if (p.family === "oriental" || p.family === "gourmand" || p.family === "woody") {
           score += 2;
-          reasons.push("Richer family for evening air");
+          reasons.push("Richer scent for evenings");
         }
         if (p.concentration === "EDP" || p.concentration === "PARFUM") {
           score += 1;
-          reasons.push(`${p.concentration} weight for night wear`);
+          reasons.push(
+            p.concentration === "PARFUM"
+              ? "Parfum strength for nights out"
+              : "EDP strength for nights out",
+          );
         }
         if (p.longevity >= 4) score += 1;
       } else if (climate === "daily") {
@@ -287,7 +334,7 @@ export function rankScentMatches(
         }
         if (p.badges?.includes("bestseller")) {
           score += 1;
-          reasons.push("Often reordered for daily use");
+          reasons.push("A bestseller for daily wear");
         }
       }
 
@@ -295,13 +342,13 @@ export function rankScentMatches(
       const trail = answers.trail;
       if (trail === "soft" && p.sillage <= 2) {
         score += 3;
-        reasons.push(`Sillage ${p.sillage}/5, close to skin`);
+        reasons.push(`Projection ${p.sillage}/5, close to skin`);
       } else if (trail === "moderate" && p.sillage === 3) {
         score += 3;
-        reasons.push(`Sillage ${p.sillage}/5, present without shouting`);
+        reasons.push(`Projection ${p.sillage}/5, present without shouting`);
       } else if (trail === "strong" && p.sillage >= 4) {
         score += 3;
-        reasons.push(`Sillage ${p.sillage}/5, room-filling trail`);
+        reasons.push(`Projection ${p.sillage}/5, fills the room`);
       } else if (trail === "soft" && p.sillage === 3) {
         score += 1;
       } else if (trail === "strong" && p.sillage === 3) {
@@ -330,7 +377,7 @@ export function rankScentMatches(
       // Light quality signal
       if (p.rating >= 4.5 && p.reviewCount >= 3) {
         score += 1;
-        reasons.push(`Rated ${p.rating.toFixed(1)} from wearers`);
+        reasons.push(`Rated ${p.rating.toFixed(1)} by customers`);
       }
 
       // Deduplicate reasons while keeping order
@@ -347,29 +394,42 @@ export function rankScentMatches(
     });
 
   // If nothing scored (empty answers edge case), fall back to bestsellers
-  const pool =
+  const ranked =
     scored.length > 0
       ? scored
-      : catalog
-          .filter((p) => !isDiscoveryOrSet(p) && p.inStock !== false)
+      : pool
           .map((p) => ({
             product: p,
             score: p.badges?.includes("bestseller") ? 2 : 1,
-            reasons: ["From the current line"] as string[],
+            reasons: ["A popular pick"] as string[],
           }))
           .sort((a, b) => b.score - a.score);
 
-  return pool.slice(0, limit).map((item, index) => ({
+  // Said "here are unisex florals": put those first, then the closest matches.
+  const note = familyGapNote(pool, answers);
+  const ordered = note
+    ? [
+        ...ranked.filter((r) => r.product.family === answers.family),
+        ...ranked.filter((r) => r.product.family !== answers.family),
+      ]
+    : ranked;
+
+  const matches = ordered.slice(0, limit).map((item, index) => ({
     product: item.product,
     score: item.score,
     maxScore: MAX_SCORE,
-    rankLabel:
-      index === 0 ? "Best match" : index === 1 ? "Strong match" : "Also try",
+    rankLabel: (index === 0
+      ? "Best match"
+      : index === 1
+        ? "Strong match"
+        : "Also try") as ScentMatch["rankLabel"],
     reasons:
       item.reasons.length > 0
         ? item.reasons
-        : ["Fits your answers across family and wear"],
+        : ["Fits your answers on scent type and wear"],
   }));
+
+  return { matches, note: matches.length ? note : null };
 }
 
 export function summarizeAnswers(answers: ScentGuideAnswers): string[] {

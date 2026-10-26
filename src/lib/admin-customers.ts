@@ -8,6 +8,8 @@ export type CustomerListRow = {
   name: string;
   phone: string;
   orderCount: number;
+  /** Orders that were not cancelled (the ones counted in lifetime spend). */
+  paidOrderCount: number;
   lifetimeSpendPkr: number;
   lastOrderAt: string | null;
   firstOrderAt: string | null;
@@ -59,6 +61,7 @@ type Acc = {
   name: string;
   phone: string;
   orderCount: number;
+  paidOrderCount: number;
   lifetimeSpendPkr: number;
   lastOrderAt: Date | null;
   firstOrderAt: Date | null;
@@ -74,6 +77,7 @@ function emptyAcc(email: string): Acc {
     name: "",
     phone: "",
     orderCount: 0,
+    paidOrderCount: 0,
     lifetimeSpendPkr: 0,
     lastOrderAt: null,
     firstOrderAt: null,
@@ -90,6 +94,7 @@ function toRow(a: Acc): CustomerListRow {
     name: a.name,
     phone: a.phone,
     orderCount: a.orderCount,
+    paidOrderCount: a.paidOrderCount,
     lifetimeSpendPkr: a.lifetimeSpendPkr,
     lastOrderAt: a.lastOrderAt ? a.lastOrderAt.toISOString() : null,
     firstOrderAt: a.firstOrderAt ? a.firstOrderAt.toISOString() : null,
@@ -126,6 +131,7 @@ export async function listAdminCustomers(opts?: {
     const acc = map.get(email) || emptyAcc(email);
     acc.orderCount += 1;
     if (o.status !== "cancelled") {
+      acc.paidOrderCount += 1;
       acc.lifetimeSpendPkr += Number(o.totalPkr) || 0;
     }
     const created = o.createdAt ? new Date(o.createdAt as Date) : null;
@@ -228,6 +234,7 @@ export async function getAdminCustomerDetail(
   for (const o of orders) {
     acc.orderCount += 1;
     if (o.status !== "cancelled") {
+      acc.paidOrderCount += 1;
       acc.lifetimeSpendPkr += Number(o.totalPkr) || 0;
     }
     const created = o.createdAt ? new Date(o.createdAt as Date) : null;

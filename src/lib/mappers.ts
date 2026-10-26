@@ -1,4 +1,4 @@
-import { richTextToPlain, sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
+import { richTextToPlain, safeRichText, sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 
 /** Map DB product to storefront shape (prices still PKR in sizes). */
 export type StoreProduct = {
@@ -20,7 +20,11 @@ export type StoreProduct = {
   ingredients: string[];
   /** False when the formula has no alcohol carrier (oils, attars). */
   containsAlcohol: boolean;
+  /** Empty when unknown; the page hides the row. */
   countryOfOrigin: string;
+  /** Optional overrides for the search result title and description. */
+  seoTitle?: string;
+  seoDescription?: string;
   story: string;
   howToWear: string;
   tags: string[];
@@ -35,7 +39,26 @@ export type StoreProduct = {
   reviewCount: number;
   inStock: boolean;
   status?: string;
+  /** ISO timestamp of the last edit, for the sitemap. */
+  updatedAt?: string;
 };
+
+/**
+ * Same product with long text stripped, for cards sent to the browser
+ * (related products, recently viewed). Keeps page payloads small as the catalog grows.
+ */
+export function cardProduct(p: StoreProduct): StoreProduct {
+  return {
+    ...p,
+    description: "",
+    story: "",
+    howToWear: "",
+    ingredients: [],
+    seoTitle: "",
+    seoDescription: "",
+    gallery: p.gallery.slice(0, 2),
+  };
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapProduct(doc: any): StoreProduct {
@@ -45,7 +68,7 @@ export function mapProduct(doc: any): StoreProduct {
     handle: doc.handle,
     name: doc.name,
     descriptor: doc.descriptor || "",
-    description: doc.description || "",
+    description: safeRichText(doc.description),
     concentration: doc.concentration,
     family: doc.family,
     gender: doc.gender,
@@ -64,9 +87,14 @@ export function mapProduct(doc: any): StoreProduct {
     longevity: doc.longevity ?? 3,
     ingredients: doc.ingredients || [],
     containsAlcohol: doc.containsAlcohol !== false,
-    countryOfOrigin: doc.countryOfOrigin || "Pakistan",
-    story: doc.story || "",
-    howToWear: doc.howToWear || "",
+    // Older admin saves stored a lone dash for "unknown".
+    countryOfOrigin: /^[\s\u2013\u2014-]*$/.test(String(doc.countryOfOrigin ?? ""))
+      ? ""
+      : String(doc.countryOfOrigin).trim(),
+    seoTitle: String(doc.seoTitle ?? "").trim(),
+    seoDescription: String(doc.seoDescription ?? "").trim(),
+    story: safeRichText(doc.story),
+    howToWear: safeRichText(doc.howToWear),
     tags: doc.tags || [],
     collectionHandles: Array.isArray(doc.collectionHandles)
       ? doc.collectionHandles
@@ -96,6 +124,7 @@ export function mapProduct(doc: any): StoreProduct {
     reviewCount: doc.reviewCount ?? 0,
     inStock: doc.inStock !== false,
     status: doc.status,
+    updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : undefined,
   };
 }
 
@@ -109,6 +138,9 @@ export type StoreJournalPost = {
   /** Legacy plain paragraphs (derived) */
   body: string[];
   date: string;
+  /** ISO timestamp of the last edit, when known. */
+  updatedAt: string;
+  /** Worked out from the article length ("4 min"). */
   readTime: string;
   category: string;
   relatedProductHandle: string;
@@ -137,7 +169,9 @@ export function mapJournal(doc: any): StoreJournalPost {
     bodyHtml,
     body,
     date: doc.date || "",
-    readTime: doc.readTime || "5 min",
+    updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : "",
+    // About 200 words a minute; the stored value was often a guess.
+    readTime: `${Math.max(1, Math.round(plain.split(/\s+/).filter(Boolean).length / 200))} min`,
     category: doc.category || "Guides",
     relatedProductHandle: doc.relatedProductHandle || "",
     relatedCollectionHandle: doc.relatedCollectionHandle || "",

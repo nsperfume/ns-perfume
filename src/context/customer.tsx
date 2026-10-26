@@ -18,6 +18,7 @@ export type CustomerUser = {
   avatarUrl?: string;
   hasPassword?: boolean;
   hasGoogle?: boolean;
+  emailVerified?: boolean;
 };
 
 type CustomerContextValue = {

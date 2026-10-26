@@ -35,19 +35,19 @@ export function AppErrorPanel({
       )}
     >
       <div className="w-full max-w-lg text-center">
-        <p className="mb-3 font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
+        <p className="mb-3 text-eyebrow text-taupe">
           Something went wrong
         </p>
-        <h1 className="font-display text-[1.75rem] font-medium tracking-tight text-ink sm:text-[2rem]">
+        <h1 className="text-display-md text-ink">
           {isAdmin ? "Admin could not load this view" : "This page could not load"}
         </h1>
-        <p className="mt-4 font-serif text-[1.05rem] leading-relaxed text-taupe">
+        <p className="mt-4 text-body text-taupe">
           {isAdmin
             ? "A temporary fault stopped this screen. Try again, or return to the dashboard."
             : "A temporary fault stopped this screen. You can retry, or keep shopping from the catalog."}
         </p>
         {error.digest ? (
-          <p className="mt-4 font-mono text-[11px] tracking-wide text-taupe/80">
+          <p className="mt-4 font-sans tabular-nums text-xs tracking-wide text-taupe/80">
             Ref {error.digest}
           </p>
         ) : null}

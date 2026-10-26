@@ -1,14 +1,14 @@
 export const siteConfig = {
   name: "NS Perfume",
   tagline: "Apothecary restraint. Editorial clarity.",
-  url: "https://nsperfume.com",
-  announcement:
-    "Complimentary shipping over Rs 8,000 · Free returns on eligible orders · New: Iris Solstice",
+  url: "https://nsperfume.pk",
   description:
     "NS Perfume is a fragrance house with honest scent pyramids, clear sillage ratings, and prices that convert into the currency you choose.",
-  email: "care@nsperfume.com",
+  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "care@nsperfume.pk",
   /** Primary care line (JazzCash / Easypaisa / WhatsApp). No spaces for easy copy. */
   phone: "03067861412",
+  /** Same number grouped for reading on screen and in emails. Links use `phone`. */
+  phoneDisplay: "0306 7861412",
   contactName: "Asim Ali",
   location: {
     label: "NS Mart",
@@ -28,87 +28,84 @@ export const siteConfig = {
     accountNumber: "09110111027312",
     iban: "PK68MEZN0009110111027312",
     branch: "Qila Didar Singh (0911)",
-    note: "Use your order number as the transfer reference. WhatsApp payment proof to 03067861412 if asked.",
   },
 } as const;
 
 export const navLinks = [
-  { label: "Our Story", href: "/about" },
+  { label: "Our story", href: "/about" },
   { label: "Journal", href: "/journal" },
-  { label: "Find Your Scent", href: "/find-your-scent" },
+  { label: "Find your scent", href: "/find-your-scent" },
   { label: "Contact", href: "/contact" },
 ] as const;
 
 export const shopMegaMenu = {
   gender: [
-    { label: "For Her", href: "/collections/for-her" },
-    { label: "For Him", href: "/collections/for-him" },
+    { label: "For her", href: "/collections/for-her" },
+    { label: "For him", href: "/collections/for-him" },
     { label: "Unisex", href: "/collections/unisex" },
   ],
   family: [
     { label: "Floral", href: "/collections/floral" },
     { label: "Woody", href: "/collections/woody" },
-    { label: "Oriental & Amber", href: "/collections/oriental" },
-    { label: "Fresh & Citrus", href: "/collections/fresh" },
+    { label: "Oriental and amber", href: "/collections/oriental" },
+    { label: "Fresh and citrus", href: "/collections/fresh" },
     { label: "Gourmand", href: "/collections/gourmand" },
   ],
   type: [
     { label: "Eau de Parfum", href: "/collections/eau-de-parfum" },
     { label: "Eau de Toilette", href: "/collections/eau-de-toilette" },
-    { label: "Discovery & Travel Size", href: "/collections/discovery" },
-    { label: "Gift Sets", href: "/collections/gift-sets" },
+  ],
+  gifts: [
+    { label: "Gift sets", href: "/collections/gift-sets" },
+    { label: "Discovery and travel size", href: "/collections/discovery" },
+    { label: "Wedding season", href: "/collections/wedding-season" },
   ],
   featured: [
-    { label: "New Arrivals", href: "/collections/new-arrivals" },
     { label: "Bestsellers", href: "/collections/bestsellers" },
-    { label: "Limited Edition", href: "/collections/limited-edition" },
+    { label: "New arrivals", href: "/collections/new-arrivals" },
+    { label: "Limited edition", href: "/collections/limited-edition" },
   ],
 } as const;
 
-/** Footer link map — keep every public storefront route represented once. */
+/** Footer link map. Account, wishlist, search and cart live in the header and mobile menu. */
 export const footerColumns = {
   shop: [
-    { label: "Shop All", href: "/products" },
-    { label: "All Collections", href: "/collections" },
+    { label: "Shop all", href: "/products" },
+    { label: "All collections", href: "/collections" },
     { label: "Bestsellers", href: "/collections/bestsellers" },
-    { label: "New Arrivals", href: "/collections/new-arrivals" },
-    { label: "Limited Edition", href: "/collections/limited-edition" },
-    { label: "Gift Sets", href: "/collections/gift-sets" },
-    { label: "Gift Cards", href: "/gift-cards" },
-    { label: "Wishlist", href: "/wishlist" },
-    { label: "Account", href: "/account" },
-    { label: "Search", href: "/search" },
-    { label: "Cart", href: "/cart" },
+    { label: "New arrivals", href: "/collections/new-arrivals" },
+    { label: "Limited edition", href: "/collections/limited-edition" },
+    { label: "Gift sets", href: "/collections/gift-sets" },
+    { label: "Wedding season", href: "/collections/wedding-season" },
   ],
   collections: [
-    { label: "For Her", href: "/collections/for-her" },
-    { label: "For Him", href: "/collections/for-him" },
+    { label: "For her", href: "/collections/for-her" },
+    { label: "For him", href: "/collections/for-him" },
     { label: "Unisex", href: "/collections/unisex" },
     { label: "Floral", href: "/collections/floral" },
     { label: "Woody", href: "/collections/woody" },
-    { label: "Oriental & Amber", href: "/collections/oriental" },
-    { label: "Fresh & Citrus", href: "/collections/fresh" },
+    { label: "Oriental and amber", href: "/collections/oriental" },
+    { label: "Fresh and citrus", href: "/collections/fresh" },
     { label: "Gourmand", href: "/collections/gourmand" },
   ],
   care: [
     { label: "FAQ", href: "/faq" },
-    { label: "Shipping & Returns", href: "/shipping-returns" },
-    { label: "Track My Order", href: "/track-order" },
-    { label: "Contact Us", href: "/contact" },
-    { label: "Concentration Guide", href: "/faq#concentration" },
+    { label: "Shipping and returns", href: "/shipping-returns" },
+    { label: "Track your order", href: "/track-order" },
+    { label: "Contact us", href: "/contact" },
+    { label: "Concentration guide", href: "/faq#concentration" },
   ],
   company: [
-    { label: "Our Story", href: "/about" },
-    { label: "Ingredients & Sourcing", href: "/about#sourcing" },
-    { label: "Press", href: "/about#press" },
+    { label: "Our story", href: "/about" },
+    { label: "Ingredients and sourcing", href: "/about#sourcing" },
     { label: "Journal", href: "/journal" },
-    { label: "Find Your Scent", href: "/find-your-scent" },
+    { label: "Find your scent", href: "/find-your-scent" },
   ],
   legal: [
-    { label: "Privacy Policy", href: "/policies/privacy" },
-    { label: "Terms of Service", href: "/policies/terms" },
-    { label: "Refund Policy", href: "/policies/refund" },
-    { label: "Shipping Policy", href: "/policies/shipping" },
+    { label: "Privacy policy", href: "/policies/privacy" },
+    { label: "Terms of service", href: "/policies/terms" },
+    { label: "Refund policy", href: "/policies/refund" },
+    { label: "Shipping policy", href: "/policies/shipping" },
   ],
 } as const;
 
@@ -147,31 +144,37 @@ export const socialLinks = [
 
 export const faqItems = [
   {
+    id: "authenticity",
     question: "Are your fragrances authentic?",
     answer:
-      "Every bottle ships from our fulfilled inventory. We source materials through registered fragrance houses and never resell gray-market stock.",
+      "Yes. Every bottle comes from our own stock, sealed and checked before it is packed for you.",
   },
   {
+    id: "shipping",
     question: "How long does shipping take?",
     answer:
-      "Domestic orders typically leave within two business days and arrive in three to seven days. International timelines vary by customs clearance.",
+      "{{shipping}} In-stock orders usually leave within one business day.",
   },
   {
+    id: "returns",
     question: "What is your return policy?",
     answer:
       "Unopened bottles may be returned within 30 days. For opened products with a genuine quality issue, contact customer care with your order number.",
   },
   {
+    id: "concentration",
     question: "What do EDP and EDT mean?",
     answer:
       "They describe oil concentration. EDP usually lasts longer and projects fuller. EDT opens brighter and may need reapplication. Parfum is denser still, so use fewer sprays.",
   },
   {
+    id: "ingredients",
     question: "Do you list ingredients?",
     answer:
       "Yes. Each product page includes a core ingredients list plus country of origin. Allergens required on labeling appear on the packing insert.",
   },
   {
+    id: "storage",
     question: "How should I store perfume?",
     answer:
       "Keep bottles away from direct sun and heat. A cool, dark drawer preserves top notes longer than a sunny bathroom shelf.",
@@ -183,11 +186,11 @@ export const policies: Record<
   { title: string; sections: { heading: string; body: string }[] }
 > = {
   privacy: {
-    title: "Privacy Policy",
+    title: "Privacy policy",
     sections: [
       {
         heading: "Information we collect",
-        body: "We collect account details, order history, and device data needed to fulfill purchases and improve the storefront. Payment card data is handled by our payment processor.",
+        body: "We collect the details you give us (name, phone, email and delivery address), your order history, and basic device data needed to fulfill orders and improve the store. We do not take card payments, so we never see or store card details.",
       },
       {
         heading: "How we use information",
@@ -195,12 +198,12 @@ export const policies: Record<
       },
       {
         heading: "Contact",
-        body: "Privacy questions: privacy@nsperfume.com.",
+        body: "Privacy questions: privacy@nsperfume.pk.",
       },
     ],
   },
   terms: {
-    title: "Terms of Service",
+    title: "Terms of service",
     sections: [
       {
         heading: "Use of the site",
@@ -217,7 +220,7 @@ export const policies: Record<
     ],
   },
   refund: {
-    title: "Refund Policy",
+    title: "Refund policy",
     sections: [
       {
         heading: "Eligibility",
@@ -225,7 +228,7 @@ export const policies: Record<
       },
       {
         heading: "Opened products",
-        body: "Opened bottles are final sale unless there is a verified quality defect. Contact care@nsperfume.com within seven days of delivery for review.",
+        body: "Opened bottles are final sale unless there is a verified quality defect. Contact care@nsperfume.pk within seven days of delivery for review.",
       },
       {
         heading: "Process",
@@ -234,7 +237,7 @@ export const policies: Record<
     ],
   },
   shipping: {
-    title: "Shipping Policy",
+    title: "Shipping policy",
     sections: [
       {
         heading: "Processing",
@@ -242,7 +245,7 @@ export const policies: Record<
       },
       {
         heading: "Rates",
-        body: "Standard domestic shipping is calculated at checkout. Orders over $75 qualify for complimentary standard shipping where available.",
+        body: "{{shipping}}",
       },
       {
         heading: "Damage",
@@ -252,24 +255,3 @@ export const policies: Record<
   },
 };
 
-export const trustBadges = [
-  "Cash on delivery in major cities",
-  "Complimentary shipping over Rs 8,000",
-  "Easy returns on eligible sealed bottles",
-  "Authenticity checked before dispatch",
-] as const;
-
-export const testimonials = [
-  {
-    quote: "Amber Noir lasts through dinner without turning heavy. That is rare.",
-    attribution: "Vogue Beauty Desk",
-  },
-  {
-    quote: "Finally a fragrance site that lists notes and sillage like it matters.",
-    attribution: "City Fragrance Weekly",
-  },
-  {
-    quote: "Iris Solstice is daylight powder without the grand-mère dust.",
-    attribution: "Scent Letter",
-  },
-] as const;

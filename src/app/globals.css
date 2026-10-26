@@ -1,12 +1,14 @@
 @import "tailwindcss";
 
-/* NS Perfume — white canvas, black chrome, gold topbar & accent */
+/* NS Perfume: white canvas, black chrome, gold topbar and accent */
 :root {
   --color-canvas: #ffffff;
   --color-paper: #ffffff;
   --color-ink: #000000;
   --color-brass: #a9873c;
   --color-brass-deep: #a9873c;
+  /* Gold for text under 18px (4.5:1+ on white and on the cream wash) */
+  --color-brass-ink: #7c5b2b;
   --color-rosewood: #8b4a45;
   --color-bordeaux: #8b4a45;
   --color-taupe: #4a4a4a;
@@ -17,7 +19,11 @@
   --color-hairline-dark: #333333;
   --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
   --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.14);
-  /* Announcement (2.25rem) + header (4rem) on mobile; sm+ uses taller chrome */
+
+  /* Layout rhythm */
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --container-max: 1280px;
+  /* Announcement (2.25rem) + header (4rem) on mobile; taller chrome from sm and lg */
   --chrome-height: 6.25rem;
 }
 
@@ -27,12 +33,25 @@
   }
 }
 
+@media (min-width: 1024px) {
+  :root {
+    --chrome-height: 7rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --container-max: 1440px;
+  }
+}
+
 @theme inline {
   --color-canvas: var(--color-canvas);
   --color-paper: var(--color-paper);
   --color-ink: var(--color-ink);
   --color-brass: var(--color-brass);
   --color-brass-deep: var(--color-brass-deep);
+  --color-brass-ink: var(--color-brass-ink);
   --color-rosewood: var(--color-rosewood);
   --color-bordeaux: var(--color-bordeaux);
   --color-taupe: var(--color-taupe);
@@ -60,11 +79,7 @@
   --color-admin-danger: var(--admin-danger);
   --color-admin-danger-hover: var(--admin-danger-hover);
   --color-admin-input-border: var(--admin-input-border);
-
-  --font-sans: var(--font-ubuntu);
-  --font-display: var(--font-ubuntu);
-  --font-mono: var(--font-ibm-plex-mono);
-  --font-serif: var(--font-eb-garamond);
+  --color-admin-accent: var(--admin-accent);
 
   --radius-xs: 2px;
   --radius-md: 8px;
@@ -78,14 +93,58 @@
   --spacing-carousel-gap: var(--carousel-gap);
 }
 
+/**
+ * Type families (next/font variables set on <html> in app/layout.tsx).
+ * display/serif: Cormorant Garamond, headings and product names only (never under 24px).
+ * sans: Manrope, all UI, paragraphs, nav, buttons, forms.
+ * Figures (prices, ml sizes, phone and order numbers) use Manrope with tabular-nums.
+ * Not `inline`, so a subtree (the admin app) can remap a family by overriding the variable.
+ */
+@theme {
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-cormorant), "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", ui-serif, Georgia, serif;
+}
+
+/* Dense admin UI stays on one sans family; the display serif is storefront-only. */
+.admin-app {
+  --font-display: var(--font-sans);
+  --font-serif: var(--font-sans);
+}
+
 @layer base {
   ::selection {
     background: #000000;
     color: #ffffff;
   }
 
+  /**
+   * Root scale: 16px base, 17px on large laptops (16" MacBook Pro at 1792 CSS px),
+   * 18px on 1920+ desktops. Everything sized in rem scales with it.
+   * Breakpoints are unaffected (media queries resolve rem against the browser default).
+   */
   html {
     overflow-x: clip;
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  @media (min-width: 1536px) {
+    html {
+      font-size: 106.25%;
+    }
+  }
+
+  @media (min-width: 1920px) {
+    html {
+      font-size: 112.5%;
+    }
+  }
+
+  /* Admin layouts are tuned at a fixed 16px root */
+  html:has(.admin-app) {
+    font-size: 100%;
   }
 
   * {
@@ -127,7 +186,7 @@
   }
 
   /**
-   * Solid dark chrome. Semi-transparent “glass” over white reads as muddy grey
+   * Solid dark chrome. Semi-transparent glass over white reads as muddy grey
    * (most pages pad content below the fixed header, so blur has nothing to sample).
    * Opaque ink keeps type crisp on PDPs and still frames full-bleed heroes cleanly.
    */
@@ -149,11 +208,14 @@
   body {
     background-color: var(--color-canvas);
     color: var(--color-ink);
-    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
-    font-size: 17px;
+    font-family: var(--font-sans);
+    font-size: 1rem;
     line-height: 1.65;
-    font-weight: 500;
+    font-weight: 400;
+    font-feature-settings: "kern" 1;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     overflow-x: clip;
   }
 
@@ -179,118 +241,150 @@
     cursor: not-allowed;
   }
 
+  /* Keyboard focus is always visible; components may refine it with ring utilities */
+  :focus-visible {
+    outline: 2px solid var(--color-brass);
+    outline-offset: 2px;
+  }
+
   h1,
   h2,
   h3 {
-    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
+    font-family: var(--font-display);
     font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
     text-wrap: balance;
-  }
-
-  p,
-  li,
-  label,
-  input,
-  textarea,
-  select {
-    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
   }
 
   p {
     text-wrap: pretty;
   }
 
-  ::selection {
-    background: #000000;
-    color: #ffffff;
-  }
+}
+
+/**
+ * Type scale. Use these instead of ad-hoc sizes.
+ * Display (Cormorant): xl / lg / md / sm, never below 24px.
+ * UI + body (Manrope): heading-sm, body-lg, body, body-sm, caption, eyebrow, label.
+ * Numerals (Manrope, tabular): price.
+ */
+@utility text-display-xl {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 1.6rem + 3.2vw, 5.25rem);
+  line-height: 1.04;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+@utility text-display-lg {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 1.5rem + 2vw, 3.75rem);
+  line-height: 1.07;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+
+@utility text-display-md {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 1.3rem + 1.2vw, 2.625rem);
+  line-height: 1.1;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+@utility text-display-sm {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1.4rem + 0.3vw, 1.75rem);
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+@utility text-heading-sm {
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@utility text-body-lg {
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  line-height: 1.7;
+  font-weight: 400;
+}
+
+@utility text-body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.65;
+  font-weight: 400;
+}
+
+@utility text-body-sm {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+@utility text-caption {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+@utility text-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Links, nav items and button-style labels. Sentence case; uppercase is reserved for text-eyebrow. */
+@utility text-label {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+@utility text-price {
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+@utility container-ns {
+  width: 100%;
+  max-width: calc(var(--container-max) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Reading measure for running text */
+@utility measure {
+  max-width: 66ch;
+}
+
+@utility measure-wide {
+  max-width: 72ch;
+}
+
+@utility section-y {
+  padding-block: clamp(3rem, 2rem + 4vw, 7rem);
 }
 
 @layer utilities {
-  .font-display {
-    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
-  }
-
-  .font-sans {
-    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
-  }
-
-  .font-serif {
-    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
-  }
-
-  .font-mono {
-    font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
-  }
-
-  .text-display-xl {
-    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
-    /* ~1.875rem at 320px, scales to 4rem on large screens */
-    font-size: clamp(1.875rem, 1.05rem + 3.6vw, 4rem);
-    line-height: 1.1;
-    font-weight: 500;
-    letter-spacing: -0.02em;
-  }
-
-  .text-display-lg {
-    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
-    font-size: clamp(1.75rem, 1.2rem + 2.4vw, 2.875rem);
-    line-height: 1.12;
-    font-weight: 500;
-    letter-spacing: -0.015em;
-  }
-
-  .text-display-md {
-    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
-    font-size: clamp(1.625rem, 2.6vw, 2.125rem);
-    line-height: 1.2;
-    font-weight: 500;
-  }
-
-  .text-heading-sm {
-    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
-    font-size: 1.25rem;
-    line-height: 1.3;
-    font-weight: 500;
-  }
-
-  .text-body-lg {
-    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
-    font-size: 1.1875rem;
-    line-height: 1.65;
-    font-weight: 500;
-  }
-
-  .text-body {
-    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
-    font-size: 1.0625rem;
-    line-height: 1.65;
-    font-weight: 500;
-  }
-
-  .text-caption {
-    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    font-weight: 500;
-  }
-
-  .text-eyebrow {
-    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
-    font-size: 0.75rem;
-    line-height: 1.4;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .text-price {
-    font-family: var(--font-ubuntu), Ubuntu, system-ui, sans-serif;
-    font-size: 1.125rem;
-    line-height: 1.3;
-    font-weight: 500;
-  }
-
   /* Light panels (currency menu, select popovers) */
   .scrollbar-panel {
     scrollbar-width: thin;
@@ -315,25 +409,6 @@
     background: #a9873c;
   }
 
-  .container-ns {
-    width: 100%;
-    max-width: 1280px;
-    margin-inline: auto;
-    padding-inline: clamp(1.125rem, 4vw, 1.5rem);
-  }
-
-  .measure {
-    max-width: 38rem;
-  }
-
-  .measure-wide {
-    max-width: 42rem;
-  }
-
-  .section-y {
-    padding-block: clamp(2.75rem, 7vw, 6rem);
-  }
-
   /**
    * Full-viewport homepage bands (desktop + tablet).
    * Mobile: content-first height, not forced empty space.
@@ -351,13 +426,12 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-block: clamp(2.5rem, 6vw, 4rem);
+    padding-block: clamp(3rem, 2rem + 4vw, 7rem);
   }
 
   @media (min-width: 768px) {
     .section-viewport {
       min-height: calc(100dvh - var(--chrome-height));
-      padding-block: clamp(2rem, 3.5vw, 3.5rem);
     }
   }
 
@@ -384,31 +458,53 @@
 
 /* Admin panel surfaces (isolated from storefront brand canvas) */
 .admin-app {
-  --admin-page: #eef0f3;
+  /* Warm brand palette: ivory page, white cards, charcoal ink, brass accent */
+  --admin-page: #f7f5f0;
   --admin-paper: #ffffff;
-  --admin-ink: #1c1f26;
-  --admin-muted: #5c6370;
-  --admin-faint: #9aa1ad;
-  --admin-line: #e4e6ea;
-  --admin-soft: #f3f4f6;
-  --admin-soft-2: #f6f7f9;
-  --admin-sidebar: #1c1f26;
-  --admin-sidebar-text: rgba(255, 255, 255, 0.72);
-  --admin-sidebar-muted: rgba(255, 255, 255, 0.42);
-  --admin-sidebar-hover: rgba(255, 255, 255, 0.08);
-  --admin-sidebar-active-bg: #ffffff;
-  --admin-sidebar-active-text: #1c1f26;
-  --admin-danger: #c62828;
-  --admin-danger-hover: #9a1b1b;
-  --admin-input-border: #d8dbe2;
-  --admin-shadow: 0 1px 2px rgba(28, 31, 38, 0.04);
+  --admin-ink: #1c1a17;
+  --admin-muted: #635c52;
+  --admin-faint: #8a8276;
+  --admin-line: #e8e2d6;
+  --admin-soft: #f3efe7;
+  --admin-soft-2: #faf8f4;
+  --admin-sidebar: #1c1a17;
+  --admin-sidebar-text: rgba(247, 245, 240, 0.74);
+  --admin-sidebar-muted: rgba(247, 245, 240, 0.48);
+  --admin-sidebar-hover: rgba(247, 245, 240, 0.08);
+  --admin-sidebar-active-bg: #f7f5f0;
+  --admin-sidebar-active-text: #1c1a17;
+  --admin-danger: #8b4a45;
+  --admin-danger-hover: #6e3834;
+  --admin-input-border: #d9d1c2;
+  /* Brass for text under 18px (4.5:1 on white) */
+  --admin-accent: #7c5b2b;
+  --admin-shadow: 0 1px 2px rgba(28, 26, 23, 0.05);
+  /* Status tones: brass (done/live), ink (in progress), amber (needs action), rose (stopped) */
+  --admin-tone-brass-bg: #f5eddb;
+  --admin-tone-brass-text: #6b4e22;
+  --admin-tone-brass-line: #e2d0a6;
+  --admin-tone-ink-bg: #efebe3;
+  --admin-tone-ink-text: #2b2823;
+  --admin-tone-ink-line: #d8d0c2;
+  --admin-tone-amber-bg: #fcefdc;
+  --admin-tone-amber-text: #8d5512;
+  --admin-tone-amber-line: #efd2a4;
+  --admin-tone-rose-bg: #f8eae8;
+  --admin-tone-rose-text: #7d3f3a;
+  --admin-tone-rose-line: #e7c5c1;
   --color-paper: #ffffff;
-  --color-ink: #1c1f26;
-  --color-canvas: #eef0f3;
-  --color-hairline: #e4e6ea;
-  --color-taupe: #5c6370;
+  --color-ink: #1c1a17;
+  --color-canvas: #f7f5f0;
+  --color-hairline: #e8e2d6;
+  --color-taupe: #635c52;
   color: var(--admin-ink);
   background: var(--admin-page);
+  /* Data UI type: Manrope 15px, never the storefront serif */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  font-weight: 450;
+  text-rendering: optimizeLegibility;
 }
 
 /* While admin is open: document itself must not scroll */
@@ -423,11 +519,11 @@ html.admin-scroll-lock body {
 .admin-app .admin-main-scroll {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: #9aa1ad transparent;
+  scrollbar-color: #c2b9a9 transparent;
 }
 
 .admin-app[data-theme="dark"] .admin-main-scroll {
-  scrollbar-color: #4b5563 transparent;
+  scrollbar-color: #4a453d transparent;
 }
 
 .admin-app .admin-main-scroll::-webkit-scrollbar {
@@ -439,14 +535,14 @@ html.admin-scroll-lock body {
 }
 
 .admin-app .admin-main-scroll::-webkit-scrollbar-thumb {
-  background: #9aa1ad;
+  background: #c2b9a9;
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .admin-app[data-theme="dark"] .admin-main-scroll::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: #4a453d;
   background-clip: padding-box;
 }
 
@@ -465,110 +561,236 @@ html.admin-scroll-lock body {
 }
 
 .admin-app[data-theme="dark"] {
-  --admin-page: #0f1115;
-  --admin-paper: #181b22;
-  --admin-ink: #eef0f3;
-  --admin-muted: #9aa1ad;
-  --admin-faint: #6b7280;
-  --admin-line: #2a2f3a;
-  --admin-soft: #1f242e;
-  --admin-soft-2: #151921;
-  --admin-sidebar: #0a0c10;
-  --admin-sidebar-text: rgba(238, 240, 243, 0.72);
-  --admin-sidebar-muted: rgba(238, 240, 243, 0.4);
-  --admin-sidebar-hover: rgba(255, 255, 255, 0.06);
-  --admin-sidebar-active-bg: #eef0f3;
-  --admin-sidebar-active-text: #0f1115;
-  --admin-danger: #e53935;
-  --admin-danger-hover: #c62828;
-  --admin-input-border: #333945;
-  --admin-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --admin-page: #12110f;
+  --admin-paper: #1b1a17;
+  --admin-ink: #f2eee6;
+  --admin-muted: #aaa398;
+  --admin-faint: #857d71;
+  --admin-line: #2e2b26;
+  --admin-soft: #252320;
+  --admin-soft-2: #171613;
+  --admin-sidebar: #0c0b0a;
+  --admin-sidebar-text: rgba(242, 238, 230, 0.72);
+  --admin-sidebar-muted: rgba(242, 238, 230, 0.44);
+  --admin-sidebar-hover: rgba(242, 238, 230, 0.07);
+  --admin-sidebar-active-bg: #f2eee6;
+  --admin-sidebar-active-text: #12110f;
+  --admin-danger: #cf7d76;
+  --admin-danger-hover: #b8655e;
+  --admin-input-border: #3d3931;
+  --admin-accent: #d6b46c;
+  --admin-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --admin-tone-brass-bg: rgba(169, 135, 60, 0.17);
+  --admin-tone-brass-text: #dcbd7a;
+  --admin-tone-brass-line: rgba(169, 135, 60, 0.45);
+  --admin-tone-ink-bg: rgba(242, 238, 230, 0.07);
+  --admin-tone-ink-text: #e6e1d7;
+  --admin-tone-ink-line: rgba(242, 238, 230, 0.2);
+  --admin-tone-amber-bg: rgba(214, 150, 60, 0.15);
+  --admin-tone-amber-text: #e9b66d;
+  --admin-tone-amber-line: rgba(214, 150, 60, 0.42);
+  --admin-tone-rose-bg: rgba(196, 110, 103, 0.17);
+  --admin-tone-rose-text: #e7a49e;
+  --admin-tone-rose-line: rgba(196, 110, 103, 0.48);
   /* Shared UI (Button, Input, Select) inside admin */
-  --color-paper: #181b22;
-  --color-ink: #eef0f3;
-  --color-canvas: #0f1115;
-  --color-hairline: #2a2f3a;
-  --color-taupe: #9aa1ad;
+  --color-paper: #1b1a17;
+  --color-ink: #f2eee6;
+  --color-canvas: #12110f;
+  --color-hairline: #2e2b26;
+  --color-taupe: #aaa398;
   color-scheme: dark;
 }
 
-/* Rich text (TipTap admin + storefront) */
-.prose-ns {
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
-  font-size: 1.05rem;
-  line-height: 1.75;
-  color: inherit;
+/*
+ * Admin typography. Body/base rules set the storefront serif on p/label/input;
+ * inside the console everything inherits Manrope instead. Stays in @layer base
+ * so utilities still win.
+ */
+@layer base {
+  .admin-app :where(p, li, label, input, textarea, select, button, h1, h2, h3, h4, td, th, dt, dd),
+  html.admin-scroll-lock :where(p, li, label, input, textarea, select, h1, h2, h3, h4) {
+    font-family: inherit;
+  }
+
+  .admin-app :where(h1, h2, h3, h4) {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
 }
 
-.prose-ns > * + * {
-  margin-top: 0.9em;
+/*
+ * Shared storefront components (Button, Select, ConfirmDialog) carry
+ * font-display / font-serif. In the console they read as UI sans.
+ */
+@layer utilities {
+  .admin-app .font-display,
+  .admin-app .font-serif,
+  .admin-app .text-eyebrow,
+  html.admin-scroll-lock .font-display,
+  html.admin-scroll-lock .font-serif {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .admin-app .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
-.prose-ns p {
-  margin: 0;
+/*
+ * Radix portals (select menus, tooltips, confirm dialogs) mount on <body>,
+ * outside .admin-app. While the console is open, <html> carries
+ * .admin-scroll-lock + data-admin-theme so those layers match the console.
+ */
+html.admin-scroll-lock {
+  --color-paper: #ffffff;
+  --color-ink: #1c1a17;
+  --color-canvas: #f7f5f0;
+  --color-hairline: #e8e2d6;
+  --color-taupe: #635c52;
 }
 
-.prose-ns h2,
-.prose-ns h3,
-.prose-ns h4 {
-  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  line-height: 1.3;
-  color: inherit;
+html.admin-scroll-lock body {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-.prose-ns h2 {
-  font-size: 1.35em;
+html.admin-scroll-lock[data-admin-theme="dark"] {
+  --color-paper: #1b1a17;
+  --color-ink: #f2eee6;
+  --color-canvas: #12110f;
+  --color-hairline: #2e2b26;
+  --color-taupe: #aaa398;
+  color-scheme: dark;
 }
 
-.prose-ns h3 {
-  font-size: 1.15em;
+/* Admin tables: thin scrollbar on the scroll wrapper, pinned first column on phones */
+.admin-app .admin-table-wrap {
+  scrollbar-width: thin;
 }
 
-.prose-ns ul,
-.prose-ns ol {
-  padding-left: 1.25em;
+/* Invalid fields (client validation sets aria-invalid) */
+.admin-app :is(input, textarea, select, button, [role="combobox"])[aria-invalid="true"] {
+  border-color: var(--admin-danger) !important;
 }
 
-.prose-ns ul {
-  list-style: disc;
+.admin-app :is(input, textarea)[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-danger) 22%, transparent) !important;
 }
 
-.prose-ns ol {
-  list-style: decimal;
+@media (max-width: 767px) {
+  .admin-app .admin-table-sticky :is(th, td):first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    max-width: 13rem;
+    background: var(--admin-paper);
+    box-shadow: inset -1px 0 0 var(--admin-line);
+    overflow-wrap: anywhere;
+  }
+
+  .admin-app .admin-table-sticky th:first-child {
+    background: var(--admin-soft);
+  }
 }
 
-.prose-ns li + li {
-  margin-top: 0.35em;
-}
+/* Rich text (TipTap admin + storefront). In the components layer so utilities can tune size and color. */
+@layer components {
+  .prose-ns {
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: inherit;
+  }
 
-.prose-ns a {
-  color: var(--color-brass, #a67c3d);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
+  /* Zero-specificity reset so the block spacing rule below always wins. */
+  :where(.prose-ns) p {
+    margin: 0;
+  }
 
-.prose-ns blockquote {
-  border-left: 2px solid var(--color-hairline, #e8dfcb);
-  padding-left: 1rem;
-  color: var(--color-taupe, #8b7e6d);
-  font-style: italic;
-}
+  .prose-ns > * + * {
+    margin-top: 1em;
+  }
 
-.prose-ns strong {
-  font-weight: 600;
-}
+  .prose-ns h2,
+  .prose-ns h3,
+  .prose-ns h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    color: inherit;
+  }
 
-.prose-ns u {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
+  .prose-ns > h2,
+  .prose-ns > h3,
+  .prose-ns > h4 {
+    margin-top: 1.6em;
+  }
 
-.prose-ns hr {
-  border: 0;
-  border-top: 1px solid var(--color-hairline, #e8dfcb);
-  margin: 1.25em 0;
+  .prose-ns h2 {
+    font-size: 1.75em;
+  }
+
+  .prose-ns h3 {
+    font-size: 1.4em;
+  }
+
+  .prose-ns h4 {
+    font-family: var(--font-sans);
+    font-size: 1.1em;
+  }
+
+  .prose-ns ul,
+  .prose-ns ol {
+    padding-left: 1.25em;
+  }
+
+  .prose-ns ul {
+    list-style: disc;
+  }
+
+  .prose-ns ol {
+    list-style: decimal;
+  }
+
+  .prose-ns li + li {
+    margin-top: 0.35em;
+  }
+
+  .prose-ns li::marker {
+    color: var(--color-brass, #a9873c);
+  }
+
+  .prose-ns a {
+    color: var(--color-brass-ink, #7c5b2b);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .prose-ns blockquote {
+    border-left: 2px solid var(--color-brass, #a9873c);
+    padding-left: 1.25rem;
+    font-family: var(--font-serif);
+    font-size: 1.5em;
+    font-style: italic;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--color-ink, #000000);
+  }
+
+  .prose-ns strong {
+    font-weight: 700;
+  }
+
+  .prose-ns u {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .prose-ns hr {
+    border: 0;
+    border-top: 1px solid var(--color-hairline, #e8dfcb);
+    margin: 1.75em 0;
+  }
 }
 
 .admin-rte-shell .ProseMirror,

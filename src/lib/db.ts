@@ -32,8 +32,16 @@ export async function connectDB() {
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
       dbName: process.env.MONGODB_DB || "ns-perfume",
+      serverSelectionTimeoutMS: 10_000,
     });
   }
-  cached.conn = await cached.promise;
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    // Forget the failed attempt so the next request reconnects instead of
+    // failing forever (the cache lives on `global` and survives hot reloads).
+    cached.promise = null;
+    throw err;
+  }
   return cached.conn;
 }

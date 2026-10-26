@@ -11,19 +11,19 @@ export function CurrencyToggle({
   className?: string;
   tone?: "light" | "dark";
 }) {
-  const { currency, setCurrency, currencies, loading } = useCurrency();
+  const { displayCurrency, setCurrency, currencies, loading } = useCurrency();
 
   return (
     <Select
-      value={currency}
-      onValueChange={(v) => setCurrency(v as typeof currency)}
+      value={displayCurrency}
+      onValueChange={(v) => setCurrency(v as typeof displayCurrency)}
       disabled={loading}
       tone={tone}
       aria-label="Select currency"
       options={currencies.map((c) => ({ value: c.code, label: c.code }))}
       className={cn("min-w-0", className)}
       triggerClassName={cn(
-        "min-h-9 min-w-[4.5rem] px-2.5 py-1.5 font-mono text-xs tracking-wide",
+        "min-h-10! min-w-[4.75rem] px-3 py-1.5 font-sans tabular-nums text-sm tracking-wide",
         tone === "dark" && "backdrop-blur-md",
       )}
     />

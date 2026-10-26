@@ -11,22 +11,32 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import gsap from "gsap";
-import { SearchIcon, XIcon } from "@animateicons/react/lucide";
+import { animate, EASE, finished } from "@/lib/animate";
+import { SearchIcon, XIcon } from "@/components/ui/icons";
 import { useUi } from "@/context/ui";
-import type { StoreProduct } from "@/lib/mappers";
 import { Price } from "@/components/commerce/price";
-import { cn } from "@/lib/cn";
+import {
+  fetchSearchCatalog,
+  isBestseller,
+  lowestPrice,
+  searchProducts,
+  type SearchProduct,
+} from "@/lib/search";
 
-const QUICK_SEARCHES = [
+/** Note chips fill the search box; `href` chips jump straight to a collection. */
+const QUICK_SEARCHES: { label: string; q?: string; href?: string }[] = [
   { label: "Oud", q: "oud" },
   { label: "Rose", q: "rose" },
   { label: "Vanilla", q: "vanilla" },
   { label: "Cedar", q: "cedar" },
   { label: "Citrus", q: "citrus" },
-  { label: "For Her", q: "iris" },
   { label: "Saffron", q: "saffron" },
-] as const;
+  { label: "For her", href: "/collections/for-her" },
+  { label: "For him", href: "/collections/for-him" },
+];
+
+const quickChipClass =
+  "inline-flex min-h-10 cursor-pointer items-center rounded-xs border border-hairline bg-[#FAF8F4] px-4 text-body-sm text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper";
 
 /**
  * Drops open from the bottom edge of the fixed chrome (topbar + nav).
@@ -39,41 +49,33 @@ export function SearchSheet() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
-  const [catalog, setCatalog] = useState<StoreProduct[]>([]);
+  const [catalog, setCatalog] = useState<SearchProduct[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
   const titleId = useId();
 
   useEffect(() => {
     if (!searchOpen) return;
     let cancelled = false;
-    fetch("/api/products")
-      .then((r) => r.json())
-      .then((j) => {
-        if (!cancelled && j.ok) setCatalog(j.data as StoreProduct[]);
+    fetchSearchCatalog()
+      .then((data) => {
+        if (cancelled) return;
+        setCatalog(data);
+        setLoadFailed(false);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setLoadFailed(true);
+      });
     return () => {
       cancelled = true;
     };
   }, [searchOpen]);
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return catalog
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.descriptor.toLowerCase().includes(q) ||
-          p.family.toLowerCase().includes(q) ||
-          p.topNotes.some((n) => n.toLowerCase().includes(q)) ||
-          p.heartNotes.some((n) => n.toLowerCase().includes(q)) ||
-          p.baseNotes.some((n) => n.toLowerCase().includes(q)),
-      )
-      .slice(0, 6);
-  }, [query, catalog]);
+  const search = useMemo(() => searchProducts(catalog, query), [query, catalog]);
+  const results = useMemo(() => search.results.slice(0, 6), [search]);
+  const totalResults = search.results.length;
 
   const bestsellers = useMemo(
-    () => catalog.filter((p) => p.badges.includes("bestseller")).slice(0, 4),
+    () => catalog.filter(isBestseller).slice(0, 4),
     [catalog],
   );
 
@@ -82,26 +84,13 @@ export function SearchSheet() {
     const panel = panelRef.current;
     if (!root || !panel) return;
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    gsap.killTweensOf([root, panel]);
-
-    if (reduced) {
-      gsap.set(root, { autoAlpha: 1 });
-      gsap.set(panel, { y: 0, autoAlpha: 1 });
-      return;
-    }
-
-    gsap.set(root, { autoAlpha: 1 });
-    gsap.fromTo(
-      panel,
-      { y: "-100%", autoAlpha: 0.95 },
-      { y: "0%", autoAlpha: 1, duration: 0.4, ease: "power4.out" },
-    );
-    gsap.fromTo(
-      root.querySelector("[data-search-scrim]"),
-      { autoAlpha: 0 },
-      { autoAlpha: 1, duration: 0.3, ease: "power2.out" },
-    );
+    root.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+    root.style.opacity = "1";
+    root.style.visibility = "visible";
+    animate(panel, [{ transform: "translateY(-100%)", opacity: 0.95 }, { transform: "none", opacity: 1 }], {
+      duration: 400,
+    });
+    animate(root.querySelector("[data-search-scrim]"), [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
   }, []);
 
   const animateClose = useCallback((done?: () => void) => {
@@ -112,26 +101,18 @@ export function SearchSheet() {
       return;
     }
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    gsap.killTweensOf([root, panel]);
-
-    if (reduced) {
-      gsap.set(root, { autoAlpha: 0 });
-      done?.();
-      return;
-    }
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        gsap.set(root, { autoAlpha: 0 });
-        done?.();
-      },
+    root.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+    const exit = { easing: EASE.in, fill: "forwards" as const };
+    const slide = animate(panel, [{ transform: "none" }, { transform: "translateY(-100%)" }], { ...exit, duration: 280 });
+    const fade = animate(root.querySelector("[data-search-scrim]"), [{ opacity: 1 }, { opacity: 0 }], {
+      ...exit,
+      duration: 240,
     });
-    tl.to(panel, { y: "-100%", duration: 0.28, ease: "power3.in" }, 0).to(
-      root.querySelector("[data-search-scrim]"),
-      { autoAlpha: 0, duration: 0.24, ease: "power2.in" },
-      0,
-    );
+    Promise.all([finished(slide), finished(fade)]).then(() => {
+      root.style.opacity = "0";
+      root.style.visibility = "hidden";
+      done?.();
+    });
   }, []);
 
   useEffect(() => {
@@ -172,13 +153,12 @@ export function SearchSheet() {
     if (!mounted || !results.length) return;
     const list = rootRef.current?.querySelectorAll("[data-search-result]");
     if (!list?.length) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
-    gsap.fromTo(
-      list,
-      { opacity: 0, y: 8 },
-      { opacity: 1, y: 0, duration: 0.22, stagger: 0.03, ease: "power2.out" },
-    );
+    list.forEach((item, i) => {
+      animate(item, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], {
+        duration: 220,
+        delay: i * 30,
+      });
+    });
   }, [mounted, results]);
 
   if (!mounted) return null;
@@ -222,7 +202,7 @@ export function SearchSheet() {
 
           {/* Single compact search row */}
           <form
-            className="flex items-stretch overflow-hidden rounded-md border border-ink bg-paper"
+            className="flex items-stretch overflow-hidden rounded-xs border border-ink bg-paper"
             onSubmit={(e) => {
               e.preventDefault();
               goFullSearch();
@@ -238,14 +218,14 @@ export function SearchSheet() {
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search notes, names, or families"
-                className="min-h-12 w-full border-0 bg-transparent font-serif text-[1.125rem] text-ink outline-none placeholder:text-taupe/65 sm:min-h-[3.25rem] sm:text-[1.25rem]"
+                placeholder="Search by name, note, or who it is for"
+                className="min-h-12 w-full border-0 bg-transparent font-sans text-[1.125rem] text-ink outline-none placeholder:text-taupe/65 sm:min-h-[3.25rem] sm:text-[1.25rem]"
                 aria-label="Search products"
               />
             </div>
             <button
               type="submit"
-              className="hidden shrink-0 cursor-pointer bg-ink px-5 font-display text-[12px] font-medium uppercase tracking-[0.14em] text-paper transition-colors hover:bg-brass hover:text-ink sm:inline-flex sm:items-center"
+              className="hidden shrink-0 cursor-pointer bg-ink px-5 text-label text-paper transition-colors hover:bg-brass hover:text-ink sm:inline-flex sm:items-center"
             >
               Search
             </button>
@@ -264,76 +244,64 @@ export function SearchSheet() {
             {!hasQuery ? (
               <div className="space-y-5">
                 <div>
-                  <p className="mb-2.5 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
-                    Try a note
+                  <p className="mb-2.5 text-eyebrow text-taupe">
+                    Try a note or collection
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {QUICK_SEARCHES.map((item) => (
-                      <button
-                        key={item.q}
-                        type="button"
-                        onClick={() => applyQuick(item.q)}
-                        className="cursor-pointer rounded-xs border border-hairline bg-[#FAF8F4] px-3 py-1.5 font-serif text-[0.95rem] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper"
-                      >
-                        {item.label}
-                      </button>
-                    ))}
+                    {QUICK_SEARCHES.map((item) =>
+                      item.href ? (
+                        <Link
+                          key={item.label}
+                          href={item.href}
+                          onClick={closeSearch}
+                          className={quickChipClass}
+                        >
+                          {item.label}
+                        </Link>
+                      ) : (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => applyQuick(item.q ?? item.label)}
+                          className={quickChipClass}
+                        >
+                          {item.label}
+                        </button>
+                      ),
+                    )}
                   </div>
                 </div>
 
                 {bestsellers.length > 0 ? (
                   <div>
-                    <p className="mb-2.5 font-display text-[11px] font-medium uppercase tracking-[0.14em] text-taupe">
+                    <p className="mb-2.5 text-eyebrow text-taupe">
                       Bestsellers
                     </p>
-                    <ul className="grid gap-1 sm:grid-cols-2">
-                      {bestsellers.map((p) => (
-                        <li key={p.handle}>
-                          <Link
-                            href={`/products/${p.handle}`}
-                            onClick={closeSearch}
-                            className="group flex items-center gap-3 rounded-sm px-1.5 py-2 transition-colors hover:bg-muted"
-                          >
-                            <div className="relative h-12 w-12 shrink-0 overflow-hidden bg-canvas">
-                              <Image
-                                src={p.imagePrimary}
-                                alt=""
-                                fill
-                                sizes="48px"
-                                className="object-contain p-1"
-                              />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate font-display text-[0.95rem] font-medium text-ink group-hover:text-brass">
-                                {p.name}
-                              </p>
-                              <Price
-                                amountPkr={p.prices[0]?.price ?? 0}
-                                className="text-[0.85rem] text-taupe"
-                              />
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                    <BestsellerList products={bestsellers} onPick={closeSearch} />
                   </div>
                 ) : null}
               </div>
             ) : results.length === 0 ? (
-              <div className="flex flex-col items-start gap-3 py-2">
-                <p className="font-serif text-[1.05rem] text-taupe">
-                  No bottles match “{query.trim()}”.
+              <div className="space-y-4 py-1">
+                <p className="text-body text-taupe" role="status">
+                  {catalog.length
+                    ? `No perfumes match “${query.trim()}”. Try a note like oud or rose, or start with a bestseller.`
+                    : loadFailed
+                      ? "Search is not loading right now. Press Search to try the full search page."
+                      : "Loading perfumes…"}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => goFullSearch()}
-                  className="cursor-pointer font-display text-[12px] font-medium uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
-                >
-                  Open full search →
-                </button>
+                {bestsellers.length > 0 ? (
+                  <BestsellerList products={bestsellers} onPick={closeSearch} />
+                ) : null}
               </div>
             ) : (
-              <ul className="divide-y divide-hairline border-t border-hairline">
+              <>
+                {search.partial ? (
+                  <p className="mb-3 text-body-sm text-taupe" role="status">
+                    Nothing matches every word. These match part of “{query.trim()}”.
+                  </p>
+                ) : null}
+                <ul className="divide-y divide-hairline border-t border-hairline">
                 {results.map((p) => (
                   <li key={p.handle} data-search-result>
                     <Link
@@ -341,40 +309,41 @@ export function SearchSheet() {
                       onClick={closeSearch}
                       className="group flex items-center gap-3.5 py-3 transition-colors hover:bg-muted/80 sm:gap-4"
                     >
-                      <div className="relative h-14 w-14 shrink-0 overflow-hidden bg-canvas sm:h-16 sm:w-16">
+                      <div className="relative aspect-4/5 w-14 shrink-0 overflow-hidden bg-muted sm:w-16">
                         <Image
                           src={p.imagePrimary}
                           alt=""
                           fill
                           sizes="64px"
-                          className="object-contain p-1.5"
+                          className="object-cover object-center"
                         />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-col gap-0.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2">
-                          <p className="truncate font-display text-[1.05rem] font-medium text-ink group-hover:text-brass">
+                          <p className="truncate text-display-sm text-ink group-hover:text-brass-ink">
                             {p.name}
                           </p>
-                          <span className="font-mono text-[11px] uppercase tracking-wide text-taupe">
+                          <span className="text-eyebrow text-taupe">
                             {p.concentration}
                           </span>
                         </div>
-                        <p className="mt-0.5 truncate font-serif text-[0.9rem] text-taupe">
+                        <p className="mt-0.5 truncate text-body-sm text-taupe">
                           {p.descriptor}
                         </p>
                         <Price
-                          amountPkr={p.prices[0]?.price ?? 0}
-                          className="mt-1 text-[0.95rem] sm:hidden"
+                          amountPkr={lowestPrice(p)}
+                          className="mt-1 text-base sm:hidden"
                         />
                       </div>
                       <Price
-                        amountPkr={p.prices[0]?.price ?? 0}
-                        className="hidden shrink-0 text-[0.95rem] sm:block sm:text-[1.05rem]"
+                        amountPkr={lowestPrice(p)}
+                        className="hidden shrink-0 text-base sm:block"
                       />
                     </Link>
                   </li>
                 ))}
               </ul>
+              </>
             )}
           </div>
 
@@ -382,18 +351,59 @@ export function SearchSheet() {
             <button
               type="button"
               onClick={() => goFullSearch()}
-              className={cn(
-                "cursor-pointer font-display text-[11px] font-medium uppercase tracking-[0.14em] text-ink underline-offset-4 hover:underline",
-              )}
+              className="inline-flex min-h-11 cursor-pointer items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass"
             >
-              {hasQuery ? "See all results →" : "Full search page →"}
+              {!hasQuery
+                ? "Full search page →"
+                : totalResults > results.length
+                  ? `See all ${totalResults} results →`
+                  : "Open full search →"}
             </button>
-            <p className="font-mono text-[10px] tracking-wide text-taupe">
+            <p className="font-sans tabular-nums text-xs tracking-wide text-taupe">
               Esc
             </p>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+/** Bestseller rows with a clear 4:5 bottle photo (same crop as product cards). */
+function BestsellerList({
+  products,
+  onPick,
+}: {
+  products: SearchProduct[];
+  onPick: () => void;
+}) {
+  return (
+    <ul className="grid gap-1 sm:grid-cols-2">
+      {products.map((p) => (
+        <li key={p.handle}>
+          <Link
+            href={`/products/${p.handle}`}
+            onClick={onPick}
+            className="group flex items-center gap-3.5 rounded-xs px-2 py-2 transition-colors hover:bg-muted"
+          >
+            <div className="relative aspect-4/5 w-14 shrink-0 overflow-hidden bg-muted sm:w-16">
+              <Image
+                src={p.imagePrimary}
+                alt=""
+                fill
+                sizes="64px"
+                className="object-cover object-center"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-semibold text-ink group-hover:text-brass-ink">
+                {p.name}
+              </p>
+              <Price amountPkr={lowestPrice(p)} className="text-caption text-taupe" />
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }

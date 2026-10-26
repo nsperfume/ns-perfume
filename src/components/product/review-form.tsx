@@ -12,9 +12,12 @@ const STAR_PATH =
 export function ProductReviewForm({
   productHandle,
   productName,
+  onDone,
 }: {
   productHandle: string;
   productName: string;
+  /** Close the surrounding dialog. */
+  onDone?: () => void;
 }) {
   const { user } = useCustomer();
   const [author, setAuthor] = useState("");
@@ -75,24 +78,14 @@ export function ProductReviewForm({
 
   if (sent) {
     return (
-      <div
-        id="write-review"
-        className="scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] border border-hairline bg-muted/40 px-5 py-6 sm:px-6"
-      >
-        <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
-          Review received
+      <div role="status" className="mt-6 border-t border-hairline pt-6">
+        <p className="text-heading-sm text-ink">Thank you, review received</p>
+        <p className="mt-2 text-body text-taupe">
+          Your note on {productName} is with us for a quick check. It appears on
+          this page once approved, usually within a day.
         </p>
-        <p className="mt-3 font-serif text-[1.1rem] leading-relaxed text-ink">
-          Thanks. Your note on {productName} is with us for a quick check before
-          it appears on this page.
-        </p>
-        <Button
-          type="button"
-          variant="secondary"
-          className="mt-5 w-auto!"
-          onClick={() => setSent(false)}
-        >
-          Write another
+        <Button type="button" className="mt-6 w-full sm:w-auto" onClick={onDone}>
+          Done
         </Button>
       </div>
     );
@@ -101,29 +94,22 @@ export function ProductReviewForm({
   const displayRating = hoverRating || rating;
 
   return (
-    <form
-      id="write-review"
-      onSubmit={onSubmit}
-      className="scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] border border-hairline bg-paper px-5 py-6 sm:px-6 md:px-8 md:py-8"
-      noValidate
-    >
-      <p className="font-display text-[11px] font-medium uppercase tracking-[0.16em] text-taupe">
-        Your turn
-      </p>
-      <h3 className="mt-2 font-display text-[1.35rem] font-medium text-ink">
-        Review {productName}
-      </h3>
-      <p className="mt-2 max-w-xl font-serif text-[1.05rem] text-taupe">
-        How it opens, how long it lasts, and where you wore it. We publish
-        after a short check.
+    <form onSubmit={onSubmit} className="mt-2" noValidate>
+      <p className="max-w-xl text-body text-taupe">
+        How it opens, how long it lasts, and where you wore it. Fields marked{" "}
+        <span className="text-rosewood" aria-hidden="true">*</span>
+        <span className="sr-only">with an asterisk</span> are required.
       </p>
 
       <div className="mt-6">
-        <p className="mb-2 text-sm font-medium text-ink/80">Rating</p>
+        <p id="review-rating-label" className="mb-2 text-sm font-semibold text-ink/80">
+          Your rating
+          <span aria-hidden="true" className="ml-0.5 text-rosewood">*</span>
+        </p>
         <div
           className="inline-flex items-center gap-1"
           role="radiogroup"
-          aria-label="Star rating"
+          aria-labelledby="review-rating-label"
           onMouseLeave={() => setHoverRating(0)}
         >
           {[1, 2, 3, 4, 5].map((value) => {
@@ -180,7 +166,7 @@ export function ProductReviewForm({
           required
         />
         <Input
-          label="City (optional)"
+          label="City"
           name="city"
           value={city}
           onChange={(e) => setCity(e.target.value)}
@@ -191,7 +177,7 @@ export function ProductReviewForm({
 
       <div className="mt-4">
         <Input
-          label="Headline (optional)"
+          label="Headline"
           name="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -209,6 +195,8 @@ export function ProductReviewForm({
           error={errors.body}
           placeholder="When you wore it, how close it sat, and what you noticed after an hour."
           rows={5}
+          maxLength={2000}
+          hint="At least 20 characters."
           required
         />
       </div>
@@ -217,13 +205,13 @@ export function ProductReviewForm({
         <p className="mt-3 text-sm text-rosewood">{errors.form}</p>
       ) : null}
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={saving} className="w-auto!">
+      <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={onDone}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={saving} className="w-full sm:w-auto">
           {saving ? "Sending…" : "Submit review"}
         </Button>
-        <p className="font-serif text-[0.95rem] text-taupe">
-          Appears after moderation. Keep it honest and specific.
-        </p>
       </div>
     </form>
   );

@@ -18,7 +18,12 @@ import {
 } from "@/data/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/cn";
+import { HORIZONTAL } from "@/components/brand/paths";
+import { BrandIcon } from "@/components/ui/brand-icon";
+import { ChevronDownIcon, MailIcon, MapPinIcon, PhoneIcon } from "@/components/ui/icons";
+import { whatsappUrl } from "@/lib/whatsapp";
 
 const iconMap: Record<(typeof socialLinks)[number]["slug"], SimpleIcon> = {
   instagram: siInstagram,
@@ -52,14 +57,89 @@ function SocialIcon({
 const columnOrder = [
   { key: "shop", title: "Shop" },
   { key: "collections", title: "Collections" },
-  { key: "care", title: "Customer Care" },
+  { key: "care", title: "Customer care" },
   { key: "company", title: "Company" },
   { key: "legal", title: "Legal" },
 ] as const;
 
+/** Link group: a tap-to-open section on phones, an always-open column from md up. */
+function FooterLinkGroup({
+  id,
+  title,
+  links,
+}: {
+  id: string;
+  title: string;
+  links: ReadonlyArray<{ label: string; href: string }>;
+}) {
+  const [open, setOpen] = useState(false);
+  const listId = `footer-links-${id}`;
+  return (
+    <div className="border-b border-white/10 md:border-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => setOpen((v) => !v)}
+        className="flex min-h-14 w-full cursor-pointer items-center justify-between text-eyebrow text-brass md:hidden"
+      >
+        {title}
+        <ChevronDownIcon
+          size={18}
+          className={cn("text-paper/60 transition-transform duration-200", open && "rotate-180")}
+        />
+      </button>
+      <p className="mb-5 hidden text-eyebrow text-brass md:block">{title}</p>
+      <ul id={listId} className={cn("flex-col gap-1 pb-4 md:flex md:pb-0", open ? "flex" : "hidden")}>
+        {links.map((link) => (
+          <li key={`${id}-${link.href}-${link.label}`}>
+            <Link
+              href={link.href}
+              className="inline-flex min-h-10 items-center text-body-sm text-paper/70 transition-colors hover:text-paper md:min-h-9"
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function Footer() {
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Signups are stored in the database (POST /api/newsletter) with a welcome email.
+  async function subscribe(e: React.FormEvent) {
+    e.preventDefault();
+    const value = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: value, source: "footer" }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        setError(json?.error || "Could not sign you up. Try again in a moment.");
+        return;
+      }
+      setDone(true);
+    } catch {
+      setError("Network error. Try again in a moment.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <footer
@@ -72,76 +152,91 @@ export function Footer() {
         aria-hidden
       />
 
-      <div className="container-ns pt-12 pb-6 sm:pt-14 lg:pt-16">
+      <div className="container-ns pt-14 pb-8 sm:pt-16 lg:pt-20">
         {/* Newsletter + brand intro */}
         <div
           id="newsletter"
-          className="mb-12 grid gap-10 border-b border-white/10 pb-12 lg:grid-cols-12 lg:items-end lg:gap-12"
+          className="mb-10 grid gap-10 pb-4 md:mb-14 md:border-b md:border-white/10 md:pb-14 lg:grid-cols-12 lg:items-end lg:gap-12"
         >
           <div className="lg:col-span-5">
-            <p className="font-display text-2xl tracking-tight text-paper sm:text-3xl">
-              {siteConfig.name}
-            </p>
-            <p className="mt-3 max-w-md font-serif text-body-lg leading-relaxed text-paper/70">
+            <Logo className="h-9 text-paper sm:h-10" />
+            <p className="mt-5 max-w-[30rem] text-body-lg text-paper/75">
               {siteConfig.description}
             </p>
-            <p className="mt-4 font-serif text-caption text-paper/50">
+            <p className="mt-4 font-serif text-[1.5rem] italic leading-snug text-paper/60">
               {siteConfig.tagline}
             </p>
-            <div className="mt-6 flex flex-wrap gap-4 font-serif text-[0.95rem] text-paper/60">
+            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-body-sm text-paper/70">
               <a
                 href={`mailto:${siteConfig.email}`}
-                className="transition-colors hover:text-brass"
+                className="inline-flex min-h-11 items-center gap-2 transition-colors hover:text-brass"
               >
+                <MailIcon size={16} />
                 {siteConfig.email}
               </a>
-              <span className="text-white/20" aria-hidden>
-                ·
-              </span>
               <a
                 href={`tel:${siteConfig.phone.replace(/\s/g, "")}`}
-                className="transition-colors hover:text-brass"
+                className="inline-flex min-h-11 items-center gap-2 font-sans tabular-nums transition-colors hover:text-brass"
               >
-                {siteConfig.phone}
+                <PhoneIcon size={16} />
+                {siteConfig.phoneDisplay}
+              </a>
+              <a
+                href={whatsappUrl(siteConfig.phone, "Hi NS Perfume, I have a question.")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center gap-2 transition-colors hover:text-brass"
+              >
+                <BrandIcon name="whatsapp" size={16} />
+                WhatsApp
+              </a>
+              <a
+                href={siteConfig.location.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center gap-2 transition-colors hover:text-brass"
+              >
+                <MapPinIcon size={16} />
+                {siteConfig.location.label}, {siteConfig.location.detail}
               </a>
             </div>
           </div>
 
           <div className="lg:col-span-6 lg:col-start-7 lg:justify-self-end lg:w-full lg:max-w-xl">
-            <p className="font-display text-heading-sm text-paper">
-              Stay On The List
+            <p className="text-display-sm text-paper">
+              Stay on the list
             </p>
-            <p className="mt-2 font-serif text-[1.05rem] font-medium leading-relaxed text-paper/70">
+            <p className="mt-3 text-body text-paper/70">
               New bottles, concentration notes, and seasonal wear tips. One
               letter when there is something worth opening. No weekly noise.
             </p>
             {done ? (
-              <p className="mt-5 font-serif text-body text-brass">
+              <p className="mt-5 text-body text-brass">
                 Thanks. You are on the list.
               </p>
             ) : (
-              <form
-                className="mt-5"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (email.includes("@")) setDone(true);
-                }}
-              >
+              <form className="mt-5" onSubmit={subscribe} noValidate>
                 {/* Mobile: stacked. sm+: field + Subscribe share one flush bar */}
-                <div className="flex w-full flex-col overflow-hidden rounded-md border border-white/30 bg-white/10 focus-within:border-brass sm:h-12 sm:flex-row">
+                <div className="flex w-full flex-col overflow-hidden rounded-xs border border-white/30 bg-white/10 focus-within:border-brass sm:h-12 sm:flex-row">
                   <Input
                     type="email"
                     name="email"
                     placeholder="Email address"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setError(null);
+                    }}
                     required
-                    className="h-12! min-h-0! flex-1 rounded-none border-0 bg-transparent px-4 py-0 font-serif text-[1.05rem] leading-none text-paper shadow-none placeholder:text-paper/50 focus:border-transparent focus:bg-transparent focus:outline-none focus:ring-0 sm:h-full!"
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? "newsletter-error" : undefined}
+                    className="h-12! min-h-0! flex-1 rounded-none border-0 bg-transparent px-4 py-0 text-body leading-none text-paper shadow-none placeholder:text-paper/50 focus:border-transparent focus:bg-transparent focus:outline-none focus:ring-0 sm:h-full!"
                     aria-label="Email for newsletter"
                   />
                   <Button
                     type="submit"
                     variant="secondary"
+                    disabled={sending}
                     className={cn(
                       "h-11! min-h-0! w-full! max-w-none! shrink-0 self-stretch sm:h-full! sm:w-auto!",
                       "rounded-none! border-0 border-t border-white/25 sm:border-t-0 sm:border-l",
@@ -150,41 +245,34 @@ export function Footer() {
                       "[&>span:last-child]:px-6",
                     )}
                   >
-                    Subscribe
+                    {sending ? "Sending…" : "Subscribe"}
                   </Button>
                 </div>
+                {error ? (
+                  <p
+                    id="newsletter-error"
+                    role="alert"
+                    className="mt-3 text-body-sm text-[#ff8a80]"
+                  >
+                    {error}
+                  </p>
+                ) : null}
               </form>
             )}
           </div>
         </div>
 
         {/* Link columns */}
-        <div className="mb-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mb-12 border-t border-white/10 md:mb-14 md:grid md:grid-cols-3 md:gap-x-6 md:gap-y-10 md:border-0 lg:grid-cols-5 lg:gap-8">
           {columnOrder.map(({ key, title }) => (
-            <div key={key}>
-              <p className="mb-4 font-display text-[13px] font-medium uppercase tracking-[0.14em] text-brass">
-                {title}
-              </p>
-              <ul className="flex flex-col gap-2.5">
-                {footerColumns[key].map((link) => (
-                  <li key={`${key}-${link.href}-${link.label}`}>
-                    <Link
-                      href={link.href}
-                      className="font-sans text-sm text-paper/60 transition-colors hover:text-paper"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <FooterLinkGroup key={key} id={key} title={title} links={footerColumns[key]} />
           ))}
         </div>
 
         {/* Social + meta bar */}
-        <div className="mb-10 flex flex-col gap-8 border-t border-white/10 pt-8 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mb-10 flex flex-col gap-8 md:border-t md:border-white/10 md:pt-8 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="mb-3 font-display text-[13px] font-medium uppercase tracking-[0.14em] text-brass">
+            <p className="mb-4 text-eyebrow text-brass">
               Follow
             </p>
             <ul className="flex flex-wrap items-center gap-2">
@@ -208,10 +296,10 @@ export function Footer() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-8">
-            <p className="font-mono text-[11px] tracking-wide text-paper/40">
-              Visa · Mastercard · Amex · PayPal
+            <p className="text-caption text-paper/55">
+              Cash on delivery · Bank transfer · JazzCash · Easypaisa
             </p>
-            <p className="font-sans text-caption text-paper/45">
+            <p className="text-caption text-paper/55">
               © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
             </p>
           </div>
@@ -220,15 +308,14 @@ export function Footer() {
 
       {/* Giant wordmark */}
       <div className="relative overflow-hidden border-t border-white/5 px-4 pb-4 pt-2 sm:pb-6">
-        <p
-          className="select-none text-center font-display font-bold uppercase leading-[0.85] tracking-[-0.04em] text-paper/[0.07] sm:text-paper/[0.09]"
-          style={{
-            fontSize: "clamp(2.75rem, 14vw, 10.5rem)",
-          }}
-          aria-hidden
+        <svg
+          viewBox={`${HORIZONTAL.rule.x + 26} 8 ${HORIZONTAL.width - HORIZONTAL.rule.x - 26} 80`}
+          className="mx-auto block h-auto w-full max-w-[90rem] select-none fill-paper/[0.08] sm:fill-paper/[0.1]"
+          aria-hidden="true"
+          focusable="false"
         >
-          NS PERFUME
-        </p>
+          <path d={HORIZONTAL.wordmark} />
+        </svg>
         <span className="sr-only">{siteConfig.name}</span>
       </div>
     </footer>

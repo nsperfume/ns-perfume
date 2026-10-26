@@ -57,7 +57,14 @@ const OrderSchema = new Schema(
     discountPkr: { type: Number, default: 0 },
     discountCode: { type: String, default: "" },
     shippingPkr: { type: Number, default: 0 },
+    /** Cash-on-delivery fee charged on this order (from store settings at the time). */
+    codFeePkr: { type: Number, default: 0 },
+    /** Tax added on top (exclusive). */
     taxPkr: { type: Number, default: 0 },
+    /** Tax already included in prices (inclusive), for invoices. */
+    taxIncludedPkr: { type: Number, default: 0 },
+    /** e.g. "GST (18%)"; empty when tax is off. */
+    taxLabel: { type: String, default: "" },
     totalPkr: { type: Number, default: 0 },
     lines: { type: [OrderLineSchema], default: [] },
     shippingAddress: { type: AddressSchema, default: {} },
@@ -89,5 +96,10 @@ const OrderSchema = new Schema(
   },
   { timestamps: true },
 );
+
+// Admin lists sort by date and filter by status; COD follow-up looks orders up by phone.
+OrderSchema.index({ createdAt: -1 });
+OrderSchema.index({ status: 1, createdAt: -1 });
+OrderSchema.index({ phone: 1 });
 
 export const OrderModel = models.Order || model("Order", OrderSchema);

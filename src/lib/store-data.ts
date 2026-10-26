@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { connectDB } from "@/lib/db";
 import { mapJournal, mapProduct, type StoreProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
@@ -8,6 +9,20 @@ import { JournalModel } from "@/models/Journal";
 import { products as fallbackProducts } from "@/data/products";
 import { collections as fallbackCollections } from "@/data/collections";
 import { productsInCollectionQuery } from "@/lib/collection-query";
+import { safeRichText } from "@/lib/rich-text";
+
+/**
+ * The built-in demo catalog (src/data) only stands in during local development.
+ * In production a database error is rethrown so ISR keeps serving the last good
+ * page, and an empty database shows an empty store, never invented products,
+ * prices or customer quotes.
+ */
+const useDemoData = process.env.NODE_ENV !== "production";
+
+function dbFailed(label: string, e: unknown) {
+  if (!useDemoData) throw e;
+  console.warn(`${label}: database unavailable, showing demo data.`, e);
+}
 
 function toPkrFallback(p: (typeof fallbackProducts)[0]): StoreProduct {
   return {
@@ -15,6 +30,8 @@ function toPkrFallback(p: (typeof fallbackProducts)[0]): StoreProduct {
     id: p.handle,
     description: p.description || "",
     containsAlcohol: p.containsAlcohol !== false,
+    seoTitle: "",
+    seoDescription: "",
     collectionHandles: [],
     prices: p.prices.map((s) => ({
       ml: s.ml,
@@ -24,32 +41,46 @@ function toPkrFallback(p: (typeof fallbackProducts)[0]): StoreProduct {
   };
 }
 
-export async function getStoreProducts(): Promise<StoreProduct[]> {
-  try {
-    await connectDB();
-    const docs = await ProductModel.find({ status: "active" })
-      .sort({ updatedAt: -1 })
-      .lean();
-    if (docs.length) return docs.map(mapProduct);
-  } catch (e) {
-    console.error("getStoreProducts fallback", e);
-  }
-  return fallbackProducts.map(toPkrFallback);
+/**
+ * "Featured" order for the shop: bestsellers, then new, then the best rated,
+ * then A to Z. Stable no matter which product was edited last.
+ */
+function featuredOrder(a: StoreProduct, b: StoreProduct) {
+  const rank = (p: StoreProduct) =>
+    p.badges.includes("bestseller") ? 0 : p.badges.includes("new") ? 1 : 2;
+  return (
+    rank(a) - rank(b) ||
+    Number(b.inStock) - Number(a.inStock) ||
+    b.rating - a.rating ||
+    a.name.localeCompare(b.name)
+  );
 }
 
-export async function getStoreProduct(
+/** Active catalog in featured order. Deduplicated per request with React cache. */
+export const getStoreProducts = cache(async (): Promise<StoreProduct[]> => {
+  try {
+    await connectDB();
+    const docs = await ProductModel.find({ status: "active" }).lean();
+    if (docs.length || !useDemoData) return docs.map(mapProduct).sort(featuredOrder);
+  } catch (e) {
+    dbFailed("getStoreProducts", e);
+  }
+  return fallbackProducts.map(toPkrFallback);
+});
+
+export const getStoreProduct = cache(async function getStoreProduct(
   handle: string,
 ): Promise<StoreProduct | null> {
   try {
     await connectDB();
     const doc = await ProductModel.findOne({ handle, status: "active" }).lean();
-    if (doc) return mapProduct(doc);
+    if (doc || !useDemoData) return doc ? mapProduct(doc) : null;
   } catch (e) {
-    console.error("getStoreProduct fallback", e);
+    dbFailed("getStoreProduct", e);
   }
   const fb = fallbackProducts.find((p) => p.handle === handle);
   return fb ? toPkrFallback(fb) : null;
-}
+});
 
 export async function getBestsellers(): Promise<StoreProduct[]> {
   const all = await getStoreProducts();
@@ -62,9 +93,9 @@ export async function getCollections() {
     const docs = await CollectionModel.find({ status: "active" })
       .sort({ sortOrder: 1 })
       .lean();
-    if (docs.length) return docs;
+    if (docs.length || !useDemoData) return docs;
   } catch (e) {
-    console.error("getCollections fallback", e);
+    dbFailed("getCollections", e);
   }
   return fallbackCollections.map((c) => ({
     ...c,
@@ -74,7 +105,7 @@ export async function getCollections() {
   }));
 }
 
-export async function getCollectionWithProducts(handle: string) {
+export const getCollectionWithProducts = cache(async function getCollectionWithProducts(handle: string) {
   try {
     await connectDB();
     const collection = await CollectionModel.findOne({
@@ -85,11 +116,12 @@ export async function getCollectionWithProducts(handle: string) {
       const docs = await ProductModel.find(
         productsInCollectionQuery(collection),
       ).lean();
-      const products = docs.map(mapProduct);
+      const products = docs.map(mapProduct).sort(featuredOrder);
       return { collection, products };
     }
+    if (!useDemoData) return null;
   } catch (e) {
-    console.error("getCollectionWithProducts fallback", e);
+    dbFailed("getCollectionWithProducts", e);
   }
 
   const fb = fallbackCollections.find((c) => c.handle === handle);
@@ -108,7 +140,7 @@ export async function getCollectionWithProducts(handle: string) {
     );
   }
   return { collection: fb, products };
-}
+});
 
 export async function getTestimonials() {
   try {
@@ -119,9 +151,11 @@ export async function getTestimonials() {
     })
       .sort({ sortOrder: 1 })
       .lean();
-    if (docs.length) return docs;
+    if (docs.length || !useDemoData) {
+      return docs.map((d) => ({ ...d, quote: safeRichText(String(d.quote ?? "")) }));
+    }
   } catch (e) {
-    console.error("getTestimonials fallback", e);
+    dbFailed("getTestimonials", e);
   }
   return [
     {
@@ -160,9 +194,9 @@ export async function getProductReviews(handle: string) {
     })
       .sort({ createdAt: -1 })
       .lean();
-    if (docs.length) return docs;
+    return docs;
   } catch (e) {
-    console.error("getProductReviews fallback", e);
+    dbFailed("getProductReviews", e);
   }
   return [];
 }
@@ -175,7 +209,7 @@ export async function getJournalPosts() {
       .lean();
     return docs.map(mapJournal);
   } catch (e) {
-    console.error("getJournalPosts", e);
+    dbFailed("getJournalPosts", e);
     return [];
   }
 }
@@ -189,7 +223,7 @@ export async function getJournalPost(slug: string) {
     }).lean();
     return doc ? mapJournal(doc) : null;
   } catch (e) {
-    console.error("getJournalPost", e);
+    dbFailed("getJournalPost", e);
     return null;
   }
 }

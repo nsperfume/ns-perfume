@@ -36,13 +36,13 @@ export function FeaturePanel({
   return (
     <div
       className={cn(
-        "rounded-lg border border-hairline p-10 md:p-12",
+        "rounded-xs border border-hairline p-7 sm:p-10 xl:p-14",
         muted ? "bg-canvas text-ink" : "bg-paper text-ink",
         className,
       )}
     >
-      <h2 className="text-display-lg mb-4">{title}</h2>
-      <p className="measure text-body-lg text-taupe">{body}</p>
+      <h2 className="mb-5 text-display-md">{title}</h2>
+      <p className="max-w-[40rem] text-body-lg text-taupe">{body}</p>
       {action ? <div className="mt-8">{action}</div> : null}
     </div>
   );
