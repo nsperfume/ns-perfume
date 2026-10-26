@@ -200,7 +200,7 @@ function AuthPanel({ next }: { next: string | null }) {
         </ul>
       </div>
 
-      <div className="border border-hairline bg-paper p-6 sm:p-10">
+      <div className="rounded-2xl border border-hairline bg-paper p-6 sm:p-10">
         <div className="mb-6 flex w-full gap-1 border-b border-hairline pb-1">
           {(
             [
@@ -233,7 +233,7 @@ function AuthPanel({ next }: { next: string | null }) {
             <a
               href="/api/auth/google"
               onClick={() => rememberNext(next)}
-              className="mb-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xs border border-[#d6cfbf] bg-paper px-4 text-label text-ink transition-colors hover:border-ink/50"
+              className="mb-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-full border border-[#d6cfbf] bg-paper px-4 text-label text-ink transition-colors hover:border-ink/50"
             >
               <GoogleIcon className="h-6 w-6" />
               Continue with Google
@@ -362,7 +362,7 @@ function VerifyEmailBanner() {
 
   if (verify === "done") {
     return (
-      <p className="mb-8 border border-hairline bg-muted px-4 py-3 text-body text-ink" role="status">
+      <p className="mb-8 rounded-xl border border-hairline bg-muted px-4 py-3 text-body text-ink" role="status">
         Your email is confirmed. Orders placed with this address now appear below.
       </p>
     );
@@ -381,7 +381,7 @@ function VerifyEmailBanner() {
   }
 
   return (
-    <div className="mb-8 flex flex-col gap-3 border border-hairline bg-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between" role="status">
+    <div className="mb-8 flex flex-col gap-3 rounded-xl border border-hairline bg-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between" role="status">
       <p className="text-body text-ink">
         {verify === "invalid"
           ? "That confirmation link is invalid or has expired."
@@ -510,7 +510,7 @@ function ProfilePanel() {
       <div className="grid gap-10 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-12">
         <form
           onSubmit={saveProfile}
-          className="h-fit space-y-4 border border-hairline bg-paper p-6 sm:p-7"
+          className="h-fit space-y-4 rounded-2xl border border-hairline bg-paper p-6 sm:p-7"
         >
           <p className="text-eyebrow text-taupe">
             Profile
@@ -572,7 +572,7 @@ function ProfilePanel() {
             {orders.map((order) => (
               <li
                 key={order.id}
-                className="border border-hairline bg-paper p-5 sm:p-6"
+                className="rounded-2xl border border-hairline bg-paper p-5 sm:p-6"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>

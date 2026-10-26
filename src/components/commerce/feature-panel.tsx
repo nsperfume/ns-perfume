@@ -36,7 +36,7 @@ export function FeaturePanel({
   return (
     <div
       className={cn(
-        "rounded-xs border border-hairline p-7 sm:p-10 xl:p-14",
+        "rounded-xl border border-hairline p-7 sm:p-10 xl:p-14",
         muted ? "bg-canvas text-ink" : "bg-paper text-ink",
         className,
       )}

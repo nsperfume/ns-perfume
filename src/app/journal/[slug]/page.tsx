@@ -138,7 +138,7 @@ export default async function JournalArticlePage({ params }: Props) {
           </div>
         </div>
 
-        <div className="relative aspect-16/9 w-full overflow-hidden bg-muted md:aspect-[2.2/1]">
+        <div className="relative aspect-16/9 w-full overflow-hidden rounded-2xl bg-muted md:aspect-[2.2/1]">
           {post.imageUrl ? (
             <Image
               src={post.imageUrl}
@@ -212,7 +212,7 @@ export default async function JournalArticlePage({ params }: Props) {
                   href={`/journal/${item.slug}`}
                   className="group flex flex-col"
                 >
-                  <div className="relative mb-5 aspect-16/10 overflow-hidden bg-muted">
+                  <div className="relative mb-5 aspect-16/10 overflow-hidden rounded-2xl bg-muted">
                     {item.imageUrl ? (
                       <Image
                         src={item.imageUrl}

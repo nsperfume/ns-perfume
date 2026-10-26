@@ -18,7 +18,7 @@ export default function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="mt-8 border border-hairline bg-paper p-6 sm:p-8">
+      <div className="mt-8 rounded-2xl border border-hairline bg-paper p-6 sm:p-8">
         <p className="text-body text-ink">
           This link is incomplete. Request a new one from the{" "}
           <Link href="/account" className="underline underline-offset-4">
@@ -61,7 +61,7 @@ export default function ResetPasswordForm() {
       <p className="mt-4 text-body-lg text-taupe">
         Use at least 8 characters. After saving you will be signed in.
       </p>
-      <div className="mt-8 border border-hairline bg-paper p-6 sm:p-8">
+      <div className="mt-8 rounded-2xl border border-hairline bg-paper p-6 sm:p-8">
         <form className="space-y-4" onSubmit={submit} noValidate>
           <Input
             label="New password"

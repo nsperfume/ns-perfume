@@ -310,7 +310,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
           </span>
         </label>
         {isGift ? (
-          <div className="mt-2 space-y-4 border border-hairline bg-canvas-deep/40 p-4">
+          <div className="mt-2 space-y-4 rounded-2xl border border-hairline bg-canvas-deep/40 p-4">
             {config.giftWrap.enabled ? (
               <label className="flex min-h-11 cursor-pointer items-center gap-3">
                 <input
@@ -345,7 +345,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
                 rows={2}
                 maxLength={120}
                 placeholder="Up to 120 characters"
-                className="w-full resize-none rounded-xs border border-hairline bg-paper px-4 py-3 text-base text-ink outline-none placeholder:text-taupe/70 focus:border-brass focus:ring-2 focus:ring-brass/25"
+                className="w-full resize-none rounded-xl border border-hairline bg-paper px-4 py-3 text-base text-ink outline-none placeholder:text-taupe/70 focus:border-brass focus:ring-2 focus:ring-brass/25"
               />
             </label>
           </div>
@@ -354,7 +354,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
 
       <div className="mt-3 flex items-stretch gap-2">
         <div
-          className="inline-flex h-12 shrink-0 items-stretch rounded-xs border border-ink/70"
+          className="inline-flex h-12 shrink-0 items-stretch overflow-hidden rounded-full border border-ink/70"
           role="group"
           aria-label="Quantity"
         >
@@ -418,7 +418,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         onAdd={addToCart}
       />
 
-      <ul className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xs bg-canvas-deep/60 px-4 py-3 text-caption text-ink">
+      <ul className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl bg-canvas-deep/60 px-4 py-3 text-caption text-ink">
         <li className="inline-flex items-center gap-2">
           <BanknoteIcon size={18} className="shrink-0 text-brass-ink" />
           Cash on delivery

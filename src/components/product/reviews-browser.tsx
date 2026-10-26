@@ -70,7 +70,7 @@ export function ReviewsBrowser({
 
   if (!reviews.length) {
     return (
-      <div className="mt-8 flex flex-col items-start gap-5 border border-hairline bg-muted/40 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+      <div className="mt-8 flex flex-col items-start gap-5 rounded-2xl border border-hairline bg-muted/40 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
         <div className="max-w-xl">
           <p className="text-heading-sm text-ink">No reviews yet</p>
           <p className="mt-1.5 text-body text-taupe">
@@ -109,7 +109,7 @@ export function ReviewsBrowser({
                   aria-label={`Show ${STAR_WORD[s]} star reviews (${n})`}
                   onClick={() => filterBy(active ? null : s)}
                   className={cn(
-                    "grid w-full grid-cols-[2.25rem_minmax(0,1fr)_1.75rem] items-center gap-3 rounded-xs px-2 py-1.5 text-left text-body-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brass/50",
+                    "grid w-full grid-cols-[2.25rem_minmax(0,1fr)_1.75rem] items-center gap-3 rounded-xl px-2 py-1.5 text-left text-body-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brass/50",
                     n ? "cursor-pointer hover:bg-muted/70" : "cursor-default opacity-45",
                     active && "bg-muted",
                   )}

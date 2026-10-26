@@ -52,7 +52,7 @@ export default async function JournalIndexPage() {
               href={`/journal/${feature.slug}`}
               className="group mb-14 grid gap-7 border-b border-hairline pb-12 md:mb-20 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:items-center md:gap-12 md:pb-20 lg:gap-16"
             >
-              <div className="relative aspect-16/10 overflow-hidden bg-muted">
+              <div className="relative aspect-16/10 overflow-hidden rounded-2xl bg-muted">
                 {feature.imageUrl ? (
                   <Image
                     src={feature.imageUrl}
@@ -97,7 +97,7 @@ export default async function JournalIndexPage() {
                 href={`/journal/${post.slug}`}
                 className="group flex flex-col"
               >
-                <div className="relative mb-5 aspect-16/10 overflow-hidden bg-muted">
+                <div className="relative mb-5 aspect-16/10 overflow-hidden rounded-2xl bg-muted">
                   {post.imageUrl ? (
                     <Image
                       src={post.imageUrl}

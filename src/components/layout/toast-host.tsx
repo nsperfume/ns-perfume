@@ -26,7 +26,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
       ref={ref}
       role="status"
       className={cn(
-        "pointer-events-auto flex min-w-[16rem] max-w-sm items-center gap-3 rounded-md border border-hairline bg-paper px-4 py-3 text-ink shadow-modal",
+        "pointer-events-auto flex min-w-[16rem] max-w-sm items-center gap-3 rounded-2xl border border-hairline bg-paper px-4 py-3 text-ink",
       )}
     >
       <span

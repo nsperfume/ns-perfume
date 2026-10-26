@@ -91,7 +91,7 @@ export function BankDetails({ className }: { className?: string }) {
   return (
     <dl
       className={cn(
-        "grid grid-cols-1 gap-x-6 gap-y-4 rounded-xs border border-hairline bg-paper p-4 sm:grid-cols-2 sm:p-5",
+        "grid grid-cols-1 gap-x-6 gap-y-4 rounded-xl border border-hairline bg-paper p-4 sm:grid-cols-2 sm:p-5",
         className,
       )}
     >

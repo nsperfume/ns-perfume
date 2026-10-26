@@ -144,7 +144,7 @@ export function EmblaCarousel({
                 aria-label="Previous"
                 disabled={!canPrev && !loop}
                 onClick={() => emblaApi?.scrollPrev()}
-                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xs border border-[#d6cfbf] bg-paper font-sans text-lg text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-[#d6cfbf] bg-paper font-sans text-lg text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-30"
               >
                 ‹
               </button>
@@ -153,7 +153,7 @@ export function EmblaCarousel({
                 aria-label="Next"
                 disabled={!canNext && !loop}
                 onClick={() => emblaApi?.scrollNext()}
-                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xs border border-[#d6cfbf] bg-paper font-sans text-lg text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-[#d6cfbf] bg-paper font-sans text-lg text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-30"
               >
                 ›
               </button>

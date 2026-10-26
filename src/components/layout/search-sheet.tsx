@@ -36,7 +36,7 @@ const QUICK_SEARCHES: { label: string; q?: string; href?: string }[] = [
 ];
 
 const quickChipClass =
-  "inline-flex min-h-10 cursor-pointer items-center rounded-xs border border-hairline bg-[#FAF8F4] px-4 text-body-sm text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper";
+  "inline-flex min-h-10 cursor-pointer items-center rounded-full border border-hairline bg-[#FAF8F4] px-4 text-body-sm text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper";
 
 /**
  * Drops open from the bottom edge of the fixed chrome (topbar + nav).
@@ -193,7 +193,7 @@ export function SearchSheet() {
 
       <div
         ref={panelRef}
-        className="relative z-10 border-b border-hairline bg-paper text-ink shadow-[0_16px_40px_rgba(0,0,0,0.18)] will-change-transform"
+        className="relative z-10 rounded-b-3xl border-b border-hairline bg-paper text-ink will-change-transform"
       >
         <div className="container-ns py-4 sm:py-5">
           <h2 id={titleId} className="sr-only">
@@ -202,13 +202,13 @@ export function SearchSheet() {
 
           {/* Single compact search row */}
           <form
-            className="flex items-stretch overflow-hidden rounded-xs border border-ink bg-paper"
+            className="flex items-stretch overflow-hidden rounded-full border border-ink bg-paper"
             onSubmit={(e) => {
               e.preventDefault();
               goFullSearch();
             }}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-3 px-3 sm:px-4">
+            <div className="flex min-w-0 flex-1 items-center gap-3 px-4 sm:px-5">
               <SearchIcon
                 size={20}
                 color="currentColor"
@@ -309,7 +309,7 @@ export function SearchSheet() {
                       onClick={closeSearch}
                       className="group flex items-center gap-3.5 py-3 transition-colors hover:bg-muted/80 sm:gap-4"
                     >
-                      <div className="relative aspect-4/5 w-14 shrink-0 overflow-hidden bg-muted sm:w-16">
+                      <div className="relative aspect-4/5 w-14 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-16">
                         <Image
                           src={p.imagePrimary}
                           alt=""
@@ -384,9 +384,9 @@ function BestsellerList({
           <Link
             href={`/products/${p.handle}`}
             onClick={onPick}
-            className="group flex items-center gap-3.5 rounded-xs px-2 py-2 transition-colors hover:bg-muted"
+            className="group flex items-center gap-3.5 rounded-xl px-2 py-2 transition-colors hover:bg-muted"
           >
-            <div className="relative aspect-4/5 w-14 shrink-0 overflow-hidden bg-muted sm:w-16">
+            <div className="relative aspect-4/5 w-14 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-16">
               <Image
                 src={p.imagePrimary}
                 alt=""

@@ -144,7 +144,7 @@ export function CartDrawer() {
       />
       <aside
         ref={panelRef}
-        className="relative flex h-full w-full max-w-[28rem] flex-col bg-paper shadow-modal 2xl:max-w-[30rem]"
+        className="relative flex h-full w-full max-w-[28rem] flex-col overflow-hidden border-l border-hairline bg-paper sm:rounded-l-3xl 2xl:max-w-[30rem]"
       >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-hairline px-5 py-3 sm:px-7">
@@ -160,7 +160,7 @@ export function CartDrawer() {
             ref={closeRef}
             type="button"
             onClick={closeCart}
-            className="-mr-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-xs text-taupe transition-colors hover:bg-muted hover:text-ink"
+            className="-mr-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-taupe transition-colors hover:bg-muted hover:text-ink"
             aria-label="Close cart"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -210,7 +210,7 @@ export function CartDrawer() {
                     href={`/products/${line.productHandle}`}
                     onClick={closeCart}
                     aria-label={`View ${line.name}`}
-                    className="relative aspect-square overflow-hidden bg-muted"
+                    className="relative aspect-square overflow-hidden rounded-xl bg-muted"
                   >
                     <Image
                       src={line.image}
@@ -257,7 +257,7 @@ export function CartDrawer() {
 
                     <div className="mt-3 flex items-center justify-between gap-3">
                       <div
-                        className="inline-flex h-10 items-stretch overflow-hidden rounded-xs border border-[#d6cfbf]"
+                        className="inline-flex h-10 items-stretch overflow-hidden rounded-full border border-[#d6cfbf]"
                         role="group"
                         aria-label={`Quantity for ${line.name}`}
                       >

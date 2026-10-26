@@ -175,7 +175,7 @@ function FilterOption({
   return (
     <label
       className={cn(
-        "flex min-h-11 items-center justify-between gap-3 rounded-xs px-3 py-2 transition-colors",
+        "flex min-h-11 items-center justify-between gap-3 rounded-xl px-3 py-2 transition-colors",
         optionTone(checked, disabled),
       )}
     >
@@ -222,7 +222,7 @@ function BadgeOption({
   return (
     <label
       className={cn(
-        "flex min-h-11 items-center justify-between gap-3 rounded-xs px-3 py-2 transition-colors",
+        "flex min-h-11 items-center justify-between gap-3 rounded-xl px-3 py-2 transition-colors",
         optionTone(checked, disabled),
       )}
     >
@@ -462,7 +462,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
         <button
           type="button"
           onClick={() => setMobileOpen((v) => !v)}
-          className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xs border border-ink/70 bg-paper px-5 text-label text-ink"
+          className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full border border-ink/70 bg-paper px-5 text-label text-ink"
           aria-expanded={mobileOpen}
         >
           Filters
@@ -475,12 +475,12 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
       </div>
 
       {mobileOpen ? (
-        <div className="mb-6 rounded-xs border border-hairline bg-paper p-5 lg:hidden">
+        <div className="mb-6 rounded-xl border border-hairline bg-paper p-5 lg:hidden">
           {filtersPanel("mobile")}
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="mt-5 min-h-12 w-full cursor-pointer rounded-xs border border-ink bg-ink text-label text-paper"
+            className="mt-5 min-h-12 w-full cursor-pointer rounded-full border border-ink bg-ink text-label text-paper"
           >
             Show {filtered.length} {filtered.length === 1 ? "result" : "results"}
           </button>
@@ -490,7 +490,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10 2xl:gap-14">
         {/* Desktop sidebar */}
         <aside className="hidden w-full shrink-0 lg:block lg:w-60 2xl:w-64">
-          <div className="sticky top-[calc(var(--spacing-chrome-height)+1.5rem)] max-h-[calc(100dvh-var(--spacing-chrome-height)-3rem)] overflow-y-auto rounded-xs border border-hairline bg-paper p-5 scrollbar-panel xl:p-6">
+          <div className="sticky top-[calc(var(--spacing-chrome-height)+1.5rem)] max-h-[calc(100dvh-var(--spacing-chrome-height)-3rem)] overflow-y-auto rounded-xl border border-hairline bg-paper p-5 scrollbar-panel xl:p-6">
             {filtersPanel("desktop")}
           </div>
         </aside>
@@ -551,7 +551,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
               <button
                 type="button"
                 disabled={safePage <= 1}
-                className="min-h-11 cursor-pointer rounded-xs border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-11 cursor-pointer rounded-full border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => goToPage(safePage - 1)}
               >
                 Previous
@@ -562,7 +562,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
               <button
                 type="button"
                 disabled={safePage >= totalPages}
-                className="min-h-11 cursor-pointer rounded-xs border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-11 cursor-pointer rounded-full border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => goToPage(safePage + 1)}
               >
                 Next

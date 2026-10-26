@@ -261,7 +261,7 @@ export default function AdminReviewsPage() {
             return (
               <li
                 key={r._id}
-                className="rounded-lg border border-admin-line bg-admin-paper p-5 shadow-admin"
+                className="rounded-lg border border-admin-line bg-admin-paper p-5"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
                   <div className="min-w-0 max-w-3xl">
@@ -343,7 +343,7 @@ export default function AdminReviewsPage() {
           })}
         </ul>
       ) : (
-        <div className="rounded-lg border border-admin-line bg-admin-paper shadow-admin">
+        <div className="rounded-lg border border-admin-line bg-admin-paper">
           {loading ? (
             <BrandLoaderBlock className="min-h-[40vh]" label="Loading reviews" />
           ) : !items.length ? (

@@ -207,7 +207,7 @@ export default function AdminCustomersPage() {
             {visible.map((r) => (
               <li
                 key={r.email}
-                className="rounded-lg border border-admin-line bg-admin-paper p-4 shadow-admin"
+                className="rounded-lg border border-admin-line bg-admin-paper p-4"
               >
                 <Link
                   href={`/admin/customers/${encodeURIComponent(r.email)}`}

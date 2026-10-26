@@ -21,7 +21,7 @@ type CatalogStatus = "loading" | "ready" | "error";
 const URL_DEBOUNCE_MS = 400;
 
 const chipClass =
-  "inline-flex min-h-11 cursor-pointer items-center rounded-xs border border-hairline bg-paper px-4 text-body-sm text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper";
+  "inline-flex min-h-11 cursor-pointer items-center rounded-full border border-hairline bg-paper px-4 text-body-sm text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper";
 
 /** ProductCard takes a full product; search rows only carry the card fields it reads. */
 function asCardProduct(p: SearchProduct): StoreProduct {

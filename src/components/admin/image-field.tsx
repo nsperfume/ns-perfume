@@ -270,7 +270,7 @@ export function AdminImageField({
               onLoad={() => setBroken(false)}
             />
             {uploading ? (
-              <div className="absolute inset-x-3 bottom-3 rounded-md bg-admin-paper/95 px-3 py-2 shadow-admin">
+              <div className="absolute inset-x-3 bottom-3 rounded-md bg-admin-paper/95 px-3 py-2">
                 <div className="flex items-center justify-between text-[0.8125rem] font-semibold text-admin-ink">
                   <span>Uploading</span>
                   <span className="font-sans tabular-nums ">{progress}%</span>

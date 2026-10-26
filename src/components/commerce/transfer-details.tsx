@@ -25,7 +25,7 @@ export function TransferDetails({ className, showWallets = true }: Props) {
   return (
     <dl
       className={cn(
-        "grid grid-cols-1 gap-x-6 gap-y-4 rounded-xs border border-hairline bg-paper p-5 sm:grid-cols-2",
+        "grid grid-cols-1 gap-x-6 gap-y-4 rounded-xl border border-hairline bg-paper p-5 sm:grid-cols-2",
         className,
       )}
     >

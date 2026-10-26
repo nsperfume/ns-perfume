@@ -55,7 +55,7 @@ export function SizeSelector({
             aria-checked={selected}
             onClick={() => onChange(ml)}
             className={cn(
-              "relative inline-flex min-h-14 min-w-22 flex-col items-center justify-center rounded-xs border px-4 pb-2 pt-2.5 font-sans tabular-nums transition-colors",
+              "relative inline-flex min-h-14 min-w-22 flex-col items-center justify-center rounded-xl border px-4 pb-2 pt-2.5 font-sans tabular-nums transition-colors",
               selected
                 ? "border-ink bg-ink text-paper"
                 : "border-[#d6cfbf] bg-paper text-ink hover:border-ink",

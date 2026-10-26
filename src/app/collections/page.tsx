@@ -52,7 +52,7 @@ export default async function CollectionsIndexPage() {
                 <Link
                   key={c.handle}
                   href={`/collections/${c.handle}`}
-                  className="group relative flex min-h-56 flex-col justify-end overflow-hidden bg-muted sm:min-h-64 lg:aspect-[5/4] lg:min-h-0"
+                  className="group relative flex min-h-56 flex-col justify-end overflow-hidden rounded-2xl bg-muted sm:min-h-64 lg:aspect-[5/4] lg:min-h-0"
                 >
                   <Image
                     src={image}

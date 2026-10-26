@@ -48,7 +48,7 @@ function WornShot({
       onPointerMove={onMove}
       onPointerLeave={onLeave}
     >
-      <div className="relative aspect-square w-full overflow-hidden bg-ink">
+      <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-ink">
         <div
           ref={mediaRef}
           className="absolute inset-0 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"

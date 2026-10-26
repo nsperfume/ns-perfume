@@ -29,7 +29,7 @@ export function ScarcityBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-xs bg-rosewood px-2 py-1 text-eyebrow text-paper",
+        "inline-flex items-center rounded-xl bg-rosewood px-2 py-1 text-eyebrow text-paper",
         className,
       )}
     >

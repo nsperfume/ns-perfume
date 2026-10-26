@@ -28,7 +28,7 @@ export function ProductTrustProcess({ className }: { className?: string }) {
   return (
     <ol
       className={cn(
-        "grid gap-0 border border-hairline sm:grid-cols-2 xl:grid-cols-4",
+        "grid gap-0 overflow-hidden rounded-2xl border border-hairline sm:grid-cols-2 xl:grid-cols-4",
         className,
       )}
     >

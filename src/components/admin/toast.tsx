@@ -77,7 +77,7 @@ export function AdminToaster({ theme }: { theme: "light" | "dark" }) {
       toastOptions={{
         classNames: {
           toast:
-            "font-sans! gap-3! px-4! py-3.5! shadow-modal! text-[0.9375rem]!",
+            "font-sans! gap-3! px-4! py-3.5! ! text-[0.9375rem]!",
           title: "font-semibold! text-[0.9375rem]! leading-snug!",
           description: "text-admin-muted! text-sm!",
           closeButton:

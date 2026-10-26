@@ -57,7 +57,7 @@ export function Button({
         size === "sm"
           ? "h-10! min-h-10! [&>span:last-child]:px-4!"
           : "h-11! min-h-11! [&>span:last-child]:px-5!",
-        "px-0! active:scale-[0.985]!",
+        "rounded-md! px-0! active:scale-[0.985]!",
         variant === "danger" &&
           "border-admin-danger! bg-admin-danger! text-admin-paper! hover:border-admin-danger-hover! [&>span:first-child]:bg-admin-danger-hover!",
         outlineDanger &&

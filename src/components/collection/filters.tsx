@@ -218,7 +218,7 @@ export function CollectionFilters({
           <button
             type="button"
             disabled={safePage <= 1}
-            className="min-h-11 cursor-pointer rounded-xs border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:opacity-40"
+            className="min-h-11 cursor-pointer rounded-full border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:opacity-40"
             onClick={() => goToPage(safePage - 1)}
           >
             Previous
@@ -229,7 +229,7 @@ export function CollectionFilters({
           <button
             type="button"
             disabled={safePage >= totalPages}
-            className="min-h-11 cursor-pointer rounded-xs border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:opacity-40"
+            className="min-h-11 cursor-pointer rounded-full border border-ink/60 px-5 text-label text-ink transition-colors hover:border-ink disabled:opacity-40"
             onClick={() => goToPage(safePage + 1)}
           >
             Next

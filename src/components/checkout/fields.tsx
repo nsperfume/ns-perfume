@@ -22,7 +22,7 @@ type FieldExtras = {
 };
 
 const fieldBase =
-  "min-h-14 w-full rounded-xs border bg-paper px-4 py-3 text-base text-ink outline-none transition-[border-color,box-shadow] placeholder:text-taupe/70 focus:ring-2";
+  "min-h-14 w-full rounded-xl border bg-paper px-4 py-3 text-base text-ink outline-none transition-[border-color,box-shadow] placeholder:text-taupe/70 focus:ring-2";
 
 /** Border and focus colours, picked as a pair so they never fight in the stylesheet. */
 const toneClass = (error?: string) =>
