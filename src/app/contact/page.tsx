@@ -1,14 +1,9 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PageHero } from "@/components/layout/page-hero";
 import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
 import { siteConfig } from "@/data/site";
-import { cn } from "@/lib/cn";
 import { CopyableValue } from "@/components/ui/copyable-value";
 import { TransferDetails } from "@/components/commerce/transfer-details";
 import { BrandIcon } from "@/components/ui/brand-icon";
@@ -21,6 +16,7 @@ import {
   UserIcon,
 } from "@/components/ui/icons";
 import { whatsappUrl } from "@/lib/whatsapp";
+import { ContactForm } from "@/components/contact/contact-form";
 
 const ROW_ICONS = {
   name: UserIcon,
@@ -30,13 +26,6 @@ const ROW_ICONS = {
   bank: LandmarkIcon,
   orders: TruckIcon,
 } as const;
-
-const topics = [
-  { value: "order", label: "Order help" },
-  { value: "shipping", label: "Shipping and delivery" },
-  { value: "product", label: "Notes and bottles" },
-  { value: "general", label: "Something else" },
-] as const;
 
 const trustPoints = [
   {
@@ -54,46 +43,6 @@ const trustPoints = [
 ] as const;
 
 export default function ContactPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [topic, setTopic] = useState<(typeof topics)[number]["value"]>("order");
-  const [message, setMessage] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [sent, setSent] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [serverMessage, setServerMessage] = useState("");
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const next: Record<string, string> = {};
-    if (!name.trim()) next.name = "Name is required.";
-    if (!email.includes("@")) next.email = "Enter a valid email.";
-    if (message.trim().length < 10)
-      next.message = "Add a few more details so we can help.";
-    setErrors(next);
-    if (Object.keys(next).length) return;
-
-    setSaving(true);
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, topic, message }),
-      });
-      const json = await res.json();
-      if (!json.ok) {
-        setErrors({ form: json.error || "Could not send message" });
-        return;
-      }
-      setServerMessage(json.data?.message || "");
-      setSent(true);
-    } catch {
-      setErrors({ form: "Network error. Try again in a moment." });
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <>
       <PageHero
@@ -255,118 +204,7 @@ export default function ContactPage() {
           </div>
 
           <div className="self-start border border-hairline bg-paper p-6 shadow-[0_1px_0_rgba(43,36,25,0.04)] sm:p-10 xl:p-12">
-            {sent ? (
-              <div>
-                <p className="text-eyebrow text-taupe">
-                  Received
-                </p>
-                <h3 className="mt-3 text-display-md text-ink">
-                  Message sent
-                </h3>
-                <p className="mt-3 text-body-lg text-taupe">
-                  {serverMessage ||
-                    "Thanks. Care usually replies within one business day on Mon to Fri."}
-                </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      setSent(false);
-                      setName("");
-                      setEmail("");
-                      setMessage("");
-                      setTopic("order");
-                      setServerMessage("");
-                    }}
-                  >
-                    Send another
-                  </Button>
-                  <Button href="/track-order">Track an order</Button>
-                </div>
-              </div>
-            ) : (
-              <form className="flex flex-col gap-6" onSubmit={onSubmit} noValidate>
-                <div>
-                  <p className="text-eyebrow text-taupe">
-                    Write to us
-                  </p>
-                  <p className="mt-2 text-body text-taupe">
-                    Tell us what you need. The clearer the detail, the faster
-                    the reply.
-                  </p>
-                </div>
-
-                <div>
-                  <p className="mb-3 text-sm font-semibold text-ink/80">
-                    Topic
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {topics.map((t) => (
-                      <button
-                        key={t.value}
-                        type="button"
-                        onClick={() => setTopic(t.value)}
-                        className={cn(
-                          "inline-flex min-h-11 cursor-pointer items-center rounded-xs border px-4 text-sm font-semibold transition-colors",
-                          topic === t.value
-                            ? "border-ink bg-ink text-paper"
-                            : "border-[#d6cfbf] bg-paper text-ink hover:border-ink/50",
-                        )}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <Input
-                  label="Name"
-                  name="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  error={errors.name}
-                />
-                <Input
-                  label="Email"
-                  type="email"
-                  name="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  error={errors.email}
-                />
-                <div>
-                  <label
-                    htmlFor="contact-message"
-                    className="mb-2 block text-sm font-semibold text-ink/80"
-                  >
-                    Message
-                  </label>
-                  <textarea
-                    id="contact-message"
-                    name="message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    rows={6}
-                    placeholder="Order number, city, and what you need help with…"
-                    className="min-h-[9rem] w-full resize-y rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none transition-colors placeholder:text-[#8a8f99] hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25"
-                  />
-                  {errors.message ? (
-                    <p className="mt-1.5 text-sm font-medium text-rosewood">
-                      {errors.message}
-                    </p>
-                  ) : null}
-                </div>
-                {errors.form ? (
-                  <p className="text-body-sm text-rosewood">
-                    {errors.form}
-                  </p>
-                ) : null}
-                <Button type="submit" disabled={saving} className="w-full sm:w-auto">
-                  {saving ? "Sending…" : "Send message"}
-                </Button>
-              </form>
-            )}
+            <ContactForm />
           </div>
         </div>
       </section>

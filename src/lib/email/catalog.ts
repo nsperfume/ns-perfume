@@ -51,6 +51,7 @@ const contact = {
   name: "Ayesha Khan",
   email: "ayesha.khan@example.com",
   topic: "product",
+  phone: "0300 1234567",
   message: "I wear Amber Noir in winter. Is there something lighter from your line for Lahore summers that still lasts through a work day?",
 };
 

@@ -27,7 +27,9 @@ export async function GET(req: Request) {
         id: String(d._id),
         name: d.name,
         email: d.email,
+        phone: d.phone || "",
         topic: d.topic || "general",
+        orderNumber: d.orderNumber || "",
         message: d.message,
         status: d.status || "new",
         createdAt: d.createdAt

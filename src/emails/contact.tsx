@@ -2,23 +2,18 @@ import { siteConfig } from "@/data/site";
 import { absoluteUrl } from "@/lib/site-url";
 import { Cta, EmailLayout, Eyebrow, P, Panel, Strong, Title } from "@/emails/components";
 import type { EmailDefinition } from "@/emails/types";
+import { contactTopicLabel as topicLabel } from "@/lib/contact-topics";
 
 export type ContactEmailData = {
   name: string;
   email: string;
   topic: string;
   message: string;
-};
-
-const TOPIC_LABEL: Record<string, string> = {
-  order: "An order",
-  product: "A fragrance",
-  shipping: "Shipping and returns",
-  general: "General question",
+  phone?: string;
+  orderNumber?: string;
 };
 
 const first = (name: string) => name.trim().split(/\s+/)[0] || "there";
-const topicLabel = (t: string) => TOPIC_LABEL[t] || TOPIC_LABEL.general!;
 
 function excerpt(message: string, max = 600) {
   const clean = message.trim();
@@ -42,6 +37,7 @@ export function ContactReceivedEmail({ data }: { data: ContactEmailData }) {
         accent
         rows={[
           ["Topic", topicLabel(data.topic)],
+          ...(data.orderNumber ? ([["Order number", data.orderNumber]] as Array<[string, string]>) : []),
           ["Your message", excerpt(data.message)],
         ]}
       />
@@ -60,15 +56,15 @@ export function AdminNewContactEmail({ data }: { data: ContactEmailData }) {
   return (
     <EmailLayout internal preview={excerpt(data.message, 120)} reason="Internal notification for the NS Perfume store team.">
       <Eyebrow>New contact message</Eyebrow>
-      <Title>
-        {data.name} wrote about {topicLabel(data.topic).toLowerCase()}
-      </Title>
+      <Title>Message from {data.name}</Title>
       <Panel
         accent
         rows={[
+          ["Topic", topicLabel(data.topic)],
           ["Name", data.name],
           ["Email", data.email],
-          ["Topic", topicLabel(data.topic)],
+          ...(data.phone ? ([["Phone", data.phone]] as Array<[string, string]>) : []),
+          ...(data.orderNumber ? ([["Order number", data.orderNumber]] as Array<[string, string]>) : []),
         ]}
       />
       <P>{data.message}</P>

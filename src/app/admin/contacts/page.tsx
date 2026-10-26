@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   AdminCard,
+  AdminContactActions,
   AdminEmptyState,
   AdminFilterChips,
   AdminIcon,
@@ -21,12 +22,15 @@ import {
 import { Button } from "@/components/admin/button";
 import { toast } from "@/components/admin/toast";
 import { cn } from "@/lib/cn";
+import { contactTopicLabel } from "@/lib/contact-topics";
 
 type Msg = {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   topic: string;
+  orderNumber?: string;
   message: string;
   status: string;
   createdAt?: string;
@@ -116,7 +120,7 @@ function ContactsInbox() {
     return scoped.filter((r) => {
       if (status !== "all" && r.status !== status) return false;
       if (!term) return true;
-      return [r.name, r.email, r.topic, r.message].some((v) =>
+      return [r.name, r.email, contactTopicLabel(r.topic), r.phone, r.orderNumber, r.message].some((v) =>
         (v || "").toLowerCase().includes(term),
       );
     });
@@ -271,7 +275,10 @@ function ContactsInbox() {
                     </span>
                     <span className="col-span-2 row-start-2 min-w-0 md:col-span-1 md:row-start-1 md:col-start-2">
                       <span className="block truncate text-sm font-semibold text-admin-ink">
-                        {m.topic}
+                        {contactTopicLabel(m.topic)}
+                        {m.orderNumber ? (
+                          <span className="font-normal text-admin-muted"> · {m.orderNumber}</span>
+                        ) : null}
                       </span>
                       <span className="block truncate text-[0.9375rem] text-admin-muted">
                         {preview(m.message)}
@@ -295,7 +302,7 @@ function ContactsInbox() {
                       icon="reply"
                       label="Reply by email"
                       ariaLabel={`Reply to ${m.name} by email`}
-                      href={`mailto:${m.email}?subject=${encodeURIComponent(`Re: ${m.topic || "Your message"}`)}`}
+                      href={`mailto:${m.email}?subject=${encodeURIComponent(`Re: ${contactTopicLabel(m.topic)}`)}`}
                     />
                   </AdminRowActions>
                 </li>
@@ -307,7 +314,7 @@ function ContactsInbox() {
       <AdminModal
         open={!!detail}
         onClose={() => setDetail(null)}
-        title={detail ? detail.topic || "Message" : "Message"}
+        title={detail ? contactTopicLabel(detail.topic) : "Message"}
         wide
       >
         {detail ? (
@@ -327,6 +334,33 @@ function ContactsInbox() {
               </div>
               <AdminStatusBadge status={detail.status} />
             </div>
+            {detail.phone || detail.orderNumber ? (
+              <dl className="grid gap-3 rounded-md border border-admin-line p-4 text-[0.9375rem] sm:grid-cols-2">
+                {detail.phone ? (
+                  <div>
+                    <dt className="text-[0.8125rem] text-admin-muted">Phone</dt>
+                    <dd className="font-semibold text-admin-ink">{detail.phone}</dd>
+                  </div>
+                ) : null}
+                {detail.orderNumber ? (
+                  <div>
+                    <dt className="text-[0.8125rem] text-admin-muted">Order number</dt>
+                    <dd>
+                      <Link
+                        href={`/admin/orders/${encodeURIComponent(detail.orderNumber)}`}
+                        className="font-semibold text-admin-accent hover:underline"
+                      >
+                        {detail.orderNumber}
+                      </Link>
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+            ) : null}
+            <AdminContactActions
+              phone={detail.phone}
+              whatsappText={`Hi ${detail.name.split(" ")[0]}, this is NS Perfume about your message.`}
+            />
             <p className="whitespace-pre-wrap rounded-md border border-admin-line bg-admin-soft-2 p-4 text-[0.9375rem] leading-relaxed text-admin-ink">
               {detail.message}
             </p>
@@ -355,7 +389,7 @@ function ContactsInbox() {
                 </Button>
               )}
               <a
-                href={`mailto:${detail.email}?subject=${encodeURIComponent(`Re: ${detail.topic || "Your message"}`)}`}
+                href={`mailto:${detail.email}?subject=${encodeURIComponent(`Re: ${contactTopicLabel(detail.topic)}`)}`}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-admin-ink bg-admin-ink px-5 text-sm font-semibold text-admin-paper transition-colors hover:border-brass hover:bg-brass hover:text-white"
               >
                 <AdminIcon name="reply" size={17} />
