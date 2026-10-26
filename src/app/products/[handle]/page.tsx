@@ -23,7 +23,8 @@ import {
   getStoreProduct,
   getStoreProducts,
 } from "@/lib/store-data";
-import type { StoreProduct } from "@/lib/mappers";
+import { cardProduct, type StoreProduct } from "@/lib/mappers";
+import { getSiteSettings } from "@/lib/site-settings";
 import { richTextToPlain } from "@/lib/rich-text";
 import { TrustedHtml as RichHtml } from "@/components/ui/trusted-html";
 
@@ -38,19 +39,45 @@ export async function generateStaticParams() {
   return products.map((p) => ({ handle: p.handle }));
 }
 
+const CONCENTRATION_NAMES: Record<string, string> = {
+  EDP: "Eau de Parfum",
+  EDT: "Eau de Toilette",
+  EDC: "Eau de Cologne",
+  PARFUM: "Parfum",
+  EXTRAIT: "Extrait de Parfum",
+};
+const concentrationName = (c: string) => CONCENTRATION_NAMES[c.toUpperCase()] ?? c;
+const audience = (gender: string) =>
+  gender === "him" ? "for men" : gender === "her" ? "for women" : "for men and women";
+const genderLabel = (gender: string) =>
+  gender === "him" ? "For him" : gender === "her" ? "For her" : "Unisex";
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
   const product = await getStoreProduct(handle);
   if (!product) return { title: "Product" };
-  const fromAdmin = richTextToPlain(product.description || "").trim();
-  const metaDescription = (
-    fromAdmin ||
-    `${product.descriptor}. ${product.concentration} with real note layers and sillage ratings from NS Perfume.`
-  ).slice(0, 155);
+  const prices = product.prices.map((p) => p.price).filter((n) => n > 0);
+  const from = prices.length ? ` Price in Pakistan from Rs ${Math.min(...prices).toLocaleString("en-US")}.` : "";
+  const title =
+    product.seoTitle ||
+    `${product.name} ${concentrationName(product.concentration)} ${audience(product.gender)}`;
+  const description = (
+    product.seoDescription ||
+    `${product.descriptor.replace(/\.?$/, ".")} ${concentrationName(product.concentration)} ${audience(product.gender)}.${from} Cash on delivery across Pakistan.`
+  ).slice(0, 160);
+  const url = `/products/${product.handle}`;
   return {
-    title: `${product.name} ${product.concentration} perfume`,
-    description: metaDescription,
-    alternates: { canonical: `/products/${product.handle}` },
+    title,
+    description,
+    alternates: { canonical: url },
+    // WhatsApp and Instagram previews show the bottle, not the site banner.
+    openGraph: {
+      title,
+      description,
+      url,
+      type: "website",
+      images: product.imagePrimary ? [{ url: product.imagePrimary, alt: `${product.name} bottle` }] : undefined,
+    },
   };
 }
 
@@ -59,20 +86,29 @@ export default async function ProductPage({ params }: Props) {
   const product = await getStoreProduct(handle);
   if (!product) notFound();
 
-  const all = await getStoreProducts();
+  const [all, { checkout }] = await Promise.all([getStoreProducts(), getSiteSettings()]);
   const related = product.relatedHandles
     .map((h) => all.find((p) => p.handle === h))
     .filter((p): p is StoreProduct => Boolean(p))
     .slice(0, 4);
-  // Curated picks first, then fill to four from the rest of the line.
+  // Curated picks first, then the closest matches: same wearer, then family, then concentration.
+  const similarity = (p: StoreProduct) =>
+    (p.gender === product.gender ? 4 : p.gender === "unisex" || product.gender === "unisex" ? 2 : 0) +
+    (p.family === product.family ? 3 : 0) +
+    (p.concentration === product.concentration ? 1 : 0) +
+    (p.inStock ? 1 : 0);
   const fallbackRelated = [
     ...related,
-    ...all.filter(
-      (p) =>
-        p.handle !== product.handle &&
-        !related.some((r) => r.handle === p.handle),
-    ),
-  ].slice(0, 4);
+    ...all
+      .filter(
+        (p) =>
+          p.handle !== product.handle &&
+          !related.some((r) => r.handle === p.handle),
+      )
+      .sort((a, b) => similarity(b) - similarity(a)),
+  ]
+    .slice(0, 4)
+    .map(cardProduct);
   const descriptionHtml = richTextToPlain(product.description || "").trim()
     ? product.description
     : "";
@@ -84,10 +120,33 @@ export default async function ProductPage({ params }: Props) {
       ? path
       : `${siteConfig.url}${path.startsWith("/") ? "" : "/"}${path}`;
   const productUrl = absoluteUrl(`/products/${product.handle}`);
-  const sizePrices = product.prices.map((p) => p.price).filter((p) => p > 0);
-  const lowPrice = sizePrices.length ? Math.min(...sizePrices) : 0;
-  const highPrice = sizePrices.length ? Math.max(...sizePrices) : 0;
 
+  // Shopping-ready markup: one Offer per size in PKR with delivery and return terms.
+  const standard = checkout.shipping.standard;
+  const transit = standard.description.match(/(\d+)\D+(\d+)/);
+  const shippingDetails = {
+    "@type": "OfferShippingDetails",
+    shippingRate: { "@type": "MonetaryAmount", value: standard.pricePkr, currency: "PKR" },
+    shippingDestination: { "@type": "DefinedRegion", addressCountry: "PK" },
+    deliveryTime: {
+      "@type": "ShippingDeliveryTime",
+      handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 2, unitCode: "DAY" },
+      transitTime: {
+        "@type": "QuantitativeValue",
+        minValue: transit ? Number(transit[1]) : 3,
+        maxValue: transit ? Number(transit[2]) : 5,
+        unitCode: "DAY",
+      },
+    },
+  };
+  const returnPolicy = {
+    "@type": "MerchantReturnPolicy",
+    applicableCountry: "PK",
+    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+    merchantReturnDays: 30,
+    returnMethod: "https://schema.org/ReturnByMail",
+  };
+  const priceValidUntil = `${new Date().getFullYear() + 1}-12-31`;
   const productLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -96,19 +155,25 @@ export default async function ProductPage({ params }: Props) {
       richTextToPlain(product.description || "").trim() || product.descriptor,
     sku: product.prices[0]?.sku,
     brand: { "@type": "Brand", name: siteConfig.name },
-    image: absoluteUrl(product.gallery?.[0] || product.imagePrimary),
+    image: product.gallery.slice(0, 4).map((src) => absoluteUrl(src)),
     url: productUrl,
-    offers: {
-      "@type": "AggregateOffer",
-      priceCurrency: "PKR",
-      lowPrice: String(lowPrice),
-      highPrice: String(highPrice),
-      offerCount: product.prices.length,
-      url: productUrl,
-      availability: product.inStock
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
-    },
+    offers: product.prices
+      .filter((p) => p.price > 0)
+      .map((p) => ({
+        "@type": "Offer",
+        sku: p.sku,
+        name: `${product.name} ${p.ml} ml`,
+        price: String(p.price),
+        priceCurrency: "PKR",
+        priceValidUntil,
+        itemCondition: "https://schema.org/NewCondition",
+        availability: product.inStock
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+        url: productUrl,
+        shippingDetails,
+        hasMerchantReturnPolicy: returnPolicy,
+      })),
     aggregateRating:
       product.reviewCount > 0
         ? {
@@ -201,16 +266,18 @@ export default async function ProductPage({ params }: Props) {
                     ))}
                   </dd>
                 </div>
-                <div>
-                  <dt className="text-eyebrow text-taupe">Origin</dt>
-                  <dd className="mt-1 text-body font-semibold text-ink">
-                    {product.countryOfOrigin}
-                  </dd>
-                </div>
+                {product.countryOfOrigin ? (
+                  <div>
+                    <dt className="text-eyebrow text-taupe">Origin</dt>
+                    <dd className="mt-1 text-body font-semibold text-ink">
+                      {product.countryOfOrigin}
+                    </dd>
+                  </div>
+                ) : null}
                 <div>
                   <dt className="text-eyebrow text-taupe">Family</dt>
-                  <dd className="mt-1 text-body font-semibold capitalize text-ink">
-                    {product.family} · {product.gender}
+                  <dd className="mt-1 text-body font-semibold text-ink">
+                    <span className="capitalize">{product.family}</span> · {genderLabel(product.gender)}
                   </dd>
                 </div>
               </dl>
@@ -295,7 +362,7 @@ export default async function ProductPage({ params }: Props) {
         </section>
       ) : null}
 
-      <RecentlyViewed currentHandle={product.handle} catalog={all} />
+      <RecentlyViewed currentHandle={product.handle} catalog={all.map(cardProduct)} />
     </>
   );
 }

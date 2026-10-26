@@ -1,6 +1,9 @@
 import { fetchPkrRates } from "@/lib/currency";
 import { jsonError, jsonOk } from "@/lib/api";
 
+/** Rates change slowly; serve a cached copy and refresh every 6 hours. */
+export const revalidate = 21600;
+
 export async function GET() {
   try {
     const data = await fetchPkrRates();

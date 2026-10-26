@@ -29,8 +29,11 @@ export function ProductCard({
   className?: string;
   priority?: boolean;
 }) {
-  const price = product.prices[0]?.price ?? 0;
+  const sizes = product.prices.filter((p) => p.price > 0);
+  const price = sizes.length ? Math.min(...sizes.map((p) => p.price)) : 0;
   const badge = product.badges[0];
+  const wearer =
+    product.gender === "him" ? "Men" : product.gender === "her" ? "Women" : "Unisex";
   const sillage = Math.min(5, Math.max(1, Math.round(product.sillage)));
   const longevity = Math.min(5, Math.max(1, Math.round(product.longevity)));
 
@@ -74,14 +77,14 @@ export function ProductCard({
         <p
           className={cn(
             "text-eyebrow",
-            badge === "sale" || badge === "limited"
+            !product.inStock || badge === "sale" || badge === "limited"
               ? "text-rosewood"
               : badge
                 ? "text-brass-ink"
                 : "text-taupe",
           )}
         >
-          {badge ? badgeLabel(badge) : product.family}
+          {!product.inStock ? "Sold out" : badge ? badgeLabel(badge) : product.family}
         </p>
         <h3 className="mt-1.5 text-display-sm text-ink transition-colors duration-300 group-hover:text-brass-ink">
           {product.name}
@@ -92,15 +95,18 @@ export function ProductCard({
           </p>
         ) : null}
         <div className="mt-auto flex flex-col gap-1 pt-3 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-3">
-          <Price amountPkr={price} className="text-ink" />
+          <span className="inline-flex items-baseline gap-1.5">
+            {sizes.length > 1 ? <span className="text-caption text-taupe">From</span> : null}
+            <Price amountPkr={price} className="text-ink" />
+          </span>
           <span className="font-sans tabular-nums text-xs text-taupe">
-            {product.concentration}
-            {product.prices[0]?.ml ? ` · ${product.prices[0].ml} ml` : ""}
+            {product.concentration} · {wearer}
+            {sizes.length === 1 ? ` · ${sizes[0]!.ml} ml` : ""}
           </span>
         </div>
         {showMeter ? (
           <p className="mt-2 text-caption text-taupe">
-            Sillage {sillage}/5 · Longevity {longevity}/5
+            Projection {sillage}/5 · Longevity {longevity}/5
           </p>
         ) : null}
       </div>

@@ -6,8 +6,7 @@ const SiteSettingsSchema = new Schema(
     topbarText: {
       type: String,
       required: true,
-      default:
-        "Complimentary shipping over Rs 8,000 · Free returns on eligible orders · New: Iris Solstice",
+      default: "Free delivery over Rs 8,000 · Cash on delivery across Pakistan",
     },
     topbarEnabled: { type: Boolean, default: true },
     /** Store charges (shipping, free-shipping threshold, gift wrap, COD fee, tax). See lib/checkout-config. */

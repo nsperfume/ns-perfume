@@ -18,7 +18,6 @@ export function ProductCarousel({
       gap="md"
       align="start"
       loop
-      autoplayDelay={4200}
       slideClassName="min-w-0 flex-[0_0_72%] sm:flex-[0_0_50%] md:flex-[0_0_33.333%] lg:flex-[0_0_25%]"
       showDots
       showArrows

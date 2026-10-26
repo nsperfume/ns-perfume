@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { connectDB } from "@/lib/db";
 import { mapJournal, mapProduct, type StoreProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
@@ -29,6 +30,8 @@ function toPkrFallback(p: (typeof fallbackProducts)[0]): StoreProduct {
     id: p.handle,
     description: p.description || "",
     containsAlcohol: p.containsAlcohol !== false,
+    seoTitle: "",
+    seoDescription: "",
     collectionHandles: [],
     prices: p.prices.map((s) => ({
       ml: s.ml,
@@ -38,20 +41,34 @@ function toPkrFallback(p: (typeof fallbackProducts)[0]): StoreProduct {
   };
 }
 
-export async function getStoreProducts(): Promise<StoreProduct[]> {
+/**
+ * "Featured" order for the shop: bestsellers, then new, then the best rated,
+ * then A to Z. Stable no matter which product was edited last.
+ */
+function featuredOrder(a: StoreProduct, b: StoreProduct) {
+  const rank = (p: StoreProduct) =>
+    p.badges.includes("bestseller") ? 0 : p.badges.includes("new") ? 1 : 2;
+  return (
+    rank(a) - rank(b) ||
+    Number(b.inStock) - Number(a.inStock) ||
+    b.rating - a.rating ||
+    a.name.localeCompare(b.name)
+  );
+}
+
+/** Active catalog in featured order. Deduplicated per request with React cache. */
+export const getStoreProducts = cache(async (): Promise<StoreProduct[]> => {
   try {
     await connectDB();
-    const docs = await ProductModel.find({ status: "active" })
-      .sort({ updatedAt: -1 })
-      .lean();
-    if (docs.length || !useDemoData) return docs.map(mapProduct);
+    const docs = await ProductModel.find({ status: "active" }).lean();
+    if (docs.length || !useDemoData) return docs.map(mapProduct).sort(featuredOrder);
   } catch (e) {
     dbFailed("getStoreProducts", e);
   }
   return fallbackProducts.map(toPkrFallback);
-}
+});
 
-export async function getStoreProduct(
+export const getStoreProduct = cache(async function getStoreProduct(
   handle: string,
 ): Promise<StoreProduct | null> {
   try {
@@ -63,7 +80,7 @@ export async function getStoreProduct(
   }
   const fb = fallbackProducts.find((p) => p.handle === handle);
   return fb ? toPkrFallback(fb) : null;
-}
+});
 
 export async function getBestsellers(): Promise<StoreProduct[]> {
   const all = await getStoreProducts();
@@ -88,7 +105,7 @@ export async function getCollections() {
   }));
 }
 
-export async function getCollectionWithProducts(handle: string) {
+export const getCollectionWithProducts = cache(async function getCollectionWithProducts(handle: string) {
   try {
     await connectDB();
     const collection = await CollectionModel.findOne({
@@ -99,7 +116,7 @@ export async function getCollectionWithProducts(handle: string) {
       const docs = await ProductModel.find(
         productsInCollectionQuery(collection),
       ).lean();
-      const products = docs.map(mapProduct);
+      const products = docs.map(mapProduct).sort(featuredOrder);
       return { collection, products };
     }
     if (!useDemoData) return null;
@@ -123,7 +140,7 @@ export async function getCollectionWithProducts(handle: string) {
     );
   }
   return { collection: fb, products };
-}
+});
 
 export async function getTestimonials() {
   try {

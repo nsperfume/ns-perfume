@@ -1,9 +1,9 @@
 import { cache } from "react";
 import { connectDB } from "@/lib/db";
 import { SiteSettingsModel } from "@/models/SiteSettings";
-import { siteConfig } from "@/data/site";
 import {
   DEFAULT_CHECKOUT_CONFIG,
+  defaultAnnouncement,
   normalizeCheckoutConfig,
   type CheckoutConfig,
 } from "@/lib/checkout-config";
@@ -15,10 +15,15 @@ export type SiteSettingsData = {
 };
 
 export const DEFAULT_SITE_SETTINGS: SiteSettingsData = {
-  topbarText: siteConfig.announcement,
+  topbarText: defaultAnnouncement(DEFAULT_CHECKOUT_CONFIG),
   topbarEnabled: true,
   checkout: DEFAULT_CHECKOUT_CONFIG,
 };
+
+/** Admin copy sometimes ends with a stray separator ("... Pakistan ·"); trim it. */
+function cleanAnnouncement(text: unknown) {
+  return typeof text === "string" ? text.trim().replace(/[\s·|,-]+$/, "") : "";
+}
 
 async function loadSiteSettings(): Promise<SiteSettingsData> {
   try {
@@ -33,15 +38,20 @@ async function loadSiteSettings(): Promise<SiteSettingsData> {
         })
       ).toObject() as Record<string, unknown>;
     }
+    const checkout = normalizeCheckoutConfig(doc.checkout);
     return {
-      topbarText: (doc.topbarText as string) || DEFAULT_SITE_SETTINGS.topbarText,
+      topbarText: cleanAnnouncement(doc.topbarText) || defaultAnnouncement(checkout),
       topbarEnabled:
         typeof doc.topbarEnabled === "boolean"
           ? doc.topbarEnabled
           : DEFAULT_SITE_SETTINGS.topbarEnabled,
-      checkout: normalizeCheckoutConfig(doc.checkout),
+      checkout,
     };
-  } catch {
+  } catch (e) {
+    // In production, fail loudly so ISR keeps the last good page instead of
+    // caching default charges; locally the defaults keep the site browsable.
+    if (process.env.NODE_ENV === "production") throw e;
+    console.warn("Site settings: database unavailable, using defaults.", e);
     return DEFAULT_SITE_SETTINGS;
   }
 }

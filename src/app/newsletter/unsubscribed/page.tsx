@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Newsletter preferences",
-  description: "Your NS Perfume newsletter subscription has been updated.",
+  description: "Manage your NS Perfume newsletter subscription.",
   robots: { index: false },
 };
 
@@ -20,11 +20,11 @@ export default async function UnsubscribedPage({
           Newsletter
         </p>
         <h1 className="text-display-lg text-balance text-ink">
-          {invalid ? "This link has expired" : "You are unsubscribed"}
+          {invalid ? "We could not use this link" : "You are unsubscribed"}
         </h1>
         <p className="mt-4 text-body-lg text-taupe">
           {invalid
-            ? "We could not find a subscription for this link. If you still receive our newsletter, reply to any issue and we will remove you by hand."
+            ? "This unsubscribe link is not valid any more. If you still receive our newsletter, reply to any issue and we will remove you."
             : "You will not receive the newsletter again. Order and account emails still arrive as normal."}
         </p>
         <div className="mt-8">

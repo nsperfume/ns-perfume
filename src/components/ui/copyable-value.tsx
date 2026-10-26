@@ -5,6 +5,8 @@ import { cn } from "@/lib/cn";
 
 type Props = {
   value: string;
+  /** What to show when it differs from what is copied (e.g. "0306 7861412"). */
+  display?: string;
   /** Optional link (e.g. tel: or mailto:) wrapping the value text. */
   href?: string;
   className?: string;
@@ -54,6 +56,7 @@ function CheckGlyph({ className }: { className?: string }) {
  */
 export function CopyableValue({
   value,
+  display,
   href,
   className,
   valueClassName,
@@ -71,18 +74,24 @@ export function CopyableValue({
     }
   }
 
+  // IBANs read and wrap in groups of four; each group stays whole.
+  const iban = /^[A-Z]{2}\d{2}[A-Z0-9]{10,}$/.test(value.replace(/\s+/g, ""));
+  const groups = iban ? value.replace(/\s+/g, "").match(/.{1,4}/g) ?? [value] : null;
   const text = (
     <span
       className={cn(
-        "block text-base font-medium leading-8 text-ink",
-        /^[\d\s+()-]+$|^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(value)
-          ? "font-sans tabular-nums"
-          : "font-sans",
-        "break-all font-sans tabular-nums tracking-normal [font-variant-numeric:lining-nums_]",
+        "block font-sans text-base font-medium leading-8 tabular-nums tracking-normal text-ink [font-variant-numeric:lining-nums_]",
+        groups ? "" : "break-all",
         valueClassName,
       )}
     >
-      {value}
+      {groups
+        ? groups.map((g, i) => (
+            <span key={i} className="inline-block whitespace-nowrap pr-[0.4em] last:pr-0">
+              {g}
+            </span>
+          ))
+        : (display ?? value)}
     </span>
   );
 

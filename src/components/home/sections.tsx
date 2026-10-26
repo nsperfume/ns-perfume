@@ -151,49 +151,51 @@ export function HomeHero() {
   );
 }
 
-const trustPromises = [
-  {
-    title: "Cash on delivery",
-    body: "In major cities you can pay when the parcel is in your hands. No card required at checkout if COD is offered for your address. The courier confirms the amount before you hand over cash.",
-  },
-  {
-    title: "Free shipping",
-    body: "Orders over Rs 8,000 ship on complimentary standard delivery where we operate. Threshold and timing show at checkout so you know the cost before you place the order.",
-  },
-  {
-    title: "Track anytime",
-    body: "After you order, open the track page with your order number. You get status updates and a map view while the parcel moves, without waiting on a phone queue.",
-  },
-  {
-    title: "Packed for transit",
-    body: "Bottles leave in fitted inserts so glass is less likely to shift in heat or rough handling. Outer cartons stay plain for privacy when someone else receives the box.",
-  },
-  {
-    title: "Returns on sealed bottles",
-    body: "Unopened bottles in original packaging may be returned within 30 days. If something arrives damaged, write to care with your order number and photos of the parcel.",
-  },
-  {
-    title: "A real person at care",
-    body: "Questions about an order or a bottle go to our care team, not a bot. Write, call, or WhatsApp Monday to Friday, 9am to 5pm PKT.",
-  },
-] as const;
+function trustPromises(freeDeliveryLine: string) {
+  return [
+    {
+      title: "Cash on delivery",
+      body: "Pay in cash when your order arrives, anywhere in Pakistan. Bank transfer, JazzCash and Easypaisa work too.",
+    },
+    {
+      title: "Free delivery",
+      body: freeDeliveryLine,
+    },
+    {
+      title: "Track your order",
+      body: "Check your order status any time with your order number and email address.",
+    },
+    {
+      title: "Packed with care",
+      body: "Every bottle is packed to travel safely through heat and long courier routes.",
+    },
+    {
+      title: "Returns on sealed bottles",
+      body: "Unopened bottles in their original packaging can be returned within 30 days. If something arrives damaged, send us photos with your order number.",
+    },
+    {
+      title: "Real people, quick replies",
+      body: "Questions go to our team, not a bot. Call or WhatsApp us Monday to Friday, 9am to 5pm.",
+    },
+  ];
+}
 
 /**
  * Full trust band — shipping, payment, and aftercare with real detail.
  * Lives below the fold so the hero stays one clear composition.
  */
-export function HomeTrustSection() {
+export function HomeTrustSection({ freeDeliveryLine }: { freeDeliveryLine: string }) {
   return (
     <section className="border-b border-hairline bg-muted/60 section-y">
       <div className="container-ns flex flex-col justify-center">
         <SectionLead
           eyebrow="Ordering with us"
-          title="Payment, shipping, and what happens after"
-          description="Clear terms for cash on delivery, free shipping thresholds, tracking, and returns. Read the full story once, then shop without guessing."
+          title="Payment, delivery and returns"
+          description="How paying, delivery, tracking and returns work, in plain words."
         />
 
         <ul className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-14">
-          {trustPromises.map((item, index) => (
+          {trustPromises(freeDeliveryLine).map((item, index) => (
             <li key={item.title} className="border-t border-[#e2d6bd] pt-6">
               <p className="font-sans tabular-nums text-sm text-brass-ink">
                 {String(index + 1).padStart(2, "0")}
@@ -534,7 +536,7 @@ export function JournalPreview({
         <div className="grid gap-x-10 gap-y-6 lg:grid-cols-12 lg:items-stretch">
           <Link
             href={`/journal/${feature.slug}`}
-            className="group relative order-1 aspect-16/11 overflow-hidden bg-muted lg:col-span-7 lg:row-start-1"
+            className="group relative order-1 aspect-16/11 overflow-hidden bg-muted lg:col-span-7 lg:col-start-1 lg:row-start-1"
           >
             {feature.imageUrl ? (
               <Image
@@ -570,7 +572,7 @@ export function JournalPreview({
             </div>
           </Link>
 
-          <div className="order-3 flex min-h-0 flex-col divide-y divide-hairline lg:order-0 lg:col-span-5 lg:row-start-1 lg:border-l lg:border-hairline lg:pl-10">
+          <div className="order-3 flex min-h-0 flex-col divide-y divide-hairline lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1 lg:border-l lg:border-hairline lg:pl-10">
             {rest.map((post) => (
               <Link
                 key={post.slug}
@@ -616,7 +618,7 @@ export function JournalPreview({
             ))}
           </div>
 
-          <div className="order-2 lg:order-0 lg:col-span-7 lg:row-start-2">
+          <div className="order-2 lg:col-span-7 lg:col-start-1 lg:row-start-2">
             <Link
               href={`/journal/${feature.slug}`}
               className="group block max-w-xl"

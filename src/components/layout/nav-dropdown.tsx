@@ -63,13 +63,19 @@ export function NavDropdown({
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [top, setTop] = useState(108);
+  const [anchorX, setAnchorX] = useState<number | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverOpenedAt = useRef(0);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
 
   useEffect(() => setMounted(true), []);
 
   const syncTop = useCallback(() => {
     setTop(Math.round(chromeBottom()));
+    const r = triggerRef.current?.getBoundingClientRect();
+    if (r) setAnchorX(Math.round(r.left + r.width / 2));
   }, []);
 
   const clearClose = useCallback(() => {
@@ -85,6 +91,11 @@ export function NavDropdown({
     setOpen(true);
   }, [clearClose, syncTop]);
 
+  const openOnHover = useCallback(() => {
+    if (!open) hoverOpenedAt.current = Date.now();
+    openMenu();
+  }, [open, openMenu]);
+
   const scheduleClose = useCallback(() => {
     clearClose();
     /* Longer grace so moving from trigger → panel does not flash closed */
@@ -96,11 +107,36 @@ export function NavDropdown({
     setOpen(false);
   }, [clearClose]);
 
+  /** Close and hand focus back to the trigger (keyboard paths). */
+  const closeToTrigger = useCallback(() => {
+    closeNow();
+    triggerRef.current?.focus();
+  }, [closeNow]);
+
+  const panelFocusables = () =>
+    Array.from(panelRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") ?? []);
+
+  // The panel is portaled to <body>, so keep Tab order sane by hand:
+  // Tab past the last link or Shift+Tab before the first returns to the trigger.
+  const onPanelKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "Tab") return;
+    const items = panelFocusables();
+    if (!items.length) return;
+    const first = items[0]!;
+    const last = items[items.length - 1]!;
+    if ((!e.shiftKey && document.activeElement === last) || (e.shiftKey && document.activeElement === first)) {
+      e.preventDefault();
+      closeToTrigger();
+    }
+  };
+
   useEffect(() => {
     if (!open) return;
     syncTop();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeNow();
+      if (e.key !== "Escape") return;
+      if (panelRef.current?.contains(document.activeElement)) closeToTrigger();
+      else closeNow();
     };
     window.addEventListener("resize", syncTop);
     window.addEventListener("scroll", syncTop, { passive: true });
@@ -110,7 +146,7 @@ export function NavDropdown({
       window.removeEventListener("scroll", syncTop);
       window.removeEventListener("keydown", onKey);
     };
-  }, [open, syncTop, closeNow]);
+  }, [open, syncTop, closeNow, closeToTrigger]);
 
   let body: ReactNode = null;
 
@@ -142,12 +178,12 @@ export function NavDropdown({
         </div>
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_13.5rem] xl:grid-cols-[minmax(0,1fr)_14.5rem]">
-          <div className="grid sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {columns.map((col) => (
               <nav
                 key={col.title}
                 aria-label={col.title}
-                className="border-b border-hairline px-5 py-5 odd:border-r xl:border-b-0 xl:border-r xl:last:border-r-0"
+                className="border-b border-r border-hairline px-5 py-5 xl:border-b-0 xl:last:border-r-0"
               >
                 <p className="mb-3 px-2 text-eyebrow text-taupe">
                   {col.title}
@@ -199,7 +235,7 @@ export function NavDropdown({
                 />
                 <span className="absolute inset-x-0 bottom-0 p-4">
                   <span className="block text-eyebrow text-paper/75">
-                    Featured
+                    Not sure yet?
                   </span>
                   <span className="mt-1 block text-sm font-semibold text-paper">
                     {panelImage.cta ?? "Shop the collection →"}
@@ -214,7 +250,7 @@ export function NavDropdown({
     );
   } else if (items) {
     body = (
-      <div className="mx-auto w-full max-w-[17rem] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper p-2 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
+      <div className="w-[17rem] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper p-2 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
         <ul className="flex flex-col">
           {items.map((item) => (
             <li key={item.href}>
@@ -235,15 +271,23 @@ export function NavDropdown({
   return (
     <div
       className="relative"
-      onMouseEnter={openMenu}
+      onMouseEnter={openOnHover}
       onMouseLeave={scheduleClose}
     >
       <button
+        ref={triggerRef}
         type="button"
         className={triggerClass}
         aria-expanded={open}
         aria-controls={panelId}
-        onClick={() => (open ? closeNow() : openMenu())}
+        onClick={(e) => {
+          // A click right after hover-open is the same intent: keep it open.
+          if (open && Date.now() - hoverOpenedAt.current < 600) return;
+          if (open) return closeNow();
+          openMenu();
+          // Keyboard activation (Enter/Space reports detail 0): move into the panel.
+          if (e.detail === 0) requestAnimationFrame(() => panelFocusables()[0]?.focus());
+        }}
       >
         {label}
         <ChevronDownIcon
@@ -259,20 +303,23 @@ export function NavDropdown({
       {mounted && body
         ? createPortal(
             <div
+              ref={panelRef}
               id={panelId}
               role="region"
               aria-label={label}
               aria-hidden={!open}
               className={cn(
-                "fixed inset-x-0 z-60 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none",
-                wide ? "px-3 sm:px-5 lg:px-6" : "flex justify-center px-3",
+                "fixed z-60 transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none",
+                // Wide panels span the page; small ones sit centred under their trigger.
+                wide ? "inset-x-0 px-3 sm:px-5 lg:px-6" : "-translate-x-1/2",
                 open
                   ? "pointer-events-auto visible translate-y-0 opacity-100"
                   : "pointer-events-none invisible -translate-y-1 opacity-0",
               )}
-              style={{ top }}
+              style={wide || anchorX === null ? { top } : { top, left: anchorX }}
               onMouseEnter={openMenu}
               onMouseLeave={scheduleClose}
+              onKeyDown={onPanelKeyDown}
             >
               {/* Invisible bridge so the cursor can cross from nav into the panel */}
               <div className="absolute inset-x-0 -top-3 h-3" aria-hidden />

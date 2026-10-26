@@ -129,7 +129,7 @@ export function EmailLayout({
                   </Link>{" "}
                   or WhatsApp{" "}
                   <Link href={whatsapp} style={footerLink}>
-                    {siteConfig.phone}
+                    {siteConfig.phoneDisplay}
                   </Link>
                   .
                 </Text>

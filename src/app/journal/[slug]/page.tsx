@@ -36,22 +36,35 @@ function formatDate(value: string) {
 /** Root layout appends " | NS Perfume"; keep the full title tag under 60 characters. */
 const MAX_TITLE = 59 - ` | ${siteConfig.name}`.length;
 
-function seoTitle(title: string) {
+/**
+ * Full title with the brand when it fits; the bare title when only that fits;
+ * otherwise cut at a word boundary (no ellipsis, which reads as broken in results).
+ */
+function seoTitle(title: string): Metadata["title"] {
   if (title.length <= MAX_TITLE) return title;
-  const cut = title.slice(0, MAX_TITLE - 1);
+  if (title.length <= 60) return { absolute: title };
+  const cut = title.slice(0, 60);
   const space = cut.lastIndexOf(" ");
-  const trimmed = space > MAX_TITLE * 0.6 ? cut.slice(0, space) : cut;
-  return `${trimmed.replace(/[\s,:;.\-]+$/, "")}…`;
+  return { absolute: (space > 36 ? cut.slice(0, space) : cut).replace(/[\s,:;.\-]+$/, "") };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = await getJournalPost(slug);
   if (!post) return { title: "Journal" };
+  const url = `/journal/${post.slug}`;
   return {
     title: seoTitle(post.title),
-    description: post.excerpt.slice(0, 154),
-    alternates: { canonical: `/journal/${post.slug}` },
+    description: post.excerpt.slice(0, 160),
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      url,
+      title: post.title,
+      description: post.excerpt,
+      publishedTime: post.date || undefined,
+      images: post.imageUrl ? [{ url: post.imageUrl, alt: post.title }] : undefined,
+    },
   };
 }
 
@@ -69,14 +82,27 @@ export default async function JournalArticlePage({ params }: Props) {
 
   const related = more.filter((p) => p.slug !== post.slug).slice(0, 3);
 
+  const pageUrl = `${siteConfig.url}/journal/${post.slug}`;
+  const imageUrl = post.imageUrl
+    ? /^https?:\/\//i.test(post.imageUrl)
+      ? post.imageUrl
+      : `${siteConfig.url}${post.imageUrl.startsWith("/") ? "" : "/"}${post.imageUrl}`
+    : undefined;
   const articleLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
     headline: post.title,
-    datePublished: post.date,
     description: post.excerpt,
-    image: post.imageUrl || undefined,
-    author: { "@type": "Organization", name: "NS Perfume" },
+    datePublished: post.date || undefined,
+    dateModified: post.updatedAt || post.date || undefined,
+    image: imageUrl ? [imageUrl] : undefined,
+    mainEntityOfPage: { "@type": "WebPage", "@id": pageUrl },
+    author: { "@type": "Organization", name: siteConfig.name, url: siteConfig.url },
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      logo: { "@type": "ImageObject", url: `${siteConfig.url}/brand/ns-perfume-logo.svg` },
+    },
   };
 
   return (

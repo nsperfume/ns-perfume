@@ -172,6 +172,8 @@ function MarqueeRow({
         {sequence.map((text, i) => (
           <span
             key={`${text}-${i}`}
+            // The second copy only exists to make the loop seamless.
+            aria-hidden={i >= phrases.length ? true : undefined}
             className="inline-flex shrink-0 items-center gap-5 px-5 md:gap-7 md:px-7"
           >
             <span className="whitespace-nowrap text-sm font-medium leading-none text-paper/90 md:text-base">

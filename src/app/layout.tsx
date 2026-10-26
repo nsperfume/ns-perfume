@@ -27,7 +27,7 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} | Modern Luxury Fragrance`,
+    default: `${siteConfig.name} | Perfumes in Pakistan`,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
@@ -51,7 +51,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // Store charges are edited in admin; cached pages refresh when settings are saved.
-  const { checkout } = await getSiteSettings();
+  const { checkout, topbarText, topbarEnabled } = await getSiteSettings();
   return (
     <html
       lang="en"
@@ -62,7 +62,7 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <CheckoutConfigProvider value={checkout}>
-          <SiteShell>{children}</SiteShell>
+          <SiteShell announcement={topbarEnabled ? topbarText : ""}>{children}</SiteShell>
         </CheckoutConfigProvider>
       </body>
     </html>

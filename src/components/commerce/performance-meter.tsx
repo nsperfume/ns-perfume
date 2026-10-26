@@ -3,16 +3,30 @@
 import { InfoTip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
 
-const SCALE = [
+type Scale = readonly { n: number; label: string }[];
+
+/** How far the scent reaches (perfumers call it sillage). */
+const PROJECTION_SCALE: Scale = [
   { n: 1, label: "Soft" },
   { n: 2, label: "Light" },
   { n: 3, label: "Moderate" },
   { n: 4, label: "Strong" },
   { n: 5, label: "Bold" },
-] as const;
+];
+
+/** How long it stays on skin. */
+const LONGEVITY_SCALE: Scale = [
+  { n: 1, label: "Brief" },
+  { n: 2, label: "Short" },
+  { n: 3, label: "Moderate" },
+  { n: 4, label: "Long" },
+  { n: 5, label: "All day" },
+];
+
+const SCALE = PROJECTION_SCALE;
 
 const SILLAGE_TIP =
-  "Sillage is how far the scent projects from your skin into the room. Soft stays close. Bold fills more space around you.";
+  "Projection (sillage) is how far the scent reaches from your skin into the room. Soft stays close. Bold fills more space around you.";
 
 const LONGEVITY_TIP =
   "Longevity is how long the scent stays noticeable on skin before it fades. Higher scores last through a longer day or evening.";
@@ -23,6 +37,7 @@ function MeterRow({
   tip,
   tipLabel,
   value,
+  scale,
   compact,
 }: {
   label: string;
@@ -30,10 +45,11 @@ function MeterRow({
   tip: string;
   tipLabel: string;
   value: number;
+  scale: Scale;
   compact?: boolean;
 }) {
   const clamped = Math.min(5, Math.max(1, Math.round(value)));
-  const word = SCALE[clamped - 1]?.label ?? "";
+  const word = scale[clamped - 1]?.label ?? "";
 
   if (compact) {
     return (
@@ -145,19 +161,21 @@ export function PerformanceMeter({
         </div>
       ) : null}
       <MeterRow
-        label="Sillage"
-        hint="Projection around you"
+        label="Projection"
+        hint="How far it reaches"
         tip={SILLAGE_TIP}
-        tipLabel="What is sillage?"
+        tipLabel="What is projection?"
         value={sillage}
+        scale={PROJECTION_SCALE}
         compact={compact}
       />
       <MeterRow
         label="Longevity"
-        hint="Hours on skin"
+        hint="How long it lasts on skin"
         tip={LONGEVITY_TIP}
         tipLabel="What is longevity?"
         value={longevity}
+        scale={LONGEVITY_SCALE}
         compact={compact}
       />
     </div>
@@ -178,8 +196,8 @@ export function PerformanceMini({
   className?: string;
 }) {
   const rows = [
-    { label: "Sillage", value: sillage },
-    { label: "Longevity", value: longevity },
+    { label: "Projection", value: sillage, scale: PROJECTION_SCALE },
+    { label: "Longevity", value: longevity, scale: LONGEVITY_SCALE },
   ];
   return (
     <div
@@ -190,7 +208,7 @@ export function PerformanceMini({
     >
       {rows.map((row) => {
         const clamped = Math.min(5, Math.max(1, Math.round(row.value)));
-        const word = SCALE[clamped - 1]?.label ?? "";
+        const word = row.scale[clamped - 1]?.label ?? "";
         return (
           <div
             key={row.label}

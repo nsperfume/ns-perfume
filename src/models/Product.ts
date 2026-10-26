@@ -70,5 +70,8 @@ export type ProductDoc = mongoose.InferSchemaType<typeof ProductSchema> & {
   _id: mongoose.Types.ObjectId;
 };
 
+// Storefront catalog: active products.
+ProductSchema.index({ status: 1, updatedAt: -1 });
+
 export const ProductModel =
   models.Product || model("Product", ProductSchema);

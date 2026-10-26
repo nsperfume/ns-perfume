@@ -72,7 +72,10 @@ export function Select({
             triggerClassName,
           )}
         >
-          <SelectPrimitive.Value placeholder={placeholder} />
+          {/* Render the selected label ourselves so it shows before the item list mounts. */}
+          <SelectPrimitive.Value placeholder={placeholder}>
+            {options.find((o) => o.value === value)?.label}
+          </SelectPrimitive.Value>
           <SelectPrimitive.Icon asChild>
             <ChevronDownIcon
               size={16}

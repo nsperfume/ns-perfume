@@ -14,7 +14,14 @@ import { CustomerProvider } from "@/context/customer";
 import { UiProvider } from "@/context/ui";
 import { WishlistProvider } from "@/context/wishlist";
 
-export function SiteShell({ children }: { children: React.ReactNode }) {
+export function SiteShell({
+  children,
+  announcement,
+}: {
+  children: React.ReactNode;
+  /** Announcement bar text from store settings; empty hides the message. */
+  announcement: string;
+}) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
   const isCheckout = pathname?.startsWith("/checkout");
@@ -57,7 +64,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                 <ScrollToTop />
                 <div className="fixed inset-x-0 top-0 z-50 overflow-visible">
                   <div data-site-chrome className="overflow-visible">
-                    <AnnouncementBar />
+                    <AnnouncementBar text={announcement} />
                     <Header />
                   </div>
                 </div>

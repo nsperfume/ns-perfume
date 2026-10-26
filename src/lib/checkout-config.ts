@@ -159,6 +159,16 @@ export function describeShipping(config: CheckoutConfig) {
   return parts.join(" ");
 }
 
+/** Announcement bar text when the owner has not written one: built from the live charges. */
+export function defaultAnnouncement(config: CheckoutConfig) {
+  const parts: string[] = [];
+  if (config.freeShippingThresholdPkr > 0 && config.shipping.standard.enabled) {
+    parts.push(`Free delivery over ${rs(config.freeShippingThresholdPkr)}`);
+  }
+  parts.push("Cash on delivery across Pakistan");
+  return parts.join(" · ");
+}
+
 /** Replace {{shipping}} in stored copy with the live shipping summary. */
 export function fillCheckoutCopy(text: string, config: CheckoutConfig) {
   return text.replace(/\{\{shipping\}\}/g, describeShipping(config));

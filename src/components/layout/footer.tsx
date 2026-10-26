@@ -22,7 +22,7 @@ import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/cn";
 import { HORIZONTAL } from "@/components/brand/paths";
 import { BrandIcon } from "@/components/ui/brand-icon";
-import { ChevronDownIcon, MailIcon, PhoneIcon } from "@/components/ui/icons";
+import { ChevronDownIcon, MailIcon, MapPinIcon, PhoneIcon } from "@/components/ui/icons";
 import { whatsappUrl } from "@/lib/whatsapp";
 
 const iconMap: Record<(typeof socialLinks)[number]["slug"], SimpleIcon> = {
@@ -112,7 +112,7 @@ export function Footer() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // No mailing-list service yet: signups land in the care inbox via the contact endpoint.
+  // Signups are stored in the database (POST /api/newsletter) with a welcome email.
   async function subscribe(e: React.FormEvent) {
     e.preventDefault();
     const value = email.trim();
@@ -179,7 +179,7 @@ export function Footer() {
                 className="inline-flex min-h-11 items-center gap-2 font-sans tabular-nums transition-colors hover:text-brass"
               >
                 <PhoneIcon size={16} />
-                {siteConfig.phone}
+                {siteConfig.phoneDisplay}
               </a>
               <a
                 href={whatsappUrl(siteConfig.phone, "Hi NS Perfume, I have a question.")}
@@ -189,6 +189,15 @@ export function Footer() {
               >
                 <BrandIcon name="whatsapp" size={16} />
                 WhatsApp
+              </a>
+              <a
+                href={siteConfig.location.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center gap-2 transition-colors hover:text-brass"
+              >
+                <MapPinIcon size={16} />
+                {siteConfig.location.label}, {siteConfig.location.detail}
               </a>
             </div>
           </div>

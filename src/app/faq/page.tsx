@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/json-ld";
 import { faqItems } from "@/data/site";
+import { OpenFromHash } from "@/components/faq/open-from-hash";
 import { fillCheckoutCopy } from "@/lib/checkout-config";
 import { getSiteSettings } from "@/lib/site-settings";
 
@@ -33,15 +34,17 @@ export default async function FaqPage() {
       <JsonLd data={faqLd} />
       <div className="container-ns max-w-[52rem]">
         <p className="mb-3 text-eyebrow text-taupe">Help</p>
-        <h1 className="mb-5 text-display-xl">Questions, answered</h1>
+        <h1 className="mb-5 text-display-xl">Frequently asked questions</h1>
         <p className="mb-12 max-w-[38rem] text-body-lg text-taupe md:mb-16">
-          Shipping, ingredients, authenticity, and how concentration shapes wear.
+          Delivery, returns, authenticity, ingredients and how concentration changes the way a perfume wears.
         </p>
-        <div className="flex flex-col border-t border-hairline" id="concentration">
+        <OpenFromHash />
+        <div className="flex flex-col border-t border-hairline">
           {items.map((item) => (
             <details
               key={item.question}
-              className="group border-b border-hairline"
+              id={item.id}
+              className="group scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] border-b border-hairline"
             >
               <summary className="flex min-h-16 cursor-pointer list-none items-center py-5 text-heading-sm marker:content-none [&::-webkit-details-marker]:hidden">
                 <span className="flex w-full items-center justify-between gap-6">

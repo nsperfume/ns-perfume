@@ -2,13 +2,13 @@ export const siteConfig = {
   name: "NS Perfume",
   tagline: "Apothecary restraint. Editorial clarity.",
   url: "https://nsperfume.pk",
-  announcement:
-    "Complimentary shipping over Rs 8,000 · Free returns on eligible orders · New: Iris Solstice",
   description:
     "NS Perfume is a fragrance house with honest scent pyramids, clear sillage ratings, and prices that convert into the currency you choose.",
   email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "care@nsperfume.pk",
   /** Primary care line (JazzCash / Easypaisa / WhatsApp). No spaces for easy copy. */
   phone: "03067861412",
+  /** Same number grouped for reading on screen and in emails. Links use `phone`. */
+  phoneDisplay: "0306 7861412",
   contactName: "Asim Ali",
   location: {
     label: "NS Mart",
@@ -28,7 +28,6 @@ export const siteConfig = {
     accountNumber: "09110111027312",
     iban: "PK68MEZN0009110111027312",
     branch: "Qila Didar Singh (0911)",
-    note: "Use your order number as the transfer reference. WhatsApp payment proof to 03067861412 if asked.",
   },
 } as const;
 
@@ -55,12 +54,15 @@ export const shopMegaMenu = {
   type: [
     { label: "Eau de Parfum", href: "/collections/eau-de-parfum" },
     { label: "Eau de Toilette", href: "/collections/eau-de-toilette" },
-    { label: "Discovery and travel size", href: "/collections/discovery" },
+  ],
+  gifts: [
     { label: "Gift sets", href: "/collections/gift-sets" },
+    { label: "Discovery and travel size", href: "/collections/discovery" },
+    { label: "Wedding season", href: "/collections/wedding-season" },
   ],
   featured: [
-    { label: "New arrivals", href: "/collections/new-arrivals" },
     { label: "Bestsellers", href: "/collections/bestsellers" },
+    { label: "New arrivals", href: "/collections/new-arrivals" },
     { label: "Limited edition", href: "/collections/limited-edition" },
   ],
 } as const;
@@ -74,7 +76,7 @@ export const footerColumns = {
     { label: "New arrivals", href: "/collections/new-arrivals" },
     { label: "Limited edition", href: "/collections/limited-edition" },
     { label: "Gift sets", href: "/collections/gift-sets" },
-    { label: "Gift cards", href: "/gift-cards" },
+    { label: "Wedding season", href: "/collections/wedding-season" },
   ],
   collections: [
     { label: "For her", href: "/collections/for-her" },
@@ -142,31 +144,37 @@ export const socialLinks = [
 
 export const faqItems = [
   {
+    id: "authenticity",
     question: "Are your fragrances authentic?",
     answer:
-      "Every bottle ships from our fulfilled inventory. We source materials through registered fragrance houses and never resell gray-market stock.",
+      "Yes. Every bottle comes from our own stock, sealed and checked before it is packed for you.",
   },
   {
+    id: "shipping",
     question: "How long does shipping take?",
     answer:
       "{{shipping}} In-stock orders usually leave within one business day.",
   },
   {
+    id: "returns",
     question: "What is your return policy?",
     answer:
       "Unopened bottles may be returned within 30 days. For opened products with a genuine quality issue, contact customer care with your order number.",
   },
   {
+    id: "concentration",
     question: "What do EDP and EDT mean?",
     answer:
       "They describe oil concentration. EDP usually lasts longer and projects fuller. EDT opens brighter and may need reapplication. Parfum is denser still, so use fewer sprays.",
   },
   {
+    id: "ingredients",
     question: "Do you list ingredients?",
     answer:
       "Yes. Each product page includes a core ingredients list plus country of origin. Allergens required on labeling appear on the packing insert.",
   },
   {
+    id: "storage",
     question: "How should I store perfume?",
     answer:
       "Keep bottles away from direct sun and heat. A cool, dark drawer preserves top notes longer than a sunny bathroom shelf.",
@@ -182,7 +190,7 @@ export const policies: Record<
     sections: [
       {
         heading: "Information we collect",
-        body: "We collect account details, order history, and device data needed to fulfill purchases and improve the storefront. Payment card data is handled by our payment processor.",
+        body: "We collect the details you give us (name, phone, email and delivery address), your order history, and basic device data needed to fulfill orders and improve the store. We do not take card payments, so we never see or store card details.",
       },
       {
         heading: "How we use information",

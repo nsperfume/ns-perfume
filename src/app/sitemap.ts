@@ -19,12 +19,19 @@ const STATIC_PATHS = [
   "/contact",
   "/faq",
   "/shipping-returns",
-  "/track-order",
   "/policies/privacy",
   "/policies/terms",
   "/policies/refund",
   "/policies/shipping",
 ];
+
+const absolute = (base: string, src: string) =>
+  /^https?:\/\//i.test(src) ? src : `${base}${src.startsWith("/") ? "" : "/"}${src}`;
+
+const iso = (v: unknown) => {
+  const d = v ? new Date(v as string) : null;
+  return d && !Number.isNaN(d.getTime()) ? d : undefined;
+};
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url;
@@ -42,16 +49,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...collections.map((c) => ({
       url: `${base}/collections/${c.handle}`,
+      lastModified: iso((c as { updatedAt?: unknown }).updatedAt),
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),
     ...products.map((p) => ({
       url: `${base}/products/${p.handle}`,
+      lastModified: iso(p.updatedAt),
       changeFrequency: "weekly" as const,
       priority: 0.8,
+      images: p.gallery.slice(0, 4).map((src) => absolute(base, src)),
     })),
     ...posts.map((post) => ({
       url: `${base}/journal/${post.slug}`,
+      lastModified: iso(post.date),
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),

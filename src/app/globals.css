@@ -701,12 +701,13 @@ html.admin-scroll-lock[data-admin-theme="dark"] {
     color: inherit;
   }
 
-  .prose-ns > * + * {
-    margin-top: 1em;
+  /* Zero-specificity reset so the block spacing rule below always wins. */
+  :where(.prose-ns) p {
+    margin: 0;
   }
 
-  .prose-ns p {
-    margin: 0;
+  .prose-ns > * + * {
+    margin-top: 1em;
   }
 
   .prose-ns h2,

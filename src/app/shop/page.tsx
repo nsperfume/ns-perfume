@@ -1,12 +1,6 @@
-/** Legacy path — full catalog lives at /products */
-import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-
-export const metadata: Metadata = {
-  title: "Shop all",
-  alternates: { canonical: "/products" },
-};
+/** Legacy path: the full catalog lives at /products. Permanent so search engines move the URL. */
+import { permanentRedirect } from "next/navigation";
 
 export default function ShopPage() {
-  redirect("/products");
+  permanentRedirect("/products");
 }

@@ -20,5 +20,8 @@ const TestimonialSchema = new Schema(
   { timestamps: true },
 );
 
+// Home page: featured, published testimonials in order.
+TestimonialSchema.index({ status: 1, featured: 1, sortOrder: 1 });
+
 export const TestimonialModel =
   models.Testimonial || model("Testimonial", TestimonialSchema);

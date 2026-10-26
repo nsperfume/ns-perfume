@@ -9,8 +9,10 @@ import { siteConfig } from "@/data/site";
 export const metadata: Metadata = {
   title: "Gift cards",
   description:
-    "Digital NS Perfume gift cards are coming soon. Until then, give the Discovery Set or a gift set, or ask care to help you choose.",
+    "Digital NS Perfume gift cards are coming soon. Until then, give the Discovery Set or a gift set, or ask our team to help you choose.",
   alternates: { canonical: "/gift-cards" },
+  // Placeholder until gift cards launch: keep it out of search results.
+  robots: { index: false, follow: true },
 };
 
 /**
@@ -45,10 +47,9 @@ export default function GiftCardsPage() {
             <h2 className="text-heading-sm text-ink">Gifting today</h2>
             <p className="mt-3 max-w-[38rem] text-body-lg text-taupe">
               The Discovery Set is the easy choice when you do not know their
-              signature yet. Several formulas to wear for a few days each, so
-              they can settle on a full bottle later. Gift sets pair discovery
-              formats with signature bottles. You can add gift wrap and a short
-              note on any product page.
+              favourite yet. Six perfumes to wear for a few days each, so they
+              can settle on a full bottle later. You can add gift wrap and a
+              short note on any product page.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button href="/products/discovery-set-six">
@@ -68,7 +69,7 @@ export default function GiftCardsPage() {
               </Link>{" "}
               or call{" "}
               <a
-                href={`tel:${siteConfig.phone}`}
+                href={`tel:${siteConfig.phoneDisplay}`}
                 className="font-semibold text-brass-ink underline underline-offset-4"
               >
                 {siteConfig.phone}

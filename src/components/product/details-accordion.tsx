@@ -48,10 +48,10 @@ export function ProductDetailsAccordion({ product }: { product: StoreProduct }) 
         <div className="border-t border-hairline">
           <Item title="Ingredients and sourcing">
             <p className="max-w-[40rem] text-body text-taupe">
-              Country of origin: {product.countryOfOrigin}.
+              {product.countryOfOrigin ? `Made in ${product.countryOfOrigin}. ` : ""}
               {product.containsAlcohol
-                ? " Core materials are listed for transparency, not as full IFRA paperwork."
-                : " This bottle is alcohol-free. Core materials are listed for transparency, not as full IFRA paperwork."}
+                ? "Key materials are listed below."
+                : "This perfume is alcohol-free. Key materials are listed below."}
             </p>
             {product.ingredients.length ? (
               <ul className="mt-5 columns-1 gap-x-10 sm:columns-2">

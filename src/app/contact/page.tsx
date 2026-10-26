@@ -87,7 +87,7 @@ export default function ContactPage() {
               </Button>
               <Button href={`tel:${siteConfig.phone}`} variant="secondary">
                 <PhoneIcon size={18} />
-                Call {siteConfig.phone}
+                Call {siteConfig.phoneDisplay}
               </Button>
             </div>
             <dl className="grid gap-x-10 gap-y-6 border-t border-hairline pt-8 sm:grid-cols-2">
@@ -109,6 +109,7 @@ export default function ContactPage() {
                       <div className="mt-1">
                         <CopyableValue
                           value={siteConfig.phone}
+                          display={siteConfig.phoneDisplay}
                           href={`tel:${siteConfig.phone}`}
                           label="Copy phone number"
                         />

@@ -1,6 +1,7 @@
 "use client";
 
 import { EmblaCarousel } from "@/components/ui/embla-carousel";
+import { StarRating } from "@/components/ui/star-rating";
 import { TrustedHtml as RichHtml } from "@/components/ui/trusted-html";
 import { htmlToPlain as richTextToPlain, isRichHtml } from "@/lib/plain-text";
 
@@ -31,9 +32,7 @@ export function TestimonialsCarousel({ items }: { items: TestimonialItem[] }) {
           className="flex h-full min-h-[14rem] flex-col justify-between border-t border-hairline pt-8 sm:min-h-[17rem] lg:pr-8"
         >
           {t.rating ? (
-            <p className="mb-5 font-sans tabular-nums text-sm text-brass-ink">
-              {t.rating}/5
-            </p>
+            <StarRating rating={t.rating} size="sm" className="mb-5" />
           ) : (
             <div className="mb-4 h-px w-8 bg-brass" aria-hidden />
           )}

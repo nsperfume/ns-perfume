@@ -30,7 +30,7 @@ export function ContactReceivedEmail({ data }: { data: ContactEmailData }) {
       <Title>Thanks for writing, {first(data.name)}</Title>
       <P>
         Your message is with our team. We reply within one business day, usually sooner. For anything urgent about a
-        delivery, WhatsApp us on <Strong>{siteConfig.phone}</Strong>.
+        delivery, WhatsApp us on <Strong>{siteConfig.phoneDisplay}</Strong>.
       </P>
       <Panel
         title="What you sent"

@@ -103,7 +103,7 @@ export function InvoiceDocument({ order: o }: { order: OrderEmailData }) {
               </Text>
               <Text>Punjab, Pakistan</Text>
               <Text>
-                {siteConfig.phone} · {siteConfig.email}
+                {siteConfig.phoneDisplay} · {siteConfig.email}
               </Text>
               <Text>{domain}</Text>
             </View>
@@ -235,7 +235,7 @@ export function InvoiceDocument({ order: o }: { order: OrderEmailData }) {
         <View style={{ marginTop: 28 }}>
           <Text style={s.strong}>Thank you for choosing {siteConfig.name}.</Text>
           <Text style={{ color: C.muted, marginTop: 4 }}>
-            Questions about this invoice or a return: {siteConfig.email} or WhatsApp {siteConfig.phone}, quoting {o.orderNumber}. Returns follow
+            Questions about this invoice or a return: {siteConfig.email} or WhatsApp {siteConfig.phoneDisplay}, quoting {o.orderNumber}. Returns follow
             the policy at {domain}/policies/refund.
           </Text>
         </View>

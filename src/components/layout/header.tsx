@@ -22,17 +22,32 @@ import { cn } from "@/lib/cn";
 import { CurrencyToggle } from "@/components/layout/currency-toggle";
 import { NavDropdown } from "@/components/layout/nav-dropdown";
 import { Logo } from "@/components/brand/logo";
+import { BrandIcon } from "@/components/ui/brand-icon";
+import { whatsappUrl } from "@/lib/whatsapp";
 
 const shopColumns = [
   { title: "Gender", items: shopMegaMenu.gender },
   { title: "Scent family", items: shopMegaMenu.family },
   { title: "Concentration", items: shopMegaMenu.type },
-  { title: "Featured", items: shopMegaMenu.featured },
+  { title: "Gifts and occasions", items: shopMegaMenu.gifts },
+  { title: "Highlights", items: shopMegaMenu.featured },
 ];
 
 const exploreItems = [
   { label: "Our story", href: "/about" },
-  { label: "Gift cards", href: "/gift-cards" },
+  { label: "Journal", href: "/journal" },
+  { label: "Track your order", href: "/track-order" },
+  { label: "Contact us", href: "/contact" },
+];
+
+/** First-level links in the mobile menu: what most shoppers come for. */
+const mobileQuickLinks = [
+  { label: "Shop all", href: "/products" },
+  { label: "For her", href: "/collections/for-her" },
+  { label: "For him", href: "/collections/for-him" },
+  { label: "Unisex", href: "/collections/unisex" },
+  { label: "Bestsellers", href: "/collections/bestsellers" },
+  { label: "Gift sets", href: "/collections/gift-sets" },
 ];
 
 const linkClass =
@@ -162,9 +177,9 @@ export function Header() {
               columns={shopColumns}
               panelImage={{
                 src: siteImages.navbarShop,
-                alt: "NS Perfume bottles styled for the Shop menu",
-                href: "/products",
-                cta: "Shop all bottles →",
+                alt: "NS Perfume bottles on a styled shelf",
+                href: "/products/discovery-set-six",
+                cta: "Try six scents in the discovery set →",
               }}
             />
             <NavDropdown label="Explore" items={exploreItems} />
@@ -245,10 +260,7 @@ export function Header() {
           <div className="px-[var(--gutter)] pb-8 pt-3">
             <nav aria-label="Mobile" className="divide-y divide-white/10">
               <div className="py-2">
-                {[
-                  { label: "All perfumes", href: "/products" },
-                  { label: "Collections", href: "/collections" },
-                ].map((link) => (
+                {mobileQuickLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
@@ -265,7 +277,7 @@ export function Header() {
                   onClick={() => setMobileShopOpen((v) => !v)}
                   aria-expanded={mobileShopOpen}
                 >
-                  Shop by category
+                  More categories
                   <ChevronDownIcon
                     size={18}
                     color="currentColor"
@@ -310,11 +322,7 @@ export function Header() {
               </div>
 
               <div className="py-2">
-                {[
-                  ...exploreItems,
-                  { label: "Journal", href: "/journal" },
-                  { label: "Contact", href: "/contact" },
-                ].map((link) => (
+                {exploreItems.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
@@ -324,6 +332,18 @@ export function Header() {
                     {link.label}
                   </Link>
                 ))}
+              </div>
+
+              <div className="py-3">
+                <a
+                  href={whatsappUrl(siteConfig.phone, "Hi NS Perfume, I have a question.")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-12 items-center gap-3 text-label text-paper/90 transition-colors hover:text-white"
+                >
+                  <BrandIcon name="whatsapp" size={20} />
+                  Chat on WhatsApp
+                </a>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-4 py-4">

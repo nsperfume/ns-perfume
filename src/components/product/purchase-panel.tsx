@@ -102,7 +102,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
     }
   }, [isGift]);
 
-  function addToBag(e?: MouseEvent<HTMLElement>) {
+  function addToCart(e?: MouseEvent<HTMLElement>) {
     if (!selected || !product.inStock) return;
     if (e) pressFeedback(e);
 
@@ -113,7 +113,8 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
     addItem(
       {
         productHandle: product.handle,
-        name: wrap ? `${product.name} (Gift Wrap)` : product.name,
+        // Gift status lives in isGift/giftWrap; the cart shows it as its own line.
+        name: product.name,
         sizeMl: selected.ml,
         price: selected.price + (wrap ? wrapFee : 0),
         sku,
@@ -385,7 +386,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         <Button
           className="min-w-0 flex-1 sm:w-auto! sm:flex-1"
           disabled={!product.inStock}
-          onClick={addToBag}
+          onClick={addToCart}
         >
           {product.inStock ? "Add to cart" : "Out of stock"}
         </Button>
@@ -414,7 +415,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         isGift={isGift}
         giftWrap={isGift && giftWrap}
         giftMessage={isGift ? giftMessage : ""}
-        onAdd={addToBag}
+        onAdd={addToCart}
       />
 
       <ul className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xs bg-canvas-deep/60 px-4 py-3 text-caption text-ink">
@@ -453,7 +454,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
           <a href={`tel:${phoneTel}`} className={serviceLink}>
             <PhoneIcon size={18} className="shrink-0" />
             <span>
-              Call <span className="font-sans tabular-nums font-normal">{siteConfig.phone}</span>
+              Call <span className="font-sans tabular-nums font-normal">{siteConfig.phoneDisplay}</span>
             </span>
           </a>
         </li>
@@ -465,7 +466,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
             className={serviceLink}
           >
             <MapPinIcon size={18} className="shrink-0" />
-            Find us: {siteConfig.location.label}
+            Visit our shop: {siteConfig.location.label}, {siteConfig.location.detail}
           </a>
         </li>
         <li>

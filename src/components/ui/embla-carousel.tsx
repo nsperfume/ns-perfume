@@ -48,11 +48,13 @@ export function EmblaCarousel({
       dragFree: false,
       containScroll: loop ? false : "trimSnaps",
     },
-    autoplayDelay > 0
+    // No auto-advance for people who ask for reduced motion; any swipe or click stops it.
+    autoplayDelay > 0 &&
+      !(typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
       ? [
           Autoplay({
             delay: autoplayDelay,
-            stopOnInteraction: false,
+            stopOnInteraction: true,
             stopOnMouseEnter: true,
             stopOnFocusIn: true,
           }),

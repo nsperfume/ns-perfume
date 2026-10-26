@@ -43,11 +43,13 @@ export function StoreSectionHeader({
 
 export function StoreBreadcrumb({
   items,
+  className = "mb-6",
 }: {
   items: { label: string; href?: string }[];
+  className?: string;
 }) {
   return (
-    <nav aria-label="Breadcrumb" className="mb-6">
+    <nav aria-label="Breadcrumb" className={className}>
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-taupe">
         {items.map((item, i) => {
           const last = i === items.length - 1;
