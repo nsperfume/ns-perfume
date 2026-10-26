@@ -14,9 +14,14 @@ import { useRouter } from "next/navigation";
 import { animate, EASE, finished } from "@/lib/animate";
 import { SearchIcon, XIcon } from "@/components/ui/icons";
 import { useUi } from "@/context/ui";
-import type { StoreProduct } from "@/lib/mappers";
 import { Price } from "@/components/commerce/price";
-import { cn } from "@/lib/cn";
+import {
+  fetchSearchCatalog,
+  isBestseller,
+  lowestPrice,
+  searchProducts,
+  type SearchProduct,
+} from "@/lib/search";
 
 /** Note chips fill the search box; `href` chips jump straight to a collection. */
 const QUICK_SEARCHES: { label: string; q?: string; href?: string }[] = [
@@ -44,41 +49,33 @@ export function SearchSheet() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
-  const [catalog, setCatalog] = useState<StoreProduct[]>([]);
+  const [catalog, setCatalog] = useState<SearchProduct[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
   const titleId = useId();
 
   useEffect(() => {
     if (!searchOpen) return;
     let cancelled = false;
-    fetch("/api/products")
-      .then((r) => r.json())
-      .then((j) => {
-        if (!cancelled && j.ok) setCatalog(j.data as StoreProduct[]);
+    fetchSearchCatalog()
+      .then((data) => {
+        if (cancelled) return;
+        setCatalog(data);
+        setLoadFailed(false);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setLoadFailed(true);
+      });
     return () => {
       cancelled = true;
     };
   }, [searchOpen]);
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return catalog
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.descriptor.toLowerCase().includes(q) ||
-          p.family.toLowerCase().includes(q) ||
-          p.topNotes.some((n) => n.toLowerCase().includes(q)) ||
-          p.heartNotes.some((n) => n.toLowerCase().includes(q)) ||
-          p.baseNotes.some((n) => n.toLowerCase().includes(q)),
-      )
-      .slice(0, 6);
-  }, [query, catalog]);
+  const search = useMemo(() => searchProducts(catalog, query), [query, catalog]);
+  const results = useMemo(() => search.results.slice(0, 6), [search]);
+  const totalResults = search.results.length;
 
   const bestsellers = useMemo(
-    () => catalog.filter((p) => p.badges.includes("bestseller")).slice(0, 4),
+    () => catalog.filter(isBestseller).slice(0, 4),
     [catalog],
   );
 
@@ -221,7 +218,7 @@ export function SearchSheet() {
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search notes, names, or families"
+                placeholder="Search by name, note, or who it is for"
                 className="min-h-12 w-full border-0 bg-transparent font-sans text-[1.125rem] text-ink outline-none placeholder:text-taupe/65 sm:min-h-[3.25rem] sm:text-[1.25rem]"
                 aria-label="Search products"
               />
@@ -280,54 +277,31 @@ export function SearchSheet() {
                     <p className="mb-2.5 text-eyebrow text-taupe">
                       Bestsellers
                     </p>
-                    <ul className="grid gap-1 sm:grid-cols-2">
-                      {bestsellers.map((p) => (
-                        <li key={p.handle}>
-                          <Link
-                            href={`/products/${p.handle}`}
-                            onClick={closeSearch}
-                            className="group flex items-center gap-3 rounded-xs px-2 py-2 transition-colors hover:bg-muted"
-                          >
-                            <div className="relative h-12 w-12 shrink-0 overflow-hidden bg-canvas">
-                              <Image
-                                src={p.imagePrimary}
-                                alt=""
-                                fill
-                                sizes="48px"
-                                className="object-contain p-1"
-                              />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-base font-semibold text-ink group-hover:text-brass-ink">
-                                {p.name}
-                              </p>
-                              <Price
-                                amountPkr={p.prices[0]?.price ?? 0}
-                                className="text-caption text-taupe"
-                              />
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                    <BestsellerList products={bestsellers} onPick={closeSearch} />
                   </div>
                 ) : null}
               </div>
             ) : results.length === 0 ? (
-              <div className="flex flex-col items-start gap-3 py-2">
-                <p className="text-body text-taupe">
-                  No bottles match “{query.trim()}”.
+              <div className="space-y-4 py-1">
+                <p className="text-body text-taupe" role="status">
+                  {catalog.length
+                    ? `No perfumes match “${query.trim()}”. Try a note like oud or rose, or start with a bestseller.`
+                    : loadFailed
+                      ? "Search is not loading right now. Press Search to try the full search page."
+                      : "Loading perfumes…"}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => goFullSearch()}
-                  className="inline-flex min-h-11 cursor-pointer items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass"
-                >
-                  Open full search →
-                </button>
+                {bestsellers.length > 0 ? (
+                  <BestsellerList products={bestsellers} onPick={closeSearch} />
+                ) : null}
               </div>
             ) : (
-              <ul className="divide-y divide-hairline border-t border-hairline">
+              <>
+                {search.partial ? (
+                  <p className="mb-3 text-body-sm text-taupe" role="status">
+                    Nothing matches every word. These match part of “{query.trim()}”.
+                  </p>
+                ) : null}
+                <ul className="divide-y divide-hairline border-t border-hairline">
                 {results.map((p) => (
                   <li key={p.handle} data-search-result>
                     <Link
@@ -335,13 +309,13 @@ export function SearchSheet() {
                       onClick={closeSearch}
                       className="group flex items-center gap-3.5 py-3 transition-colors hover:bg-muted/80 sm:gap-4"
                     >
-                      <div className="relative h-14 w-14 shrink-0 overflow-hidden bg-canvas sm:h-16 sm:w-16">
+                      <div className="relative aspect-4/5 w-14 shrink-0 overflow-hidden bg-muted sm:w-16">
                         <Image
                           src={p.imagePrimary}
                           alt=""
                           fill
                           sizes="64px"
-                          className="object-contain p-1.5"
+                          className="object-cover object-center"
                         />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -357,18 +331,19 @@ export function SearchSheet() {
                           {p.descriptor}
                         </p>
                         <Price
-                          amountPkr={p.prices[0]?.price ?? 0}
+                          amountPkr={lowestPrice(p)}
                           className="mt-1 text-base sm:hidden"
                         />
                       </div>
                       <Price
-                        amountPkr={p.prices[0]?.price ?? 0}
+                        amountPkr={lowestPrice(p)}
                         className="hidden shrink-0 text-base sm:block"
                       />
                     </Link>
                   </li>
                 ))}
               </ul>
+              </>
             )}
           </div>
 
@@ -376,11 +351,13 @@ export function SearchSheet() {
             <button
               type="button"
               onClick={() => goFullSearch()}
-              className={cn(
-                "inline-flex min-h-11 cursor-pointer items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass",
-              )}
+              className="inline-flex min-h-11 cursor-pointer items-center text-label text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-brass"
             >
-              {hasQuery ? "See all results →" : "Full search page →"}
+              {!hasQuery
+                ? "Full search page →"
+                : totalResults > results.length
+                  ? `See all ${totalResults} results →`
+                  : "Open full search →"}
             </button>
             <p className="font-sans tabular-nums text-xs tracking-wide text-taupe">
               Esc
@@ -389,5 +366,44 @@ export function SearchSheet() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Bestseller rows with a clear 4:5 bottle photo (same crop as product cards). */
+function BestsellerList({
+  products,
+  onPick,
+}: {
+  products: SearchProduct[];
+  onPick: () => void;
+}) {
+  return (
+    <ul className="grid gap-1 sm:grid-cols-2">
+      {products.map((p) => (
+        <li key={p.handle}>
+          <Link
+            href={`/products/${p.handle}`}
+            onClick={onPick}
+            className="group flex items-center gap-3.5 rounded-xs px-2 py-2 transition-colors hover:bg-muted"
+          >
+            <div className="relative aspect-4/5 w-14 shrink-0 overflow-hidden bg-muted sm:w-16">
+              <Image
+                src={p.imagePrimary}
+                alt=""
+                fill
+                sizes="64px"
+                className="object-cover object-center"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-semibold text-ink group-hover:text-brass-ink">
+                {p.name}
+              </p>
+              <Price amountPkr={lowestPrice(p)} className="text-caption text-taupe" />
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }

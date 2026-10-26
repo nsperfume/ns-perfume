@@ -4,9 +4,14 @@ import { FindYourScentGuide } from "@/components/commerce/find-your-scent-guide"
 import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
 
+/** Plain copy kept here until src/data/copy.ts drops "No AI ranking" and similar wording. */
+const HERO_DESCRIPTION =
+  "Five short questions. Three perfumes picked for who will wear them, the scent you like and how long it should last.";
+
 export const metadata: Metadata = {
   title: "Find your scent",
-  description: pageCopy.findYourScent.metaDescription,
+  description:
+    "Answer five short questions and get three NS Perfume picks matched to who will wear it, the scent you like, the trail and how long it lasts.",
   alternates: { canonical: "/find-your-scent" },
 };
 
@@ -15,7 +20,7 @@ export default function FindYourScentPage() {
     <>
       <PageHero
         title={pageCopy.findYourScent.title}
-        description={pageCopy.findYourScent.description}
+        description={HERO_DESCRIPTION}
         image={siteImages.findYourScent}
         alt="Fragrance bottles arranged as paths for finding your scent"
         objectPosition="center 42%"
@@ -32,11 +37,11 @@ export default function FindYourScentPage() {
           {[
             {
               title: "Five clear questions",
-              body: "Wearer, climate, family, trail, and stay time. Each maps to a field already on the bottle page.",
+              body: "Who it is for, where you will wear it, the scent you like, the trail and how long it lasts. Each one matches details shown on the product page.",
             },
             {
-              title: "Scored on the catalog",
-              body: "Matches come from gender, family, sillage, longevity, and concentration. You see the reasons beside each pick.",
+              title: "Scored on real details",
+              body: "Picks come from who it is for, the scent type, the trail, how long it lasts and its strength. You see the reasons beside each pick.",
             },
             {
               title: "Then try on skin",

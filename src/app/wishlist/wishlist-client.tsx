@@ -75,7 +75,7 @@ function resolveItem(
   };
 }
 
-export function WishlistClient() {
+export function WishlistClient({ description }: { description: string }) {
   const { items, removeItem } = useWishlist();
   const { addItem } = useCart();
   const { showToast } = useUi();
@@ -121,7 +121,7 @@ export function WishlistClient() {
     <>
       <PageHero
         title={pageCopy.wishlist.title}
-        description={pageCopy.wishlist.description}
+        description={description}
         image={siteImages.wishlist}
         alt="NS Perfume bottles set aside on a quiet shelf for the wishlist"
         objectPosition="center 48%"
@@ -138,7 +138,7 @@ export function WishlistClient() {
                 {pageCopy.wishlistEmpty}
               </p>
               <div className="flex flex-wrap gap-3">
-                <Button href="/products">Browse the line</Button>
+                <Button href="/products">Shop all</Button>
                 <Button href="/collections/bestsellers" variant="secondary">
                   Bestsellers
                 </Button>
@@ -149,10 +149,11 @@ export function WishlistClient() {
               <div className="mb-10 flex flex-col gap-3 border-b border-hairline pb-6 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-eyebrow text-taupe">
-                    Saved bottles
+                    Your wishlist
                   </p>
                   <h2 className="mt-2 text-display-md text-ink">
-                    {items.length} selection{items.length === 1 ? "" : "s"}
+                    <span className="font-sans tabular-nums">{items.length}</span>{" "}
+                    saved perfume{items.length === 1 ? "" : "s"}
                   </h2>
                 </div>
                 <Link
@@ -224,7 +225,9 @@ export function WishlistClient() {
                                   sku: live.size.sku,
                                   image: live.product.imagePrimary || item.image,
                                 });
-                                showToast(`${item.name} added to your cart`, "cart");
+                                // "Move" means it leaves the wishlist once it is in the cart.
+                                removeItem(item.productHandle);
+                                showToast(`${item.name} moved to your cart`, "cart");
                               }}
                             >
                               Move to cart

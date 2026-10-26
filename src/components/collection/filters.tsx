@@ -5,8 +5,9 @@ import { ProductCard } from "@/components/commerce/product-card";
 import { Select } from "@/components/ui/select";
 import type { StoreProduct } from "@/lib/mappers";
 import { pageCopy } from "@/data/copy";
+import { lowestPrice } from "@/lib/search";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 24;
 
 const CONCENTRATION_OPTIONS = [
   { value: "all", label: "All" },
@@ -29,12 +30,47 @@ const SORT_OPTIONS = [
   { value: "name", label: "Name: A to Z" },
 ] as const;
 
+type Dimension = "gender" | "family" | "concentration";
+
+/** Grid columns for the toolbar: one per visible filter, plus sort and the count. */
+const TOOLBAR_COLUMNS: Record<number, string> = {
+  2: "sm:grid-cols-2",
+  3: "sm:grid-cols-2 md:grid-cols-3",
+  4: "sm:grid-cols-2 md:grid-cols-4",
+  5: "sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5",
+};
+
+/**
+ * Dimensions the collection already fixes, so their filter is not shown:
+ * from the collection rule tags when passed (gender:him, family:woody,
+ * concentration:edp), else whenever every product shares one value.
+ */
+function fixedDimensions(
+  products: StoreProduct[],
+  filterTags: readonly string[] | null | undefined,
+): Set<Dimension> {
+  const fixed = new Set<Dimension>();
+  for (const tag of filterTags ?? []) {
+    const key = tag.split(":")[0];
+    if (key === "gender" || key === "family" || key === "concentration") fixed.add(key);
+  }
+  if (products.length > 0) {
+    for (const d of ["gender", "family", "concentration"] as const) {
+      if (new Set(products.map((p) => p[d])).size === 1) fixed.add(d);
+    }
+  }
+  return fixed;
+}
+
 export function CollectionFilters({
   products,
   seoCopy,
+  filterTags,
 }: {
   products: StoreProduct[];
   seoCopy: string;
+  /** The collection's rule tags, e.g. ["gender:him"]. Optional: inferred from products otherwise. */
+  filterTags?: readonly string[] | null;
 }) {
   const [family, setFamily] = useState("all");
   const [concentration, setConcentration] = useState("all");
@@ -43,24 +79,52 @@ export function CollectionFilters({
   const [page, setPage] = useState(1);
   const topRef = useRef<HTMLDivElement>(null);
 
+  const fixed = useMemo(() => fixedDimensions(products, filterTags), [products, filterTags]);
+
   const families = useMemo(
     () => Array.from(new Set(products.map((p) => p.family))).sort(),
     [products],
   );
 
+  const matchesFilters = (p: StoreProduct, skip?: Dimension) =>
+    (skip === "family" || family === "all" || p.family === family) &&
+    (skip === "concentration" || concentration === "all" || p.concentration === concentration) &&
+    (skip === "gender" || gender === "all" || p.gender === gender);
+
+  /** Options with no product under the other filters are disabled, not offered as dead ends. */
+  const available = (d: Dimension, value: string) =>
+    products.some((p) => matchesFilters(p, d) && p[d] === value);
+
   const filtered = useMemo(() => {
-    let list = [...products];
-    if (family !== "all") list = list.filter((p) => p.family === family);
-    if (concentration !== "all")
-      list = list.filter((p) => p.concentration === concentration);
-    if (gender !== "all") list = list.filter((p) => p.gender === gender);
-    if (sort === "price-asc")
-      list.sort((a, b) => (a.prices[0]?.price ?? 0) - (b.prices[0]?.price ?? 0));
-    if (sort === "price-desc")
-      list.sort((a, b) => (b.prices[0]?.price ?? 0) - (a.prices[0]?.price ?? 0));
+    const list = products.filter(
+      (p) =>
+        (family === "all" || p.family === family) &&
+        (concentration === "all" || p.concentration === concentration) &&
+        (gender === "all" || p.gender === gender),
+    );
+    if (sort === "price-asc") list.sort((a, b) => lowestPrice(a) - lowestPrice(b));
+    if (sort === "price-desc") list.sort((a, b) => lowestPrice(b) - lowestPrice(a));
     if (sort === "name") list.sort((a, b) => a.name.localeCompare(b.name));
     return list;
   }, [products, family, concentration, gender, sort]);
+
+  /** Hide concentrations the collection does not carry at all. */
+  const concentrationOptions = CONCENTRATION_OPTIONS.filter(
+    (o) => o.value === "all" || products.some((p) => p.concentration === o.value),
+  ).map((o) => ({
+    ...o,
+    disabled: o.value !== "all" && o.value !== concentration && !available("concentration", o.value),
+  }));
+  const genderOptions = GENDER_OPTIONS.filter(
+    (o) => o.value === "all" || products.some((p) => p.gender === o.value),
+  ).map((o) => ({
+    ...o,
+    disabled: o.value !== "all" && o.value !== gender && !available("gender", o.value),
+  }));
+  const showFamily = !fixed.has("family") && families.length > 1;
+  const showConcentration = !fixed.has("concentration") && concentrationOptions.length > 2;
+  const showGender = !fixed.has("gender") && genderOptions.length > 2;
+  const toolbarItems = 2 + Number(showFamily) + Number(showConcentration) + Number(showGender);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -80,41 +144,48 @@ export function CollectionFilters({
     <>
       <div
         ref={topRef}
-        className="mb-8 grid scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] gap-4 border-b border-hairline pb-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5"
+        className={`mb-8 grid scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] gap-4 border-b border-hairline pb-6 ${TOOLBAR_COLUMNS[toolbarItems]}`}
       >
-        <Select
-          label="Family"
-          value={family}
-          onValueChange={(v) => {
-            setFamily(v);
-            setPage(1);
-          }}
-          options={[
-            { value: "all", label: "All" },
-            ...families.map((f) => ({
-              value: f,
-              label: f.charAt(0).toUpperCase() + f.slice(1),
-            })),
-          ]}
-        />
-        <Select
-          label="Concentration"
-          value={concentration}
-          onValueChange={(v) => {
-            setConcentration(v);
-            setPage(1);
-          }}
-          options={[...CONCENTRATION_OPTIONS]}
-        />
-        <Select
-          label="Gender"
-          value={gender}
-          onValueChange={(v) => {
-            setGender(v);
-            setPage(1);
-          }}
-          options={[...GENDER_OPTIONS]}
-        />
+        {showFamily ? (
+          <Select
+            label="Family"
+            value={family}
+            onValueChange={(v) => {
+              setFamily(v);
+              setPage(1);
+            }}
+            options={[
+              { value: "all", label: "All" },
+              ...families.map((f) => ({
+                value: f,
+                label: f.charAt(0).toUpperCase() + f.slice(1),
+                disabled: f !== family && !available("family", f),
+              })),
+            ]}
+          />
+        ) : null}
+        {showConcentration ? (
+          <Select
+            label="Concentration"
+            value={concentration}
+            onValueChange={(v) => {
+              setConcentration(v);
+              setPage(1);
+            }}
+            options={concentrationOptions}
+          />
+        ) : null}
+        {showGender ? (
+          <Select
+            label="Gender"
+            value={gender}
+            onValueChange={(v) => {
+              setGender(v);
+              setPage(1);
+            }}
+            options={genderOptions}
+          />
+        ) : null}
         <Select
           label="Sort"
           value={sort}
@@ -122,7 +193,10 @@ export function CollectionFilters({
           options={[...SORT_OPTIONS]}
         />
         <p className="flex items-end text-body-sm text-taupe lg:justify-end lg:pb-3">
-          {filtered.length} product{filtered.length === 1 ? "" : "s"}
+          <span>
+            <span className="font-sans tabular-nums">{filtered.length}</span> product
+            {filtered.length === 1 ? "" : "s"}
+          </span>
         </p>
       </div>
 
