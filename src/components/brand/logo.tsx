@@ -5,7 +5,7 @@
  * metallic gold come from scripts/brand/build-brand.mjs.
  * The monogram is an NS ligature: the N's diagonal flows into the S, one stroke
  * from structure to trail, the way a scent moves from top notes to its drydown.
- * The crown above it is three tapered spikes (top, heart, base notes) with pearls.
+ * The crown above it is a classic five-point rim with pearls and a jewelled band.
  * Ink follows currentColor; the mark and hairline are metallic gold.
  */
 import { useId } from "react";

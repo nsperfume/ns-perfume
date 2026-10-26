@@ -3,10 +3,11 @@
  *
  *   node scripts/brand/build-brand.mjs
  *
- * Mark: the NS ligature under a slim crown. The crown is three tapered spikes
- * (top, heart and base notes) with a pearl on each and a fine band. All crown
- * parts are separate shapes that never overlap, so they render the same in
- * browsers, the PDF invoice and the Lottie loader without boolean unions.
+ * Mark: the NS ligature under a slim crown. The crown is a classic five-point
+ * rim (points rising from arched valleys, tallest at the centre) with a pearl
+ * over each point and a fine band set with a diamond. All crown parts are
+ * separate shapes that never overlap, so they render the same in browsers, the
+ * PDF invoice and the Lottie loader without boolean unions.
  *
  * Lockup: crowned NS, a brass hairline, then PERFUME. The monogram already says
  * NS, so the wordmark does not repeat it.
@@ -91,27 +92,8 @@ function capsule(x0, y0, x1, y1) {
   ];
 }
 
-function rotateContour(c, [ox, oy], deg) {
-  const a = (deg * Math.PI) / 180;
-  const cos = Math.cos(a);
-  const sin = Math.sin(a);
-  const rp = ([x, y]) => [ox + (x - ox) * cos - (y - oy) * sin, oy + (x - ox) * sin + (y - oy) * cos];
-  const rv = ([x, y]) => [x * cos - y * sin, x * sin + y * cos];
-  return c.map((n) => ({ p: rp(n.p), in: rv(n.in), out: rv(n.out) }));
-}
-
-/** Tapered spike: full width at the base, curving to a sharp tip. */
-function spike(cx, baseY, w, h, deg) {
-  const bl = [cx - w / 2, baseY];
-  const br = [cx + w / 2, baseY];
-  const tip = [cx, baseY - h];
-  const c = [
-    node(bl, [0, 0], [0, -h * 0.42]),
-    node(tip, [-w * 0.08, h * 0.28], [w * 0.08, h * 0.28]),
-    node(br, [0, -h * 0.42], [0, 0]),
-  ];
-  return { contour: rotateContour(c, [cx, baseY], deg), tip: rotateContour([node(tip)], [cx, baseY], deg)[0].p };
-}
+/** Diamond (rhombus) centred on cx, cy. */
+const diamond = (cx, cy, w, h) => [node([cx, cy - h]), node([cx + w, cy]), node([cx, cy + h]), node([cx - w, cy])];
 
 const mapContour = (c, f) => c.map((n) => ({ p: f(n.p), in: f(n.in, true), out: f(n.out, true) }));
 /** Uniform scale + translate (handles only scale). */
@@ -147,34 +129,75 @@ const toLottieShape = (c) => ({
 const MONO = SRC.monogram; // 108.5 × 77.8
 const CROWN_GAP = 5; // crown band to the top of the letters
 
-const CROWN_REGULAR = { centerH: 16, sideH: 11, centerW: 5.6, sideW: 4.8, tilt: 18, spread: 0.36, band: 2.4, bandW: 0.78, gap: 1.2, pearl: 1.45, pearlGap: 0.9 };
-/** Heavier cut for favicons and app icons so the crown survives 16 to 48 px. */
-const CROWN_BOLD = { centerH: 16, sideH: 11.4, centerW: 7.6, sideW: 6.8, tilt: 17, spread: 0.37, band: 3.4, bandW: 0.8, gap: 1.5, pearl: 1.9, pearlGap: 1.1 };
+/*
+ * Crown measures, in monogram units. Rim heights are measured down from the
+ * centre tip: the inner and outer points sit lower, the valleys between them
+ * are arched, and the rim ends in a flat base that is a little narrower than
+ * the outer points so the crown flares as it rises.
+ *   width       crown width as a share of the monogram width
+ *   innerTip    inner points, below the centre tip
+ *   outerTip    outer points, below the centre tip
+ *   innerValley valleys either side of the centre point
+ *   outerValley valleys between the inner and outer points
+ *   rim         rim base, below the centre tip
+ *   baseHalf    half the rim base width, as a share of the crown width
+ *   shoulder    how far each valley arch climbs the point beside it
+ *   tipHandle   valley-side handle at each tip (sharpness of the points)
+ *   arch        handle at the bottom of each valley (roundness of the arch)
+ *   pearl       centre pearl radius (the others are sidePearl times that)
+ *   jewel       half width of the diamond in the band; 0 for a plain band
+ */
+const CROWN_REGULAR = {
+  width: 0.64, innerTip: 3.8, outerTip: 7.6, innerValley: 10, outerValley: 11.6, rim: 17, baseHalf: 0.47,
+  shoulder: 3.6, tipHandle: 0.035, arch: 0.045, pearl: 1.5, sidePearl: 0.85, pearlGap: 0.8,
+  gap: 1.2, band: 2.6, jewel: 2.2, jewelGap: 0.9,
+};
+/** Heavier cut for favicons and app icons: wider, bigger pearls, a plain thick band (the diamond blurs below 48 px). */
+const CROWN_BOLD = {
+  width: 0.7, innerTip: 3.4, outerTip: 6.8, innerValley: 9.2, outerValley: 10.8, rim: 17, baseHalf: 0.47,
+  shoulder: 3.2, tipHandle: 0.04, arch: 0.05, pearl: 2.1, sidePearl: 0.85, pearlGap: 1.1,
+  gap: 1.6, band: 3.6, jewel: 0, jewelGap: 0,
+};
 
 /** Crown contours centred on the monogram, top at y = 0. */
-function crown(o, w = MONO.width * 0.56) {
+function crown(o) {
+  const w = MONO.width * o.width;
   const cx = MONO.width / 2;
-  const baseY = o.pearlGap + 2 * o.pearl + o.centerH;
-  const c = spike(cx, baseY, o.centerW, o.centerH, 0);
-  const l = spike(cx - o.spread * w, baseY, o.sideW, o.sideH, -o.tilt);
-  const r = spike(cx + o.spread * w, baseY, o.sideW, o.sideH, o.tilt);
-  const pearlAt = ([px, py], radius, deg) => {
-    const a = (deg * Math.PI) / 180;
-    return circle(px + Math.sin(a) * (o.pearlGap + radius), py - Math.cos(a) * (o.pearlGap + radius), radius);
-  };
-  const by0 = baseY + o.gap;
+  const X = (f) => cx + f * w;
+  const top = o.pearlGap + 2 * o.pearl; // centre tip
+  const Y = (v) => top + v;
+
+  const points = [[-0.5, o.outerTip], [-0.25, o.innerTip], [0, 0], [0.25, o.innerTip], [0.5, o.outerTip]];
+  const valleys = [[-0.375, o.outerValley], [-0.125, o.innerValley], [0.125, o.innerValley], [0.375, o.outerValley]];
+  const t = o.tipHandle * w;
+  const a = o.arch * w;
+  const rim = [node([X(-o.baseHalf), Y(o.rim)])];
+  points.forEach(([px, py], i) => {
+    const first = i === 0;
+    const last = i === points.length - 1;
+    rim.push(node([X(px), Y(py)], first ? [0, 0] : [-t, o.shoulder], last ? [0, 0] : [t, o.shoulder]));
+    if (!last) rim.push(node([X(valleys[i][0]), Y(valleys[i][1])], [-a, 0], [a, 0]));
+  });
+  rim.push(node([X(o.baseHalf), Y(o.rim)]));
+
+  const pearls = points.map(([px, py]) => {
+    const r = px === 0 ? o.pearl : o.pearl * o.sidePearl;
+    return circle(X(px), Y(py) - o.pearlGap - r, r);
+  });
+
+  const by0 = Y(o.rim) + o.gap;
   const by1 = by0 + o.band;
-  const bw = (w * o.bandW) / 2;
-  const contours = [
-    c.contour,
-    l.contour,
-    r.contour,
-    capsule(cx - bw, by0, cx + bw, by1),
-    pearlAt(c.tip, o.pearl, 0),
-    pearlAt(l.tip, o.pearl * 0.9, -o.tilt),
-    pearlAt(r.tip, o.pearl * 0.9, o.tilt),
-  ];
-  return { contours, bottom: by1 };
+  const half = w / 2;
+  let band = [capsule(cx - half, by0, cx + half, by1)];
+  let bottom = by1;
+  if (o.jewel) {
+    const jh = o.jewel * 1.15;
+    const jy = (by0 + by1) / 2;
+    const inner = o.jewel + o.jewelGap;
+    band = [capsule(cx - half, by0, cx - inner, by1), capsule(cx + inner, by0, cx + half, by1), diamond(cx, jy, o.jewel, jh)];
+    bottom = Math.max(by1, jy + jh);
+  }
+  return { contours: [rim, ...band, ...pearls], bottom };
 }
 
 function crownedMark(o) {
