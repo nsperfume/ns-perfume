@@ -473,6 +473,7 @@ export function TestimonialsSection({
   items: TestimonialItem[];
 }) {
   const shown = items.slice(0, 8);
+  if (!shown.length) return null;
   return (
     <section className="border-b border-hairline bg-canvas section-y">
       <div className="container-ns flex flex-col justify-center">
