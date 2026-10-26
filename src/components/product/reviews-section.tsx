@@ -1,5 +1,4 @@
-import { StarRating } from "@/components/ui/star-rating";
-import { ReviewComposer } from "@/components/product/review-composer";
+import { ReviewsBrowser, type ReviewItem } from "@/components/product/reviews-browser";
 
 type ReviewDoc = {
   _id?: unknown;
@@ -9,11 +8,25 @@ type ReviewDoc = {
   author: string;
   city?: string;
   verified?: boolean;
+  createdAt?: Date | string;
+};
+
+const dateLabel = (value?: Date | string) => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  // Fixed zone so the server and browser print the same day.
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Karachi",
+  });
 };
 
 /**
- * Social proof right after the scent details: rating summary, review cards,
- * and a "Write a review" button that opens the form inline.
+ * Social proof right after the scent details: rating summary with a star
+ * breakdown, filterable review list, and a "Write a review" dialog.
  */
 export function ProductReviewsSection({
   productHandle,
@@ -28,70 +41,46 @@ export function ProductReviewsSection({
   reviewCount: number;
   reviews: ReviewDoc[];
 }) {
+  const items: ReviewItem[] = reviews.map((r, i) => ({
+    id: String(r._id ?? `${r.author}-${i}`),
+    rating: Math.max(1, Math.min(5, Math.round(r.rating))),
+    title: r.title?.trim() || "",
+    body: r.body,
+    author: r.author,
+    city: r.city?.trim() || "",
+    verified: Boolean(r.verified),
+    date: r.createdAt ? new Date(r.createdAt).toISOString() : "",
+    dateLabel: dateLabel(r.createdAt),
+  }));
+
+  // The product's stored rating is recalculated whenever a review is published;
+  // fall back to the list itself if it is missing.
+  const count = items.length || reviewCount;
+  const average =
+    rating > 0
+      ? rating
+      : items.length
+        ? items.reduce((s, r) => s + r.rating, 0) / items.length
+        : 0;
+
   return (
     <section
       id="reviews"
+      aria-labelledby="reviews-heading"
       className="scroll-mt-[calc(var(--spacing-chrome-height)+1rem)] border-b border-hairline bg-canvas py-14 lg:py-20"
     >
-      <div className="container-ns grid gap-8 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:items-start lg:gap-20">
-        <div>
-          <p className="mb-3 text-eyebrow text-taupe">Reviews</p>
-          <h2 className="text-display-md text-ink">What wearers say</h2>
-          {reviewCount > 0 && rating > 0 ? (
-            <div className="mt-5 flex items-center gap-3">
-              <span className="font-mono text-3xl font-medium tabular-nums text-ink">
-                {rating.toFixed(1)}
-              </span>
-              <div>
-                <StarRating rating={rating} size="md" />
-                <p className="mt-0.5 text-caption text-taupe">
-                  From {reviewCount} review{reviewCount === 1 ? "" : "s"}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="mt-4 max-w-[30rem] text-body text-taupe">
-              No published reviews yet. Notes from wearers show here after a
-              short check, so yours could be the first.
-            </p>
-          )}
-          <div className="mt-6">
-            <ReviewComposer
-              productHandle={productHandle}
-              productName={productName}
-            />
-          </div>
-        </div>
-
-        {reviews.length ? (
-          <ul className="-mx-[var(--gutter)] flex snap-x snap-mandatory gap-3 overflow-x-auto px-[var(--gutter)] pb-2 md:mx-0 md:grid md:snap-none md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0">
-            {reviews.slice(0, 6).map((r) => (
-              <li
-                key={String(r._id || `${r.author}-${r.title}`)}
-                className="flex w-[85%] shrink-0 snap-start flex-col rounded-xs border border-hairline bg-paper p-5 sm:w-[60%] sm:p-6 md:w-auto"
-              >
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <StarRating rating={r.rating} size="sm" />
-                  {r.verified ? (
-                    <span className="text-eyebrow text-brass-ink">
-                      Verified buyer
-                    </span>
-                  ) : null}
-                </div>
-                {r.title ? (
-                  <h3 className="mt-3 font-sans text-lg font-semibold leading-snug text-ink">
-                    {r.title}
-                  </h3>
-                ) : null}
-                <p className="mt-2 flex-1 text-body text-ink/80">{r.body}</p>
-                <p className="mt-4 text-body-sm text-taupe">
-                  {r.author}
-                  {r.city ? ` · ${r.city}` : ""}
-                </p>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+      <div className="container-ns">
+        <p className="mb-3 text-eyebrow text-taupe">Reviews</p>
+        <h2 id="reviews-heading" className="text-display-md text-ink">
+          What wearers say
+        </h2>
+        <ReviewsBrowser
+          productHandle={productHandle}
+          productName={productName}
+          average={average}
+          count={count}
+          reviews={items}
+        />
       </div>
     </section>
   );

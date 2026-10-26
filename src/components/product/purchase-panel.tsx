@@ -183,11 +183,14 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
   const serviceLink =
     "inline-flex min-h-10 items-center gap-2.5 text-caption font-semibold text-ink transition-colors hover:text-brass-ink";
 
+  // One note per tier, without repeats when a note is listed in more than one tier.
   const keyNotes = [
-    product.topNotes[0],
-    product.heartNotes[0],
-    product.baseNotes[0],
-  ].filter((n): n is string => Boolean(n));
+    ...new Set(
+      [product.topNotes[0], product.heartNotes[0], product.baseNotes[0]]
+        .map((n) => n?.trim())
+        .filter((n): n is string => Boolean(n)),
+    ),
+  ];
 
   const sizeOptions = product.prices.map((p) => ({ ml: p.ml, price: p.price }));
 
