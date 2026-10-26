@@ -7,13 +7,23 @@ import { SignJWT, jwtVerify } from "jose";
 export const ADMIN_COOKIE = "ns_admin_session";
 export const ADMIN_AUDIENCE = "ns-perfume:admin";
 
-export type AdminRole = "super_admin" | "admin";
+/** super_admin = Owner, admin = Editor (view and change), viewer = view only. */
+export type AdminRole = "super_admin" | "admin" | "viewer";
 
 export type AdminTokenClaims = {
   sub: string;
   email: string;
   name: string;
   role: AdminRole;
+  /** Account tokenVersion when signed; a mismatch means the session was revoked. */
+  ver: number;
+};
+
+/** Plain names for the console and emails. */
+export const ROLE_LABELS: Record<AdminRole, string> = {
+  super_admin: "Owner",
+  admin: "Editor",
+  viewer: "Viewer",
 };
 
 const DEV_ONLY_SECRET = "ns-perfume-local-dev-admin-secret-change-me";
@@ -28,10 +38,11 @@ export function adminSecretKey(): Uint8Array {
   return new TextEncoder().encode(s || DEV_ONLY_SECRET);
 }
 
-/** Map legacy DB roles + JWT claims into super_admin | admin. */
+/** Map stored roles (including legacy spellings) to super_admin | admin | viewer. */
 export function normalizeRole(raw: unknown): AdminRole {
   const r = String(raw || "").toLowerCase();
   if (r === "super_admin" || r === "owner") return "super_admin";
+  if (r === "viewer" || r === "read_only" || r === "readonly") return "viewer";
   return "admin";
 }
 
@@ -40,6 +51,7 @@ export async function signAdminToken(claims: AdminTokenClaims) {
     email: claims.email,
     name: claims.name,
     role: claims.role,
+    ver: claims.ver,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(claims.sub)
@@ -62,5 +74,6 @@ export async function verifyAdminToken(token: string): Promise<AdminTokenClaims>
     email: String(payload.email || ""),
     name: String(payload.name || "Admin"),
     role: normalizeRole(payload.role),
+    ver: typeof payload.ver === "number" ? payload.ver : 0,
   };
 }

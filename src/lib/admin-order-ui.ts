@@ -79,13 +79,92 @@ export const ORDER_STATUSES = [
   { value: "cancelled", label: "Cancelled" },
 ] as const;
 
-/** Status select options with impossible moves (e.g. out of cancelled) disabled. */
+const STATUS_STEP: Record<string, number> = {
+  pending: 0,
+  confirmed: 1,
+  shipped: 2,
+  delivered: 3,
+};
+
+/**
+ * Moves the admin UI offers: the current status, any later step, or cancel.
+ * Never backwards (a confirmed order cannot go back to pending). Unknown
+ * legacy statuses can be moved anywhere so they can be repaired.
+ */
+export function canMoveOrderStatus(from: string, to: string) {
+  if (from === to) return true;
+  const target = ORDER_STATUSES.find((s) => s.value === to)?.value;
+  if (!target || !canTransitionOrderStatus(from, target)) return false;
+  if (to === "cancelled") return true;
+  const a = STATUS_STEP[from];
+  const b = STATUS_STEP[to];
+  if (a === undefined) return true;
+  return b !== undefined && b > a;
+}
+
+/** Status select options with backward and impossible moves disabled. */
 export function orderStatusOptions(current: string) {
   return ORDER_STATUSES.map((o) => ({
     value: o.value,
     label: o.label,
-    disabled: !canTransitionOrderStatus(current, o.value),
+    disabled: !canMoveOrderStatus(current, o.value),
   }));
+}
+
+export function orderStatusLabel(value: string) {
+  return ORDER_STATUSES.find((s) => s.value === value)?.label ?? value;
+}
+
+/** Couriers offered when an order is marked shipped. "Other" asks for a name. */
+export const COURIERS = [
+  "TCS",
+  "Leopards",
+  "M&P",
+  "PostEx",
+  "Trax",
+  "Call Courier",
+] as const;
+
+export const OTHER_COURIER = "Other";
+
+/**
+ * Tracking links are often pasted without the scheme ("tcs.com.pk/track").
+ * Add https:// so the saved link opens and passes the API check.
+ */
+export function normalizeTrackingUrl(raw: string) {
+  const v = raw.trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  if (v.startsWith("//")) return `https:${v}`;
+  return `https://${v.replace(/^\/+/, "")}`;
+}
+
+/** True when a (normalized) tracking link looks like a real web address. */
+export function isValidTrackingUrl(url: string) {
+  if (!url) return true;
+  if (/\s/.test(url)) return false;
+  try {
+    const u = new URL(url);
+    return (
+      (u.protocol === "https:" || u.protocol === "http:") &&
+      /^[^.]+(\.[^.]+)+$/.test(u.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Two-letter country codes ("PK") as names ("Pakistan"). Names pass through. */
+export function countryName(value?: string) {
+  const v = (value || "").trim();
+  if (!/^[A-Za-z]{2}$/.test(v)) return v;
+  const code = v.toUpperCase();
+  if (code === "PK") return "Pakistan";
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) || code;
+  } catch {
+    return code;
+  }
 }
 
 export function paymentLabel(method?: string) {
@@ -144,7 +223,7 @@ export function formatOrderAddress(a?: AdminOrderAddress) {
       a.address2,
       [a.city, a.province].filter(Boolean).join(", "),
       a.postalCode,
-      a.country,
+      countryName(a.country),
       a.phone,
     ]
       .filter(Boolean)

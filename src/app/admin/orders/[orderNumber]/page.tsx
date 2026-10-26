@@ -21,7 +21,10 @@ import {
 } from "@/components/admin/ui";
 import { Button } from "@/components/admin/button";
 import { Select } from "@/components/admin/select";
-import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import {
+  OrderStatusDialog,
+  type OrderStatusChange,
+} from "@/components/admin/order-status-dialog";
 import { toast } from "@/components/admin/toast";
 import {
   AdminFieldError,
@@ -33,11 +36,13 @@ import { formatOrderNumber } from "@/lib/order-number";
 import { formatSize } from "@/lib/format";
 import { siteConfig } from "@/data/site";
 import {
-  ORDER_STATUSES,
   formatOrderAddress,
   formatOrderDate,
   formatOrderDateTime,
+  isValidTrackingUrl,
   mapAdminOrder,
+  normalizeTrackingUrl,
+  orderStatusLabel,
   orderStatusOptions,
   paymentLabel,
   type AdminOrder,
@@ -49,7 +54,10 @@ type Fulfillment = {
   trackingUrl: string;
 };
 
-/** Mirrors PATCH /api/orders/[orderNumber] fulfillment rules. */
+/**
+ * Mirrors PATCH /api/orders/[orderNumber] fulfillment rules. The tracking
+ * link is checked after https:// is added (see normalizeTrackingUrl).
+ */
 const fulfillmentSchema = z.object({
   carrier: z.string().trim().max(80, "Keep the courier name under 80 characters"),
   trackingNumber: z
@@ -61,8 +69,8 @@ const fulfillmentSchema = z.object({
     .trim()
     .max(500, "This link is too long")
     .refine(
-      (v) => !v || /^https?:\/\//i.test(v),
-      "Start the link with https://",
+      (v) => isValidTrackingUrl(normalizeTrackingUrl(v)),
+      "Enter a link like tcs.com.pk/track",
     ),
 });
 
@@ -88,10 +96,6 @@ function isGiftWrap(l: { name?: string; giftWrap?: boolean }) {
 }
 function isGift(l: { name?: string; isGift?: boolean }) {
   return Boolean(l.isGift) || /\(gift\)\s*$/i.test(l.name || "");
-}
-
-function statusLabel(value: string) {
-  return ORDER_STATUSES.find((s) => s.value === value)?.label ?? value;
 }
 
 function Section({
@@ -155,15 +159,19 @@ export default function AdminOrderDetailPage() {
     trackingNumber: "",
     trackingUrl: "",
   });
-  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [nextStatus, setNextStatus] = useState<string | null>(null);
   const v = useFormValidation(fulfillmentSchema);
 
   const load = useCallback(() => {
     if (!orderNumber) return;
     setLoading(true);
     setError("");
-    fetch(`/api/orders/${encodeURIComponent(orderNumber)}`)
-      .then((r) => r.json())
+    const get = (n: string) =>
+      fetch(`/api/orders/${encodeURIComponent(n)}`).then((r) => r.json());
+    // Older orders are stored as NS772829567 but shown (and linked) as NS-772829567.
+    const legacy = /^NS-\d+$/i.test(orderNumber) ? `NS${orderNumber.slice(3)}` : "";
+    get(orderNumber)
+      .then((j) => (!j.ok && legacy ? get(legacy) : j))
       .then((j) => {
         if (j.ok) {
           const next = mapAdminOrder(j.data);
@@ -198,12 +206,32 @@ export default function AdminOrderDetailPage() {
 
   const leaveGuard = useUnsavedChangesGuard(trackingDirty && !saving);
 
-  /** Sends status plus the courier fields as typed (blank = none). */
-  async function updateStatus(status: string): Promise<boolean> {
+  /** The courier fields as typed, with https:// added to a bare tracking link. */
+  function typedTracking() {
+    return {
+      carrier: tracking.carrier.trim(),
+      trackingNumber: tracking.trackingNumber.trim(),
+      trackingUrl: normalizeTrackingUrl(tracking.trackingUrl),
+    };
+  }
+
+  /**
+   * PATCH the order. A status change comes from the confirmation dialog
+   * (which carries the tracking details when shipping); unsaved edits in the
+   * Courier tracking form go along with it so they are not lost.
+   */
+  async function updateStatus(change: OrderStatusChange): Promise<boolean> {
     if (!order) return false;
-    if (!v.validate(tracking, formRef.current)) {
-      toast.error("Check the courier tracking details");
-      return false;
+    const trackingOnly = change.status === order.status;
+    let body: OrderStatusChange = change;
+    if (trackingOnly || (trackingDirty && change.trackingNumber === undefined)) {
+      const typed = typedTracking();
+      if (!v.validate(tracking, formRef.current)) {
+        toast.error("Check the courier tracking details");
+        return false;
+      }
+      setTracking(typed);
+      body = { ...typed, ...change };
     }
     setSaving(true);
     setFormError("");
@@ -213,26 +241,25 @@ export default function AdminOrderDetailPage() {
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            status,
-            carrier: tracking.carrier.trim(),
-            trackingNumber: tracking.trackingNumber.trim(),
-            trackingUrl: tracking.trackingUrl.trim(),
-          }),
+          body: JSON.stringify(body),
         },
       );
       const json = await readAdminJson(res);
       if (!json.ok) {
         const message = json.error || "Could not update the order";
-        setFormError(message);
+        if (trackingOnly) setFormError(message);
         toast.error(message);
         return false;
       }
-      toast.success(
-        status === order.status
-          ? "Tracking details saved"
-          : `Order marked ${statusLabel(status).toLowerCase()}`,
-      );
+      if (trackingOnly) toast.success("Tracking details saved");
+      else
+        toast.success(
+          `Order marked ${orderStatusLabel(change.status).toLowerCase()}`,
+          change.status === "pending"
+            ? undefined
+            : { description: "The customer will get an email about it." },
+        );
+      setNextStatus(null);
       v.reset();
       load();
       return true;
@@ -246,11 +273,7 @@ export default function AdminOrderDetailPage() {
 
   function onStatusChange(next: string) {
     if (!order || next === order.status) return;
-    if (next === "cancelled") {
-      setConfirmCancel(true);
-      return;
-    }
-    void updateStatus(next);
+    setNextStatus(next);
   }
 
   const ref = order ? formatOrderNumber(order.orderNumber) : orderNumber;
@@ -546,7 +569,7 @@ export default function AdminOrderDetailPage() {
                   className="mt-5 space-y-4 border-t border-admin-line pt-5"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    void updateStatus(order.status);
+                    void updateStatus({ status: order.status });
                   }}
                 >
                   <p className="text-sm font-semibold text-admin-ink">
@@ -579,11 +602,19 @@ export default function AdminOrderDetailPage() {
                     </AdminFieldLabel>
                     <input
                       {...fieldProps("trackingUrl")}
-                      type="url"
                       inputMode="url"
+                      autoComplete="off"
                       className={adminFieldClass}
                       maxLength={500}
-                      placeholder="https://"
+                      placeholder="tcs.com.pk/track"
+                      onBlur={() => {
+                        const next = {
+                          ...tracking,
+                          trackingUrl: normalizeTrackingUrl(tracking.trackingUrl),
+                        };
+                        if (next.trackingUrl !== tracking.trackingUrl) setTracking(next);
+                        v.revalidate(next);
+                      }}
                     />
                     <AdminFieldError message={v.errors.trackingUrl} />
                   </div>
@@ -693,23 +724,23 @@ export default function AdminOrderDetailPage() {
         </div>
       ) : null}
 
-      <ConfirmDialog
-        open={confirmCancel}
-        onOpenChange={(o) => {
-          if (!o && !saving) setConfirmCancel(false);
-        }}
-        title="Cancel this order?"
-        description={`${ref} will be marked cancelled and the customer will see this on the tracking page.${
-          order?.discountCode
-            ? ` One use of ${order.discountCode} goes back to the coupon.`
-            : ""
-        } This cannot be undone.`}
-        confirmLabel="Cancel order"
-        cancelLabel="Keep order"
-        loading={saving}
-        onConfirm={async () => {
-          await updateStatus("cancelled");
-          setConfirmCancel(false);
+      <OrderStatusDialog
+        order={
+          order
+            ? {
+                ...order,
+                // Start from what is typed in Courier tracking, saved or not.
+                carrier: tracking.carrier,
+                trackingNumber: tracking.trackingNumber,
+                trackingUrl: tracking.trackingUrl,
+              }
+            : null
+        }
+        nextStatus={nextStatus}
+        saving={saving}
+        onClose={() => setNextStatus(null)}
+        onConfirm={async (change) => {
+          await updateStatus(change);
         }}
       />
       {leaveGuard}

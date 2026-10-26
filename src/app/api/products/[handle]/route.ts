@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
+import { requireAdmin, requireSuperAdmin, requireAdminWrite, adminDenied } from "@/lib/auth";
 import { mapProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
 import { isDuplicateKey, productUpdateSchema, validationError } from "@/lib/validation/catalog";
@@ -27,8 +27,8 @@ export async function GET(_req: Request, ctx: Ctx) {
 
 export async function PUT(req: Request, ctx: Ctx) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) return jsonError("Unauthorized", 401);
+    const admin = await requireAdminWrite();
+    if (!admin) return adminDenied();
     await connectDB();
     const { handle } = await ctx.params;
     const parsed = productUpdateSchema.safeParse(await req.json().catch(() => null));
@@ -64,7 +64,7 @@ export async function PUT(req: Request, ctx: Ctx) {
 export async function DELETE(_req: Request, ctx: Ctx) {
   try {
     const admin = await requireSuperAdmin();
-    if (!admin) return jsonError("Forbidden", 403);
+    if (!admin) return adminDenied();
     await connectDB();
     const { handle } = await ctx.params;
     const doc = await ProductModel.findOneAndDelete({ handle }).lean();

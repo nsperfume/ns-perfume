@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminWrite } from "@/lib/auth";
 import { ReviewModel } from "@/models/Review";
 import { ProductModel } from "@/models/Product";
 import { limitByIp } from "@/lib/rate-limit";
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdminWrite();
     if (!admin) {
       const limited = limitByIp(req, "reviews", 5, 30 * 60_000);
       if (limited) return limited;

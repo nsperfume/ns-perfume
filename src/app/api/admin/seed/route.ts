@@ -1,14 +1,13 @@
 import { timingSafeEqual } from "node:crypto";
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireSuperAdmin, hashPassword } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth";
 import { revalidateStorefront } from "@/lib/revalidate";
 import { ProductModel } from "@/models/Product";
 import { CollectionModel } from "@/models/Collection";
 import { TestimonialModel } from "@/models/Testimonial";
 import { ReviewModel } from "@/models/Review";
 import { JournalModel } from "@/models/Journal";
-import { AdminUserModel } from "@/models/AdminUser";
 import {
   seedProducts,
   seedCollections,
@@ -17,23 +16,6 @@ import {
   seedJournal,
 } from "@/data/seed-catalog";
 
-/** Create the env-configured super admin if missing. Never overwrites an existing password. */
-async function ensureAdmin() {
-  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password) return { email: "", created: false };
-
-  const existing = await AdminUserModel.findOne({ email });
-  if (existing) return { email, created: false };
-
-  await AdminUserModel.create({
-    email,
-    name: "Store Owner",
-    passwordHash: await hashPassword(password),
-    role: "super_admin",
-  });
-  return { email, created: true };
-}
 
 function hasSeedSecret(req: Request) {
   const secret = process.env.SEED_SECRET;
@@ -84,8 +66,6 @@ export async function POST(req: Request) {
       ]);
     }
 
-    const admin = await ensureAdmin();
-
     await ProductModel.insertMany(seedProducts);
     await CollectionModel.insertMany(seedCollections);
     await TestimonialModel.insertMany(seedTestimonials);
@@ -101,8 +81,6 @@ export async function POST(req: Request) {
       testimonials: seedTestimonials.length,
       reviews: seedReviewsInserted ? seedReviews.length : 0,
       journal: seedJournal.length,
-      adminEmail: admin.email,
-      adminCreated: admin.created,
     });
   } catch (e) {
     console.error(e);

@@ -16,6 +16,7 @@ import {
   AdminTd,
   AdminTh,
   formatPkr,
+  readAdminJson,
   useRowLink,
   whatsappHref,
 } from "@/components/admin/ui";
@@ -85,17 +86,21 @@ export default function AdminCustomersPage() {
   const [account, setAccount] = useState("all");
   const rowLink = useRowLink();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
+    setLoadError(null);
     const params = new URLSearchParams();
     if (q.trim()) params.set("q", q.trim());
     if (sort) params.set("sort", sort);
     fetch(`/api/admin/customers?${params}`)
-      .then((r) => r.json())
+      .then((r) => readAdminJson<Row[]>(r))
       .then((j) => {
-        if (j.ok) setRows(j.data);
+        if (j.ok) setRows(j.data || []);
+        else setLoadError(j.error || "Could not load customers");
       })
+      .catch(() => setLoadError("Could not load customers. Check your connection."))
       .finally(() => setLoading(false));
   }, [q, sort]);
 
@@ -121,8 +126,18 @@ export default function AdminCustomersPage() {
   const visible =
     account === "all" ? rows : rows.filter((r) => r.account === account);
 
-  const empty = !loading && visible.length === 0;
-  const emptyState = q.trim() || account !== "all" ? (
+  const empty = !loading && (visible.length === 0 || Boolean(loadError));
+  const emptyState = loadError ? (
+    <AdminEmptyState
+      title="Customers could not load"
+      description={loadError}
+      action={
+        <Button variant="secondary" onClick={load}>
+          Try again
+        </Button>
+      }
+    />
+  ) : q.trim() || account !== "all" ? (
     <AdminEmptyState
       title="No customers match"
       action={

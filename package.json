@@ -13,6 +13,7 @@
     "optimize:product-photos": "node scripts/optimize-images.mjs --dir=public/products/photos --quality=78 --max-width=900",
     "seed:images": "node scripts/download-seed-images.mjs",
     "seed:db": "tsx scripts/seed-db.ts",
+    "admin:user": "tsx scripts/admin-user.ts",
     "clean:copy": "tsx scripts/clean-copy.ts"
   },
   "dependencies": {

@@ -3,6 +3,7 @@
 import type { ComponentProps } from "react";
 import { Button as BaseButton } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { READ_ONLY_HINT, useAdminAccess } from "@/components/admin/access";
 
 type BaseProps = ComponentProps<typeof BaseButton>;
 
@@ -28,6 +29,11 @@ export function Button({
   className,
   ...props
 }: AdminButtonProps) {
+  // View-only accounts: saving and destructive buttons are switched off (the server refuses them too).
+  const { canWrite } = useAdminAccess();
+  if (!canWrite && (props.type === "submit" || variant === "danger" || variant === "danger-outline")) {
+    props = { ...props, disabled: true, title: READ_ONLY_HINT };
+  }
   if (variant === "ghost") {
     return (
       <BaseButton

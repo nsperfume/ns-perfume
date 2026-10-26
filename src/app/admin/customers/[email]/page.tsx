@@ -22,12 +22,15 @@ import {
 } from "@/components/admin/ui";
 import { Button } from "@/components/admin/button";
 import { formatOrderNumber } from "@/lib/order-number";
+import { contactTopicLabel } from "@/lib/contact-topics";
 
 type Detail = {
   email: string;
   name: string;
   phone: string;
   orderCount: number;
+  /** Not cancelled; average order divides spend by this */
+  paidOrderCount: number;
   lifetimeSpendPkr: number;
   lastOrderAt: string | null;
   firstOrderAt: string | null;
@@ -122,8 +125,9 @@ export default function AdminCustomerDetailPage() {
       .finally(() => setLoading(false));
   }, [emailParam]);
 
+  // Spend leaves out cancelled orders, so the count must too.
   const avgOrder =
-    data && data.orderCount ? data.lifetimeSpendPkr / data.orderCount : 0;
+    data && data.paidOrderCount ? data.lifetimeSpendPkr / data.paidOrderCount : 0;
 
   return (
     <AdminShell user={user}>
@@ -153,8 +157,10 @@ export default function AdminCustomerDetailPage() {
           />
         </AdminCard>
       ) : data ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
-          <div className="order-2 min-w-0 space-y-6 xl:order-1">
+        // Side column only from 2xl: at laptop widths it squeezed the orders
+        // table until the Total column was cut off.
+        <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:items-start">
+          <div className="order-2 min-w-0 space-y-6 2xl:order-1">
             <AdminCard
               title="Orders"
               action={
@@ -164,7 +170,7 @@ export default function AdminCustomerDetailPage() {
               }
             >
               {data.orders.length ? (
-                <AdminTable flush>
+                <AdminTable flush minWidthClass="min-w-[38rem]">
                   <thead>
                     <tr>
                       <AdminTh>Order</AdminTh>
@@ -246,7 +252,7 @@ export default function AdminCustomerDetailPage() {
                             </span>{" "}
                             {p.orderCount === 1 ? "order" : "orders"}
                           </span>
-                          <AdminIcon name="edit" size={17} className="text-admin-faint" />
+                          <AdminIcon name="view" size={17} className="text-admin-faint" />
                         </span>
                       </Link>
                     </li>
@@ -279,7 +285,7 @@ export default function AdminCustomerDetailPage() {
                       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                         <AdminStatusBadge status={m.status} />
                         <span className="text-sm font-semibold text-admin-ink">
-                          {m.topic}
+                          {contactTopicLabel(m.topic)}
                         </span>
                         <span className="text-[0.8125rem] text-admin-muted">
                           {formatDate(m.createdAt)}
@@ -295,7 +301,7 @@ export default function AdminCustomerDetailPage() {
             </AdminCard>
           </div>
 
-          <aside className="order-1 space-y-6 xl:order-2 xl:sticky xl:top-4">
+          <aside className="order-1 grid gap-6 md:grid-cols-2 md:items-start 2xl:order-2 2xl:sticky 2xl:top-4 2xl:grid-cols-1">
             <AdminCard
               title="Contact"
               action={
@@ -334,7 +340,7 @@ export default function AdminCustomerDetailPage() {
                 <Fact label="Orders">
                   <span className="font-sans tabular-nums ">{data.orderCount}</span>
                 </Fact>
-                {data.orderCount ? (
+                {data.paidOrderCount ? (
                   <Fact label="Average order">
                     <span className="font-sans tabular-nums ">{formatPkr(avgOrder)}</span>
                   </Fact>

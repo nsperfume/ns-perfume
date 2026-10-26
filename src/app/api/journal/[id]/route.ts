@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
+import { requireSuperAdmin, requireAdminWrite, adminDenied } from "@/lib/auth";
 import { mapJournal } from "@/lib/mappers";
 import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 import { JournalModel } from "@/models/Journal";
@@ -11,8 +11,8 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function PUT(req: Request, ctx: Ctx) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) return jsonError("Unauthorized", 401);
+    const admin = await requireAdminWrite();
+    if (!admin) return adminDenied();
     await connectDB();
     const { id } = await ctx.params;
     const body = await req.json().catch(() => null);
@@ -83,7 +83,7 @@ export async function PUT(req: Request, ctx: Ctx) {
 export async function DELETE(_req: Request, ctx: Ctx) {
   try {
     const admin = await requireSuperAdmin();
-    if (!admin) return jsonError("Forbidden", 403);
+    if (!admin) return adminDenied();
     await connectDB();
     const { id } = await ctx.params;
     const doc = await JournalModel.findByIdAndDelete(id).lean();

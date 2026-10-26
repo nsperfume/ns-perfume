@@ -8,18 +8,56 @@ import { ReviewModel } from "@/models/Review";
 import { ContactMessageModel } from "@/models/ContactMessage";
 import { countCrmPeople, countRegisteredAccounts } from "@/lib/admin-customers";
 
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+/** Sales days follow the store's clock (Pakistan), not the server's. */
+const STORE_TZ = "Asia/Karachi";
+
+const zoneParts = new Intl.DateTimeFormat("en-US", {
+  timeZone: STORE_TZ,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+});
+
+function partsAt(d: Date) {
+  const p: Record<string, number> = {};
+  for (const x of zoneParts.formatToParts(d)) {
+    if (x.type !== "literal") p[x.type] = Number(x.value);
+  }
+  return p;
 }
 
-function dayKeyLocal(d: Date) {
-  const x = new Date(d);
-  const y = x.getFullYear();
-  const m = String(x.getMonth() + 1).padStart(2, "0");
-  const day = String(x.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+/** YYYY-MM-DD of the store-time day that `d` falls on. */
+function storeDayKey(d: Date) {
+  const p = partsAt(d);
+  return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
+}
+
+/** Calendar maths on a YYYY-MM-DD key (timezone free). */
+function addDaysToKey(key: string, days: number) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/** The instant store-time midnight starts on the day `key`. */
+function storeMidnight(key: string) {
+  const [y, m, d] = key.split("-").map(Number);
+  const guess = Date.UTC(y, m - 1, d);
+  const p = partsAt(new Date(guess));
+  const shown = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+  return new Date(guess - (shown - guess));
+}
+
+/** "25 Oct", the short date style used across the admin. */
+function dayLabel(key: string) {
+  return new Date(`${key}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
 }
 
 export async function GET() {
@@ -30,11 +68,10 @@ export async function GET() {
 
     const now = new Date();
     const days = 14;
-    const rangeStart = startOfDay(new Date(now));
-    rangeStart.setDate(rangeStart.getDate() - (days - 1));
-
-    const prevStart = new Date(rangeStart);
-    prevStart.setDate(prevStart.getDate() - days);
+    const todayKey = storeDayKey(now);
+    const firstKey = addDaysToKey(todayKey, -(days - 1));
+    const rangeStart = storeMidnight(firstKey);
+    const prevStart = storeMidnight(addDaysToKey(firstKey, -days));
 
     const paidFilter = { status: { $nin: ["cancelled"] } };
 
@@ -117,13 +154,10 @@ export async function GET() {
 
     const dayMap = new Map<string, { revenue: number; orders: number }>();
     for (let i = 0; i < days; i++) {
-      const d = new Date(rangeStart);
-      d.setDate(rangeStart.getDate() + i);
-      const key = dayKeyLocal(d);
-      dayMap.set(key, { revenue: 0, orders: 0 });
+      dayMap.set(addDaysToKey(firstKey, i), { revenue: 0, orders: 0 });
     }
     for (const o of periodOrders) {
-      const key = dayKeyLocal(new Date(o.createdAt as Date));
+      const key = storeDayKey(new Date(o.createdAt as Date));
       const row = dayMap.get(key);
       if (row) {
         row.revenue += o.totalPkr || 0;
@@ -132,7 +166,7 @@ export async function GET() {
     }
     const revenueSeries = Array.from(dayMap.entries()).map(([date, v]) => ({
       date,
-      label: date.slice(5).replace("-", "/"),
+      label: dayLabel(date),
       revenue: v.revenue,
       orders: v.orders,
     }));
@@ -142,12 +176,11 @@ export async function GET() {
       ordersByStatus[String(g._id)] = g.count;
     }
 
+    // No percentage when the previous period had no sales (it would read "up 100%").
     const revenueChange =
       prevRevenuePkr > 0
         ? Math.round(((revenuePkr - prevRevenuePkr) / prevRevenuePkr) * 100)
-        : revenuePkr > 0
-          ? 100
-          : 0;
+        : null;
 
     const showRevenue = canViewRevenue(admin);
 

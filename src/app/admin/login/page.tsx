@@ -7,10 +7,15 @@ import { z } from "zod";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/admin/button";
 import { Input } from "@/components/admin/input";
+import { AdminIcon } from "@/components/admin/ui";
 
 const schema = z.object({
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Password needs at least 6 characters"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Enter your email")
+    .pipe(z.email("Enter a valid email")),
+  password: z.string().min(1, "Enter your password"),
 });
 
 /**
@@ -41,6 +46,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Already signed in (DB-checked by the API): skip the form.
@@ -92,7 +98,8 @@ export default function AdminLoginPage() {
         setLoading(false);
         return;
       }
-      router.push(nextAdminPath());
+      // Temporary password from the owner: choose your own before anything else.
+      router.push(json.data?.mustChangePassword ? "/admin/profile" : nextAdminPath());
       router.refresh();
     } catch {
       setError("Network error");
@@ -124,17 +131,49 @@ export default function AdminLoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="username"
           />
-          <Input
-            label="Password"
-            name="password"
-            type="password"
-            required
-            value={password}
-            error={fieldErrors.password}
-            aria-invalid={fieldErrors.password ? true : undefined}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-          />
+          <div className="flex flex-col gap-2 text-sm font-semibold text-taupe">
+            <label htmlFor="admin-password" className="text-ink/80">
+              Password
+              <span aria-hidden="true" className="ml-0.5 text-rosewood">
+                *
+              </span>
+            </label>
+            <div className="relative">
+              <Input
+                id="admin-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                aria-invalid={fieldErrors.password ? true : undefined}
+                aria-describedby={fieldErrors.password ? "admin-password-message" : undefined}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                className="pr-13!"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                aria-controls="admin-password"
+                className="absolute inset-y-0 right-0 flex w-12 cursor-pointer items-center justify-center rounded-r-xs text-admin-muted outline-none transition-colors hover:text-admin-ink focus-visible:ring-2 focus-visible:ring-brass/50"
+              >
+                <AdminIcon name={showPassword ? "hide" : "view"} size={19} />
+              </button>
+            </div>
+            {fieldErrors.password ? (
+              <span id="admin-password-message" className="text-sm font-medium text-rosewood">
+                {fieldErrors.password}
+              </span>
+            ) : null}
+            <Link
+              href="/admin/forgot-password"
+              className="self-end text-sm font-semibold text-admin-accent underline-offset-4 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
         {error ? (
           <p

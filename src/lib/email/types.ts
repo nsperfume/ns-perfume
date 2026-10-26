@@ -19,4 +19,7 @@ export type EmailTemplateId =
   | "contact-received"
   | "admin-new-contact"
   | "newsletter-welcome"
+  | "admin-password-reset"
+  | "admin-password-changed"
+  | "admin-invite"
   | "test";

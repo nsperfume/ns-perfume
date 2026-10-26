@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminWrite, adminDenied } from "@/lib/auth";
 import { mapJournal } from "@/lib/mappers";
 import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 import { JournalModel } from "@/models/Journal";
@@ -37,8 +37,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) return jsonError("Unauthorized", 401);
+    const admin = await requireAdminWrite();
+    if (!admin) return adminDenied();
     await connectDB();
     const body = await req.json();
     const title = String(body.title || "").trim();

@@ -100,7 +100,7 @@ const journalSchema = z.object({
     .trim()
     .min(1, "Write the post")
     .min(40, "Write at least a short paragraph (40 characters)"),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a publish date"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick the date to show on the post"),
   excerpt: z.string().trim().max(300, "Keep the summary under 300 characters"),
 });
 
@@ -594,7 +594,7 @@ export default function AdminJournalPage() {
                 ]}
               />
               <AdminDatePickerField
-                label="Publish date"
+                label="Date shown on post"
                 name="date"
                 required
                 value={form.date}
@@ -644,7 +644,7 @@ export default function AdminJournalPage() {
                       onClick={() => setUrlOpen(true)}
                       className="mt-1 cursor-pointer text-sm font-semibold text-admin-accent hover:underline"
                     >
-                      Edit URL
+                      Edit web address
                     </button>
                     <AdminFieldError message={v.errors.slug} />
                   </>

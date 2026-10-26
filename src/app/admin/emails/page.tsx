@@ -327,7 +327,8 @@ export default function AdminEmailsPage() {
                   <iframe
                     title={`Preview: ${current?.label || "email"}`}
                     srcDoc={preview.html}
-                    sandbox=""
+                    // Fonts and images load; scripts stay off (no allow-scripts).
+                    sandbox="allow-same-origin"
                     className="h-128 w-full rounded-md border border-admin-line bg-white lg:h-152"
                   />
                 ) : (

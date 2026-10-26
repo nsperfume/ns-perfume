@@ -12,10 +12,13 @@ import { cn } from "@/lib/cn";
  * follow the admin field tokens (both themes) and match `adminFieldClass`.
  */
 const FIELD =
-  "border-admin-input-border! bg-admin-soft-2! text-admin-ink! placeholder:text-admin-faint! focus:border-brass! disabled:bg-admin-soft! disabled:text-admin-muted!";
+  "bg-admin-soft-2! text-admin-ink! placeholder:text-admin-faint! disabled:bg-admin-soft! disabled:text-admin-muted!";
+/** Border colours forced over the storefront ones; the error colour wins when there is an error. */
+const border = (error?: string) =>
+  error ? "border-admin-danger! focus:border-admin-danger!" : "border-admin-input-border! focus:border-brass!";
 
 export function Input({ className, ...props }: ComponentProps<typeof BaseInput>) {
-  return <BaseInput className={cn(FIELD, "min-h-11!", className)} {...props} />;
+  return <BaseInput className={cn(FIELD, border(props.error), "min-h-11!", className)} {...props} />;
 }
 
 export function Textarea({
@@ -24,7 +27,7 @@ export function Textarea({
 }: ComponentProps<typeof BaseTextarea>) {
   return (
     <BaseTextarea
-      className={cn(FIELD, "leading-relaxed", className)}
+      className={cn(FIELD, border(props.error), "leading-relaxed", className)}
       {...props}
     />
   );

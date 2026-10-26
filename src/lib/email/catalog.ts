@@ -4,6 +4,7 @@ import { adminNewOrder, orderConfirmation, orderStatus } from "@/emails/orders";
 import { passwordChanged, passwordReset, verifyEmail, welcome } from "@/emails/account";
 import { adminNewContact, contactReceived } from "@/emails/contact";
 import { newsletterWelcome } from "@/emails/newsletter";
+import { adminInvite, adminPasswordChanged, adminPasswordReset } from "@/emails/team";
 import type { EmailDefinition } from "@/emails/types";
 import type { EmailTemplateId } from "@/lib/email/types";
 
@@ -79,6 +80,9 @@ export const EMAIL_CATALOG: EmailCatalogEntry[] = [
   { id: "contact-received", label: "Contact auto-reply", audience: "Customer", trigger: "Contact form submitted", render: () => contactReceived(contact) },
   { id: "admin-new-contact", label: "New message alert", audience: "Store team", trigger: "Contact form submitted", render: () => adminNewContact(contact) },
   { id: "newsletter-welcome", label: "Newsletter welcome", audience: "Customer", trigger: "Footer newsletter signup", render: () => newsletterWelcome({ unsubscribeUrl: absoluteUrl("/api/newsletter/unsubscribe?token=sample") }) },
+  { id: "admin-invite", label: "Team invite", audience: "Store team", trigger: "Owner adds a team member", render: () => adminInvite({ name: "Bilal Ahmed", invitedBy: "Asim Ali", roleLabel: "Editor", access: "View and change orders, products and content" }) },
+  { id: "admin-password-reset", label: "Admin password reset", audience: "Store team", trigger: "Forgot password on admin sign-in", render: () => adminPasswordReset({ name: "Asim Ali", resetUrl: absoluteUrl("/admin/reset-password?token=sample") }) },
+  { id: "admin-password-changed", label: "Admin password changed", audience: "Store team", trigger: "Admin password changed or reset", render: () => adminPasswordChanged({ name: "Asim Ali" }) },
 ];
 
 export function catalogEntry(index: number) {

@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminWrite, adminDenied } from "@/lib/auth";
 import { TestimonialModel } from "@/models/Testimonial";
 import { testimonialSchema, validationError } from "@/lib/validation/catalog";
 import { revalidateStorefront } from "@/lib/revalidate";
@@ -24,8 +24,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) return jsonError("Unauthorized", 401);
+    const admin = await requireAdminWrite();
+    if (!admin) return adminDenied();
     await connectDB();
     const parsed = testimonialSchema
       .required({ author: true, quote: true })

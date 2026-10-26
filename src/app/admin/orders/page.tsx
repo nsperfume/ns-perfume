@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrandLoaderBlock } from "@/components/brand/brand-loader";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import {
   AdminFilterChips,
   AdminIconAction,
   AdminPageHeader,
+  AdminPagination,
   AdminRowActions,
   AdminSearchInput,
   AdminTable,
@@ -21,17 +22,33 @@ import {
 } from "@/components/admin/ui";
 import { Button } from "@/components/admin/button";
 import { Select } from "@/components/admin/select";
-import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import {
+  OrderStatusDialog,
+  type OrderStatusChange,
+} from "@/components/admin/order-status-dialog";
 import { toast } from "@/components/admin/toast";
 import { formatOrderNumber } from "@/lib/order-number";
+import { cn } from "@/lib/cn";
 import {
   ORDER_STATUSES,
   formatOrderDate,
   mapAdminOrder,
+  orderStatusLabel,
   orderStatusOptions,
   paymentLabel,
   type AdminOrder,
 } from "@/lib/admin-order-ui";
+
+const PAGE_SIZE = 25;
+
+type OrdersPage = {
+  rows: unknown[];
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  counts: Record<string, number>;
+};
 
 const selectTrigger = "h-10! min-h-10! text-sm! px-3!";
 
@@ -45,10 +62,6 @@ function payment(method?: string) {
   return label === "—" ? "" : label;
 }
 
-function statusLabel(value: string) {
-  return ORDER_STATUSES.find((s) => s.value === value)?.label ?? value;
-}
-
 export default function AdminOrdersPage() {
   const router = useRouter();
   const rowLink = useRowLink();
@@ -56,30 +69,73 @@ export default function AdminOrdersPage() {
     null,
   );
   const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
-  const [cancelTarget, setCancelTarget] = useState<AdminOrder | null>(null);
+  const [statusChange, setStatusChange] = useState<{
+    order: AdminOrder;
+    next: string;
+  } | null>(null);
   const [q, setQ] = useState("");
+  const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [ready, setReady] = useState(false);
+  const [result, setResult] = useState<Omit<OrdersPage, "rows">>({
+    total: 0,
+    page: 1,
+    pageSize: PAGE_SIZE,
+    pageCount: 1,
+    counts: { all: 0 },
+  });
+  const requestId = useRef(0);
 
   const load = useCallback(() => {
+    const id = ++requestId.current;
     setLoading(true);
     setLoadError(null);
-    fetch("/api/orders")
-      .then((r) => r.json())
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(PAGE_SIZE),
+    });
+    if (filter !== "all") params.set("status", filter);
+    if (search) params.set("q", search);
+    fetch(`/api/admin/orders?${params}`)
+      .then((r) => readAdminJson<OrdersPage>(r))
       .then((j) => {
-        if (j.ok) setOrders((j.data || []).map(mapAdminOrder));
-        else setLoadError(j.error || "Could not load orders");
+        if (id !== requestId.current) return;
+        if (j.ok && j.data) {
+          const { rows, ...meta } = j.data;
+          setOrders((rows || []).map(mapAdminOrder));
+          setResult(meta);
+          if (meta.page !== page) setPage(meta.page);
+          setLoaded(true);
+        } else setLoadError(j.error || "Could not load orders");
       })
-      .catch(() => setLoadError("Could not load orders. Check your connection."))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        if (id === requestId.current)
+          setLoadError("Could not load orders. Check your connection.");
+      })
+      .finally(() => {
+        if (id === requestId.current) setLoading(false);
+      });
+  }, [page, filter, search]);
 
-  // Dashboard links such as /admin/orders?status=pending open pre-filtered
+  // Dashboard links such as /admin/orders?status=pending open pre-filtered;
+  // page and search come back from the address after viewing an order.
   useEffect(() => {
-    const status = new URLSearchParams(window.location.search).get("status");
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
     if (status && ORDER_STATUSES.some((s) => s.value === status)) setFilter(status);
+    const term = params.get("q")?.trim() || "";
+    if (term) {
+      setQ(term);
+      setSearch(term);
+    }
+    const p = Number.parseInt(params.get("page") || "", 10);
+    if (p > 1) setPage(p);
+    setReady(true);
   }, []);
 
   useEffect(() => {
@@ -89,10 +145,46 @@ export default function AdminOrdersPage() {
         if (!j.ok) router.replace("/admin/login");
         else setUser(j.data);
       });
-    load();
-  }, [router, load]);
+  }, [router]);
 
-  const updateStatus = async (orderNumber: string, status: string) => {
+  // Search runs on the server, a moment after typing stops.
+  useEffect(() => {
+    const term = q.trim();
+    if (term === search) return;
+    const t = setTimeout(() => {
+      setSearch(term);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [q, search]);
+
+  useEffect(() => {
+    if (!ready) return;
+    load();
+    const params = new URLSearchParams();
+    if (filter !== "all") params.set("status", filter);
+    if (search) params.set("q", search);
+    if (page > 1) params.set("page", String(page));
+    const qs = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${qs ? `?${qs}` : ""}`,
+    );
+  }, [ready, load, filter, search, page]);
+
+  function changeFilter(next: string) {
+    setFilter(next);
+    setPage(1);
+  }
+
+  function changePage(next: number) {
+    setPage(next);
+    document.querySelector(".admin-main-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function updateStatus(order: AdminOrder, change: OrderStatusChange) {
+    const { orderNumber } = order;
     setSaving(orderNumber);
     try {
       const res = await fetch(
@@ -100,54 +192,54 @@ export default function AdminOrdersPage() {
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status }),
+          body: JSON.stringify(change),
         },
       );
       const json = await readAdminJson<{
         status?: string;
         trackingNumber?: string;
+        trackingUrl?: string;
         carrier?: string;
       }>(res);
       if (!json.ok) {
         toast.error(json.error || "Could not update the order");
-      } else {
-        toast.success(
-          `${formatOrderNumber(orderNumber)} marked ${statusLabel(status).toLowerCase()}`,
-        );
-        setOrders((prev) =>
-          prev.map((o) =>
-            o.orderNumber === orderNumber
-              ? {
-                  ...o,
-                  status: json.data?.status || status,
-                  trackingNumber: json.data?.trackingNumber ?? o.trackingNumber,
-                  carrier: json.data?.carrier ?? o.carrier,
-                }
-              : o,
-          ),
-        );
+        return;
       }
+      toast.success(
+        `${formatOrderNumber(orderNumber)} marked ${orderStatusLabel(change.status).toLowerCase()}`,
+        change.status === "pending"
+          ? undefined
+          : { description: "The customer will get an email about it." },
+      );
+      setStatusChange(null);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.orderNumber === orderNumber
+            ? {
+                ...o,
+                status: json.data?.status || change.status,
+                trackingNumber: json.data?.trackingNumber ?? o.trackingNumber,
+                trackingUrl: json.data?.trackingUrl ?? o.trackingUrl,
+                carrier: json.data?.carrier ?? o.carrier,
+              }
+            : o,
+        ),
+      );
+      // Refresh the counts (and the list when a status filter is on).
+      load();
     } catch {
       toast.error("Network error. The order was not updated.");
     } finally {
       setSaving(null);
     }
-  };
+  }
 
   function onStatusChange(o: AdminOrder, next: string) {
     if (next === o.status) return;
-    if (next === "cancelled") {
-      setCancelTarget(o);
-      return;
-    }
-    void updateStatus(o.orderNumber, next);
+    setStatusChange({ order: o, next });
   }
 
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { all: orders.length };
-    for (const o of orders) c[o.status] = (c[o.status] || 0) + 1;
-    return c;
-  }, [orders]);
+  const counts = result.counts;
 
   const chips = useMemo(
     () => [
@@ -161,19 +253,11 @@ export default function AdminOrdersPage() {
     [counts, filter],
   );
 
-  const visible = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    return orders.filter((o) => {
-      if (filter !== "all" && o.status !== filter) return false;
-      if (!term) return true;
-      return [o.orderNumber, formatOrderNumber(o.orderNumber), o.customerName, o.email, o.phone]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(term));
-    });
-  }, [orders, filter, q]);
+  const visible = orders;
 
-  const filtered = filter !== "all" || q.trim() !== "";
-  const empty = !loading && visible.length === 0;
+  const filtered = filter !== "all" || search !== "";
+  const empty = loaded && !loading && visible.length === 0;
+  const firstLoad = !loaded && !loadError;
 
   const emptyState = loadError ? (
     <AdminEmptyState
@@ -193,7 +277,9 @@ export default function AdminOrdersPage() {
           variant="secondary"
           onClick={() => {
             setQ("");
+            setSearch("");
             setFilter("all");
+            setPage(1);
           }}
         >
           Clear filters
@@ -220,7 +306,7 @@ export default function AdminOrdersPage() {
         <AdminFilterChips
           label="Order status"
           value={filter}
-          onChange={setFilter}
+          onChange={changeFilter}
           options={chips}
         />
         <AdminSearchInput
@@ -234,14 +320,18 @@ export default function AdminOrdersPage() {
 
       {/* Phones: one card per order (status and actions without sideways scrolling) */}
       <div className="md:hidden">
-        {loading && !orders.length ? (
+        {firstLoad ? (
           <BrandLoaderBlock className="min-h-[40vh]" label="Loading orders" />
-        ) : empty ? (
+        ) : empty || (loadError && !visible.length) ? (
           <div className="rounded-lg border border-admin-line bg-admin-paper">
             {emptyState}
           </div>
         ) : (
-          <ul className="space-y-3" aria-label="Orders">
+          <ul
+            className={cn("space-y-3 transition-opacity", loading && "opacity-60")}
+            aria-label="Orders"
+            aria-busy={loading || undefined}
+          >
             {visible.map((o) => {
               const ref = formatOrderNumber(o.orderNumber);
               const detailHref = `/admin/orders/${encodeURIComponent(o.orderNumber)}`;
@@ -313,7 +403,9 @@ export default function AdminOrdersPage() {
         )}
       </div>
 
-      <AdminTable className="hidden md:block">
+      <AdminTable
+        className={cn("hidden transition-opacity md:block", loading && loaded && "opacity-60")}
+      >
         <thead>
           <tr>
             <AdminTh>Order</AdminTh>
@@ -406,11 +498,11 @@ export default function AdminOrdersPage() {
               </tr>
             );
           })}
-          {loading && !orders.length ? (
+          {firstLoad ? (
             <tr>
               <td colSpan={7}><BrandLoaderBlock className="min-h-[40vh]" label="Loading orders" /></td>
             </tr>
-          ) : empty ? (
+          ) : empty || (loadError && !visible.length) ? (
             <tr>
               <td colSpan={7}>{emptyState}</td>
             </tr>
@@ -418,35 +510,39 @@ export default function AdminOrdersPage() {
         </tbody>
       </AdminTable>
 
-      {!loading && visible.length > 0 ? (
-        <p className="mt-3 text-sm text-admin-muted">
-          {visible.length} of {orders.length} orders
+      {loadError && visible.length ? (
+        <p role="alert" className="mt-3 text-sm font-medium text-admin-danger">
+          {loadError}{" "}
+          <button
+            type="button"
+            onClick={load}
+            className="cursor-pointer font-semibold underline underline-offset-2"
+          >
+            Try again
+          </button>
         </p>
       ) : null}
 
-      <ConfirmDialog
-        open={Boolean(cancelTarget)}
-        onOpenChange={(o) => {
-          if (!o && !saving) setCancelTarget(null);
-        }}
-        title="Cancel this order?"
-        description={
-          cancelTarget
-            ? `${formatOrderNumber(cancelTarget.orderNumber)} will be marked cancelled and the customer will see this on the tracking page.${
-                cancelTarget.discountCode
-                  ? ` One use of ${cancelTarget.discountCode} goes back to the coupon.`
-                  : ""
-              } This cannot be undone.`
-            : "This cannot be undone."
+      {loaded && visible.length > 0 ? (
+        <AdminPagination
+          page={result.page}
+          pageCount={result.pageCount}
+          pageSize={result.pageSize}
+          total={result.total}
+          noun={result.total === 1 ? "order" : "orders"}
+          onPageChange={changePage}
+          disabled={loading}
+        />
+      ) : null}
+
+      <OrderStatusDialog
+        order={statusChange?.order ?? null}
+        nextStatus={statusChange?.next ?? null}
+        saving={Boolean(statusChange && saving === statusChange.order.orderNumber)}
+        onClose={() => setStatusChange(null)}
+        onConfirm={(change) =>
+          statusChange ? updateStatus(statusChange.order, change) : undefined
         }
-        confirmLabel="Cancel order"
-        cancelLabel="Keep order"
-        loading={Boolean(cancelTarget && saving === cancelTarget.orderNumber)}
-        onConfirm={async () => {
-          if (!cancelTarget) return;
-          await updateStatus(cancelTarget.orderNumber, "cancelled");
-          setCancelTarget(null);
-        }}
       />
     </AdminShell>
   );

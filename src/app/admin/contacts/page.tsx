@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
+  AdminActionDivider,
   AdminCard,
   AdminContactActions,
   AdminEmptyState,
@@ -20,9 +21,11 @@ import {
   readAdminJson,
 } from "@/components/admin/ui";
 import { Button } from "@/components/admin/button";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { toast } from "@/components/admin/toast";
 import { cn } from "@/lib/cn";
 import { contactTopicLabel } from "@/lib/contact-topics";
+import { formatOrderNumber } from "@/lib/order-number";
 
 type Msg = {
   id: string;
@@ -47,6 +50,12 @@ function formatDate(iso?: string) {
   });
 }
 
+/** The order number as the customer typed it ("ns 7k4q2m", "#NS-7K4Q2M") in store format. */
+function orderRef(raw?: string) {
+  const v = (raw || "").replace(/\s+/g, "").replace(/^#/, "");
+  return v ? formatOrderNumber(v) : "";
+}
+
 function preview(text: string, max = 90) {
   const t = text.replace(/\s+/g, " ").trim();
   return t.length > max ? `${t.slice(0, max)}…` : t;
@@ -64,9 +73,12 @@ function ContactsInbox() {
   const searchParams = useSearchParams();
   const emailFilter = searchParams.get("email") || "";
   const initialStatus = searchParams.get("status") || "all";
-  const [user, setUser] = useState<{ email?: string; name?: string } | null>(
-    null,
-  );
+  const [user, setUser] = useState<{
+    email?: string;
+    name?: string;
+    role?: string;
+    isSuperAdmin?: boolean;
+  } | null>(null);
   const [rows, setRows] = useState<Msg[]>([]);
   const [status, setStatus] = useState(
     STATUS_CHIPS.some((c) => c.value === initialStatus) ? initialStatus : "all",
@@ -76,6 +88,9 @@ function ContactsInbox() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Msg | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const canDelete = Boolean(user?.isSuperAdmin || user?.role === "super_admin");
 
   const load = useCallback(() => {
     setLoading(true);
@@ -154,6 +169,30 @@ function ContactsInbox() {
       toast.error("Network error. The message was not updated.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteMessage() {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/contacts/${encodeURIComponent(target.id)}`, {
+        method: "DELETE",
+      });
+      const json = await readAdminJson(res);
+      if (!json.ok) {
+        toast.error(json.error || "Could not delete the message");
+        return;
+      }
+      toast.success(`Message from ${target.name || target.email} deleted`);
+      setRows((prev) => prev.filter((r) => r.id !== target.id));
+      setDetail((d) => (d && d.id === target.id ? null : d));
+      setDeleteTarget(null);
+    } catch {
+      toast.error("Network error. The message was not deleted.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -277,7 +316,7 @@ function ContactsInbox() {
                       <span className="block truncate text-sm font-semibold text-admin-ink">
                         {contactTopicLabel(m.topic)}
                         {m.orderNumber ? (
-                          <span className="font-normal text-admin-muted"> · {m.orderNumber}</span>
+                          <span className="font-normal text-admin-muted"> · {orderRef(m.orderNumber)}</span>
                         ) : null}
                       </span>
                       <span className="block truncate text-[0.9375rem] text-admin-muted">
@@ -304,6 +343,18 @@ function ContactsInbox() {
                       ariaLabel={`Reply to ${m.name} by email`}
                       href={`mailto:${m.email}?subject=${encodeURIComponent(`Re: ${contactTopicLabel(m.topic)}`)}`}
                     />
+                    {canDelete ? (
+                      <>
+                        <AdminActionDivider />
+                        <AdminIconAction
+                          icon="delete"
+                          tone="danger"
+                          label="Delete message"
+                          ariaLabel={`Delete message from ${m.name}`}
+                          onClick={() => setDeleteTarget(m)}
+                        />
+                      </>
+                    ) : null}
                   </AdminRowActions>
                 </li>
             ))}
@@ -347,10 +398,10 @@ function ContactsInbox() {
                     <dt className="text-[0.8125rem] text-admin-muted">Order number</dt>
                     <dd>
                       <Link
-                        href={`/admin/orders/${encodeURIComponent(detail.orderNumber)}`}
-                        className="font-semibold text-admin-accent hover:underline"
+                        href={`/admin/orders/${encodeURIComponent(orderRef(detail.orderNumber))}`}
+                        className="font-sans font-semibold tabular-nums text-admin-accent hover:underline"
                       >
-                        {detail.orderNumber}
+                        {orderRef(detail.orderNumber)}
                       </Link>
                     </dd>
                   </div>
@@ -365,12 +416,25 @@ function ContactsInbox() {
               {detail.message}
             </p>
             <div className="flex flex-col-reverse gap-2 border-t border-admin-line pt-4 sm:flex-row sm:items-center">
-              <Link
-                href={`/admin/customers/${encodeURIComponent(detail.email)}`}
-                className="text-sm font-semibold text-admin-accent hover:underline sm:mr-auto"
-              >
-                View customer
-              </Link>
+              <div className="flex items-center justify-between gap-3 sm:mr-auto sm:justify-start">
+                <Link
+                  href={`/admin/customers/${encodeURIComponent(detail.email)}`}
+                  className="text-sm font-semibold text-admin-accent hover:underline"
+                >
+                  View customer
+                </Link>
+                {canDelete ? (
+                  <Button
+                    variant="danger-outline"
+                    size="sm"
+                    className="w-auto!"
+                    disabled={saving || deleting}
+                    onClick={() => setDeleteTarget(detail)}
+                  >
+                    Delete
+                  </Button>
+                ) : null}
+              </div>
               {detail.status === "closed" ? (
                 <Button
                   variant="secondary"
@@ -399,6 +463,23 @@ function ContactsInbox() {
           </div>
         ) : null}
       </AdminModal>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(o) => {
+          if (!o && !deleting) setDeleteTarget(null);
+        }}
+        title="Delete this message?"
+        description={
+          deleteTarget
+            ? `The message from ${deleteTarget.name || deleteTarget.email} will be removed from the inbox for good. Use this for spam. This cannot be undone.`
+            : "This cannot be undone."
+        }
+        confirmLabel="Delete message"
+        cancelLabel="Keep message"
+        loading={deleting}
+        onConfirm={deleteMessage}
+      />
     </AdminShell>
   );
 }

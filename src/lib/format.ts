@@ -8,7 +8,7 @@ export function formatPrice(amount: number, currency = "USD"): string {
 }
 
 export function formatSize(ml: number): string {
-  return `${ml}ML`;
+  return `${ml} ml`;
 }
 
 export function concentrationLabel(value: string): string {

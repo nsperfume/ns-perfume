@@ -96,10 +96,8 @@ const productSchema = z
       .min(1, "Enter the product name")
       .min(2, "Use at least 2 characters")
       .max(80, "Keep the name under 80 characters"),
-    handle: z
-      .string()
-      .max(80, "Keep the URL under 80 characters")
-      .regex(HANDLE_RE, "Use lowercase letters, numbers and dashes"),
+    // Format is checked below, only once there is a name to build it from.
+    handle: z.string().max(80, "Keep the web address under 80 characters"),
     descriptor: z.string().max(160, "Keep this under 160 characters"),
     countryOfOrigin: z.string().max(60, "Keep this under 60 characters"),
     prices: z
@@ -110,6 +108,13 @@ const productSchema = z
     status: z.string(),
   })
   .superRefine((f, ctx) => {
+    if (handleProblem(f.name, f.handle)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["handle"],
+        message: handleProblem(f.name, f.handle) as string,
+      });
+    }
     const seen = new Set<number>();
     f.prices.forEach((p, i) => {
       if (!Number.isFinite(p.ml)) return;
@@ -130,6 +135,16 @@ const productSchema = z
       });
     }
   });
+
+/**
+ * Web address problem, if any. A blank name already has its own error, so
+ * the empty web address made from it does not get a second one.
+ */
+function handleProblem(name: string, handle: string): string | null {
+  if (HANDLE_RE.test(handle)) return null;
+  if (!handle) return name.trim() ? "Enter a web address" : null;
+  return "Use lowercase letters, numbers and dashes";
+}
 
 function toHandle(name: string) {
   return slugify(name, { lower: true, strict: true, trim: true })
@@ -654,7 +669,7 @@ export function ProductForm({
     if (saving) return;
     setServerError("");
     if (!v.validate(validationInput, formRef.current)) {
-      if (v.errors.handle || !HANDLE_RE.test(form.handle)) setUrlOpen(true);
+      if (handleProblem(form.name, form.handle)) setUrlOpen(true);
       toast.error("Check the highlighted fields");
       return;
     }
@@ -696,8 +711,8 @@ export function ProductForm({
         ? form.ingredients
         : withoutAlcoholIngredients(form.ingredients),
       containsAlcohol: form.containsAlcohol,
-      // Same stored default as before when left blank
-      countryOfOrigin: form.countryOfOrigin.trim() || "\u2014",
+      // Left blank means "not shown"; never store a placeholder dash.
+      countryOfOrigin: form.countryOfOrigin.trim(),
       story: sanitizeRichHtml(toRichHtml(form.story)),
       howToWear: sanitizeRichHtml(toRichHtml(form.howToWear)),
       tags: buildTags(form),
@@ -824,14 +839,14 @@ export function ProductForm({
                     className="cursor-pointer font-semibold text-admin-accent hover:underline"
                     aria-expanded={urlOpen}
                   >
-                    {urlOpen ? "Done" : "Edit URL"}
+                    {urlOpen ? "Done" : "Edit web address"}
                   </button>
                 ) : null}
               </div>
               {isNew && urlOpen ? (
                 <div className="mt-3">
                   <AdminFieldLabel htmlFor="product-handle" required>
-                    URL name
+                    Web address
                   </AdminFieldLabel>
                   <div className="flex items-stretch overflow-hidden rounded-md border border-admin-input-border bg-admin-soft-2 focus-within:border-brass focus-within:ring-2 focus-within:ring-brass/20">
                     <span className="flex items-center border-r border-admin-line bg-admin-soft px-3 text-[0.9375rem] text-admin-muted">
@@ -952,7 +967,7 @@ export function ProductForm({
                   Price <span className="text-admin-danger" aria-hidden>*</span>
                 </p>
                 <p className="text-sm font-semibold text-admin-ink">
-                  Compare-at price
+                  Was price
                 </p>
                 <span className="sr-only">Remove</span>
               </div>
@@ -993,11 +1008,11 @@ export function ProductForm({
                   </div>
                   <div className="col-span-2 sm:col-span-1">
                     <p className="mb-1.5 text-sm font-semibold text-admin-ink sm:hidden">
-                      Compare-at price
+                      Was price
                     </p>
                     <NumberInput
                       name={`prices.${i}.compareAt`}
-                      label={`Size ${i + 1} compare-at price`}
+                      label={`Size ${i + 1} was price`}
                       value={size.compareAt}
                       prefix="Rs"
                       placeholder="Optional"
@@ -1197,7 +1212,7 @@ export function ProductForm({
 
           <AdminFormSection title="Performance">
             <ScaleField
-              label="Sillage"
+              label="Projection (sillage)"
               value={form.sillage}
               onChange={(n) => setField("sillage", n)}
               low="Close to skin"

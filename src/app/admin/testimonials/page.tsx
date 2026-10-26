@@ -52,7 +52,7 @@ type FormState = {
 
 const EMPTY_FORM: FormState = {
   author: "",
-  city: "Karachi",
+  city: "",
   productName: "",
   quote: "",
   status: "published",
@@ -504,6 +504,7 @@ export default function AdminTestimonialsPage() {
                 aria-invalid={v.errors.city ? true : undefined}
                 onChange={(e) => update({ city: e.target.value })}
                 onBlur={() => v.revalidate(form)}
+                placeholder="Karachi"
                 maxLength={60}
               />
               <AdminFieldError message={v.errors.city} />

@@ -20,6 +20,8 @@ import {
   ShoppingBagIcon,
   StarIcon,
   UserIcon,
+  UserRoundCogIcon,
+  UsersIcon,
   XIcon,
 } from "@animateicons/react/lucide";
 import { cn } from "@/lib/cn";
@@ -31,6 +33,7 @@ import {
 } from "@/context/admin-theme";
 import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
 import { AdminToaster } from "@/components/admin/toast";
+import { AdminAccessProvider } from "@/components/admin/access";
 
 type IconProps = {
   size?: number;
@@ -43,6 +46,8 @@ type NavItem = {
   href: string;
   label: string;
   exact?: boolean;
+  /** Shown to owners only. */
+  ownerOnly?: boolean;
   Icon: ComponentType<IconProps>;
 };
 
@@ -100,6 +105,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "System",
     items: [
       { href: "/admin/emails", label: "Emails", Icon: SendIcon },
+      { href: "/admin/team", label: "Team", ownerOnly: true, Icon: UsersIcon },
       { href: "/admin/settings", label: "Settings", Icon: SettingsIcon },
     ],
   },
@@ -139,12 +145,25 @@ function AdminShellInner({
     email?: string;
     name?: string;
     role?: string;
+    roleLabel?: string;
     isSuperAdmin?: boolean;
+    /** False for viewers and for anyone still on a temporary password. */
+    canWrite?: boolean;
+    mustChangePassword?: boolean;
   } | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme } = useAdminTheme();
+  const isOwner = Boolean(user?.isSuperAdmin || user?.role === "super_admin");
+  // Until the account loads, assume write access so owners never see controls flicker off.
+  const canWrite = user ? user.canWrite !== false && user.role !== "viewer" : true;
+  const viewOnly = Boolean(user) && !canWrite && !user?.mustChangePassword;
+
+  // Temporary password: nothing else until they choose their own.
+  useEffect(() => {
+    if (user?.mustChangePassword && pathname !== "/admin/profile") router.replace("/admin/profile");
+  }, [user?.mustChangePassword, pathname, router]);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const mainScrollRef = useRef<HTMLElement | null>(null);
@@ -302,7 +321,7 @@ function AdminShellInner({
               />
             )}
             <ul className="space-y-0.5">
-              {group.items.map((item) => {
+              {group.items.filter((item) => !item.ownerOnly || isOwner).map((item) => {
                 const active = isActive(pathname, item);
                 const Icon = item.Icon;
                 return (
@@ -339,6 +358,27 @@ function AdminShellInner({
       </nav>
 
       <div className="shrink-0 space-y-1.5 border-t border-white/10 p-3">
+        <NavTip show={collapsed} label="Profile">
+          <Link
+            href="/admin/profile"
+            aria-label={collapsed ? "Profile" : undefined}
+            className={cn(
+              "flex min-h-12 items-center gap-3 rounded-md transition-colors",
+              collapsed ? "justify-center px-2" : "px-3",
+              pathname === "/admin/profile"
+                ? "bg-admin-sidebar-active-bg text-admin-sidebar-active-text"
+                : "text-admin-sidebar-text hover:bg-admin-sidebar-hover hover:text-white",
+            )}
+          >
+            <UserRoundCogIcon size={18} color="currentColor" isAnimated={false} className="shrink-0" />
+            {!collapsed ? (
+              <span className="min-w-0">
+                <span className="block truncate text-[0.9375rem] font-medium">{user?.name || "Profile"}</span>
+                <span className="block truncate text-xs opacity-70">{user?.roleLabel || "Your account"}</span>
+              </span>
+            ) : null}
+          </Link>
+        </NavTip>
         <Link
           href="/"
           target="_blank"
@@ -369,7 +409,9 @@ function AdminShellInner({
 
   return (
     <div
-      className="admin-app fixed inset-0 z-40 flex overflow-hidden"
+      // overflow-clip, not hidden: a hidden box can still be scrolled by focus or
+      // scrollIntoView, which shifted the whole console. Only <main> scrolls.
+      className="admin-app fixed inset-0 z-40 flex overflow-clip"
       data-theme={theme}
     >
       <aside
@@ -404,12 +446,12 @@ function AdminShellInner({
                 Close
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-hidden">{sidebar}</div>
+            <div className="min-h-0 flex-1 overflow-clip">{sidebar}</div>
           </aside>
         </div>
       ) : null}
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-admin-page">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-clip bg-admin-page">
         <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-admin-line bg-admin-paper px-3 md:hidden">
           <button
             type="button"
@@ -440,7 +482,18 @@ function AdminShellInner({
           className="admin-main-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain"
         >
           <div className="mx-auto w-full max-w-[1600px] px-4 pb-10 pt-5 sm:px-6 sm:pt-7 lg:px-8 2xl:px-10">
-            {children}
+            {viewOnly ? (
+              <div
+                role="status"
+                className="mb-5 flex items-center gap-2 rounded-md border border-admin-line bg-admin-soft-2 px-4 py-2.5 text-sm text-admin-ink"
+              >
+                <EyeIcon size={16} color="currentColor" isAnimated={false} className="shrink-0 text-admin-muted" />
+                <span>
+                  <strong className="font-semibold">View only.</strong> You can look at everything, but changes are turned off for your account.
+                </span>
+              </div>
+            ) : null}
+            <AdminAccessProvider value={{ canWrite, isOwner }}>{children}</AdminAccessProvider>
           </div>
         </main>
       </div>
@@ -458,7 +511,11 @@ export function AdminShell({
     email?: string;
     name?: string;
     role?: string;
+    roleLabel?: string;
     isSuperAdmin?: boolean;
+    /** False for viewers and for anyone still on a temporary password. */
+    canWrite?: boolean;
+    mustChangePassword?: boolean;
   } | null;
 }) {
   return (

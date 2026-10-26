@@ -1,27 +1,24 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import {
-  createAdminToken,
-  hashPassword,
-  setAdminSessionCookie,
+  ROLE_LABELS,
+  burnPasswordCheck,
+  canWrite,
   clearAdminSessionCookie,
-  verifyPassword,
   getAdminSession,
+  isSuperAdmin,
+  issueAdminSession,
   normalizeRole,
+  verifyPassword,
 } from "@/lib/auth";
 import { AdminUserModel } from "@/models/AdminUser";
 import { limitByIp, rateLimit } from "@/lib/rate-limit";
-import { createHash, timingSafeEqual } from "node:crypto";
 
-/** Constant-time string compare (hash first so lengths always match). */
-function sameSecret(a: string, b: string) {
-  const ha = createHash("sha256").update(a).digest();
-  const hb = createHash("sha256").update(b).digest();
-  return timingSafeEqual(ha, hb);
-}
+const MAX_FAILED = 8;
+const LOCK_MINUTES = 15;
+const WRONG = "Email or password is incorrect.";
 
-const SUPER_NAME = "Asim Ali";
-
+/** Who is signed in, and what they may do. The console reads this on every page. */
 export async function GET() {
   const session = await getAdminSession();
   if (!session) return jsonError("Unauthorized", 401);
@@ -30,95 +27,81 @@ export async function GET() {
     name: session.name,
     sub: session.sub,
     role: session.role,
-    isSuperAdmin: session.role === "super_admin",
+    roleLabel: ROLE_LABELS[session.role],
+    isSuperAdmin: isSuperAdmin(session),
+    canWrite: canWrite(session) && !session.mustChangePassword,
+    mustChangePassword: session.mustChangePassword,
   });
 }
 
+/** Sign in with email and password from the database. There is no environment master login. */
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = (await req.json().catch(() => ({}))) as { email?: unknown; password?: unknown };
     const email = String(body.email || "").toLowerCase().trim();
     const password = String(body.password || "");
+    if (!email || !password) return jsonError("Enter your email and password.", 400);
 
     const limited =
-      limitByIp(req, "admin-login", 10, 15 * 60_000) ||
-      rateLimit(`admin-login:${email}`, 8, 15 * 60_000);
+      limitByIp(req, "admin-login", 20, 15 * 60_000) ||
+      rateLimit(`admin-login:${email}`, 10, 15 * 60_000);
     if (limited) return limited;
 
     await connectDB();
-
-    const bootstrapEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase() || "";
-    const bootstrapPass = process.env.ADMIN_PASSWORD || "";
-
-    /**
-     * Env bootstrap creates / re-syncs the super admin (Asim Ali).
-     * Only when both ADMIN_EMAIL and ADMIN_PASSWORD are configured.
-     */
-    if (
-      bootstrapEmail &&
-      bootstrapPass &&
-      email === bootstrapEmail &&
-      sameSecret(password, bootstrapPass)
-    ) {
-      let user = await AdminUserModel.findOne({ email: bootstrapEmail });
-      if (!user) {
-        user = await AdminUserModel.create({
-          email: bootstrapEmail,
-          name: SUPER_NAME,
-          passwordHash: await hashPassword(bootstrapPass),
-          role: "super_admin",
-        });
-      } else {
-        user.passwordHash = await hashPassword(bootstrapPass);
-        user.role = "super_admin";
-        if (!user.name || user.name === "Store Owner" || user.name === "Admin") {
-          user.name = SUPER_NAME;
-        }
-        await user.save();
-      }
-      const role = normalizeRole(user.role);
-      const token = await createAdminToken({
-        sub: String(user._id),
-        email: user.email,
-        name: user.name,
-        role,
-      });
-      await setAdminSessionCookie(token);
-      return jsonOk({
-        email: user.email,
-        name: user.name,
-        role,
-        isSuperAdmin: role === "super_admin",
-        bootstrapped: true,
-      });
-    }
-
     const user = await AdminUserModel.findOne({ email });
-    if (!user || !(await verifyPassword(password, user.passwordHash))) {
-      return jsonError("Invalid email or password", 401);
+
+    if (!user) {
+      await burnPasswordCheck(password);
+      return jsonError(WRONG, 401);
     }
-    const role = normalizeRole(user.role);
-    // Soft-upgrade legacy owner
-    if (user.role === "owner") {
-      user.role = "super_admin";
+
+    const now = Date.now();
+    if (user.lockedUntil && new Date(user.lockedUntil).getTime() > now) {
+      const minutes = Math.ceil((new Date(user.lockedUntil).getTime() - now) / 60_000);
+      return jsonError(
+        `Too many attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}, or reset your password.`,
+        429,
+      );
+    }
+
+    const ok = await verifyPassword(password, user.passwordHash);
+    if (!ok) {
+      const failed = (user.failedLoginCount || 0) + 1;
+      if (failed >= MAX_FAILED) {
+        user.failedLoginCount = 0;
+        user.lockedUntil = new Date(now + LOCK_MINUTES * 60_000);
+      } else {
+        user.failedLoginCount = failed;
+      }
       await user.save();
+      return jsonError(WRONG, 401);
     }
-    const token = await createAdminToken({
-      sub: String(user._id),
-      email: user.email,
-      name: user.name,
-      role,
-    });
-    await setAdminSessionCookie(token);
+
+    // Correct password, but the owner switched this account off.
+    if (user.active === false) {
+      return jsonError("This account is turned off. Ask the store owner to turn it back on.", 403);
+    }
+
+    user.failedLoginCount = 0;
+    user.lockedUntil = null;
+    user.lastLoginAt = new Date(now);
+    if (user.role === "owner") user.role = "super_admin";
+    if (user.role === "staff") user.role = "admin";
+    await user.save();
+
+    await issueAdminSession(user);
+    const role = normalizeRole(user.role);
     return jsonOk({
       email: user.email,
       name: user.name,
       role,
+      roleLabel: ROLE_LABELS[role],
       isSuperAdmin: role === "super_admin",
+      mustChangePassword: Boolean(user.mustChangePassword),
     });
   } catch (e) {
     console.error(e);
-    return jsonError("Login failed", 500);
+    return jsonError("Sign in failed. Please try again.", 500);
   }
 }
 

@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminWrite, adminDenied } from "@/lib/auth";
 import { configureCloudinary, isCloudinaryConfigured } from "@/lib/cloudinary";
 
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -16,8 +16,8 @@ function sniffImageType(b: Buffer): string | null {
 
 export async function POST(req: Request) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) return jsonError("Unauthorized", 401);
+    const admin = await requireAdminWrite();
+    if (!admin) return adminDenied();
 
     if (!isCloudinaryConfigured()) {
       return jsonError(

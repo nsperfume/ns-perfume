@@ -24,6 +24,8 @@ import { siWhatsapp } from "simple-icons";
 import { useRouter } from "next/navigation";
 import { useEffect, type MouseEvent, type ReactNode } from "react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Button } from "@/components/admin/button";
+import { READ_ONLY_HINT, useAdminAccess } from "@/components/admin/access";
 import { cn } from "@/lib/cn";
 
 /**
@@ -254,11 +256,14 @@ export function AdminTable({
   compact,
   flush,
   stickyFirst = true,
+  minWidthClass = "min-w-[44rem]",
 }: {
   children: ReactNode;
   className?: string;
   /** No min-width, avoids horizontal scroll in nested cards */
   compact?: boolean;
+  /** Width below which the table scrolls sideways (ignored when compact) */
+  minWidthClass?: string;
   /** Sits inside an AdminCard: no own border, radius or shadow */
   flush?: boolean;
   /** Pin the first column while scrolling sideways on phones */
@@ -277,7 +282,7 @@ export function AdminTable({
       <table
         className={cn(
           "w-full text-left text-[0.9375rem] leading-snug",
-          !compact && "min-w-[44rem]",
+          !compact && minWidthClass,
         )}
       >
         {children}
@@ -567,6 +572,81 @@ export function AdminFilterChips({
 }
 
 /**
+ * Previous / next pager under a list. Shows "Showing 26 to 50 of 312 orders"
+ * and the page number. Renders nothing when everything fits on one page.
+ */
+export function AdminPagination({
+  page,
+  pageCount,
+  pageSize,
+  total,
+  noun = "items",
+  onPageChange,
+  disabled,
+  className,
+}: {
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  total: number;
+  /** Plural word for the records, e.g. "orders" */
+  noun?: string;
+  onPageChange: (page: number) => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  if (total <= 0) return null;
+  const from = (page - 1) * pageSize + 1;
+  const to = Math.min(total, page * pageSize);
+  const summary = (
+    <p className="text-sm text-admin-muted">
+      Showing{" "}
+      <span className="font-sans tabular-nums text-admin-ink">{from}</span> to{" "}
+      <span className="font-sans tabular-nums text-admin-ink">{to}</span> of{" "}
+      <span className="font-sans tabular-nums text-admin-ink">{total}</span> {noun}
+    </p>
+  );
+  if (pageCount <= 1) {
+    return <div className={cn("mt-3", className)}>{summary}</div>;
+  }
+  return (
+    <nav
+      aria-label="Pages"
+      className={cn(
+        "mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+        className,
+      )}
+    >
+      {summary}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1 sm:flex-none"
+          disabled={disabled || page <= 1}
+          onClick={() => onPageChange(page - 1)}
+        >
+          Previous
+        </Button>
+        <span className="shrink-0 px-2 text-sm text-admin-muted" aria-live="polite">
+          Page <span className="font-sans tabular-nums text-admin-ink">{page}</span> of{" "}
+          <span className="font-sans tabular-nums text-admin-ink">{pageCount}</span>
+        </span>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1 sm:flex-none"
+          disabled={disabled || page >= pageCount}
+          onClick={() => onPageChange(page + 1)}
+        >
+          Next
+        </Button>
+      </div>
+    </nav>
+  );
+}
+
+/**
  * Whole-row click opens the record. Clicks on links, buttons, inputs and
  * menus inside the row keep their own behaviour.
  */
@@ -624,6 +704,9 @@ function BrandGlyph({ path, size }: { path: string; size: number }) {
     </svg>
   );
 }
+
+/** Row actions that change data (switched off for view-only accounts). */
+const WRITE_ICONS = new Set<AdminIconName>(["delete", "publish", "hide", "upload", "remove-user", "send"]);
 
 /** The single icon map for admin actions (lucide, static; brands via simple-icons). */
 export function AdminIcon({
@@ -705,6 +788,12 @@ export function AdminIconAction({
   disabled?: boolean;
   className?: string;
 }) {
+  // View-only accounts cannot trigger actions that change or remove data.
+  const { canWrite } = useAdminAccess();
+  if (!canWrite && !href && (tone === "danger" || WRITE_ICONS.has(icon))) {
+    disabled = true;
+    label = READ_ONLY_HINT;
+  }
   const cls = cn(
     ICON_ACTION,
     tone === "danger" &&

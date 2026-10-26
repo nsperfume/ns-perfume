@@ -615,7 +615,7 @@ export default function AdminCollectionsPage() {
                         onClick={() => setUrlOpen(true)}
                         className="mt-1 cursor-pointer text-sm font-semibold text-admin-accent hover:underline"
                       >
-                        Edit URL
+                        Edit web address
                       </button>
                       <AdminFieldError message={v.errors.handle} />
                     </>
@@ -699,6 +699,38 @@ export default function AdminCollectionsPage() {
   }
 
   /* ----------------------------- List view ----------------------------- */
+  const listEmpty = loading ? (
+    <BrandLoaderBlock className="min-h-[40vh]" label="Loading collections" />
+  ) : items.length ? (
+    <AdminEmptyState
+      title="No collections match"
+      action={
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="w-auto!"
+          onClick={() => {
+            setQuery("");
+            setFilter("all");
+          }}
+        >
+          Clear filters
+        </Button>
+      }
+    />
+  ) : (
+    <AdminEmptyState
+      title="No collections yet"
+      description="Group bottles so shoppers can browse by mood or occasion."
+      action={
+        <Button type="button" onClick={() => openEditor(null)}>
+          Add collection
+        </Button>
+      }
+    />
+  );
+
   return shell(
     <>
       <AdminPageHeader
@@ -735,7 +767,94 @@ export default function AdminCollectionsPage() {
         />
       </div>
 
-      <AdminTable compact>
+      {/* Phones: one card per collection so the actions never run off screen */}
+      <div className="md:hidden">
+        {visible.length ? (
+          <ul className="space-y-3" aria-label="Collections">
+            {visible.map((c) => {
+              const live = (c.status || "active") === "active";
+              const count = products.length ? liveProductCount(c, products) : null;
+              return (
+                <li
+                  key={c.handle}
+                  className="rounded-lg border border-admin-line bg-admin-paper p-4 shadow-admin"
+                >
+                  <button
+                    type="button"
+                    onClick={() => openEditor(c)}
+                    className="flex w-full min-w-0 cursor-pointer items-start gap-3 text-left"
+                  >
+                    <span className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-admin-line bg-admin-soft">
+                      {c.bannerImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={c.bannerImage}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : null}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold text-admin-ink">
+                        {c.title}
+                      </span>
+                      {count !== null ? (
+                        <span className="mt-0.5 block text-[0.8125rem] text-admin-muted">
+                          <span className="font-sans tabular-nums">{count}</span>{" "}
+                          {count === 1 ? "product" : "products"}
+                        </span>
+                      ) : null}
+                    </span>
+                    <AdminStatusBadge status={c.status || "active"} className="shrink-0" />
+                  </button>
+                  {c.description ? (
+                    <p className="mt-2 line-clamp-2 text-[0.8125rem] text-admin-muted">
+                      {richTextToPlain(c.description)}
+                    </p>
+                  ) : null}
+                  <div className="mt-3 border-t border-admin-line pt-2">
+                    <AdminRowActions>
+                      {live ? (
+                        <AdminIconAction
+                          icon="view"
+                          label="View in store"
+                          ariaLabel={`View ${c.title} in the store`}
+                          href={`/collections/${encodeURIComponent(c.handle)}`}
+                          external
+                        />
+                      ) : null}
+                      <AdminIconAction
+                        icon="edit"
+                        label="Edit collection"
+                        ariaLabel={`Edit ${c.title}`}
+                        onClick={() => openEditor(c)}
+                      />
+                      {canDelete ? (
+                        <>
+                          <AdminActionDivider />
+                          <AdminIconAction
+                            icon="delete"
+                            tone="danger"
+                            label="Delete collection"
+                            ariaLabel={`Delete ${c.title}`}
+                            onClick={() => setRowDelete(c)}
+                          />
+                        </>
+                      ) : null}
+                    </AdminRowActions>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="rounded-lg border border-admin-line bg-admin-paper">
+            {listEmpty}
+          </div>
+        )}
+      </div>
+
+      <AdminTable compact className="hidden md:block">
         <thead>
           <tr>
             <AdminTh>Collection</AdminTh>
@@ -829,39 +948,7 @@ export default function AdminCollectionsPage() {
           ))}
           {!visible.length ? (
             <tr>
-              <td colSpan={4}>
-                {loading ? (
-                  <BrandLoaderBlock className="min-h-[40vh]" label="Loading collections" />
-                ) : items.length ? (
-                  <AdminEmptyState
-                    title="No collections match"
-                    action={
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="w-auto!"
-                        onClick={() => {
-                          setQuery("");
-                          setFilter("all");
-                        }}
-                      >
-                        Clear filters
-                      </Button>
-                    }
-                  />
-                ) : (
-                  <AdminEmptyState
-                    title="No collections yet"
-                    description="Group bottles so shoppers can browse by mood or occasion."
-                    action={
-                      <Button type="button" onClick={() => openEditor(null)}>
-                        Add collection
-                      </Button>
-                    }
-                  />
-                )}
-              </td>
+              <td colSpan={4}>{listEmpty}</td>
             </tr>
           ) : null}
         </tbody>

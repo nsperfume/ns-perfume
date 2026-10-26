@@ -1,12 +1,12 @@
 /**
- * Direct Mongo seed (no HTTP). Syncs admin from .env and replaces catalog.
- * Usage: pnpm seed:db
+ * Direct Mongo seed (no HTTP). Replaces the demo catalog only.
+ * Admin accounts are managed with `pnpm admin:user` and in Admin > Settings > Team.
+ * Usage: pnpm seed:db --yes
  */
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
 import {
   seedProducts,
   seedCollections,
@@ -57,26 +57,6 @@ async function main() {
   const db = mongoose.connection.db;
   if (!db) throw new Error("No db");
 
-  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password) throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must be set");
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  await db.collection("adminusers").updateOne(
-    { email },
-    {
-      $set: {
-        email,
-        name: "Store Owner",
-        passwordHash,
-        role: "owner",
-        updatedAt: new Date(),
-      },
-      $setOnInsert: { createdAt: new Date() },
-    },
-    { upsert: true },
-  );
-
   for (const name of [
     "products",
     "collections",
@@ -107,9 +87,7 @@ async function main() {
     testimonials: seedTestimonials.length,
     reviews: seedReviews.length,
     journal: seedJournal.length,
-    adminEmail: email,
   });
-  console.log("Admin password synced from ADMIN_PASSWORD in .env.local");
 
   await mongoose.disconnect();
 }

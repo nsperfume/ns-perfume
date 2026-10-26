@@ -19,7 +19,21 @@ cp .env.example .env.local   # fill in the values
 pnpm dev                     # http://localhost:3000
 ```
 
-The admin is at `/admin`. The first login with `ADMIN_EMAIL` and `ADMIN_PASSWORD` creates the super admin account.
+The admin is at `/admin`. Accounts live in the database. Create the first owner (or recover access) from the terminal:
+
+```bash
+ADMIN_NEW_PASSWORD='a-long-unique-password' pnpm admin:user --email you@example.com --name "Your Name" --role owner
+```
+
+Add `--db ns-perfume-prod` to target the production database. After that, the owner manages people in **Admin > Team**:
+
+| Role | Can do |
+| --- | --- |
+| Owner | Everything, including the team, store charges and deleting |
+| Editor | View and change orders, products, collections, content, messages and coupons |
+| Viewer | View everything, change nothing |
+
+People added by the owner get a temporary password and must choose their own at first sign-in. Everyone can change their password in **Profile**, and "Forgot password?" on the sign-in page emails a one-hour reset link (needs SMTP).
 
 To run a second dev server next to `pnpm dev` (for example for screenshots), give it its own build folder: `NEXT_DIST_DIR=.next-alt pnpm exec next dev -p 3100`.
 
@@ -35,7 +49,7 @@ To run a second dev server next to `pnpm dev` (for example for screenshots), giv
 
 ## Environment
 
-Every variable is documented in [`.env.example`](.env.example). Required in production: `NEXT_PUBLIC_SITE_URL`, `MONGODB_URI`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_JWT_SECRET` (32+ characters), the three `CLOUDINARY_*` keys, and `SMTP_USER` with `SMTP_PASS` or `APP_PASSWORD`.
+Every variable is documented in [`.env.example`](.env.example). Required in production: `NEXT_PUBLIC_SITE_URL`, `MONGODB_URI`, `MONGODB_DB` (`ns-perfume-prod` on Vercel), `ADMIN_JWT_SECRET` (32+ characters), the three `CLOUDINARY_*` keys, and `SMTP_USER` with `SMTP_PASS` or `APP_PASSWORD`.
 
 ## Email
 
@@ -69,7 +83,8 @@ Sending uses Gmail SMTP with an app password by default. The Google account must
 
 ### Before going live
 
-- Use a strong `ADMIN_PASSWORD` that has never been shared and a fresh `ADMIN_JWT_SECRET`. Changing the secret signs everyone out.
+- Use a fresh `ADMIN_JWT_SECRET` in production. Changing it signs every admin out.
+- Admin sign-in locks for 15 minutes after 8 wrong passwords. Changing or resetting a password signs out every other session.
 - Replace the product photography. The current demo photos show other brands' bottles.
 - Send one test of each email from Admin > Emails.
 - Place a test COD order and a bank-transfer order. Move them through confirmed, shipped and delivered, and check the emails and invoices.

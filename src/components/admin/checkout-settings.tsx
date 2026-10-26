@@ -293,10 +293,13 @@ function Group({
 export function CheckoutSettings({
   initial,
   onDirtyChange,
+  readOnly = false,
 }: {
   /** Stored config from GET /api/admin/settings (null while loading). */
   initial: CheckoutConfig | null;
   onDirtyChange?: (dirty: boolean) => void;
+  /** Editors and viewers can see the charges; only the owner changes them. */
+  readOnly?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [baseline, setBaseline] = useState<ChargesForm | null>(null);
@@ -403,13 +406,18 @@ export function CheckoutSettings({
 
   return (
     <AdminCard title="Shipping and charges">
+      {readOnly ? (
+        <p className="border-b border-admin-line bg-admin-soft-2 px-5 py-3 text-sm text-admin-muted sm:px-6">
+          Only the owner can change store charges.
+        </p>
+      ) : null}
       <form
         ref={formRef}
         onSubmit={save}
         noValidate
         className="grid gap-8 px-5 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_17rem]"
       >
-        <div className="min-w-0">
+        <fieldset disabled={readOnly} className="min-w-0 disabled:opacity-80">
           {/* 1. Shipping methods */}
           <Group title="Delivery" hint="At least one method must stay on.">
             <div data-field="shipping" className="space-y-3">
@@ -675,7 +683,7 @@ export function CheckoutSettings({
               </Button>
             </div>
           </div>
-        </div>
+        </fieldset>
 
         {/* 6. Live example, computed exactly like checkout */}
         <aside className="lg:sticky lg:top-6 lg:self-start">

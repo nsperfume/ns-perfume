@@ -17,6 +17,7 @@ import { adminNewOrder, orderConfirmation, orderStatus } from "@/emails/orders";
 import { passwordChanged, passwordReset, verifyEmail, welcome } from "@/emails/account";
 import { adminNewContact, contactReceived, type ContactEmailData } from "@/emails/contact";
 import { newsletterWelcome } from "@/emails/newsletter";
+import { adminInvite, adminPasswordChanged, adminPasswordReset } from "@/emails/team";
 import type { EmailTemplateId } from "@/lib/email/types";
 
 export { sendEmail, queueEmails, renderEmail } from "@/lib/email/send";
@@ -91,4 +92,28 @@ export function notifyNewsletterWelcome(email: string, unsubscribeToken: string)
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
   });
+}
+
+/* ---------- admin team ---------- */
+
+export function notifyAdminPasswordReset(user: { email: string; name: string }, resetToken: string) {
+  queueEmails({
+    template: "admin-password-reset",
+    to: user.email,
+    email: adminPasswordReset({
+      name: user.name,
+      resetUrl: absoluteUrl(`/admin/reset-password?token=${encodeURIComponent(resetToken)}`),
+    }),
+  });
+}
+
+export function notifyAdminPasswordChanged(user: { email: string; name: string }) {
+  queueEmails({ template: "admin-password-changed", to: user.email, email: adminPasswordChanged({ name: user.name }) });
+}
+
+export function notifyAdminInvite(
+  user: { email: string; name: string },
+  details: { invitedBy: string; roleLabel: string; access: string },
+) {
+  queueEmails({ template: "admin-invite", to: user.email, email: adminInvite({ name: user.name, ...details }) });
 }

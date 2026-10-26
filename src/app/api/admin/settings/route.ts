@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { adminDenied, isSuperAdmin, requireAdmin, requireAdminWrite } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { SiteSettingsModel } from "@/models/SiteSettings";
 import { getSiteSettings } from "@/lib/site-settings";
@@ -20,10 +20,8 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const admin = await requireAdmin();
-  if (!admin) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  }
+  const admin = await requireAdminWrite();
+  if (!admin) return adminDenied();
 
   try {
     const body = (await req.json().catch(() => null)) as {
@@ -47,6 +45,8 @@ export async function PUT(req: NextRequest) {
     }
     if (typeof body.topbarEnabled === "boolean") set.topbarEnabled = body.topbarEnabled;
     if (body.checkout !== undefined) {
+      // Prices customers pay: owner only. Editors can still change the announcement.
+      if (!isSuperAdmin(admin)) return jsonError("Only the owner can change store charges.", 403);
       const parsed = checkoutConfigSchema.safeParse(body.checkout);
       if (!parsed.success) return validationError(parsed.error);
       set.checkout = parsed.data;

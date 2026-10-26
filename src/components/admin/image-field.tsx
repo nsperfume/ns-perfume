@@ -226,7 +226,9 @@ export function AdminImageField({
   const shownError = error || fieldError;
 
   return (
-    <div className={cn("min-w-0", className)} data-field={name}>
+    // `relative` keeps the visually hidden file input inside this field, so when focus
+    // returns to it after the file dialog the browser does not scroll the page to find it.
+    <div className={cn("relative min-w-0", className)} data-field={name}>
       {!hideLabel ? (
         <div className="mb-2 min-w-0">
           <p className="text-sm font-semibold text-admin-ink">

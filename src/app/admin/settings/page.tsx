@@ -10,18 +10,12 @@ import { CouponManager } from "@/components/admin/coupon-manager";
 import { CheckoutSettings } from "@/components/admin/checkout-settings";
 import type { CheckoutConfig } from "@/lib/checkout-config";
 import {
-  AdminActionDivider,
-  AdminIconAction,
-  AdminRowActions,
   AdminCard,
-  AdminModal,
   AdminPageHeader,
-  AdminStatusBadge,
   readAdminJson,
 } from "@/components/admin/ui";
 import { Button } from "@/components/admin/button";
-import { Input, Textarea } from "@/components/admin/input";
-import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { Textarea } from "@/components/admin/input";
 import { AdminFieldLabel } from "@/components/admin/form-section";
 import {
   AdminFieldError,
@@ -40,13 +34,6 @@ type AdminUser = {
   isSuperAdmin?: boolean;
 };
 
-type TeamMember = {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-};
-
 /* Mirrors PUT /api/admin/settings */
 const announcementSchema = z.object({
   topbarText: z
@@ -57,31 +44,13 @@ const announcementSchema = z.object({
   topbarEnabled: z.boolean(),
 });
 
-/* Mirrors POST /api/admin/team */
-const teamSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Enter their name")
-    .max(80, "Use 80 characters or fewer"),
-  email: z.string().trim().min(1, "Enter their email").email("Enter a valid email"),
-  password: z
-    .string()
-    .min(8, "Use at least 8 characters")
-    .max(120, "Use 120 characters or fewer"),
-});
-
-type TeamForm = z.infer<typeof teamSchema>;
-const EMPTY_TEAM: TeamForm = { name: "", email: "", password: "" };
-
 const SECTIONS = [
   { id: "announcement", label: "Announcement bar" },
   { id: "charges", label: "Shipping and charges" },
   { id: "coupons", label: "Coupons" },
-  { id: "team", label: "Team", superOnly: true },
   { id: "currency", label: "Currency" },
   { id: "appearance", label: "Appearance" },
-  { id: "profile", label: "Your account" },
+  { id: "account", label: "Your account and team" },
 ] as const;
 
 const DISPLAY_CURRENCIES = ["USD", "AED", "SAR", "GBP", "EUR"] as const;
@@ -173,169 +142,6 @@ function AppearancePicker() {
   );
 }
 
-function AddAdminModal({
-  open,
-  onClose,
-  onAdded,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onAdded: () => void;
-}) {
-  const formRef = useRef<HTMLFormElement>(null);
-  const [form, setForm] = useState<TeamForm>(EMPTY_TEAM);
-  const [saving, setSaving] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const v = useFormValidation(teamSchema);
-  const dirty = JSON.stringify(form) !== JSON.stringify(EMPTY_TEAM);
-
-  useEffect(() => {
-    if (!open) return;
-    setForm(EMPTY_TEAM);
-    setServerError(null);
-    v.reset();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  function update(patch: Partial<TeamForm>) {
-    const next = { ...form, ...patch };
-    setForm(next);
-    if (v.submitted) v.revalidate(next);
-  }
-
-  function requestClose() {
-    if (saving) return;
-    if (dirty) setConfirmDiscard(true);
-    else onClose();
-  }
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setServerError(null);
-    if (!v.validate(form, formRef.current)) return;
-    setSaving(true);
-    try {
-      const res = await fetch("/api/admin/team", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          email: form.email.trim(),
-          password: form.password,
-        }),
-      });
-      const j = await readAdminJson(res);
-      if (!j.ok) {
-        const message = j.error || "Could not add this admin";
-        if (res.status === 409) v.setErrors({ email: message });
-        else setServerError(message);
-        toast.error(message);
-        return;
-      }
-      toast.success(`${form.name.trim()} can now sign in`);
-      onAdded();
-    } catch {
-      setServerError("Network error. The admin was not added.");
-      toast.error("Network error. The admin was not added.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <>
-      <AdminModal open={open} onClose={requestClose} title="Add admin">
-        <form ref={formRef} onSubmit={submit} noValidate className="space-y-5">
-          <p className="text-[0.9375rem] text-admin-muted">
-            Admins manage products and orders. Only you can delete records or see revenue.
-          </p>
-          <div data-field="name">
-            <AdminFieldLabel htmlFor="team-name" required>
-              Name
-            </AdminFieldLabel>
-            <Input
-              id="team-name"
-              name="name"
-              value={form.name}
-              autoComplete="off"
-              aria-invalid={v.errors.name ? true : undefined}
-              onChange={(e) => update({ name: e.target.value })}
-              onBlur={() => v.revalidate(form)}
-            />
-            <AdminFieldError message={v.errors.name} />
-          </div>
-          <div data-field="email">
-            <AdminFieldLabel htmlFor="team-email" required>
-              Email
-            </AdminFieldLabel>
-            <Input
-              id="team-email"
-              name="email"
-              type="email"
-              autoComplete="off"
-              value={form.email}
-              aria-invalid={v.errors.email ? true : undefined}
-              onChange={(e) => update({ email: e.target.value })}
-              onBlur={() => v.revalidate(form)}
-            />
-            <AdminFieldError message={v.errors.email} />
-          </div>
-          <div data-field="password">
-            <AdminFieldLabel htmlFor="team-password" required>
-              Password
-            </AdminFieldLabel>
-            <Input
-              id="team-password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              value={form.password}
-              aria-invalid={v.errors.password ? true : undefined}
-              onChange={(e) => update({ password: e.target.value })}
-              onBlur={() => v.revalidate(form)}
-            />
-            {v.errors.password ? (
-              <AdminFieldError message={v.errors.password} />
-            ) : (
-              <p className="mt-1.5 text-[0.8125rem] text-admin-muted">
-                At least 8 characters. Share it with them privately.
-              </p>
-            )}
-          </div>
-          <AdminFormError>{serverError}</AdminFormError>
-          <div className="flex flex-col-reverse gap-2 border-t border-admin-line pt-5 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={requestClose}
-              disabled={saving}
-              className="sm:w-auto"
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={saving} className="sm:w-auto">
-              {saving ? "Adding…" : "Add admin"}
-            </Button>
-          </div>
-        </form>
-      </AdminModal>
-      <ConfirmDialog
-        open={confirmDiscard}
-        onOpenChange={setConfirmDiscard}
-        title="Discard this admin?"
-        description="The details you entered will be lost."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
-        onConfirm={() => {
-          setConfirmDiscard(false);
-          onClose();
-        }}
-      />
-    </>
-  );
-}
-
 export default function AdminSettingsPage() {
   const router = useRouter();
   const announcementRef = useRef<HTMLFormElement>(null);
@@ -355,12 +161,6 @@ export default function AdminSettingsPage() {
   const [topbarServerError, setTopbarServerError] = useState<string | null>(null);
   const av = useFormValidation(announcementSchema);
 
-  const [team, setTeam] = useState<TeamMember[]>([]);
-  const [teamLoading, setTeamLoading] = useState(true);
-  const [addOpen, setAddOpen] = useState(false);
-  const [removeTarget, setRemoveTarget] = useState<TeamMember | null>(null);
-  const [removingTeam, setRemovingTeam] = useState(false);
-
   const isSuper = Boolean(user?.isSuperAdmin || user?.role === "super_admin");
   const announcementDirty =
     announcementLoaded &&
@@ -374,16 +174,6 @@ export default function AdminSettingsPage() {
   const leaveGuard = useUnsavedChangesGuard(
     (announcementDirty && !savingTopbar) || chargesDirty,
   );
-
-  function loadTeam() {
-    setTeamLoading(true);
-    fetch("/api/admin/team")
-      .then((r) => readAdminJson<TeamMember[]>(r))
-      .then((j) => {
-        if (j.ok && j.data) setTeam(j.data);
-      })
-      .finally(() => setTeamLoading(false));
-  }
 
   useEffect(() => {
     fetch("/api/admin/auth")
@@ -412,10 +202,6 @@ export default function AdminSettingsPage() {
       })
       .finally(() => setAnnouncementLoaded(true));
   }, [router]);
-
-  useEffect(() => {
-    if (isSuper) loadTeam();
-  }, [isSuper]);
 
   // Deep-link from dashboard: /admin/settings#coupons etc.
   useEffect(() => {
@@ -469,28 +255,6 @@ export default function AdminSettingsPage() {
       toast.error("Network error. The announcement was not saved.");
     } finally {
       setSavingTopbar(false);
-    }
-  }
-
-  async function confirmRemoveTeam() {
-    if (!removeTarget) return;
-    setRemovingTeam(true);
-    try {
-      const res = await fetch(`/api/admin/team/${removeTarget.id}`, {
-        method: "DELETE",
-      });
-      const j = await readAdminJson(res);
-      if (!j.ok) {
-        toast.error(j.error || "Could not remove this admin");
-        return;
-      }
-      setTeam((prev) => prev.filter((m) => m.id !== removeTarget.id));
-      toast.success(`${removeTarget.name || removeTarget.email} removed`);
-    } catch {
-      toast.error("Network error. The admin was not removed.");
-    } finally {
-      setRemoveTarget(null);
-      setRemovingTeam(false);
     }
   }
 
@@ -592,77 +356,12 @@ export default function AdminSettingsPage() {
           </Section>
 
           <Section id="charges">
-            <CheckoutSettings initial={checkout} onDirtyChange={onChargesDirty} />
+            <CheckoutSettings initial={checkout} onDirtyChange={onChargesDirty} readOnly={!isSuper} />
           </Section>
 
           <Section id="coupons">
             <CouponManager canDelete={isSuper} />
           </Section>
-
-          {isSuper ? (
-            <Section id="team">
-              <AdminCard
-                title="Team"
-                action={
-                  <Button size="sm" className="w-auto!" onClick={() => setAddOpen(true)}>
-                    Add admin
-                  </Button>
-                }
-              >
-                {teamLoading && team.length === 0 ? (
-                  <div className="flex justify-center px-6 py-10"><BrandLoader size={56} label="Loading team" /></div>
-                ) : (
-                  <ul className="divide-y divide-admin-line">
-                    {team.map((m) => {
-                      const owner = m.role === "super_admin";
-                      return (
-                        <li
-                          key={m.id}
-                          className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6"
-                        >
-                          <div className="min-w-0">
-                            <p className="font-semibold text-admin-ink">
-                              {m.name || m.email}
-                            </p>
-                            <p className="truncate text-[0.8125rem] text-admin-muted">
-                              {m.email}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <AdminStatusBadge
-                              status={owner ? "active" : "staff"}
-                              label={owner ? "Owner" : "Admin"}
-                              tone={owner ? "brass" : "neutral"}
-                            />
-                            <AdminRowActions>
-                              <AdminIconAction
-                                icon="email"
-                                label="Email"
-                                ariaLabel={`Email ${m.name || m.email}`}
-                                href={`mailto:${m.email}`}
-                              />
-                              {!owner ? (
-                                <>
-                                  <AdminActionDivider />
-                                  <AdminIconAction
-                                    icon="remove-user"
-                                    tone="danger"
-                                    label="Remove admin"
-                                    ariaLabel={`Remove ${m.name || m.email} from the team`}
-                                    onClick={() => setRemoveTarget(m)}
-                                  />
-                                </>
-                              ) : null}
-                            </AdminRowActions>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </AdminCard>
-            </Section>
-          ) : null}
 
           <Section id="currency">
             <AdminCard title="Currency">
@@ -726,50 +425,28 @@ export default function AdminSettingsPage() {
             </AdminCard>
           </Section>
 
-          <Section id="profile">
-            <AdminCard title="Your account">
-              <dl className="divide-y divide-admin-line px-5 sm:px-6">
-                {[
-                  ["Name", user?.name],
-                  ["Email", user?.email],
-                  ["Role", user ? (isSuper ? "Owner" : "Admin") : undefined],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="flex flex-col gap-0.5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-                  >
-                    <dt className="text-sm font-semibold text-admin-muted">{label}</dt>
-                    <dd className="min-w-0 wrap-break-word text-[0.9375rem] text-admin-ink">
-                      {value || "Not set"}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+          <Section id="account">
+            <AdminCard title="Your account and team">
+              <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <p className="text-[0.9375rem] text-admin-ink">
+                  Signed in as <strong className="font-semibold">{user?.name || user?.email || "you"}</strong>
+                  {user?.email ? <span className="text-admin-muted"> ({user.email})</span> : null}.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button href="/admin/profile" variant="secondary" size="sm" className="w-auto!">
+                    Profile and password
+                  </Button>
+                  {isSuper ? (
+                    <Button href="/admin/team" variant="secondary" size="sm" className="w-auto!">
+                      Manage team
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
             </AdminCard>
           </Section>
         </div>
       </div>
-
-      <AddAdminModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onAdded={() => {
-          setAddOpen(false);
-          loadTeam();
-        }}
-      />
-
-      <ConfirmDialog
-        open={Boolean(removeTarget)}
-        onOpenChange={(o) => {
-          if (!o && !removingTeam) setRemoveTarget(null);
-        }}
-        title={`Remove ${removeTarget?.name || "this admin"}?`}
-        description="They will lose access to the admin right away."
-        confirmLabel="Remove admin"
-        loading={removingTeam}
-        onConfirm={confirmRemoveTeam}
-      />
 
       {leaveGuard}
     </AdminShell>

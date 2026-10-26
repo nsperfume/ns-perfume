@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminWrite, adminDenied } from "@/lib/auth";
 import { CouponModel } from "@/models/Coupon";
 import { ensureDefaultCoupons } from "@/lib/coupons";
 
@@ -102,8 +102,8 @@ const createSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const admin = await requireAdmin();
-  if (!admin) return jsonError("Unauthorized", 401);
+  const admin = await requireAdminWrite();
+  if (!admin) return adminDenied();
   try {
     await connectDB();
     const raw = await req.json();
@@ -161,8 +161,8 @@ function couponValueError(type: string, value: number): string | null {
 }
 
 export async function PUT(req: Request) {
-  const admin = await requireAdmin();
-  if (!admin) return jsonError("Unauthorized", 401);
+  const admin = await requireAdminWrite();
+  if (!admin) return adminDenied();
   try {
     await connectDB();
     const body = await req.json();
