@@ -36,6 +36,30 @@ const WHITE = "#FFFFFF";
 const NIGHT = "#0A0A0A";
 const r2 = (n) => Math.round(n * 100) / 100;
 
+/**
+ * Metallic gold: antique base, champagne highlight, a darker reflection and a
+ * second soft glint, laid diagonally across the whole mark so the crown and the
+ * letters share one sheen. Coordinates are in crowned-mark units (108.5 wide).
+ */
+const GOLD = {
+  x1: 8, y1: 0, x2: 100, y2: 106,
+  stops: [
+    [0, "#7E5E22"],
+    [0.18, "#C9A24F"],
+    [0.34, "#F2E2A8"],
+    [0.46, "#D8B865"],
+    [0.62, "#9A7632"],
+    [0.8, "#D2AE5C"],
+    [1, "#735420"],
+  ],
+};
+/** Vertical sheen for the hairline rule (bright in the middle). */
+const GOLD_RULE = [
+  [0, "#8C6B2A"],
+  [0.5, "#EBD596"],
+  [1, "#8C6B2A"],
+];
+
 /* ------------------------------------------------------------------ geometry */
 
 const K = 0.5522847498; // cubic handle length for a quarter circle
@@ -252,6 +276,11 @@ export const HORIZONTAL = ${JSON.stringify(HORIZONTAL)};
 
 /** Full NS PERFUME wordmark, top-left at 0,0 (footer signature). */
 export const WORDMARK = ${JSON.stringify(WORDMARK)};
+
+/** Metallic gold for the mark (crowned-mark units) and the vertical sheen for the rule. */
+export type GoldStop = [offset: number, color: string];
+export const GOLD: { x1: number; y1: number; x2: number; y2: number; stops: GoldStop[] } = ${JSON.stringify(GOLD)};
+export const GOLD_RULE: GoldStop[] = ${JSON.stringify(GOLD_RULE)};
 `,
 );
 
@@ -260,9 +289,16 @@ export const WORDMARK = ${JSON.stringify(WORDMARK)};
 const svgDoc = (w, h, body, title = "NS Perfume") =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${r2(w)} ${r2(h)}" width="${r2(w)}" height="${r2(h)}" role="img" aria-label="${title}"><title>${title}</title>${body}</svg>\n`;
 
-/** Crowned mark at (x, y) with scale k. */
+const stopsSvg = (stops) => stops.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("");
+/** Gradient defs used by gold marks and rules (ids are per document). */
+const goldDefs = (rule) =>
+  `<defs><linearGradient id="nsGold" gradientUnits="userSpaceOnUse" x1="${GOLD.x1}" y1="${GOLD.y1}" x2="${GOLD.x2}" y2="${GOLD.y2}">${stopsSvg(GOLD.stops)}</linearGradient>` +
+  (rule ? `<linearGradient id="nsGoldRule" gradientUnits="userSpaceOnUse" x1="0" y1="${rule.y}" x2="0" y2="${r2(rule.y + rule.height)}">${stopsSvg(GOLD_RULE)}</linearGradient>` : "") +
+  `</defs>`;
+
+/** Crowned mark at (x, y) with scale k. A brass fill becomes metallic gold. */
 const markSvg = (m, x, y, k, fill) =>
-  `<g transform="translate(${r2(x)} ${r2(y)}) scale(${r2(k * 10000) / 10000})" fill="${fill}"><path d="${m.d}"/><path transform="translate(0 ${m.monogramY})" d="${MONO.d}"/></g>`;
+  `<g transform="translate(${r2(x)} ${r2(y)}) scale(${r2(k * 10000) / 10000})" fill="${fill === BRASS ? "url(#nsGold)" : fill}"><path d="${m.d}"/><path transform="translate(0 ${m.monogramY})" d="${MONO.d}"/></g>`;
 
 const VARIANTS = {
   "": { mark: BRASS, text: INK, accent: BRASS },
@@ -276,14 +312,15 @@ function logoSvg(v) {
   return svgDoc(
     HORIZONTAL.width,
     H,
-    markSvg(CROWNED, 0, 0, markScale, v.mark) +
-      `<rect x="${r.x}" y="${r.y}" width="${r.width}" height="${r.height}" fill="${v.accent}"/>` +
+    goldDefs(r) +
+      markSvg(CROWNED, 0, 0, markScale, v.mark) +
+      `<rect x="${r.x}" y="${r.y}" width="${r.width}" height="${r.height}" fill="${v.accent === BRASS ? "url(#nsGoldRule)" : v.accent}"/>` +
       `<path d="${HORIZONTAL.wordmark}" fill="${v.text}"/>`,
   );
 }
 
 function symbolSvg(v) {
-  return svgDoc(CROWNED.width, CROWNED.height, markSvg(CROWNED, 0, 0, 1, v.mark));
+  return svgDoc(CROWNED.width, CROWNED.height, goldDefs() + markSvg(CROWNED, 0, 0, 1, v.mark));
 }
 
 const TAGLINE = subpaths(SRC.stackedTagline.d);
@@ -304,7 +341,8 @@ function stackedSvg(v) {
   return svgDoc(
     W,
     height,
-    markSvg(CROWNED, (W - MONO.width * k) / 2, 0, k, v.mark) +
+    goldDefs() +
+      markSvg(CROWNED, (W - MONO.width * k) / 2, 0, k, v.mark) +
       `<path d="${moveAbs(PERFUME_D, (W - PERFUME_W * t) / 2, textY, t)}" fill="${v.text}"/>` +
       `<rect x="${r2(W / 2 - 20)}" y="${r2(ruleY)}" width="40" height="1.2" fill="${v.accent}"/>` +
       `<path d="${moveAbs(SRC.stackedTagline.d, tagDx, tagY)}" fill="${v.text}"/>`,
@@ -340,7 +378,7 @@ function iconSvg(size, radius, markRatio) {
   const k = mh / CROWNED_BOLD.height;
   const x = (size - MONO.width * k) / 2;
   const y = (size - mh) / 2;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="NS Perfume"><title>NS Perfume</title><rect width="${size}" height="${size}" rx="${radius}" fill="${INK}"/>${markSvg(CROWNED_BOLD, x, y, k, BRASS)}</svg>\n`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="NS Perfume"><title>NS Perfume</title><rect width="${size}" height="${size}" rx="${radius}" fill="${INK}"/>${goldDefs()}${markSvg(CROWNED_BOLD, x, y, k, BRASS)}</svg>\n`;
 }
 
 writeFileSync(at("src/app/icon.svg"), iconSvg(64, 14, 0.72));
@@ -411,9 +449,10 @@ writeFileSync(at("public/brand/icon-512.png"), await png(app, 512, 512));
   const ruleY = textBottom + 26;
   const body =
     `<rect width="${W}" height="${Hh}" fill="${NIGHT}"/>` +
+    goldDefs() +
     markSvg(CROWNED, (W - MONO.width * k) / 2, markTop, k, BRASS) +
     `<path d="${moveAbs(PERFUME_D, (W - PERFUME_W * t) / 2, textY, t)}" fill="${WHITE}"/>` +
-    `<rect x="${W / 2 - 28}" y="${r2(ruleY)}" width="56" height="2" fill="${BRASS}"/>` +
+    `<rect x="${W / 2 - 28}" y="${r2(ruleY)}" width="56" height="2" fill="#C9A24F"/>` +
     spaced("TOP · HEART · BASE", 17, 4.2, ruleY + 42, WHITE) +
     spaced("NSPERFUME.PK", 15, 5, ruleY + 92, "#9A9A9A");
   writeFileSync(at("src/app/opengraph-image.png"), await png(svgDoc(W, Hh, body), W, Hh));
@@ -433,7 +472,22 @@ writeFileSync(at("public/brand/icon-512.png"), await png(app, 512, 512));
   const k = (maxX - minX) / MONO.width;
   const dy = minY - CROWNED.monogramY * k;
   if (dy < 4) throw new Error(`Crown would leave the loader canvas (top ${r2(dy)})`);
-  const color = [0.6627450980392157, 0.5294117647058824, 0.23529411764705882, 1];
+  // Same metallic gold as the logo, in composition coordinates.
+  const hex = (h) => [1, 3, 5].map((i) => r2(parseInt(h.slice(i, i + 2), 16) / 255));
+  const goldFill = (nm) => ({
+    ty: "gf",
+    nm,
+    o: { a: 0, k: 100 },
+    r: 1,
+    bm: 0,
+    t: 1,
+    s: { a: 0, k: [r2(minX + GOLD.x1 * k), r2(dy + GOLD.y1 * k)] },
+    e: { a: 0, k: [r2(minX + GOLD.x2 * k), r2(dy + GOLD.y2 * k)] },
+    g: { p: GOLD.stops.length, k: { a: 0, k: GOLD.stops.flatMap(([o, c]) => [o, ...hex(c)]) } },
+  });
+  const fillGroup = fill.shapes[0].it;
+  const fi = fillGroup.findIndex((i) => i.ty === "fl" || i.ty === "gf");
+  fillGroup[fi] = goldFill("Gold");
   const ease = { o: { x: [0.65], y: [0] }, i: { x: [0.35], y: [1] } };
   const crownLayer = {
     ddd: 0,
@@ -459,7 +513,7 @@ writeFileSync(at("public/brand/icon-512.png"), await png(app, 512, 512));
         nm: "Crown",
         it: [
           ...CROWNED.contours.map((c, i) => ({ ty: "sh", nm: `Part ${i + 1}`, ks: { a: 0, k: toLottieShape(place(c, k, minX, dy)) } })),
-          { ty: "fl", nm: "Brass", c: { a: 0, k: color }, o: { a: 0, k: 100 }, r: 1 },
+          goldFill("Gold"),
           { ty: "tr", p: { a: 0, k: [0, 0] }, a: { a: 0, k: [0, 0] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } },
         ],
       },
