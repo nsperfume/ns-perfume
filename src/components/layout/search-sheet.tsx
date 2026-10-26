@@ -26,8 +26,8 @@ const QUICK_SEARCHES: { label: string; q?: string; href?: string }[] = [
   { label: "Cedar", q: "cedar" },
   { label: "Citrus", q: "citrus" },
   { label: "Saffron", q: "saffron" },
-  { label: "For Her", href: "/collections/for-her" },
-  { label: "For Him", href: "/collections/for-him" },
+  { label: "For her", href: "/collections/for-her" },
+  { label: "For him", href: "/collections/for-him" },
 ];
 
 const quickChipClass =
@@ -382,7 +382,7 @@ export function SearchSheet() {
             >
               {hasQuery ? "See all results →" : "Full search page →"}
             </button>
-            <p className="font-mono text-xs tracking-wide text-taupe">
+            <p className="font-sans tabular-nums text-xs tracking-wide text-taupe">
               Esc
             </p>
           </div>

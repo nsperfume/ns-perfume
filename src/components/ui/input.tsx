@@ -11,8 +11,12 @@ type FieldExtras = {
 type InputProps = InputHTMLAttributes<HTMLInputElement> & FieldExtras;
 
 const fieldClass =
-  "w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 font-sans text-base text-ink outline-none transition-colors placeholder:text-[#8a8f99] hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25";
-const errorClass = "border-rosewood focus:border-rosewood focus:ring-rosewood/20";
+  "w-full rounded-xs border bg-paper px-4 py-3 font-sans text-base text-ink outline-none transition-colors placeholder:text-[#8a8f99] focus:ring-2";
+/** Border and focus colours, picked as a pair so they never fight in the stylesheet. */
+const toneClass = (error?: string) =>
+  error
+    ? "border-rosewood focus:border-rosewood focus:ring-rosewood/20"
+    : "border-[#d6cfbf] hover:border-ink/40 focus:border-brass focus:ring-brass/25";
 
 function FieldLabel({ label, required }: { label: string; required?: boolean }) {
   return (
@@ -59,7 +63,7 @@ export function Input({ label, error, hint, className, id, ...props }: InputProp
         id={inputId}
         aria-invalid={error ? true : undefined}
         aria-describedby={messageId}
-        className={cn("min-h-12", fieldClass, error && errorClass, className)}
+        className={cn("min-h-12", fieldClass, toneClass(error), className)}
         {...props}
       />
       <FieldMessage id={messageId} error={error} hint={hint} />
@@ -90,7 +94,7 @@ export function Textarea({
         id={inputId}
         aria-invalid={error ? true : undefined}
         aria-describedby={messageId}
-        className={cn("min-h-[7.5rem] resize-y leading-relaxed", fieldClass, error && errorClass, className)}
+        className={cn("min-h-[7.5rem] resize-y leading-relaxed", fieldClass, toneClass(error), className)}
         {...props}
       />
       <FieldMessage id={messageId} error={error} hint={hint} />

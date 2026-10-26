@@ -11,8 +11,8 @@ const PAGE_SIZE = 12;
 
 const GENDER_OPTIONS = [
   { value: "all", label: "All" },
-  { value: "her", label: "For Her" },
-  { value: "him", label: "For Him" },
+  { value: "her", label: "For her" },
+  { value: "him", label: "For him" },
   { value: "unisex", label: "Unisex" },
 ] as const;
 
@@ -25,8 +25,8 @@ const CONCENTRATION_OPTIONS = [
 
 const BADGE_OPTIONS = [
   { value: "bestseller", label: "Bestsellers" },
-  { value: "new", label: "New Arrivals" },
-  { value: "limited", label: "Limited Edition" },
+  { value: "new", label: "New arrivals" },
+  { value: "limited", label: "Limited edition" },
   { value: "sale", label: "Sale" },
 ] as const;
 
@@ -262,12 +262,12 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
             onClick={resetFilters}
             className="inline-flex min-h-8 cursor-pointer items-center text-label text-ink/70 underline underline-offset-4 hover:text-ink"
           >
-            Clear All
+            Clear all
           </button>
         ) : null}
       </div>
 
-      <FilterGroup title="Shop By Gender">
+      <FilterGroup title="Shop by gender">
         {GENDER_OPTIONS.map((opt) => (
           <FilterOption
             key={opt.value}
@@ -284,11 +284,11 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
         ))}
       </FilterGroup>
 
-      <FilterGroup title="Scent Family">
+      <FilterGroup title="Scent family">
         <FilterOption
           name="family"
           value="all"
-          label="All Families"
+          label="All families"
           checked={family === "all"}
           count={counts.family.all}
           onChange={() => {
@@ -359,7 +359,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
         >
           Filters
           {activeCount > 0 ? (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1.5 font-mono text-xs text-paper">
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1.5 font-sans tabular-nums text-xs text-paper">
               {activeCount}
             </span>
           ) : null}
@@ -407,7 +407,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
               aria-label="Sort products"
               prefix={
                 <span className="shrink-0 text-eyebrow text-taupe">
-                  Sort By
+                  Sort by
                 </span>
               }
               options={SORT_OPTIONS.map((o) => ({
@@ -451,7 +451,7 @@ export function ProductsCatalog({ products }: { products: StoreProduct[] }) {
               >
                 Previous
               </button>
-              <span className="font-mono text-sm text-taupe">
+              <span className="font-sans tabular-nums text-sm text-taupe">
                 {safePage} / {totalPages}
               </span>
               <button

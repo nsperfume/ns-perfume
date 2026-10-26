@@ -47,7 +47,7 @@ export function AppErrorPanel({
             : "A temporary fault stopped this screen. You can retry, or keep shopping from the catalog."}
         </p>
         {error.digest ? (
-          <p className="mt-4 font-mono text-xs tracking-wide text-taupe/80">
+          <p className="mt-4 font-sans tabular-nums text-xs tracking-wide text-taupe/80">
             Ref {error.digest}
           </p>
         ) : null}

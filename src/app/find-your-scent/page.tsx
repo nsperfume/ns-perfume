@@ -5,7 +5,7 @@ import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
 
 export const metadata: Metadata = {
-  title: "Find Your Scent",
+  title: "Find your scent",
   description: pageCopy.findYourScent.metaDescription,
   alternates: { canonical: "/find-your-scent" },
 };

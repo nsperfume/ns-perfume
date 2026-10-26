@@ -350,7 +350,7 @@ function NumberInput({
         aria-invalid={invalid || undefined}
         className={cn(
           adminFieldClass,
-          "font-mono tabular-nums placeholder:font-sans",
+          "tabular-nums placeholder:font-sans",
           prefix && "pl-10",
           suffix && "pr-11",
         )}
@@ -489,7 +489,7 @@ function ScaleField({
             aria-label={`${label} ${n} of 5`}
             onClick={() => onChange(n)}
             className={cn(
-              "h-9 cursor-pointer rounded font-mono text-sm font-semibold tabular-nums transition-colors",
+              "h-9 cursor-pointer rounded font-sans tabular-nums text-sm font-semibold transition-colors",
               value === n
                 ? "bg-admin-ink text-admin-paper"
                 : "text-admin-muted hover:bg-admin-soft hover:text-admin-ink",

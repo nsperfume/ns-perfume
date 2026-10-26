@@ -119,24 +119,25 @@ export default async function ProductPage({ params }: Props) {
         : undefined,
   };
 
+  // One trail for the visible breadcrumb and the BreadcrumbList markup.
+  const familyLabel = product.family
+    ? product.family.charAt(0).toUpperCase() + product.family.slice(1)
+    : "";
+  const trail: { label: string; href?: string }[] = [
+    { label: "Home", href: "/" },
+    { label: "Shop all", href: "/products" },
+    ...(familyLabel ? [{ label: familyLabel, href: `/collections/${product.family}` }] : []),
+    { label: product.name },
+  ];
   const breadcrumbLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: siteConfig.url },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Products",
-        item: absoluteUrl("/products"),
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: product.name,
-        item: productUrl,
-      },
-    ],
+    itemListElement: trail.map((t, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: t.label,
+      item: t.href ? absoluteUrl(t.href) : productUrl,
+    })),
   };
 
   return (
@@ -146,17 +147,7 @@ export default async function ProductPage({ params }: Props) {
       {/* Gallery + buy box (sticky on desktop while the gallery scrolls) */}
       <section className="border-b border-hairline bg-canvas">
         <div className="container-ns pb-12 pt-6 md:pb-16 md:pt-8">
-          <StoreBreadcrumb
-            items={[
-              { label: "Home", href: "/" },
-              { label: "Shop", href: "/products" },
-              {
-                label: product.family,
-                href: `/collections/${product.family}`,
-              },
-              { label: product.name },
-            ]}
-          />
+          <StoreBreadcrumb items={trail} />
 
           <div className="mt-2 grid items-start gap-8 md:gap-12 lg:mt-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:gap-14 xl:gap-20">
             <ProductGallery images={product.gallery} name={product.name} />
@@ -201,7 +192,7 @@ export default async function ProductPage({ params }: Props) {
                 </div>
                 <div>
                   <dt className="text-eyebrow text-taupe">Sizes</dt>
-                  <dd className="mt-1 flex flex-wrap gap-x-2 font-mono text-sm text-ink">
+                  <dd className="mt-1 flex flex-wrap gap-x-2 font-sans tabular-nums text-sm text-ink">
                     {product.prices.map((p, i) => (
                       <span key={p.ml} className="whitespace-nowrap">
                         {i > 0 ? "· " : ""}

@@ -33,77 +33,77 @@ export const siteConfig = {
 } as const;
 
 export const navLinks = [
-  { label: "Our Story", href: "/about" },
+  { label: "Our story", href: "/about" },
   { label: "Journal", href: "/journal" },
-  { label: "Find Your Scent", href: "/find-your-scent" },
+  { label: "Find your scent", href: "/find-your-scent" },
   { label: "Contact", href: "/contact" },
 ] as const;
 
 export const shopMegaMenu = {
   gender: [
-    { label: "For Her", href: "/collections/for-her" },
-    { label: "For Him", href: "/collections/for-him" },
+    { label: "For her", href: "/collections/for-her" },
+    { label: "For him", href: "/collections/for-him" },
     { label: "Unisex", href: "/collections/unisex" },
   ],
   family: [
     { label: "Floral", href: "/collections/floral" },
     { label: "Woody", href: "/collections/woody" },
-    { label: "Oriental & Amber", href: "/collections/oriental" },
-    { label: "Fresh & Citrus", href: "/collections/fresh" },
+    { label: "Oriental and amber", href: "/collections/oriental" },
+    { label: "Fresh and citrus", href: "/collections/fresh" },
     { label: "Gourmand", href: "/collections/gourmand" },
   ],
   type: [
     { label: "Eau de Parfum", href: "/collections/eau-de-parfum" },
     { label: "Eau de Toilette", href: "/collections/eau-de-toilette" },
-    { label: "Discovery & Travel Size", href: "/collections/discovery" },
-    { label: "Gift Sets", href: "/collections/gift-sets" },
+    { label: "Discovery and travel size", href: "/collections/discovery" },
+    { label: "Gift sets", href: "/collections/gift-sets" },
   ],
   featured: [
-    { label: "New Arrivals", href: "/collections/new-arrivals" },
+    { label: "New arrivals", href: "/collections/new-arrivals" },
     { label: "Bestsellers", href: "/collections/bestsellers" },
-    { label: "Limited Edition", href: "/collections/limited-edition" },
+    { label: "Limited edition", href: "/collections/limited-edition" },
   ],
 } as const;
 
 /** Footer link map. Account, wishlist, search and cart live in the header and mobile menu. */
 export const footerColumns = {
   shop: [
-    { label: "Shop All", href: "/products" },
-    { label: "All Collections", href: "/collections" },
+    { label: "Shop all", href: "/products" },
+    { label: "All collections", href: "/collections" },
     { label: "Bestsellers", href: "/collections/bestsellers" },
-    { label: "New Arrivals", href: "/collections/new-arrivals" },
-    { label: "Limited Edition", href: "/collections/limited-edition" },
-    { label: "Gift Sets", href: "/collections/gift-sets" },
-    { label: "Gift Cards", href: "/gift-cards" },
+    { label: "New arrivals", href: "/collections/new-arrivals" },
+    { label: "Limited edition", href: "/collections/limited-edition" },
+    { label: "Gift sets", href: "/collections/gift-sets" },
+    { label: "Gift cards", href: "/gift-cards" },
   ],
   collections: [
-    { label: "For Her", href: "/collections/for-her" },
-    { label: "For Him", href: "/collections/for-him" },
+    { label: "For her", href: "/collections/for-her" },
+    { label: "For him", href: "/collections/for-him" },
     { label: "Unisex", href: "/collections/unisex" },
     { label: "Floral", href: "/collections/floral" },
     { label: "Woody", href: "/collections/woody" },
-    { label: "Oriental & Amber", href: "/collections/oriental" },
-    { label: "Fresh & Citrus", href: "/collections/fresh" },
+    { label: "Oriental and amber", href: "/collections/oriental" },
+    { label: "Fresh and citrus", href: "/collections/fresh" },
     { label: "Gourmand", href: "/collections/gourmand" },
   ],
   care: [
     { label: "FAQ", href: "/faq" },
-    { label: "Shipping & Returns", href: "/shipping-returns" },
-    { label: "Track My Order", href: "/track-order" },
-    { label: "Contact Us", href: "/contact" },
-    { label: "Concentration Guide", href: "/faq#concentration" },
+    { label: "Shipping and returns", href: "/shipping-returns" },
+    { label: "Track your order", href: "/track-order" },
+    { label: "Contact us", href: "/contact" },
+    { label: "Concentration guide", href: "/faq#concentration" },
   ],
   company: [
-    { label: "Our Story", href: "/about" },
-    { label: "Ingredients & Sourcing", href: "/about#sourcing" },
+    { label: "Our story", href: "/about" },
+    { label: "Ingredients and sourcing", href: "/about#sourcing" },
     { label: "Journal", href: "/journal" },
-    { label: "Find Your Scent", href: "/find-your-scent" },
+    { label: "Find your scent", href: "/find-your-scent" },
   ],
   legal: [
-    { label: "Privacy Policy", href: "/policies/privacy" },
-    { label: "Terms of Service", href: "/policies/terms" },
-    { label: "Refund Policy", href: "/policies/refund" },
-    { label: "Shipping Policy", href: "/policies/shipping" },
+    { label: "Privacy policy", href: "/policies/privacy" },
+    { label: "Terms of service", href: "/policies/terms" },
+    { label: "Refund policy", href: "/policies/refund" },
+    { label: "Shipping policy", href: "/policies/shipping" },
   ],
 } as const;
 
@@ -178,7 +178,7 @@ export const policies: Record<
   { title: string; sections: { heading: string; body: string }[] }
 > = {
   privacy: {
-    title: "Privacy Policy",
+    title: "Privacy policy",
     sections: [
       {
         heading: "Information we collect",
@@ -195,7 +195,7 @@ export const policies: Record<
     ],
   },
   terms: {
-    title: "Terms of Service",
+    title: "Terms of service",
     sections: [
       {
         heading: "Use of the site",
@@ -212,7 +212,7 @@ export const policies: Record<
     ],
   },
   refund: {
-    title: "Refund Policy",
+    title: "Refund policy",
     sections: [
       {
         heading: "Eligibility",
@@ -229,7 +229,7 @@ export const policies: Record<
     ],
   },
   shipping: {
-    title: "Shipping Policy",
+    title: "Shipping policy",
     sections: [
       {
         heading: "Processing",

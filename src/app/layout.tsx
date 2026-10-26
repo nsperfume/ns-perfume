@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, IBM_Plex_Mono, Manrope } from "next/font/google";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { SiteShell } from "@/components/layout/site-shell";
 import { CheckoutConfigProvider } from "@/context/checkout-config";
 import { getSiteSettings } from "@/lib/site-settings";
@@ -23,12 +23,6 @@ const manrope = Manrope({
 });
 
 /* Numerals: prices, ml sizes, SKUs, order numbers */
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-ibm-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -61,7 +55,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${cormorant.variable} ${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${manrope.variable} h-full antialiased`}
     >
       <body
         className="flex min-h-full flex-col bg-canvas text-ink"

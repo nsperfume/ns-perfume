@@ -47,29 +47,33 @@ export function StoreBreadcrumb({
   items: { label: string; href?: string }[];
 }) {
   return (
-    <nav
-      aria-label="Breadcrumb"
-      className="mb-6 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-eyebrow text-taupe"
-    >
-      {items.map((item, i) => (
-        <span key={`${item.label}-${i}`} className="inline-flex items-center gap-2">
-          {i > 0 ? (
-            <span className="text-taupe/50" aria-hidden>
-              /
-            </span>
-          ) : null}
-          {item.href ? (
-            <Link
-              href={item.href}
-              className="inline-flex min-h-8 cursor-pointer items-center transition-colors hover:text-ink"
-            >
-              {item.label}
-            </Link>
-          ) : (
-            <span className="text-ink">{item.label}</span>
-          )}
-        </span>
-      ))}
+    <nav aria-label="Breadcrumb" className="mb-6">
+      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-taupe">
+        {items.map((item, i) => {
+          const last = i === items.length - 1;
+          return (
+            <li key={`${item.label}-${i}`} className="inline-flex items-center gap-2">
+              {i > 0 ? (
+                <span className="text-taupe/50" aria-hidden="true">
+                  /
+                </span>
+              ) : null}
+              {item.href && !last ? (
+                <Link
+                  href={item.href}
+                  className="inline-flex min-h-8 cursor-pointer items-center transition-colors hover:text-ink"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <span className="text-ink" aria-current={last ? "page" : undefined}>
+                  {item.label}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </nav>
   );
 }

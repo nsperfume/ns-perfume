@@ -207,7 +207,7 @@ export default function AdminCustomersPage() {
                         {r.email}
                       </p>
                     </div>
-                    <p className="shrink-0 font-mono text-[0.9375rem] font-medium tabular-nums text-admin-ink">
+                    <p className="shrink-0 font-sans tabular-nums text-[0.9375rem] font-medium text-admin-ink">
                       {formatPkr(r.lifetimeSpendPkr)}
                     </p>
                   </div>

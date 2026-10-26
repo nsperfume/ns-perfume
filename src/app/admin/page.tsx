@@ -118,7 +118,7 @@ function RevenueChart({ series }: { series: Dash["revenueSeries"] }) {
           {TICKS.map((t) => (
             <span
               key={t}
-              className="absolute right-0 -translate-y-1/2 font-mono text-xs tabular-nums text-admin-muted"
+              className="absolute right-0 -translate-y-1/2 font-sans tabular-nums text-xs text-admin-muted"
               style={{ top: `${(1 - t) * 100}%` }}
             >
               {t === 0 ? "0" : compactPkr(top * t)}
@@ -152,7 +152,7 @@ function RevenueChart({ series }: { series: Dash["revenueSeries"] }) {
                     >
                       <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-admin-ink px-2.5 py-1.5 text-xs font-medium text-admin-paper shadow-modal group-hover:block">
                         {d.date}
-                        <span className="ml-2 font-mono tabular-nums">
+                        <span className="ml-2 font-sans tabular-nums ">
                           {formatPkr(d.revenue)}
                         </span>
                         <span className="ml-2 opacity-70">
@@ -174,7 +174,7 @@ function RevenueChart({ series }: { series: Dash["revenueSeries"] }) {
               <li
                 key={d.date}
                 className={cn(
-                  "min-w-0 flex-1 text-center font-mono text-xs tabular-nums text-admin-muted",
+                  "min-w-0 flex-1 text-center font-sans tabular-nums text-xs text-admin-muted",
                   i % 2 === 1 && "max-2xl:invisible",
                 )}
               >
@@ -205,7 +205,7 @@ function StatusBars({ data }: { data: Record<string, number> }) {
         <li key={status}>
           <div className="mb-2 flex items-center justify-between gap-3">
             <AdminStatusBadge status={status} />
-            <span className="font-mono text-sm tabular-nums text-admin-ink">
+            <span className="font-sans tabular-nums text-sm text-admin-ink">
               {count}
               <span className="ml-2 text-admin-muted">
                 {Math.round((count / Math.max(1, total)) * 100)}%
@@ -364,7 +364,7 @@ export default function AdminHomePage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-admin-muted">
                   {k.label}
                 </p>
-                <p className="mt-2.5 break-words text-[1.75rem] font-semibold leading-tight tracking-[-0.015em] tabular-nums text-admin-ink 2xl:text-[2rem]">
+                <p className="mt-2.5 break-words text-[1.75rem] font-semibold leading-tight tracking-[-0.015em] font-sans tabular-nums text-admin-ink 2xl:text-[2rem]">
                   {k.value}
                 </p>
                 <p className="mt-1.5 text-sm text-admin-muted">{k.meta}</p>
@@ -384,7 +384,7 @@ export default function AdminHomePage() {
               <AdminCard
                 title="Sales, last 14 days"
                 action={
-                  <span className="font-mono text-sm font-medium tabular-nums text-admin-ink">
+                  <span className="font-sans tabular-nums text-sm font-medium text-admin-ink">
                     {formatPkr(data.revenuePkr || 0)}
                   </span>
                 }
@@ -402,7 +402,7 @@ export default function AdminHomePage() {
                           href={a.href}
                           className="flex min-h-14 items-center gap-3 px-5 py-3 transition-colors hover:bg-admin-soft-2 sm:px-6"
                         >
-                          <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-(--admin-tone-amber-bg) px-2 font-mono text-sm font-medium tabular-nums text-(--admin-tone-amber-text)">
+                          <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-(--admin-tone-amber-bg) px-2 font-sans tabular-nums text-sm font-medium text-(--admin-tone-amber-text)">
                             {a.count}
                           </span>
                           <span className="flex-1 text-[0.9375rem] font-medium text-admin-ink">
@@ -448,7 +448,7 @@ export default function AdminHomePage() {
                       className="group flex min-h-16 items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-admin-soft-2 sm:px-6"
                     >
                       <div className="min-w-0">
-                        <p className="font-mono text-[0.9375rem] font-medium text-admin-ink">
+                        <p className="font-sans tabular-nums text-[0.9375rem] font-medium text-admin-ink">
                           {formatOrderNumber(o.orderNumber)}
                         </p>
                         <p className="mt-0.5 truncate text-[0.8125rem] text-admin-muted">
@@ -463,7 +463,7 @@ export default function AdminHomePage() {
                       </div>
                       <div className="flex shrink-0 items-center gap-4">
                         {showRevenue && typeof o.totalPkr === "number" ? (
-                          <span className="hidden font-mono text-sm font-medium tabular-nums text-admin-ink sm:inline">
+                          <span className="hidden font-sans tabular-nums text-sm font-medium text-admin-ink sm:inline">
                             {formatPkr(o.totalPkr)}
                           </span>
                         ) : null}
@@ -524,7 +524,7 @@ export default function AdminHomePage() {
                       </div>
                       <div className="flex shrink-0 items-center gap-4">
                         {showRevenue && typeof p.price === "number" ? (
-                          <span className="hidden font-mono text-sm font-medium tabular-nums text-admin-ink sm:inline">
+                          <span className="hidden font-sans tabular-nums text-sm font-medium text-admin-ink sm:inline">
                             {formatPkr(p.price)}
                           </span>
                         ) : null}

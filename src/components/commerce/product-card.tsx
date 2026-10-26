@@ -93,7 +93,7 @@ export function ProductCard({
         ) : null}
         <div className="mt-auto flex flex-col gap-1 pt-3 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-3">
           <Price amountPkr={price} className="text-ink" />
-          <span className="font-mono text-xs text-taupe">
+          <span className="font-sans tabular-nums text-xs text-taupe">
             {product.concentration}
             {product.prices[0]?.ml ? ` · ${product.prices[0].ml} ml` : ""}
           </span>

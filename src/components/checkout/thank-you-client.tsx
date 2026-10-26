@@ -89,7 +89,7 @@ export function ThankYouClient() {
             <div>
               <p className="text-sm text-taupe">
                 Order{" "}
-                <span className="font-mono font-medium text-ink">
+                <span className="font-sans tabular-nums font-medium text-ink">
                   {order.orderNumber}
                 </span>
               </p>
@@ -166,7 +166,7 @@ export function ThankYouClient() {
                   className="font-medium text-ink"
                 />{" "}
                 by bank, JazzCash, or Easypaisa. Use order number{" "}
-                <span className="font-mono font-medium text-ink">
+                <span className="font-sans tabular-nums font-medium text-ink">
                   {order.orderNumber}
                 </span>{" "}
                 as the reference.
@@ -280,7 +280,7 @@ export function ThankYouClient() {
                       </p>
                     ) : null}
                   </div>
-                  <p className="shrink-0 font-mono text-base font-medium tabular-nums text-ink">
+                  <p className="shrink-0 font-sans tabular-nums text-base font-medium text-ink">
                     {format(line.unitPricePkr * line.quantity)}
                   </p>
                 </li>
@@ -327,7 +327,7 @@ export function ThankYouClient() {
               <PayableAmount
                 amountPkr={order.totalPkr}
                 variant="stacked"
-                className="items-end text-right font-mono text-2xl font-medium tracking-tight text-ink"
+                className="items-end text-right font-sans tabular-nums text-2xl font-medium tracking-tight text-ink"
               />
             </div>
           </div>

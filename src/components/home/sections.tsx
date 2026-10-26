@@ -16,13 +16,13 @@ export type { TestimonialItem };
 
 const collectionTiles = [
   {
-    title: "For Her",
+    title: "For her",
     href: "/collections/for-her",
     image: siteImages.shopByCollection.forHer,
     alt: "Glass perfume bottle with rose-gold liquid on linen with a pale rose",
   },
   {
-    title: "For Him",
+    title: "For him",
     href: "/collections/for-him",
     image: siteImages.shopByCollection.forHim,
     alt: "Dark amber perfume bottle on stone with cedar and leather tones",
@@ -34,7 +34,7 @@ const collectionTiles = [
     alt: "Clear perfume bottle balanced with citrus leaf and warm resin",
   },
   {
-    title: "Gift Sets",
+    title: "Gift sets",
     href: "/collections/gift-sets",
     image: siteImages.shopByCollection.giftSets,
     alt: "Gift tray of mini perfume vials on ivory tissue with a brass ribbon",
@@ -142,7 +142,7 @@ export function HomeHero() {
               variant="secondary"
               className="w-full border-paper/70 bg-transparent text-paper hover:border-brass focus-visible:ring-offset-ink sm:w-auto"
             >
-              Shop All
+              Shop all
             </Button>
           </div>
         </div>
@@ -195,7 +195,7 @@ export function HomeTrustSection() {
         <ul className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-14">
           {trustPromises.map((item, index) => (
             <li key={item.title} className="border-t border-[#e2d6bd] pt-6">
-              <p className="font-mono text-sm text-brass-ink">
+              <p className="font-sans tabular-nums text-sm text-brass-ink">
                 {String(index + 1).padStart(2, "0")}
               </p>
               <h3 className="mt-3 text-heading-sm text-ink">

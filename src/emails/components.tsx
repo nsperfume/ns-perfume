@@ -40,7 +40,6 @@ export const colors = {
 
 const sans = "Manrope, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif";
 const serif = "'Cormorant Garamond', Georgia, 'Times New Roman', serif";
-const mono = "'SFMono-Regular', Menlo, Consolas, 'Courier New', monospace";
 
 export function formatPkr(amount: number) {
   return `Rs ${Math.round(Number(amount) || 0).toLocaleString("en-US")}`;
@@ -278,7 +277,7 @@ export function ReferenceBadge({ label, value }: { label: string; value: string 
             <td style={{ padding: "12px 18px", backgroundColor: colors.soft, border: `1px solid ${colors.line}`, borderRadius: 2 }}>
               <span style={{ fontSize: 11, letterSpacing: "1.5px", textTransform: "uppercase", color: colors.muted }}>{label}</span>
               <br />
-              <span style={{ fontFamily: mono, fontSize: 18, lineHeight: "26px", fontWeight: 700, letterSpacing: "1px", color: colors.ink }}>
+              <span style={{ fontFamily: sans, fontSize: 18, lineHeight: "26px", fontWeight: 700, letterSpacing: "1px", color: colors.ink }}>
                 {value}
               </span>
             </td>

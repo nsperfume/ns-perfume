@@ -123,7 +123,7 @@ export function ReviewsBrowser({
                   <span className="h-1.5 overflow-hidden rounded-full bg-hairline">
                     <span className="block h-full rounded-full bg-brass" style={{ width: `${pct}%` }} />
                   </span>
-                  <span className="text-right tabular-nums text-taupe">{n}</span>
+                  <span className="text-right font-sans tabular-nums text-taupe">{n}</span>
                 </button>
               </li>
             );

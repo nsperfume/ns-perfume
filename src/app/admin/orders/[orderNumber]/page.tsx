@@ -132,7 +132,7 @@ function Row({
       className={`flex justify-between gap-4 ${strong ? "border-t border-admin-line pt-3 text-base font-semibold text-admin-ink" : ""}`}
     >
       <span className={strong ? "" : "text-admin-muted"}>{label}</span>
-      <span className="text-right font-mono tabular-nums">{children}</span>
+      <span className="text-right font-sans tabular-nums ">{children}</span>
     </div>
   );
 }
@@ -383,7 +383,7 @@ export default function AdminOrderDetailPage() {
                         ) : null}
                       </div>
                       {l.sku ? (
-                        <p className="mt-1 font-mono text-[0.8125rem] text-admin-muted">
+                        <p className="mt-1 font-sans tabular-nums text-[0.8125rem] text-admin-muted">
                           {l.sku}
                         </p>
                       ) : null}
@@ -399,10 +399,10 @@ export default function AdminOrderDetailPage() {
                       ) : null}
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="font-mono text-[0.9375rem] font-medium tabular-nums text-admin-ink">
+                      <p className="font-sans tabular-nums text-[0.9375rem] font-medium text-admin-ink">
                         {formatPkr((l.unitPricePkr || 0) * (l.quantity || 1))}
                       </p>
-                      <p className="mt-1 font-mono text-[0.8125rem] tabular-nums text-admin-muted">
+                      <p className="mt-1 font-sans tabular-nums text-[0.8125rem] text-admin-muted">
                         {l.quantity || 1} × {formatPkr(l.unitPricePkr || 0)}
                       </p>
                     </div>
@@ -441,7 +441,7 @@ export default function AdminOrderDetailPage() {
                 {(order.taxIncludedPkr || 0) > 0 ? (
                   <p className="text-right text-[0.8125rem] text-admin-muted">
                     Includes {order.taxLabel || "tax"} of{" "}
-                    <span className="font-mono tabular-nums">
+                    <span className="font-sans tabular-nums ">
                       {formatPkr(order.taxIncludedPkr || 0)}
                     </span>
                   </p>
@@ -468,7 +468,7 @@ export default function AdminOrderDetailPage() {
                   {order.email}
                 </p>
                 {order.phone ? (
-                  <p className="mt-1 font-mono text-[0.875rem] tabular-nums text-admin-ink">
+                  <p className="mt-1 font-sans tabular-nums text-[0.875rem] text-admin-ink">
                     {order.phone}
                   </p>
                 ) : null}
@@ -568,7 +568,7 @@ export default function AdminOrderDetailPage() {
                     </AdminFieldLabel>
                     <input
                       {...fieldProps("trackingNumber")}
-                      className={`${adminFieldClass} font-mono`}
+                      className={`${adminFieldClass} font-sans tabular-nums`}
                       maxLength={120}
                     />
                     <AdminFieldError message={v.errors.trackingNumber} />
@@ -605,14 +605,14 @@ export default function AdminOrderDetailPage() {
                 {clean(paymentLabel(order.paymentMethod)) || "Payment"}
               </p>
               {order.paymentMethod === "card" && order.cardLast4 ? (
-                <p className="mt-1 font-mono text-[0.875rem] text-admin-muted">
+                <p className="mt-1 font-sans tabular-nums text-[0.875rem] text-admin-muted">
                   •••• {order.cardLast4}
                 </p>
               ) : null}
               {order.paymentMethod === "cod" ? (
                 <p className="mt-1.5 text-[0.9375rem] text-admin-muted">
                   Collect{" "}
-                  <span className="font-mono font-medium text-admin-ink">
+                  <span className="font-sans tabular-nums font-medium text-admin-ink">
                     {formatPkr(order.totalPkr)}
                   </span>{" "}
                   on delivery
@@ -626,14 +626,14 @@ export default function AdminOrderDetailPage() {
                   <p className="text-admin-muted">
                     {siteConfig.bankTransfer.accountTitle}
                   </p>
-                  <p className="font-mono text-[0.875rem] tabular-nums text-admin-ink">
+                  <p className="font-sans tabular-nums text-[0.875rem] text-admin-ink">
                     {siteConfig.bankTransfer.accountNumber}
                   </p>
-                  <p className="break-all font-mono text-[0.8125rem] tabular-nums text-admin-muted">
+                  <p className="break-all font-sans tabular-nums text-[0.8125rem] text-admin-muted">
                     {siteConfig.bankTransfer.iban}
                   </p>
                   <p className="pt-1 text-admin-muted">
-                    Reference: <span className="font-mono">{ref}</span>
+                    Reference: <span className="font-sans tabular-nums">{ref}</span>
                   </p>
                   {order.status === "pending" ? (
                     <p className="pt-1 font-semibold text-admin-accent">

@@ -271,7 +271,7 @@ export function AdminImageField({
               <div className="absolute inset-x-3 bottom-3 rounded-md bg-admin-paper/95 px-3 py-2 shadow-admin">
                 <div className="flex items-center justify-between text-[0.8125rem] font-semibold text-admin-ink">
                   <span>Uploading</span>
-                  <span className="font-mono tabular-nums">{progress}%</span>
+                  <span className="font-sans tabular-nums ">{progress}%</span>
                 </div>
                 <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-admin-soft">
                   <div
@@ -335,7 +335,7 @@ export function AdminImageField({
             <span className="w-full max-w-[14rem]">
               <span className="flex items-center justify-between text-[0.8125rem] font-semibold text-admin-ink">
                 <span>Uploading</span>
-                <span className="font-mono tabular-nums">{progress}%</span>
+                <span className="font-sans tabular-nums ">{progress}%</span>
               </span>
               <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-admin-soft">
                 <span

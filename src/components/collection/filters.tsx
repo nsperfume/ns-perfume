@@ -17,8 +17,8 @@ const CONCENTRATION_OPTIONS = [
 
 const GENDER_OPTIONS = [
   { value: "all", label: "All" },
-  { value: "her", label: "For Her" },
-  { value: "him", label: "For Him" },
+  { value: "her", label: "For her" },
+  { value: "him", label: "For him" },
   { value: "unisex", label: "Unisex" },
 ] as const;
 
@@ -149,7 +149,7 @@ export function CollectionFilters({
           >
             Previous
           </button>
-          <span className="font-mono text-sm text-taupe">
+          <span className="font-sans tabular-nums text-sm text-taupe">
             {safePage} / {totalPages}
           </span>
           <button

@@ -7,7 +7,7 @@ import { siteImages } from "@/data/images";
 import { siteConfig } from "@/data/site";
 
 export const metadata: Metadata = {
-  title: "Gift Cards",
+  title: "Gift cards",
   description:
     "Digital NS Perfume gift cards are coming soon. Until then, give the Discovery Set or a gift set, or ask care to help you choose.",
   alternates: { canonical: "/gift-cards" },
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 /**
  * Informational until gift card codes can be issued and redeemed at checkout.
- * Nothing on this page adds to the bag.
+ * Nothing on this page adds to the cart.
  */
 export default function GiftCardsPage() {
   return (

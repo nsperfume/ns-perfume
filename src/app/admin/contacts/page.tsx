@@ -217,8 +217,8 @@ function ContactsInbox() {
 
       <div
         className={cn(
-          "mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between",
-          !loading && !scoped.length && "hidden",
+          "mb-5 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between",
+          !loading && !scoped.length ? "hidden" : "flex",
         )}
       >
         <AdminFilterChips

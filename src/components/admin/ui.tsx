@@ -325,7 +325,7 @@ export function AdminTd({
       className={cn(
         "border-b border-admin-line px-4 py-3.5 align-middle text-admin-ink first:pl-5 last:pr-5 [tr:last-child>&]:border-b-0",
         numeric &&
-          "whitespace-nowrap text-right font-mono text-[0.875rem] tabular-nums",
+          "whitespace-nowrap text-right font-sans tabular-nums text-[0.875rem] ",
         className,
       )}
     >
@@ -552,7 +552,7 @@ export function AdminFilterChips({
             {typeof o.count === "number" ? (
               <span
                 className={cn(
-                  "font-mono text-xs tabular-nums",
+                  "font-sans tabular-nums text-xs ",
                   on ? "text-admin-paper/70" : "text-admin-faint",
                 )}
               >

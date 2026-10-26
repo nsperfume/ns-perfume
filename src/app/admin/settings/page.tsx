@@ -540,7 +540,7 @@ export default function AdminSettingsPage() {
                     </AdminFieldLabel>
                     <span
                       className={cn(
-                        "mb-2 font-mono text-xs tabular-nums",
+                        "mb-2 font-sans tabular-nums text-xs ",
                         announcement.topbarText.length > 220
                           ? "text-admin-danger"
                           : "text-admin-muted",
@@ -685,7 +685,7 @@ export default function AdminSettingsPage() {
                             <dt className="text-xs font-semibold text-admin-muted">
                               1 {c}
                             </dt>
-                            <dd className="mt-0.5 font-mono text-sm tabular-nums text-admin-ink">
+                            <dd className="mt-0.5 font-sans tabular-nums text-sm text-admin-ink">
                               {pkrPerUnit
                                 ? `Rs ${pkrPerUnit.toLocaleString("en-PK", {
                                     maximumFractionDigits: 0,

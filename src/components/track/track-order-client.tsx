@@ -282,7 +282,7 @@ function OrderStatusView({
         </div>
 
         <p className="text-sm text-taupe">
-          Order <span className="font-mono text-ink">#{order.orderNumber}</span>
+          Order <span className="font-sans tabular-nums text-ink">#{order.orderNumber}</span>
         </p>
         <h2 className="mt-2 text-display-md text-ink">
           {order.headline}
@@ -343,7 +343,7 @@ function OrderStatusView({
               {order.trackingNumber ? (
                 <div>
                   <dt className="text-taupe">Tracking number</dt>
-                  <dd className="font-mono font-medium text-ink">
+                  <dd className="font-sans tabular-nums font-medium text-ink">
                     {order.trackingNumber}
                   </dd>
                 </div>
@@ -490,7 +490,7 @@ function OrderStatusView({
                     {line.isGift ? " · Gift" : ""}
                   </p>
                 </div>
-                <p className="shrink-0 font-mono text-base font-medium tabular-nums text-ink">
+                <p className="shrink-0 font-sans tabular-nums text-base font-medium text-ink">
                   {format(line.unitPricePkr * line.quantity)}
                 </p>
               </li>
@@ -542,7 +542,7 @@ function OrderStatusView({
             <PayableAmount
               amountPkr={order.totalPkr}
               variant="stacked"
-              className="items-end text-right font-mono text-2xl font-medium tracking-tight text-ink"
+              className="items-end text-right font-sans tabular-nums text-2xl font-medium tracking-tight text-ink"
             />
           </div>
         </div>

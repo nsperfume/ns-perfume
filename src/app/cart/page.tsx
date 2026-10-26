@@ -44,7 +44,7 @@ export default function CartPage() {
         title={pageCopy.cart.title}
         description={pageCopy.cart.description}
         image={siteImages.cart}
-        alt="NS Perfume bottles styled for reviewing your bag"
+        alt="NS Perfume bottles styled for reviewing your cart"
         objectPosition="center 48%"
       />
 
@@ -53,7 +53,7 @@ export default function CartPage() {
           {lines.length === 0 ? (
             <div className="mx-auto flex max-w-lg flex-col items-start gap-6">
               <p className="text-eyebrow text-taupe">
-                Empty bag
+                Your cart is empty
               </p>
               <p className="text-body-lg text-ink/80">
                 {pageCopy.cartEmpty}
@@ -118,7 +118,7 @@ export default function CartPage() {
                               >
                                 {line.name}
                               </Link>
-                              <p className="mt-1.5 font-mono text-xs text-taupe">
+                              <p className="mt-1.5 font-sans tabular-nums text-xs text-taupe">
                                 {line.sizeMl > 0 ? `${line.sizeMl} ml` : null}
                                 {line.sizeMl > 0 ? " · " : null}
                                 {line.sku}
@@ -163,7 +163,7 @@ export default function CartPage() {
                               >
                                 −
                               </button>
-                              <span className="flex min-w-10 items-center justify-center font-mono text-sm tabular-nums">
+                              <span className="flex min-w-10 items-center justify-center font-sans tabular-nums text-sm ">
                                 {line.quantity}
                               </span>
                               <button
@@ -193,7 +193,7 @@ export default function CartPage() {
                             className="text-lg"
                           />
                           {line.quantity > 1 ? (
-                            <p className="mt-1 font-mono text-xs text-taupe">
+                            <p className="mt-1 font-sans tabular-nums text-xs text-taupe">
                               {format(line.price)} each
                             </p>
                           ) : null}

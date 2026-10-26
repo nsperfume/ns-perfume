@@ -88,7 +88,7 @@ export function CartDrawer() {
       className="fixed inset-0 z-80 flex justify-end opacity-0"
       role="dialog"
       aria-modal="true"
-      aria-label="Your bag"
+      aria-label="Your cart"
     >
       <button
         type="button"
@@ -104,9 +104,9 @@ export function CartDrawer() {
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-hairline px-5 py-3 sm:px-7">
           <h2 className="flex items-center gap-3 text-display-sm text-ink">
-            Your Bag
+            Your cart
             {itemCount > 0 ? (
-              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-ink px-1.5 font-mono text-xs font-medium text-paper">
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-ink px-1.5 font-sans tabular-nums text-xs font-medium text-paper">
                 {itemCount}
               </span>
             ) : null}
@@ -201,7 +201,7 @@ export function CartDrawer() {
                           {line.name}
                           {line.isGift ? " (Gift)" : ""}
                         </Link>
-                        <p className="mt-1 font-mono text-xs text-taupe">
+                        <p className="mt-1 font-sans tabular-nums text-xs text-taupe">
                           {line.sizeMl > 0 ? `${line.sizeMl} ml` : line.sku}
                           {line.giftWrap ? " · Wrap" : ""}
                         </p>
@@ -233,7 +233,7 @@ export function CartDrawer() {
                         >
                           −
                         </button>
-                        <span className="flex min-w-9 items-center justify-center font-mono text-sm tabular-nums">
+                        <span className="flex min-w-9 items-center justify-center font-sans tabular-nums text-sm ">
                           {line.quantity}
                         </span>
                         <button
@@ -262,7 +262,7 @@ export function CartDrawer() {
           )}
         </div>
 
-        {/* Footer (filled bag only) */}
+        {/* Footer (filled cart only) */}
         {lines.length > 0 ? (
           <div className="shrink-0 border-t border-hairline bg-muted/50 px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-7">
             {freeShipRemaining !== null ? (
@@ -283,8 +283,8 @@ export function CartDrawer() {
               <div className="h-1 overflow-hidden bg-hairline">
                 <div
                   className={cn(
-                    "h-full bg-ink transition-[width] duration-500 ease-out",
-                    freeShipRemaining === 0 && "bg-brass",
+                    "h-full transition-[width] duration-500 ease-out",
+                    freeShipRemaining === 0 ? "bg-brass" : "bg-ink",
                   )}
                   style={{ width: `${freeShipProgress}%` }}
                 />
@@ -321,7 +321,7 @@ export function CartDrawer() {
                 className="w-full sm:w-full"
                 onClick={closeCart}
               >
-                View full bag
+                View cart
               </Button>
             </div>
           </div>

@@ -97,14 +97,13 @@
  * Type families (next/font variables set on <html> in app/layout.tsx).
  * display/serif: Cormorant Garamond, headings and product names only (never under 24px).
  * sans: Manrope, all UI, paragraphs, nav, buttons, forms.
- * mono: IBM Plex Mono, prices, ml sizes, SKUs, order numbers.
+ * Figures (prices, ml sizes, phone and order numbers) use Manrope with tabular-nums.
  * Not `inline`, so a subtree (the admin app) can remap a family by overriding the variable.
  */
 @theme {
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-display: var(--font-cormorant), "Cormorant Garamond", ui-serif, Georgia, serif;
   --font-serif: var(--font-cormorant), "Cormorant Garamond", ui-serif, Georgia, serif;
-  --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* Dense admin UI stays on one sans family; the display serif is storefront-only. */
@@ -262,17 +261,13 @@
     text-wrap: pretty;
   }
 
-  /* Price figures line up in columns */
-  .font-mono {
-    font-variant-numeric: tabular-nums;
-  }
 }
 
 /**
  * Type scale. Use these instead of ad-hoc sizes.
  * Display (Cormorant): xl / lg / md / sm, never below 24px.
  * UI + body (Manrope): heading-sm, body-lg, body, body-sm, caption, eyebrow, label.
- * Numerals (Plex Mono): price.
+ * Numerals (Manrope, tabular): price.
  */
 @utility text-display-xl {
   font-family: var(--font-display);
@@ -351,17 +346,17 @@
   text-transform: uppercase;
 }
 
+/* Links, nav items and button-style labels. Sentence case; uppercase is reserved for text-eyebrow. */
 @utility text-label {
   font-family: var(--font-sans);
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   line-height: 1.3;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 @utility text-price {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 1.0625rem;
   line-height: 1.3;
   font-weight: 500;
@@ -609,7 +604,7 @@ html.admin-scroll-lock body {
 /*
  * Admin typography. Body/base rules set the storefront serif on p/label/input;
  * inside the console everything inherits Manrope instead. Stays in @layer base
- * so utilities (font-mono, etc.) still win.
+ * so utilities still win.
  */
 @layer base {
   .admin-app :where(p, li, label, input, textarea, select, button, h1, h2, h3, h4, td, th, dt, dd),
@@ -636,7 +631,6 @@ html.admin-scroll-lock body {
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   }
 
-  .admin-app .font-mono,
   .admin-app .tabular-nums {
     font-variant-numeric: tabular-nums;
   }

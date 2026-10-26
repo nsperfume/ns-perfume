@@ -809,7 +809,7 @@ export default function AdminJournalPage() {
               <AdminTd className="hidden whitespace-nowrap text-admin-muted md:table-cell">
                 {post.category}
               </AdminTd>
-              <AdminTd className="hidden whitespace-nowrap tabular-nums text-admin-muted sm:table-cell">
+              <AdminTd className="hidden whitespace-nowrap font-sans tabular-nums text-admin-muted sm:table-cell">
                 {formatPostDate(post.date)}
               </AdminTd>
               <AdminTd>

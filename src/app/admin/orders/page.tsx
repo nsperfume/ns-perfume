@@ -253,14 +253,14 @@ export default function AdminOrdersPage() {
                   <Link href={detailHref} className="block">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-mono text-[0.9375rem] font-medium text-admin-ink">
+                        <p className="font-sans tabular-nums text-[0.9375rem] font-medium text-admin-ink">
                           {ref}
                         </p>
                         <p className="mt-0.5 text-[0.8125rem] text-admin-muted">
                           {formatOrderDate(o.createdAt)}
                         </p>
                       </div>
-                      <p className="shrink-0 font-mono text-[0.9375rem] font-medium tabular-nums text-admin-ink">
+                      <p className="shrink-0 font-sans tabular-nums text-[0.9375rem] font-medium text-admin-ink">
                         {formatPkr(o.totalPkr)}
                       </p>
                     </div>
@@ -335,7 +335,7 @@ export default function AdminOrdersPage() {
                 <AdminTd className="whitespace-nowrap">
                   <Link
                     href={detailHref}
-                    className="font-mono text-[0.875rem] font-medium text-admin-ink hover:underline"
+                    className="font-sans tabular-nums text-[0.875rem] font-medium text-admin-ink hover:underline"
                   >
                     {ref}
                   </Link>
@@ -364,7 +364,7 @@ export default function AdminOrdersPage() {
                     </p>
                   ) : null}
                   {o.paymentMethod === "card" && o.cardLast4 ? (
-                    <p className="mt-0.5 font-mono text-[0.8125rem] text-admin-muted">
+                    <p className="mt-0.5 font-sans tabular-nums text-[0.8125rem] text-admin-muted">
                       •••• {o.cardLast4}
                     </p>
                   ) : null}

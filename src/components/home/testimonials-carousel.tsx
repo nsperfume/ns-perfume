@@ -31,7 +31,7 @@ export function TestimonialsCarousel({ items }: { items: TestimonialItem[] }) {
           className="flex h-full min-h-[14rem] flex-col justify-between border-t border-hairline pt-8 sm:min-h-[17rem] lg:pr-8"
         >
           {t.rating ? (
-            <p className="mb-5 font-mono text-sm tabular-nums text-brass-ink">
+            <p className="mb-5 font-sans tabular-nums text-sm text-brass-ink">
               {t.rating}/5
             </p>
           ) : (

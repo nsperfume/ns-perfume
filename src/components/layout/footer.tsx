@@ -57,7 +57,7 @@ function SocialIcon({
 const columnOrder = [
   { key: "shop", title: "Shop" },
   { key: "collections", title: "Collections" },
-  { key: "care", title: "Customer Care" },
+  { key: "care", title: "Customer care" },
   { key: "company", title: "Company" },
   { key: "legal", title: "Legal" },
 ] as const;
@@ -176,7 +176,7 @@ export function Footer() {
               </a>
               <a
                 href={`tel:${siteConfig.phone.replace(/\s/g, "")}`}
-                className="inline-flex min-h-11 items-center gap-2 font-mono transition-colors hover:text-brass"
+                className="inline-flex min-h-11 items-center gap-2 font-sans tabular-nums transition-colors hover:text-brass"
               >
                 <PhoneIcon size={16} />
                 {siteConfig.phone}

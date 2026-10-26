@@ -257,7 +257,7 @@ function MoneyInput({
         aria-invalid={error ? true : undefined}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
-        className="pl-10! font-mono tabular-nums"
+        className="pl-10! font-sans tabular-nums "
       />
     </div>
   );
@@ -635,7 +635,7 @@ export function CheckoutSettings({
                       aria-invalid={err.taxRate ? true : undefined}
                       onChange={(e) => patch({ taxRate: e.target.value })}
                       onBlur={blur}
-                      className="pr-9! font-mono tabular-nums"
+                      className="pr-9! font-sans tabular-nums "
                     />
                     <span
                       aria-hidden
@@ -687,17 +687,17 @@ export function CheckoutSettings({
             <dl className="mt-4 space-y-2.5 text-[0.9375rem]">
               <div className="flex justify-between gap-3">
                 <dt className="text-admin-muted">Subtotal</dt>
-                <dd className="font-mono tabular-nums text-admin-ink">{formatPkr(totals.subtotalPkr)}</dd>
+                <dd className="font-sans tabular-nums text-admin-ink">{formatPkr(totals.subtotalPkr)}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-admin-muted">Delivery</dt>
-                <dd className="font-mono tabular-nums text-admin-ink">
+                <dd className="font-sans tabular-nums text-admin-ink">
                   {totals.shippingPkr === 0 ? "Free" : formatPkr(totals.shippingPkr)}
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-admin-muted">Cash on delivery fee</dt>
-                <dd className="font-mono tabular-nums text-admin-ink">
+                <dd className="font-sans tabular-nums text-admin-ink">
                   {totals.codFeePkr ? formatPkr(totals.codFeePkr) : "None"}
                 </dd>
               </div>
@@ -706,17 +706,17 @@ export function CheckoutSettings({
                   <dt className="text-admin-muted">
                     {config.tax.label} ({config.tax.ratePercent || 0}%)
                   </dt>
-                  <dd className="font-mono tabular-nums text-admin-ink">{formatPkr(totals.taxPkr)}</dd>
+                  <dd className="font-sans tabular-nums text-admin-ink">{formatPkr(totals.taxPkr)}</dd>
                 </div>
               ) : null}
               <div className="flex justify-between gap-3 border-t border-admin-line pt-3 text-base font-semibold text-admin-ink">
                 <dt>Total</dt>
-                <dd className="font-mono tabular-nums">{formatPkr(totals.totalPkr)}</dd>
+                <dd className="font-sans tabular-nums ">{formatPkr(totals.totalPkr)}</dd>
               </div>
               {config.tax.mode === "inclusive" ? (
                 <p className="text-[0.8125rem] text-admin-muted">
                   Includes {config.tax.label} of{" "}
-                  <span className="font-mono tabular-nums">{formatPkr(totals.taxIncludedPkr)}</span>
+                  <span className="font-sans tabular-nums ">{formatPkr(totals.taxIncludedPkr)}</span>
                 </p>
               ) : null}
             </dl>

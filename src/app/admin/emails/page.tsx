@@ -431,7 +431,7 @@ export default function AdminEmailsPage() {
                         ) : l.ref ? (
                           <Link
                             href={`/admin/orders/${encodeURIComponent(l.ref)}`}
-                            className="font-mono text-[0.875rem] font-semibold text-admin-accent hover:underline"
+                            className="font-sans tabular-nums text-[0.875rem] font-semibold text-admin-accent hover:underline"
                           >
                             {formatOrderNumber(l.ref)}
                           </Link>
@@ -480,7 +480,7 @@ export default function AdminEmailsPage() {
                   <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-admin-muted">
                     {label}
                   </dt>
-                  <dd className="mt-1 text-[1.75rem] font-semibold leading-tight tabular-nums text-admin-ink">
+                  <dd className="mt-1 text-[1.75rem] font-semibold leading-tight font-sans tabular-nums text-admin-ink">
                     {n}
                   </dd>
                 </div>
@@ -581,7 +581,7 @@ export default function AdminEmailsPage() {
                 <dd>
                   <Link
                     href={`/admin/orders/${encodeURIComponent(logDetail.ref)}`}
-                    className="font-mono font-semibold text-admin-accent hover:underline"
+                    className="font-sans tabular-nums font-semibold text-admin-accent hover:underline"
                   >
                     {formatOrderNumber(logDetail.ref)}
                   </Link>
@@ -598,7 +598,7 @@ export default function AdminEmailsPage() {
                       : "The mail server refused this email. Share the note below with your developer."}
                   </p>
                   {!/not configured/i.test(logDetail.error) ? (
-                    <p className="mt-2 whitespace-pre-wrap break-words rounded-md border border-admin-line bg-admin-soft-2 p-3 font-mono text-[0.8125rem] leading-relaxed text-admin-muted">
+                    <p className="mt-2 whitespace-pre-wrap break-words rounded-md border border-admin-line bg-admin-soft-2 p-3 font-sans tabular-nums text-[0.8125rem] leading-relaxed text-admin-muted">
                       {logDetail.error}
                     </p>
                   ) : null}

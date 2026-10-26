@@ -140,7 +140,7 @@ function AuthPanel() {
         </p>
         <ul className="mt-8 space-y-3 border-t border-hairline pt-6 text-body text-ink/80">
           <li>See past orders by the email you used</li>
-          <li>Repeat an order into your bag in one tap</li>
+          <li>Reorder a past order in one tap</li>
           <li>Track parcels without digging through inbox threads</li>
         </ul>
       </div>
@@ -402,7 +402,7 @@ function ProfilePanel() {
         giftWrap: l.giftWrap,
       })),
     );
-    showToast(`Order ${order.orderNumber} added to bag`, "cart");
+    showToast(`Order ${order.orderNumber} added to your cart`, "cart");
     setRepeating(null);
   }
 
@@ -505,7 +505,7 @@ function ProfilePanel() {
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="font-mono text-base font-medium text-ink">
+                    <p className="font-sans tabular-nums text-base font-medium text-ink">
                       {order.orderNumber}
                     </p>
                     <p className="mt-1 text-caption capitalize text-taupe">
@@ -516,7 +516,7 @@ function ProfilePanel() {
                       })}{" "}
                       · {order.status}
                     </p>
-                    <p className="mt-3 font-mono text-lg font-medium text-ink">
+                    <p className="mt-3 font-sans tabular-nums text-lg font-medium text-ink">
                       {format(order.totalPkr)}
                     </p>
                     <p className="mt-2 line-clamp-2 text-body-sm text-taupe">

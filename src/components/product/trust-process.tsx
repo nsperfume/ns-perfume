@@ -43,7 +43,7 @@ export function ProductTrustProcess({ className }: { className?: string }) {
             i > 0 && "xl:border-l xl:border-hairline",
           )}
         >
-          <p className="font-mono text-sm tabular-nums text-brass-ink">
+          <p className="font-sans tabular-nums text-sm text-brass-ink">
             {item.step}
           </p>
           <p className="mt-3 text-heading-sm text-ink">

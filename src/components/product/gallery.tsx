@@ -126,7 +126,7 @@ export function ProductGallery({
             >
               <Chevron dir="right" className="h-4 w-4" />
             </button>
-            <p className="absolute bottom-3 left-3 z-10 font-mono text-xs text-taupe">
+            <p className="absolute bottom-3 left-3 z-10 font-sans tabular-nums text-xs text-taupe">
               {active + 1} / {list.length}
             </p>
           </>

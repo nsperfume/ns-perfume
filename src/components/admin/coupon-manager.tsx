@@ -317,7 +317,7 @@ function CreateCouponModal({
                 spellCheck={false}
                 maxLength={20}
                 placeholder="SPRING15"
-                className="font-mono! uppercase tracking-wide"
+                className="font-sans tabular-nums! uppercase tracking-wide"
                 aria-invalid={v.errors.code ? true : undefined}
                 aria-describedby={v.errors.code ? "coupon-code-error" : undefined}
                 onChange={(e) =>
@@ -384,7 +384,7 @@ function CreateCouponModal({
                     inputMode="numeric"
                     value={form.value}
                     className={cn(
-                      "font-mono! tabular-nums",
+                      "font-sans tabular-nums! ",
                       !isPercent && "pl-10!",
                       isPercent && "pr-9!",
                     )}
@@ -418,7 +418,7 @@ function CreateCouponModal({
                   inputMode="numeric"
                   placeholder="0"
                   value={form.minSubtotalPkr}
-                  className={cn("pl-10! tabular-nums", form.minSubtotalPkr && "font-mono!")}
+                  className={cn("pl-10! font-sans tabular-nums", form.minSubtotalPkr && "font-sans tabular-nums!")}
                   aria-invalid={v.errors.minSubtotalPkr ? true : undefined}
                   onChange={(e) =>
                     update({ minSubtotalPkr: e.target.value.replace(/\D/g, "") })
@@ -436,7 +436,7 @@ function CreateCouponModal({
                 inputMode="numeric"
                 placeholder="No limit"
                 value={form.usageLimit}
-                className={cn("tabular-nums", form.usageLimit && "font-mono!")}
+                className={cn("font-sans tabular-nums", form.usageLimit && "font-sans tabular-nums!")}
                 aria-invalid={v.errors.usageLimit ? true : undefined}
                 onChange={(e) =>
                   update({ usageLimit: e.target.value.replace(/\D/g, "") })
@@ -641,7 +641,7 @@ export function CouponManager({ canDelete }: Props) {
                 <li key={c.id} className="space-y-3 px-5 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-mono text-[0.9375rem] font-semibold tracking-wide text-admin-ink">
+                      <p className="font-sans tabular-nums text-[0.9375rem] font-semibold tracking-wide text-admin-ink">
                         {c.code}
                       </p>
                       <p className="mt-0.5 text-[0.8125rem] text-admin-muted">
@@ -661,7 +661,7 @@ export function CouponManager({ canDelete }: Props) {
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.8125rem] text-admin-muted">
                     <span>
                       Used{" "}
-                      <span className="tabular-nums text-admin-ink">
+                      <span className="font-sans tabular-nums text-admin-ink">
                         {usedLabel(c)}
                       </span>
                     </span>
@@ -720,7 +720,7 @@ export function CouponManager({ canDelete }: Props) {
                   <tr key={c.id} className="transition-colors hover:bg-admin-soft-2">
                     <AdminTd>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-[0.875rem] font-semibold tracking-wide">
+                        <span className="font-sans tabular-nums text-[0.875rem] font-semibold tracking-wide">
                           {c.code}
                         </span>
                         {statusBadges(c)}
@@ -736,7 +736,7 @@ export function CouponManager({ canDelete }: Props) {
                       {c.minSubtotalPkr ? (
                         <p className="mt-0.5 whitespace-nowrap text-[0.8125rem] text-admin-muted">
                           Min order{" "}
-                          <span className="font-mono tabular-nums">
+                          <span className="font-sans tabular-nums ">
                             Rs {c.minSubtotalPkr.toLocaleString("en-PK")}
                           </span>
                         </p>

@@ -305,7 +305,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
               className="min-w-0 truncate text-lg font-semibold text-admin-ink sm:text-xl"
             >
               Poster for{" "}
-              <span className="font-mono tracking-wide">{coupon.code}</span>
+              <span className="font-sans tabular-nums tracking-wide">{coupon.code}</span>
             </h2>
             <button
               type="button"
@@ -450,7 +450,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
                     }
                     onBlur={() => v.revalidate(form)}
                     placeholder="No limit"
-                    className={cn("tabular-nums", form.usageLimit && "font-mono!")}
+                    className={cn("font-sans tabular-nums", form.usageLimit && "font-sans tabular-nums!")}
                     aria-invalid={v.errors.usageLimit ? true : undefined}
                   />
                   <AdminFieldError message={v.errors.usageLimit} />

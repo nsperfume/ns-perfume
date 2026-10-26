@@ -3,7 +3,7 @@ import { pageCopy } from "@/data/copy";
 
 /** The cart page is a client component, so its metadata lives on this segment layout. */
 export const metadata: Metadata = {
-  title: "Your Bag",
+  title: "Your cart",
   description: pageCopy.cart.description,
   robots: { index: false },
 };

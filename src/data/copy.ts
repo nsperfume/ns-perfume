@@ -5,7 +5,7 @@
 
 export const pageCopy = {
   products: {
-    title: "All Products",
+    title: "All perfumes",
     description:
       "Find the fragrance that already feels like yours. Honest note pyramids, true sillage and longevity, and sizes you can live with day to day.",
     metaDescription:
@@ -19,26 +19,26 @@ export const pageCopy = {
       "Browse NS Perfume collections by gender, scent family, and occasion. Clear filters and honest wear detail on every bottle.",
   },
   findYourScent: {
-    title: "Find Your Scent",
+    title: "Find your scent",
     description:
       "Five short questions. Three bottles scored from gender, family, sillage, and how long they stay on skin.",
     metaDescription:
       "Find NS Perfume bottles with a short guide scored on gender, scent family, sillage, and longevity. No AI ranking.",
   },
   cart: {
-    title: "Your Bag",
+    title: "Your cart",
     description:
       "Review sizes, check the total, and finish when the bottle feels like the right one.",
   },
   cartEmpty:
-    "Your bag is waiting for the bottle that still stays on your skin after dinner.",
+    "Your cart is empty. Start with a bestseller or find your scent in five questions.",
   wishlist: {
     title: "Wishlist",
     description:
       "Bottles you set aside because something in the drydown felt familiar. Compare them when the day is quieter.",
   },
   wishlistEmpty:
-    "Save the ones that made you pause. Compare notes when you are ready. Nothing is held until it is in your bag.",
+    "Save the perfumes you like and come back to them any time.",
   wishlistLead:
     "Bottles you set aside because something in the drydown felt familiar. Compare them when the day is quieter.",
   search: {
@@ -47,12 +47,12 @@ export const pageCopy = {
       "Look up a note, a family, or a bottle name. Honest results without padding the page with noise.",
   },
   giftCards: {
-    title: "Gift Cards",
+    title: "Gift cards",
     description:
       "Give them the freedom to choose a scent that fits their climate and their wardrobe. Thoughtful without guessing the note.",
   },
   about: {
-    title: "Our Story",
+    title: "Our story",
     description:
       "We write labels the way people wear scent: slowly, honestly, and close enough to the skin that strangers only catch it when they lean in.",
   },

@@ -26,7 +26,6 @@ Font.register({
   ],
 });
 Font.register({ family: "Cormorant", src: path.join(fontDir, "cormorant-garamond-latin-600-normal.ttf"), fontWeight: 600 });
-Font.register({ family: "PlexMono", src: path.join(fontDir, "ibm-plex-mono-latin-500-normal.ttf"), fontWeight: 500 });
 Font.registerHyphenationCallback((word) => [word]);
 
 const C = { ink: "#111111", text: "#3A3A3A", muted: "#6B6B6B", line: "#E8E0D0", soft: "#FAF7F1", brass: "#A9873C" };
@@ -37,7 +36,7 @@ const s = StyleSheet.create({
   title: { fontFamily: "Cormorant", fontSize: 30, color: C.ink, textAlign: "right", lineHeight: 1 },
   metaRow: { flexDirection: "row", justifyContent: "flex-end", marginTop: 4 },
   metaLabel: { color: C.muted, width: 70, textAlign: "right", marginRight: 8 },
-  metaValue: { fontFamily: "PlexMono", color: C.ink, minWidth: 92, textAlign: "right" },
+  metaValue: { fontWeight: 600, color: C.ink, minWidth: 92, textAlign: "right" },
   rule: { height: 1, backgroundColor: C.line, marginVertical: 22 },
   brassRule: { height: 2, backgroundColor: C.brass, marginTop: 20 },
   cols: { flexDirection: "row", gap: 24 },
@@ -51,7 +50,7 @@ const s = StyleSheet.create({
   cQty: { width: 36, textAlign: "right" },
   cPrice: { width: 78, textAlign: "right" },
   cAmount: { width: 84, textAlign: "right" },
-  num: { fontFamily: "PlexMono", color: C.ink },
+  num: { fontWeight: 600, color: C.ink },
   totals: { marginLeft: "auto", width: 240, marginTop: 14 },
   totalRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 3 },
   grandRow: { flexDirection: "row", justifyContent: "space-between", paddingTop: 9, marginTop: 6, borderTopWidth: 1, borderTopColor: C.ink },

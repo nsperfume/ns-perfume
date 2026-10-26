@@ -76,9 +76,9 @@ export function CopyableValue({
       className={cn(
         "block text-base font-medium leading-8 text-ink",
         /^[\d\s+()-]+$|^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(value)
-          ? "font-mono"
+          ? "font-sans tabular-nums"
           : "font-sans",
-        "break-all tabular-nums tracking-normal [font-variant-numeric:lining-nums_tabular-nums]",
+        "break-all font-sans tabular-nums tracking-normal [font-variant-numeric:lining-nums_]",
         valueClassName,
       )}
     >
@@ -107,9 +107,9 @@ export function CopyableValue({
         type="button"
         onClick={copy}
         className={cn(
-          "inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-hairline bg-paper text-ink transition-colors",
+          "inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border bg-paper transition-colors",
           "hover:border-ink/30 hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
-          copied && "border-brass/40 text-brass",
+          copied ? "border-brass/40 text-brass" : "border-hairline text-ink",
         )}
         aria-label={copied ? "Copied" : `${label}: ${value}`}
         title={copied ? "Copied" : label}

@@ -17,7 +17,7 @@ import type { StoreProduct } from "@/lib/mappers";
 type ResolvedItem =
   /** Catalog still loading */
   | { state: "loading"; pricePkr: number; sizeLabel: string | null }
-  /** Saved size still exists and the bottle is in stock: can go straight to the bag */
+  /** Saved size still exists and the bottle is in stock: can go straight to the cart */
   | {
       state: "ready";
       product: StoreProduct;
@@ -32,7 +32,7 @@ type ResolvedItem =
 
 /**
  * Match a saved item to the live catalog. Only a SKU that still exists on an
- * in-stock product moves straight to the bag, at today's price.
+ * in-stock product moves straight to the cart, at today's price.
  */
 function resolveItem(
   item: WishlistItem,
@@ -197,7 +197,7 @@ export function WishlistClient() {
                               {item.name}
                             </Link>
                             {live.sizeLabel ? (
-                              <p className="mt-1.5 font-mono text-xs text-taupe">
+                              <p className="mt-1.5 font-sans tabular-nums text-xs text-taupe">
                                 {live.sizeLabel}
                               </p>
                             ) : null}
@@ -224,14 +224,14 @@ export function WishlistClient() {
                                   sku: live.size.sku,
                                   image: live.product.imagePrimary || item.image,
                                 });
-                                showToast(`${item.name} added to your bag`, "cart");
+                                showToast(`${item.name} added to your cart`, "cart");
                               }}
                             >
-                              Move to bag
+                              Move to cart
                             </Button>
                           ) : live.state === "loading" ? (
                             <Button type="button" className="w-full sm:w-full" disabled>
-                              {item.sku ? "Move to bag" : "Choose a size"}
+                              {item.sku ? "Move to cart" : "Choose a size"}
                             </Button>
                           ) : live.state === "choose" ? (
                             <Button href={productHref} className="w-full sm:w-full">

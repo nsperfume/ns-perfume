@@ -199,7 +199,7 @@ export function NavDropdown({
                 />
                 <span className="absolute inset-x-0 bottom-0 p-4">
                   <span className="block text-eyebrow text-paper/75">
-                    Featured Look
+                    Featured
                   </span>
                   <span className="mt-1 block text-sm font-semibold text-paper">
                     {panelImage.cta ?? "Shop the collection →"}

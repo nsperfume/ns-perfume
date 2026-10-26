@@ -70,7 +70,7 @@ export type CartLine = {
   sku: string;
   quantity: number;
   image: string;
-  /** Marked as a gift at add-to-bag time */
+  /** Marked as a gift at add-to-cart time */
   isGift?: boolean;
   /** Optional note printed / included for the recipient */
   giftMessage?: string;

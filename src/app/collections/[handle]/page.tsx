@@ -79,7 +79,7 @@ export default async function CollectionPage({ params }: Props) {
             /
           </span>
           <Link href="/products" className="cursor-pointer transition-colors hover:text-ink">
-            All products
+            All perfumes
           </Link>
           <span aria-hidden className="hidden text-hairline sm:inline">
             /
@@ -102,13 +102,13 @@ export default async function CollectionPage({ params }: Props) {
                   href="/products"
                   className="text-label text-ink underline-offset-4 hover:underline"
                 >
-                  All Products
+                  All perfumes
                 </Link>
                 <Link
                   href="/collections"
                   className="text-label text-ink underline-offset-4 hover:underline"
                 >
-                  All Collections
+                  All collections
                 </Link>
               </div>
             </div>

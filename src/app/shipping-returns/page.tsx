@@ -5,7 +5,7 @@ import { describeShipping } from "@/lib/checkout-config";
 import { getSiteSettings } from "@/lib/site-settings";
 
 export const metadata: Metadata = {
-  title: "Shipping & Returns",
+  title: "Shipping and returns",
   description:
     "Delivery across Pakistan with standard and express options, unopened returns within 30 days, and damaged parcel reporting.",
   alternates: { canonical: "/shipping-returns" },
@@ -16,7 +16,7 @@ export default async function ShippingReturnsPage() {
   return (
     <section className="bg-canvas section-y">
       <div className="container-ns max-w-[48rem]">
-        <h1 className="mb-10 text-display-xl">Shipping & returns</h1>
+        <h1 className="mb-10 text-display-xl">Shipping and returns</h1>
         <div className="flex flex-col gap-10 text-body-lg text-taupe">
           <div>
             <h2 className="text-heading-sm mb-3 text-ink">Shipping</h2>

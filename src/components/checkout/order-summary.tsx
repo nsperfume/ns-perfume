@@ -93,7 +93,7 @@ export function CheckoutOrderSummary({
                 </p>
               ) : null}
             </div>
-            <p className="shrink-0 font-mono text-base font-medium tabular-nums text-ink">
+            <p className="shrink-0 font-sans tabular-nums text-base font-medium text-ink">
               {format(line.price * line.quantity)}
             </p>
           </li>
@@ -164,12 +164,12 @@ export function CheckoutOrderSummary({
       <div className="mt-5 space-y-2 border-t border-hairline pt-4 text-base">
         <div className="flex justify-between text-taupe">
           <span>Subtotal</span>
-          <span className="font-mono text-ink">{format(subtotalPkr)}</span>
+          <span className="font-sans tabular-nums text-ink">{format(subtotalPkr)}</span>
         </div>
         {discountPkr > 0 ? (
           <div className="flex justify-between text-taupe">
             <span>Discount</span>
-            <span className="font-mono text-ink">−{format(discountPkr)}</span>
+            <span className="font-sans tabular-nums text-ink">−{format(discountPkr)}</span>
           </div>
         ) : null}
         <div className="flex justify-between text-taupe">
@@ -190,13 +190,13 @@ export function CheckoutOrderSummary({
         {codFeePkr > 0 ? (
           <div className="flex justify-between text-taupe">
             <span>Cash on delivery fee</span>
-            <span className="font-mono text-ink">{format(codFeePkr)}</span>
+            <span className="font-sans tabular-nums text-ink">{format(codFeePkr)}</span>
           </div>
         ) : null}
         {config.tax.mode === "exclusive" ? (
           <div className="flex justify-between text-taupe">
             <span>{taxLineLabel(config)}</span>
-            <span className="font-mono text-ink">{format(taxPkr)}</span>
+            <span className="font-sans tabular-nums text-ink">{format(taxPkr)}</span>
           </div>
         ) : null}
       </div>
@@ -204,11 +204,11 @@ export function CheckoutOrderSummary({
       <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
         <span className="text-base font-semibold text-ink">Total</span>
         <div className="flex items-baseline text-right">
-          <span className="mr-2 font-mono text-xs text-taupe">PKR</span>
+          <span className="mr-2 font-sans tabular-nums text-xs text-taupe">PKR</span>
           <PayableAmount
             amountPkr={totalPkr}
             variant="stacked"
-            className="items-end font-mono text-2xl font-medium tracking-tight text-ink"
+            className="items-end font-sans tabular-nums text-2xl font-medium tracking-tight text-ink"
           />
         </div>
       </div>

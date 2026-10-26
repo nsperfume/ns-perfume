@@ -106,10 +106,9 @@ export function AdminDatePickerField({
             aria-label={`${label}: ${display}`}
             className={cn(
               "flex h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-md border bg-admin-soft-2 px-3.5 text-left text-base outline-none transition-colors",
-              "border-admin-input-border text-admin-ink",
+              error ? "border-rosewood focus-visible:ring-rosewood/20" : "border-admin-input-border",
+              selected ? "text-admin-ink" : "text-admin-faint",
               "hover:border-admin-muted focus-visible:border-brass focus-visible:ring-2 focus-visible:ring-brass/20",
-              error && "border-rosewood focus-visible:ring-rosewood/20",
-              !selected && "text-admin-faint",
             )}
           >
             <span className="truncate">{display}</span>

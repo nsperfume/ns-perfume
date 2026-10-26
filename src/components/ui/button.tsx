@@ -21,7 +21,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 /**
- * Slide CTAs. Label: Manrope 600, 13px uppercase, 0.14em tracking.
+ * Slide CTAs. Label: Manrope 600, sentence case, 15px (14px small).
  * Hover fill: brand gold #A9873C (danger uses red fill). Radius 2px.
  */
 export function Button({
@@ -109,10 +109,8 @@ export function Button({
   );
 
   const label = cn(
-    "relative z-10 inline-flex h-full w-full items-center justify-center gap-2 text-center font-semibold uppercase leading-tight",
-    small
-      ? "px-5 text-xs tracking-[0.12em]"
-      : "px-7 text-[0.8125rem] tracking-[0.14em] sm:px-8",
+    "relative z-10 inline-flex h-full w-full items-center justify-center gap-2 text-center font-semibold leading-tight",
+    small ? "px-5 text-sm" : "px-7 text-[0.9375rem] sm:px-8",
     "text-current transition-colors duration-300 group-hover/nsbtn:text-paper",
     "motion-reduce:transition-none",
   );

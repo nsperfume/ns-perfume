@@ -54,7 +54,7 @@ function MeterRow({
               />
             ))}
           </div>
-          <span className="font-mono text-xs tabular-nums text-taupe">
+          <span className="font-sans tabular-nums text-xs text-taupe">
             {clamped}/5
           </span>
         </div>
@@ -79,7 +79,7 @@ function MeterRow({
           </p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="font-mono text-lg font-medium tabular-nums text-ink">
+          <p className="font-sans tabular-nums text-lg font-medium text-ink">
             {clamped}/5
           </p>
           <p className="mt-0.5 text-eyebrow text-taupe">
@@ -210,7 +210,7 @@ export function PerformanceMini({
                 />
               ))}
             </span>
-            <span className="font-mono text-xs font-medium tabular-nums text-ink">
+            <span className="font-sans tabular-nums text-xs font-medium text-ink">
               {clamped}/5
             </span>
           </div>

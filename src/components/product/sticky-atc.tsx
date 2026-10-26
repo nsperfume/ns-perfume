@@ -28,7 +28,7 @@ export function StickyAddToCart({
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
-    // The sentinel sits right after the main Add to bag button. Only show the bar once
+    // The sentinel sits right after the main Add to cart button. Only show the bar once
     // that button has scrolled up out of view, not while it is still below the fold.
     const obs = new IntersectionObserver(
       ([entry]) =>
@@ -68,7 +68,7 @@ export function StickyAddToCart({
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-semibold">{product.name}</p>
-              <p className="font-mono text-xs text-taupe">
+              <p className="font-sans tabular-nums text-xs text-taupe">
                 {`${sizeMl} ml`} ·{" "}
                 <Price amountPkr={price} className="text-sm" />
               </p>
@@ -78,7 +78,7 @@ export function StickyAddToCart({
               disabled={!product.inStock}
               className="w-auto! shrink-0 px-0! [&>span:last-child]:px-5"
             >
-              Add to bag
+              Add to cart
             </Button>
           </div>
         </div>

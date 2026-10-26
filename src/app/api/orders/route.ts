@@ -73,14 +73,14 @@ async function priceLines(lines: z.infer<typeof lineSchema>[], config: CheckoutC
       product?.sizes.find((s) => s.sku === baseSku) ??
       product?.sizes.find((s) => s.ml === l.sizeMl);
     if (!product || !size) {
-      return { error: `${l.name} is no longer available. Remove it from your bag to continue.` };
+      return { error: `${l.name} is no longer available. Remove it from your cart to continue.` };
     }
     if (product.inStock === false) {
-      return { error: `${product.name} is out of stock. Remove it from your bag to continue.` };
+      return { error: `${product.name} is out of stock. Remove it from your cart to continue.` };
     }
     const wrap = Boolean(l.isGift && l.giftWrap);
     if (wrap && !config.giftWrap.enabled) {
-      return { error: "Gift wrap is not available right now. Remove gift wrap from your bag to continue." };
+      return { error: "Gift wrap is not available right now. Remove gift wrap from your cart to continue." };
     }
     const unitPricePkr = size.pricePkr + (wrap ? config.giftWrap.feePkr : 0);
     // Never charge more than the shopper was shown. A lower catalog price is honored.

@@ -265,7 +265,7 @@ export default function AdminProductsPage() {
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
                     <AdminStatusBadge status={productStatus(p)} />
-                    <span className="font-mono text-sm tabular-nums text-admin-ink">
+                    <span className="font-sans tabular-nums text-sm text-admin-ink">
                       {formatPkr(lowestPrice(p))}
                     </span>
                   </div>

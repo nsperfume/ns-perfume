@@ -43,8 +43,8 @@ function WishlistHeart({ filled }: { filled?: boolean }) {
       height={22}
       className="block h-[22px] w-[22px] shrink-0"
       aria-hidden
-      fill={filled ? "#c62828" : "none"}
-      stroke="#c62828"
+      fill={filled ? "#8b4a45" : "none"}
+      stroke="#8b4a45"
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -127,7 +127,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
     showToast(
       isGift
         ? `${product.name} added as a gift`
-        : `${product.name} added to your bag`,
+        : `${product.name} added to your cart`,
       "cart",
     );
   }
@@ -139,7 +139,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
       name: product.name,
       image: product.imagePrimary,
       pricePkr: selected?.price ?? product.prices[0]?.price ?? 0,
-      // Remember the exact size so the wishlist can move this bottle to the bag later.
+      // Remember the exact size so the wishlist can move this bottle to the cart later.
       sku: selected?.sku,
       sizeMl: selected?.ml,
     });
@@ -259,7 +259,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
       <div className="mt-6 flex items-baseline gap-3 border-t border-hairline pt-5">
         <Price amountPkr={unitPrice} className="text-2xl text-ink" />
         {selected?.ml ? (
-          <span className="font-mono text-sm text-taupe">{selected.ml} ml</span>
+          <span className="font-sans tabular-nums text-sm text-taupe">{selected.ml} ml</span>
         ) : null}
         {isGift && giftWrap ? (
           <span className="text-caption text-taupe">incl. gift wrap</span>
@@ -367,7 +367,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
             −
           </button>
           <span
-            className="flex min-w-10 items-center justify-center font-mono text-base tabular-nums"
+            className="flex min-w-10 items-center justify-center font-sans tabular-nums text-base "
             aria-live="polite"
           >
             {qty}
@@ -387,7 +387,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
           disabled={!product.inStock}
           onClick={addToBag}
         >
-          {product.inStock ? "Add to bag" : "Out of stock"}
+          {product.inStock ? "Add to cart" : "Out of stock"}
         </Button>
         <Button
           type="button"
@@ -453,7 +453,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
           <a href={`tel:${phoneTel}`} className={serviceLink}>
             <PhoneIcon size={18} className="shrink-0" />
             <span>
-              Call <span className="font-mono font-normal">{siteConfig.phone}</span>
+              Call <span className="font-sans tabular-nums font-normal">{siteConfig.phone}</span>
             </span>
           </a>
         </li>
@@ -484,7 +484,7 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
         >
           Share
         </button>
-        <p className="font-mono text-xs text-taupe">
+        <p className="font-sans tabular-nums text-xs text-taupe">
           Ref. {selected?.sku || product.handle}
         </p>
       </div>

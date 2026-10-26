@@ -4,7 +4,7 @@ import type { Collection, Product } from "@/lib/types";
 export const collections: Collection[] = [
   {
     handle: "for-her",
-    title: "For Her",
+    title: "For her",
     description: "Florals, iris, and soft gourmands composed for her wardrobe.",
     seoCopy:
       "Explore NS Perfume compositions created with feminine-leaning structures: powdered iris, rose, and warm vanilla gourmands. Each eau de parfum and eau de toilette is listed with its true scent pyramid, sillage, and longevity so you can choose by wear time and occasion rather than by trend. From Iris Solstice for daylight offices to Vanille Gilde for cooler evenings, every bottle links to full note breakdowns, concentration, and available sizes.",
@@ -13,7 +13,7 @@ export const collections: Collection[] = [
   },
   {
     handle: "for-him",
-    title: "For Him",
+    title: "For him",
     description: "Woods, oud, and dry amber structures built for daily and evening wear.",
     seoCopy:
       "Shop NS Perfume for him: cedar, vetiver, smoked leather, and restrained oud. Cedar Rift is a clean daytime EDT; Oud Atelier is a denser parfum for night. Filter by family and concentration to match climate, office policy, and how long you need a scent to last.",
@@ -49,7 +49,7 @@ export const collections: Collection[] = [
   },
   {
     handle: "oriental",
-    title: "Oriental & Amber",
+    title: "Oriental and amber",
     description: "Resins, amber, oud, and incense for longer nights.",
     seoCopy:
       "Oriental and amber compositions at NS Perfume emphasize depth without glitter or gimmick. Expect saffron, labdanum, oud, and leather crafted for sillage you can control with application. Compare performance meters to match intensity to occasion.",
@@ -58,7 +58,7 @@ export const collections: Collection[] = [
   },
   {
     handle: "fresh",
-    title: "Fresh & Citrus",
+    title: "Fresh and citrus",
     description: "Green stems, fig leaf, and Italian citrus with soft drydowns.",
     seoCopy:
       "Fresh and citrus scents need more than top-note sparkle. Our lineup pairs lemon, blood orange, and fig leaf with musk and light woods so the scent does not disappear after an hour. Reapplication-friendly EDTs sit beside brighter everyday options for warm weather.",
@@ -94,7 +94,7 @@ export const collections: Collection[] = [
   },
   {
     handle: "discovery",
-    title: "Discovery & Travel Size",
+    title: "Discovery and travel size",
     description: "Sample sets and smaller formats for testing on skin.",
     seoCopy:
       "Start with the Discovery Set when you want to wear a formula for several days before buying a full bottle. Travel-friendly formats help you test sillage in real offices, evenings, and humidity.",
@@ -103,7 +103,7 @@ export const collections: Collection[] = [
   },
   {
     handle: "gift-sets",
-    title: "Gift Sets",
+    title: "Gift sets",
     description: "Curated pairings for occasions that deserve a full wardrobe start.",
     seoCopy:
       "Gift sets combine discovery formats with signature bottles so recipients can map preference before committing to a larger size. Look for guided note descriptions and free shipping thresholds on eligible orders.",
@@ -112,7 +112,7 @@ export const collections: Collection[] = [
   },
   {
     handle: "new-arrivals",
-    title: "New Arrivals",
+    title: "New arrivals",
     description: "Recently released compositions and limited formats.",
     seoCopy:
       "New arrivals at NS Perfume surface the latest note structures and bottle sizes. Browse concentration badges and scent pyramids first, then choose size once performance matches how you live.",
@@ -130,7 +130,7 @@ export const collections: Collection[] = [
   },
   {
     handle: "limited-edition",
-    title: "Limited Edition",
+    title: "Limited edition",
     description: "Short-run compositions and seasonal strengths.",
     seoCopy:
       "Limited editions may use higher concentrations or restricted raw materials. Availability is finite; check stock on the product page and consider smaller sizes if you are sampling a denser formula for the first time.",

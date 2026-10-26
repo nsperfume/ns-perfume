@@ -86,7 +86,7 @@ export function FindYourScentGuide() {
                 ? "Your matches"
                 : `Question ${step + 1} of ${SCENT_GUIDE_STEPS.length}`}
             </p>
-            <p className="font-mono text-sm tabular-nums text-taupe">
+            <p className="font-sans tabular-nums text-sm text-taupe">
               {Math.min(100, progress)}%
             </p>
           </div>
@@ -230,7 +230,7 @@ export function FindYourScentGuide() {
                               {p.name}
                             </Link>
                           </h3>
-                          <p className="mt-2 font-mono text-xs text-taupe">
+                          <p className="mt-2 font-sans tabular-nums text-xs text-taupe">
                             {p.concentration}
                             {price?.ml ? ` · ${`${price.ml} ml`}` : ""}
                             {` · ${p.family}`}
@@ -351,7 +351,7 @@ export function FindYourScentGuide() {
                   key={`${line}-${i}`}
                   className="text-body-sm text-ink"
                 >
-                  <span className="font-mono text-sm text-taupe">
+                  <span className="font-sans tabular-nums text-sm text-taupe">
                     {String(i + 1).padStart(2, "0")}
                   </span>{" "}
                   {line}

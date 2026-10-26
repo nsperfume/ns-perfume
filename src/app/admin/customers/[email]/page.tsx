@@ -186,7 +186,7 @@ export default function AdminCustomerDetailPage() {
                           <AdminTd className="whitespace-nowrap">
                             <Link
                               href={href}
-                              className="font-mono text-[0.875rem] font-medium text-admin-ink hover:underline"
+                              className="font-sans tabular-nums text-[0.875rem] font-medium text-admin-ink hover:underline"
                             >
                               {formatOrderNumber(o.orderNumber)}
                             </Link>
@@ -237,11 +237,11 @@ export default function AdminCustomerDetailPage() {
                         </span>
                         <span className="flex shrink-0 items-center gap-3 text-sm text-admin-muted">
                           <span>
-                            <span className="tabular-nums text-admin-ink">
+                            <span className="font-sans tabular-nums text-admin-ink">
                               {p.totalQuantity}
                             </span>{" "}
                             bought in{" "}
-                            <span className="tabular-nums text-admin-ink">
+                            <span className="font-sans tabular-nums text-admin-ink">
                               {p.orderCount}
                             </span>{" "}
                             {p.orderCount === 1 ? "order" : "orders"}
@@ -308,7 +308,7 @@ export default function AdminCustomerDetailPage() {
               <div className="space-y-1.5 px-5 py-5 text-[0.9375rem] sm:px-6">
                 <p className="break-all font-medium text-admin-ink">{data.email}</p>
                 {data.phone ? (
-                  <p className="font-mono text-[0.875rem] tabular-nums text-admin-ink">
+                  <p className="font-sans tabular-nums text-[0.875rem] text-admin-ink">
                     {data.phone}
                   </p>
                 ) : null}
@@ -327,16 +327,16 @@ export default function AdminCustomerDetailPage() {
             <AdminCard title="Summary">
               <dl className="divide-y divide-admin-line px-5 py-2 text-[0.9375rem] sm:px-6">
                 <Fact label="Total spent">
-                  <span className="font-mono tabular-nums">
+                  <span className="font-sans tabular-nums ">
                     {formatPkr(data.lifetimeSpendPkr)}
                   </span>
                 </Fact>
                 <Fact label="Orders">
-                  <span className="font-mono tabular-nums">{data.orderCount}</span>
+                  <span className="font-sans tabular-nums ">{data.orderCount}</span>
                 </Fact>
                 {data.orderCount ? (
                   <Fact label="Average order">
-                    <span className="font-mono tabular-nums">{formatPkr(avgOrder)}</span>
+                    <span className="font-sans tabular-nums ">{formatPkr(avgOrder)}</span>
                   </Fact>
                 ) : null}
                 {data.lastOrderAt ? (

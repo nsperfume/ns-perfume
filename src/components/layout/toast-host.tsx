@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { animate } from "@/lib/animate";
 import { useUi, type ToastItem } from "@/context/ui";
+import { useCart } from "@/context/cart";
+import { XIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 
 function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }) {
@@ -42,16 +44,20 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
       <button
         type="button"
         onClick={onDismiss}
-        className="shrink-0 cursor-pointer text-eyebrow text-taupe hover:text-ink"
+        aria-label="Dismiss"
+        className="-mr-1.5 inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-taupe transition-colors hover:bg-muted hover:text-ink"
       >
-        Close
+        <XIcon size={16} />
       </button>
     </div>
   );
 }
 
 export function ToastHost() {
-  const { toasts, dismissToast } = useUi();
+  const { toasts: all, dismissToast } = useUi();
+  const { isOpen: cartOpen } = useCart();
+  // The open drawer already confirms an add; a cart toast on top of it covers Check out on phones.
+  const toasts = cartOpen ? all.filter((t) => t.kind !== "cart") : all;
 
   if (!toasts.length) return null;
 

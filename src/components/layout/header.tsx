@@ -25,14 +25,14 @@ import { Logo } from "@/components/brand/logo";
 
 const shopColumns = [
   { title: "Gender", items: shopMegaMenu.gender },
-  { title: "Scent Family", items: shopMegaMenu.family },
+  { title: "Scent family", items: shopMegaMenu.family },
   { title: "Concentration", items: shopMegaMenu.type },
   { title: "Featured", items: shopMegaMenu.featured },
 ];
 
 const exploreItems = [
-  { label: "Our Story", href: "/about" },
-  { label: "Gift Cards", href: "/gift-cards" },
+  { label: "Our story", href: "/about" },
+  { label: "Gift cards", href: "/gift-cards" },
 ];
 
 const linkClass =
@@ -156,8 +156,8 @@ export function Header() {
               label="Shop"
               wide
               topLinks={[
-                { label: "All Products", href: "/products" },
-                { label: "All Collections", href: "/collections" },
+                { label: "All perfumes", href: "/products" },
+                { label: "All collections", href: "/collections" },
               ]}
               columns={shopColumns}
               panelImage={{
@@ -169,7 +169,7 @@ export function Header() {
             />
             <NavDropdown label="Explore" items={exploreItems} />
             <Link href="/find-your-scent" className={linkClass}>
-              Find Your Scent
+              Find your scent
             </Link>
         </nav>
 
@@ -196,7 +196,7 @@ export function Header() {
             {ready && wishCount > 0 ? (
               <span
                 ref={wishBadgeRef}
-                className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF1744] px-1 font-mono text-xs font-medium leading-none text-white"
+                className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF1744] px-1 font-sans tabular-nums text-xs font-medium leading-none text-white"
               >
                 {wishCount}
               </span>
@@ -214,7 +214,7 @@ export function Header() {
             {ready && itemCount > 0 ? (
               <span
                 ref={cartBadgeRef}
-                className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF1744] px-1 font-mono text-xs font-medium leading-none text-white"
+                className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF1744] px-1 font-sans tabular-nums text-xs font-medium leading-none text-white"
               >
                 {itemCount}
               </span>
@@ -246,7 +246,7 @@ export function Header() {
             <nav aria-label="Mobile" className="divide-y divide-white/10">
               <div className="py-2">
                 {[
-                  { label: "All products", href: "/products" },
+                  { label: "All perfumes", href: "/products" },
                   { label: "Collections", href: "/collections" },
                 ].map((link) => (
                   <Link

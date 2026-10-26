@@ -6,7 +6,7 @@ import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
 
 export const metadata: Metadata = {
-  title: "Our Story",
+  title: "Our story",
   description: pageCopy.about.description,
   alternates: { canonical: "/about" },
 };

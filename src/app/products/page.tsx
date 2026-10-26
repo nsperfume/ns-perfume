@@ -6,7 +6,7 @@ import { siteImages } from "@/data/images";
 import { getStoreProducts } from "@/lib/store-data";
 
 export const metadata: Metadata = {
-  title: "All Products",
+  title: "All perfumes",
   description: pageCopy.products.metaDescription,
   alternates: { canonical: "/products" },
 };

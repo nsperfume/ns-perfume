@@ -417,41 +417,6 @@ export function CheckoutClient() {
             </Link>
           </header>
 
-          {/* Express wallets (Shop Pay / Apple Pay / GPay) — disabled until a gateway is connected.
-          <section className="mb-6">
-            <p className="mb-3 text-center text-sm text-taupe">
-              Express checkout
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: "Shop Pay", className: "bg-brass text-paper" },
-                { label: "Apple Pay", className: "bg-ink text-paper" },
-                { label: "GPay", className: "bg-paper text-ink border border-hairline" },
-              ].map((btn) => (
-                <button
-                  key={btn.label}
-                  type="button"
-                  disabled
-                  title="Connect a payment provider to enable express checkout"
-                  className={cn(
-                    "flex h-11 cursor-not-allowed items-center justify-center rounded-md text-sm font-semibold opacity-90",
-                    btn.className,
-                  )}
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
-            <div className="my-5 flex items-center gap-3">
-              <div className="h-px flex-1 bg-hairline" />
-              <span className="font-sans text-xs uppercase tracking-wide text-taupe">
-                OR
-              </span>
-              <div className="h-px flex-1 bg-hairline" />
-            </div>
-          </section>
-          */}
-
           <div>{breadcrumbs(step, goToStep)}</div>
 
           {formError ? (
