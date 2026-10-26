@@ -11,10 +11,16 @@ import { computeTotals, type CheckoutConfig } from "@/lib/checkout-config";
 import { getCheckoutConfig } from "@/lib/site-settings";
 import { redeemCoupon, releaseCoupon, resolveDiscount } from "@/lib/coupons";
 import { estimateDeliveryRange } from "@/lib/order-status";
+import { normalizePkMobile, PK_MOBILE_ERROR } from "@/lib/checkout";
 import { generateOrderNumber } from "@/lib/order-number";
 import { invoicePath } from "@/lib/invoice/access";
 
 const field = (max = 200) => z.string().max(max);
+
+/** Pakistani mobile, normalised to 03XXXXXXXXX (see normalizePkMobile). */
+const pkMobile = field(30)
+  .refine((v) => normalizePkMobile(v) !== null, { message: PK_MOBILE_ERROR })
+  .transform((v) => normalizePkMobile(v) as string);
 
 const addressSchema = z.object({
   firstName: field(80).min(1),
@@ -91,7 +97,9 @@ async function priceLines(lines: z.infer<typeof lineSchema>[], config: CheckoutC
     }
     priced.push({
       productHandle: product.handle,
-      name: wrap ? `${product.name} (Gift Wrap)` : l.isGift ? `${product.name} (Gift)` : product.name,
+      // Emails and invoices print only the name, so it carries the gift note.
+      // Storefront views strip it with lineDisplayName() and show a gift line instead.
+      name: wrap ? `${product.name} (Gift wrap)` : l.isGift ? `${product.name} (Gift)` : product.name,
       sizeMl: size.ml,
       sku: wrap ? `${size.sku}-GIFT` : size.sku,
       quantity: l.quantity,
@@ -107,7 +115,7 @@ async function priceLines(lines: z.infer<typeof lineSchema>[], config: CheckoutC
 
 const createOrderSchema = z.object({
   email: z.string().email().max(200),
-  phone: field(30).optional().default(""),
+  phone: pkMobile,
   lines: z.array(lineSchema).min(1).max(30),
   shippingAddress: addressSchema,
   billingAddress: addressSchema.optional(),
@@ -144,10 +152,17 @@ export async function POST(req: Request) {
     const raw = await req.json();
     const parsed = createOrderSchema.safeParse(raw);
     if (!parsed.success) {
-      return jsonError("Invalid order payload", 400, parsed.error.flatten());
+      const phoneIssue = parsed.error.issues.some((i) => i.path[0] === "phone");
+      return jsonError(
+        phoneIssue ? PK_MOBILE_ERROR : "Invalid order payload",
+        400,
+        parsed.error.flatten(),
+      );
     }
 
     const body = parsed.data;
+    // The checkout asks for one mobile number; keep the delivery address in step with it.
+    body.shippingAddress = { ...body.shippingAddress, phone: body.phone };
     if (body.paymentMethod === "card") {
       return jsonError("Card payments are not available yet. Choose cash on delivery or bank transfer.", 400);
     }
@@ -196,10 +211,9 @@ export async function POST(req: Request) {
       orderNumber = generateOrderNumber();
     }
 
-    const status =
-      body.paymentMethod === "cod" || body.paymentMethod === "bank"
-        ? "confirmed"
-        : "pending";
+    // Every order starts pending: the team confirms COD orders by call or WhatsApp and
+    // bank orders once the transfer arrives. Confirming in admin emails the customer.
+    const status = "pending";
 
     const billing =
       body.billingSameAsShipping || !body.billingAddress
@@ -207,7 +221,7 @@ export async function POST(req: Request) {
         : body.billingAddress;
 
     const now = new Date();
-    const eta = estimateDeliveryRange(now, body.shippingMethodId);
+    const eta = estimateDeliveryRange(now, body.shippingMethodId, shippingOption.description);
 
     if (body.discountCode?.trim() && !discount) {
       return jsonError("Discount code is invalid or no longer available", 400);
@@ -230,7 +244,7 @@ export async function POST(req: Request) {
       const created = await OrderModel.create({
         orderNumber,
         email: body.email.toLowerCase().trim(),
-        phone: body.phone || body.shippingAddress.phone || "",
+        phone: body.phone,
         customerName,
         customerId: customerId || "",
         status,
@@ -265,7 +279,7 @@ export async function POST(req: Request) {
         notes: body.notes || "",
         estimatedDeliveryFrom: new Date(eta.from),
         estimatedDeliveryTo: new Date(eta.to),
-        confirmedAt: status === "confirmed" ? now : null,
+        confirmedAt: null,
       });
 
       notifyOrderPlaced(created.toObject());

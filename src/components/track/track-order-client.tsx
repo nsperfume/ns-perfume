@@ -18,6 +18,8 @@ import {
 import { cn } from "@/lib/cn";
 import { siteConfig } from "@/data/site";
 import { Button } from "@/components/ui/button";
+import { whatsappUrl } from "@/lib/whatsapp";
+import { formatPkMobile, giftLineLabel, lineDisplayName } from "@/lib/checkout";
 
 type TrackedOrder = {
   orderNumber: string;
@@ -63,6 +65,8 @@ type TrackedOrder = {
     unitPricePkr: number;
     image?: string;
     isGift?: boolean;
+    giftWrap?: boolean;
+    giftMessage?: string;
   }[];
   carrier?: string;
   trackingNumber?: string;
@@ -70,6 +74,35 @@ type TrackedOrder = {
   estimatedDelivery: { from: string; to: string };
   createdAt?: string;
 };
+
+const contactLink = "font-semibold underline underline-offset-4";
+
+/** WhatsApp and email links, optionally prefilled with an order number. */
+function ContactLinks({ orderNumber, className }: { orderNumber?: string; className?: string }) {
+  const text = orderNumber
+    ? `Hello ${siteConfig.name}, I need help with order ${orderNumber}.`
+    : `Hello ${siteConfig.name}, I need help finding my order.`;
+  const subject = orderNumber ? `Order ${orderNumber}` : "Order lookup";
+  return (
+    <>
+      <a
+        href={whatsappUrl(siteConfig.phone, text)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className ?? contactLink}
+      >
+        WhatsApp us
+      </a>{" "}
+      or{" "}
+      <a
+        href={`mailto:${siteConfig.email}?subject=${encodeURIComponent(subject)}`}
+        className={className ?? contactLink}
+      >
+        email us
+      </a>
+    </>
+  );
+}
 
 const paymentLabels: Record<string, string> = {
   cod: "Cash on delivery (COD)",
@@ -85,6 +118,7 @@ function TrackLookUpForm({
   onSubmit,
   loading,
   error,
+  notFound,
 }: {
   orderNumber: string;
   email: string;
@@ -93,6 +127,7 @@ function TrackLookUpForm({
   onSubmit: () => void;
   loading: boolean;
   error: string | null;
+  notFound: boolean;
 }) {
   return (
     <div className="mx-auto w-full max-w-[30rem]">
@@ -104,10 +139,9 @@ function TrackLookUpForm({
         >
           <Logo className="h-8 lg:h-9" />
         </Link>
-        {/* Page H1 is server-rendered in app/track-order/page.tsx */}
-        <h2 className="mt-8 text-display-md text-ink">
+        <h1 className="mt-8 text-display-md text-ink">
           Track your order
-        </h2>
+        </h1>
         <p className="mt-3 text-body-lg text-taupe">
           Enter the order number from your confirmation and the email used at
           checkout.
@@ -132,7 +166,7 @@ function TrackLookUpForm({
             id="track-order"
             value={orderNumber}
             onChange={(e) => setOrderNumber(e.target.value)}
-            placeholder="e.g. NS-4821"
+            placeholder="e.g. NS-7K4Q2M"
             autoComplete="off"
             required
             className="min-h-12 w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25"
@@ -157,12 +191,18 @@ function TrackLookUpForm({
           />
         </div>
         {error ? (
-          <p
+          <div
             role="alert"
             className="rounded-xs border border-rosewood/30 bg-rosewood/10 px-4 py-3 text-sm font-medium text-rosewood"
           >
-            {error}
-          </p>
+            <p>{error}</p>
+            {notFound ? (
+              <p className="mt-2 font-normal">
+                Still stuck? <ContactLinks orderNumber={orderNumber.trim() || undefined} /> and
+                we will find it for you.
+              </p>
+            ) : null}
+          </div>
         ) : null}
         <button
           type="submit"
@@ -175,12 +215,7 @@ function TrackLookUpForm({
 
       <p className="mt-6 text-center text-sm text-taupe">
         Need help?{" "}
-        <a
-          href={`mailto:${siteConfig.email}`}
-          className="font-semibold text-brass-ink underline-offset-4 hover:underline"
-        >
-          Contact us
-        </a>
+        <ContactLinks className="font-semibold text-brass-ink underline-offset-4 hover:underline" />
       </p>
     </div>
   );
@@ -284,14 +319,14 @@ function OrderStatusView({
         <p className="text-sm text-taupe">
           Order <span className="font-sans tabular-nums text-ink">#{order.orderNumber}</span>
         </p>
-        <h2 className="mt-2 text-display-md text-ink">
+        <h1 className="mt-2 text-display-md text-ink">
           {order.headline}
           {name ? (
             <span className="font-normal text-taupe">
               , {name.split(" ")[0]}
             </span>
           ) : null}
-        </h2>
+        </h1>
         <p className="mt-3 max-w-lg text-body text-taupe">
           {order.subcopy}
         </p>
@@ -380,8 +415,8 @@ function OrderStatusView({
               </h3>
               <p className="mt-1.5 text-sm text-ink">{order.email}</p>
               {(order.phone || addr.phone) && (
-                <p className="text-sm text-taupe">
-                  {order.phone || addr.phone}
+                <p className="font-sans text-sm tabular-nums text-taupe">
+                  {formatPkMobile(order.phone || addr.phone)}
                 </p>
               )}
             </div>
@@ -437,12 +472,13 @@ function OrderStatusView({
         </section>
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-6">
-          <a
-            href={`mailto:${siteConfig.email}?subject=Order%20${encodeURIComponent(order.orderNumber)}`}
-            className="inline-flex min-h-11 items-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline"
-          >
-            Need help? Contact us
-          </a>
+          <p className="text-sm text-taupe">
+            Need help?{" "}
+            <ContactLinks
+              orderNumber={order.orderNumber}
+              className="inline-flex min-h-11 items-center font-semibold text-brass-ink underline-offset-4 hover:underline"
+            />
+          </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
             {order.invoiceUrl ? (
               <Button
@@ -480,15 +516,17 @@ function OrderStatusView({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-sans text-base font-semibold text-ink">
-                    {line.name}
+                    {lineDisplayName(line.name)}
                   </p>
-                  <p className="text-sm text-taupe">
+                  <p className="font-sans text-sm tabular-nums text-taupe">
                     Qty {line.quantity}
-                    {line.sizeMl
-                      ? ` · ${`${line.sizeMl} ml`}`
-                      : ` · ${line.sku}`}
-                    {line.isGift ? " · Gift" : ""}
+                    {line.sizeMl ? ` · ${line.sizeMl} ml` : ""}
                   </p>
+                  {giftLineLabel(line) ? (
+                    <p className="mt-1 text-sm font-medium text-brass-ink">
+                      {giftLineLabel(line)}
+                    </p>
+                  ) : null}
                 </div>
                 <p className="shrink-0 font-sans tabular-nums text-base font-medium text-ink">
                   {format(line.unitPricePkr * line.quantity)}
@@ -557,12 +595,14 @@ export function TrackOrderClient() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [order, setOrder] = useState<TrackedOrder | null>(null);
   const [autoTried, setAutoTried] = useState(false);
 
   const lookup = useCallback(async (on: string, em: string) => {
     setLoading(true);
     setError(null);
+    setNotFound(false);
     try {
       const res = await fetch("/api/orders/track", {
         method: "POST",
@@ -572,7 +612,12 @@ export function TrackOrderClient() {
       const json = await res.json();
       if (!json.ok) {
         setOrder(null);
-        setError(json.error || "Could not find that order.");
+        if (res.status === 404) {
+          setNotFound(true);
+          setError("We could not find an order with that number and email. Check both and try again.");
+        } else {
+          setError(json.error || "Could not find that order.");
+        }
         return;
       }
       setOrder(json.data as TrackedOrder);
@@ -639,6 +684,7 @@ export function TrackOrderClient() {
           onLookupAnother={() => {
             setOrder(null);
             setError(null);
+            setNotFound(false);
           }}
         />
       ) : (
@@ -650,6 +696,7 @@ export function TrackOrderClient() {
             setEmail={setEmail}
             loading={loading}
             error={error}
+            notFound={notFound}
             onSubmit={() => lookup(orderNumber, email)}
           />
         </div>

@@ -17,15 +17,15 @@ export const ORDER_STATUS_VALUES: readonly OrderStatus[] = [
 ];
 
 /**
- * Allowed admin status moves. Pending/confirmed/shipped can move freely
- * (fixing a mis-click), but a cancelled order is final and a delivered order
- * can only be cancelled (return / refund), never sent back to an earlier step.
- * Same-status updates are allowed so tracking details can be edited.
+ * Allowed admin status moves: forward only, plus cancel. Every move is confirmed
+ * in the admin (it emails the customer), so there is no "undo" back to an earlier
+ * step. A cancelled order is final. Same-status updates are allowed so tracking
+ * details can be edited.
  */
 const ORDER_STATUS_NEXT: Record<OrderStatus, readonly OrderStatus[]> = {
-  pending: ORDER_STATUS_VALUES,
-  confirmed: ORDER_STATUS_VALUES,
-  shipped: ORDER_STATUS_VALUES,
+  pending: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
+  confirmed: ["confirmed", "shipped", "delivered", "cancelled"],
+  shipped: ["shipped", "delivered", "cancelled"],
   delivered: ["delivered", "cancelled"],
   cancelled: ["cancelled"],
 };
@@ -109,7 +109,7 @@ export function statusHeadline(status: OrderStatus): string {
 export function statusSubcopy(status: OrderStatus): string {
   switch (status) {
     case "pending":
-      return "We’re confirming payment details. You’ll get an email when the order moves forward.";
+      return "We will call or WhatsApp you to confirm your order before dispatch. Paying by bank transfer? We confirm as soon as your transfer arrives.";
     case "confirmed":
       return "We’ve received your order and are preparing it for shipment.";
     case "shipped":
@@ -175,7 +175,7 @@ export function buildTimeline(
     {
       id: "confirmed",
       label: "Confirmed",
-      description: "Payment accepted and order confirmed.",
+      description: "Order confirmed and being prepared.",
       state: r > 1 ? "done" : r === 1 ? "current" : "upcoming",
       at: iso(dates.confirmedAt) || (r >= 1 ? iso(dates.createdAt) : null),
     },
@@ -200,7 +200,7 @@ export function buildTimeline(
     steps[1] = {
       ...steps[1],
       label: "Confirming",
-      description: "Reviewing payment (COD holds, bank, or card).",
+      description: "We confirm your order by phone or WhatsApp, or once your transfer arrives.",
       state: "current",
     };
   }
@@ -261,27 +261,56 @@ export function resolveMapCoords(address: {
   };
 }
 
+/**
+ * Add courier delivery days. Pakistani couriers deliver Monday to Saturday,
+ * so only Sundays are skipped.
+ */
 export function addBusinessDays(from: Date, days: number): Date {
   const d = new Date(from);
   let left = days;
   while (left > 0) {
     d.setDate(d.getDate() + 1);
-    const day = d.getDay();
-    if (day !== 0 && day !== 6) left -= 1;
+    if (d.getDay() !== 0) left -= 1;
   }
   return d;
 }
 
+const DEFAULT_DELIVERY_DAYS: Record<string, { min: number; max: number }> = {
+  standard: { min: 3, max: 5 },
+  express: { min: 1, max: 2 },
+};
+
+/**
+ * Read a day range from a shipping method description set in Admin > Settings,
+ * e.g. "3 to 5 business days", "1-2 days" or "2 business days". Null when the
+ * text has no usable numbers.
+ */
+export function parseDeliveryDays(description?: string | null): { min: number; max: number } | null {
+  const text = String(description ?? "");
+  const range = /(\d{1,2})\s*(?:to|-|\u2013|\u2014|and)\s*(\d{1,2})/i.exec(text);
+  const single = range ? null : /(\d{1,2})/.exec(text);
+  const min = Number(range ? range[1] : single?.[1]);
+  const max = Number(range ? range[2] : single?.[1]);
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min < 0 || max < min || max > 30) return null;
+  return { min, max };
+}
+
+/**
+ * Expected delivery window. Uses the day range in the shipping method
+ * description when it has one, else 3 to 5 days (standard) or 1 to 2 (express).
+ */
 export function estimateDeliveryRange(
   createdAt: Date | string,
   shippingMethodId?: string,
+  description?: string | null,
 ): { from: string; to: string } {
   const start = new Date(createdAt);
-  const minDays = shippingMethodId === "express" ? 1 : 3;
-  const maxDays = shippingMethodId === "express" ? 2 : 5;
+  const days =
+    parseDeliveryDays(description) ??
+    DEFAULT_DELIVERY_DAYS[shippingMethodId === "express" ? "express" : "standard"];
   return {
-    from: addBusinessDays(start, minDays).toISOString(),
-    to: addBusinessDays(start, maxDays).toISOString(),
+    from: addBusinessDays(start, days.min).toISOString(),
+    to: addBusinessDays(start, days.max).toISOString(),
   };
 }
 

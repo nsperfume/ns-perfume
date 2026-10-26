@@ -16,14 +16,10 @@ export default function ResetPasswordPage() {
           Account
         </p>
         <h1 className="text-display-lg text-balance text-ink">Choose a new password</h1>
-        <p className="mt-4 text-body-lg text-taupe">
-          Use at least 8 characters. After saving you will be signed in.
-        </p>
-        <div className="mt-8 border border-hairline bg-paper p-6 sm:p-8">
-          <Suspense fallback={null}>
-            <ResetPasswordForm />
-          </Suspense>
-        </div>
+        {/* The form renders the intro, so it can drop it when the link has no token. */}
+        <Suspense fallback={null}>
+          <ResetPasswordForm />
+        </Suspense>
       </div>
     </section>
   );

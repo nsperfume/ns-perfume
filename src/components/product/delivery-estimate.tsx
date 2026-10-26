@@ -41,11 +41,11 @@ export function DeliveryEstimate({ className }: { className?: string }) {
   const [label, setLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    const { from, to } = estimateDeliveryRange(karachiToday(), method);
+    const { from, to } = estimateDeliveryRange(karachiToday(), method, config.shipping[method].description);
     setLabel(
       `Order today, delivered between ${formatDay(from)} and ${formatDay(to)}`,
     );
-  }, [method]);
+  }, [method, config]);
 
   return <span className={className}>{label ?? fallback}</span>;
 }

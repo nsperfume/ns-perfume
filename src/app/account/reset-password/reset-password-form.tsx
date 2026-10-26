@@ -18,13 +18,15 @@ export default function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <p className="text-body text-ink">
-        This link is incomplete. Request a new one from the{" "}
-        <Link href="/account" className="underline underline-offset-4">
-          sign in page
-        </Link>
-        .
-      </p>
+      <div className="mt-8 border border-hairline bg-paper p-6 sm:p-8">
+        <p className="text-body text-ink">
+          This link is incomplete. Request a new one from the{" "}
+          <Link href="/account" className="underline underline-offset-4">
+            sign in page
+          </Link>
+          .
+        </p>
+      </div>
     );
   }
 
@@ -55,31 +57,38 @@ export default function ResetPasswordForm() {
   }
 
   return (
-    <form className="space-y-4" onSubmit={submit} noValidate>
-      <Input
-        label="New password"
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        autoComplete="new-password"
-        required
-      />
-      <Input
-        label="Repeat new password"
-        type="password"
-        value={confirm}
-        onChange={(e) => setConfirm(e.target.value)}
-        autoComplete="new-password"
-        required
-      />
-      {error ? (
-        <p className="text-body-sm text-rosewood" role="alert">
-          {error}
-        </p>
-      ) : null}
-      <Button type="submit" disabled={saving} className="w-full">
-        {saving ? "Saving…" : "Save new password"}
-      </Button>
-    </form>
+    <>
+      <p className="mt-4 text-body-lg text-taupe">
+        Use at least 8 characters. After saving you will be signed in.
+      </p>
+      <div className="mt-8 border border-hairline bg-paper p-6 sm:p-8">
+        <form className="space-y-4" onSubmit={submit} noValidate>
+          <Input
+            label="New password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            required
+          />
+          <Input
+            label="Repeat new password"
+            type="password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            autoComplete="new-password"
+            required
+          />
+          {error ? (
+            <p className="text-body-sm text-rosewood" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <Button type="submit" disabled={saving} className="w-full">
+            {saving ? "Saving…" : "Save new password"}
+          </Button>
+        </form>
+      </div>
+    </>
   );
 }

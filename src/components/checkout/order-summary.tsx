@@ -7,6 +7,7 @@ import { useCurrency } from "@/context/currency";
 import { useCheckoutConfig } from "@/context/checkout-config";
 import { freeShippingGap, taxLineLabel } from "@/lib/checkout-config";
 import { cn } from "@/lib/cn";
+import { giftLineLabel } from "@/lib/checkout";
 import { PayableAmount } from "@/components/commerce/price";
 
 type SummaryProps = {
@@ -16,6 +17,8 @@ type SummaryProps = {
   discountCode: string;
   shippingPkr: number | null;
   shippingLabel?: string;
+  /** A discount code that includes free standard shipping. */
+  freeShippingCoupon?: boolean;
   /** Cash-on-delivery fee once the shopper is on the payment step. */
   codFeePkr?: number;
   /** Tax added on top (exclusive). */
@@ -35,6 +38,7 @@ export function CheckoutOrderSummary({
   discountCode,
   shippingPkr,
   shippingLabel,
+  freeShippingCoupon = false,
   codFeePkr = 0,
   taxPkr = 0,
   taxIncludedPkr = 0,
@@ -81,15 +85,18 @@ export function CheckoutOrderSummary({
               <p className="text-base font-semibold leading-snug text-ink">
                 {line.name}
               </p>
-              <p className="mt-0.5 text-sm text-taupe">
+              <p className="mt-0.5 font-sans text-sm tabular-nums text-taupe">
                 Qty {line.quantity}
-                {line.sizeMl > 0 ? ` · ${line.sizeMl} ml` : ` · ${line.sku}`}
-                {line.giftWrap ? " · Gift wrap" : line.isGift ? " · Gift" : ""}
+                {line.sizeMl > 0 ? ` · ${line.sizeMl} ml` : ""}
               </p>
+              {giftLineLabel(line) ? (
+                <p className="mt-1 text-sm font-medium text-brass-ink">
+                  {giftLineLabel(line)}
+                </p>
+              ) : null}
               {line.giftMessage ? (
                 <p className="mt-1 text-sm leading-snug text-taupe">
-                  <span className="text-taupe">Gift note: </span>
-                  {line.giftMessage}
+                  Gift note: {line.giftMessage}
                 </p>
               ) : null}
             </div>
@@ -147,17 +154,18 @@ export function CheckoutOrderSummary({
               ×
             </button>
           </span>
-          <span className="text-ink">−{format(discountPkr)}</span>
+          <span className="font-sans tabular-nums text-ink">−{format(discountPkr)}</span>
         </div>
       ) : null}
 
-      {freeShipGap === null ? null : freeShipGap > 0 ? (
+      {freeShipGap === null ? null : freeShipGap > 0 && !freeShippingCoupon ? (
         <p className="mt-4 text-sm leading-snug text-taupe">
-          Add {format(freeShipGap)} more for complimentary standard shipping.
+          Add <span className="font-sans tabular-nums">{format(freeShipGap)}</span> more
+          for free standard shipping.
         </p>
       ) : (
         <p className="mt-4 text-sm leading-snug text-taupe">
-          Your order qualifies for complimentary standard shipping.
+          Your order qualifies for free standard shipping.
         </p>
       )}
 
@@ -174,9 +182,9 @@ export function CheckoutOrderSummary({
         ) : null}
         <div className="flex justify-between text-taupe">
           <span>Shipping</span>
-          <span className="text-ink">
+          <span className="text-right font-sans tabular-nums text-ink">
             {shippingPkr === null
-              ? "Enter shipping address"
+              ? "Calculated at next step"
               : shippingPkr === 0
                 ? "Free"
                 : format(shippingPkr)}
@@ -203,14 +211,11 @@ export function CheckoutOrderSummary({
 
       <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
         <span className="text-base font-semibold text-ink">Total</span>
-        <div className="flex items-baseline text-right">
-          <span className="mr-2 font-sans tabular-nums text-xs text-taupe">PKR</span>
-          <PayableAmount
-            amountPkr={totalPkr}
-            variant="stacked"
-            className="items-end font-sans tabular-nums text-2xl font-medium tracking-tight text-ink"
-          />
-        </div>
+        <PayableAmount
+          amountPkr={totalPkr}
+          variant="stacked"
+          className="items-end text-right font-sans tabular-nums text-2xl font-medium tracking-tight text-ink"
+        />
       </div>
       {taxIncludedPkr > 0 ? (
         <p className="mt-2 text-right text-caption text-taupe">
@@ -235,7 +240,7 @@ export function CheckoutOrderSummary({
               {openMobile ? "▴" : "▾"}
             </span>
           </span>
-          <span className="font-sans text-base font-semibold text-ink">
+          <span className="font-sans text-base font-semibold tabular-nums text-ink">
             {formatPkr(totalPkr)}
           </span>
         </button>

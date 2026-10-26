@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/cart";
@@ -11,6 +11,61 @@ import { useCustomer } from "@/context/customer";
 import { useUi } from "@/context/ui";
 import { cn } from "@/lib/cn";
 import { BrandLoader, BrandLoaderBlock } from "@/components/brand/brand-loader";
+import { lineDisplayName } from "@/lib/checkout";
+
+/** Where to return after Google sign-in, which always lands back on /account. */
+const NEXT_KEY = "ns-auth-next";
+const NEXT_TTL_MS = 15 * 60_000;
+
+/**
+ * `next` from the URL, accepted only as a same-origin path ("/checkout"), never
+ * "//evil.com", "https://..." or another account page.
+ */
+function safeNext(raw: string | null | undefined): string | null {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
+    return null;
+  }
+  try {
+    const base = "https://store.invalid";
+    const url = new URL(raw, base);
+    if (url.origin !== base || url.pathname.startsWith("/account")) return null;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return null;
+  }
+}
+
+function rememberNext(path: string | null) {
+  if (!path) return;
+  try {
+    sessionStorage.setItem(NEXT_KEY, JSON.stringify({ path, at: Date.now() }));
+  } catch {
+    /* ignore */
+  }
+}
+
+function readRememberedNext(): string | null {
+  try {
+    const raw = sessionStorage.getItem(NEXT_KEY);
+    if (!raw) return null;
+    const { path, at } = JSON.parse(raw) as { path?: string; at?: number };
+    if (!at || Date.now() - at > NEXT_TTL_MS) {
+      sessionStorage.removeItem(NEXT_KEY);
+      return null;
+    }
+    return safeNext(path);
+  } catch {
+    return null;
+  }
+}
+
+function forgetNext() {
+  try {
+    sessionStorage.removeItem(NEXT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 type OrderLine = {
   productHandle: string;
@@ -67,7 +122,7 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-function AuthPanel() {
+function AuthPanel({ next }: { next: string | null }) {
   const search = useSearchParams();
   const { refresh, googleEnabled } = useCustomer();
   const [mode, setMode] = useState<"signin" | "register" | "forgot">("signin");
@@ -177,6 +232,7 @@ function AuthPanel() {
           <>
             <a
               href="/api/auth/google"
+              onClick={() => rememberNext(next)}
               className="mb-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xs border border-[#d6cfbf] bg-paper px-4 text-label text-ink transition-colors hover:border-ink/50"
             >
               <GoogleIcon className="h-6 w-6" />
@@ -224,6 +280,7 @@ function AuthPanel() {
               autoComplete={
                 mode === "register" ? "new-password" : "current-password"
               }
+              hint={mode === "register" ? "Use at least 8 characters" : undefined}
               required
             />
           )}
@@ -242,7 +299,21 @@ function AuthPanel() {
           ) : null}
           {mode === "register" ? (
             <p className="text-body-sm text-taupe">
-              Use at least 8 characters. That is all.
+              By creating an account you agree to our{" "}
+              <Link
+                href="/policies/terms"
+                className="text-ink underline underline-offset-4 hover:text-brass-ink"
+              >
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/policies/privacy"
+                className="text-ink underline underline-offset-4 hover:text-brass-ink"
+              >
+                Privacy policy
+              </Link>
+              .
             </p>
           ) : null}
           {error ? (
@@ -521,7 +592,7 @@ function ProfilePanel() {
                     </p>
                     <p className="mt-2 line-clamp-2 text-body-sm text-taupe">
                       {order.lines
-                        .map((l) => `${l.name} × ${l.quantity}`)
+                        .map((l) => `${lineDisplayName(l.name)}${l.isGift ? " (gift)" : ""} × ${l.quantity}`)
                         .join(" · ")}
                     </p>
                   </div>
@@ -564,18 +635,49 @@ function ProfilePanel() {
   );
 }
 
+/** Visible from the first paint: the caption shows while the animated mark loads. */
+export function AccountLoading({ caption = "Loading your account" }: { caption?: string }) {
+  return <BrandLoaderBlock label={caption} caption={caption} />;
+}
+
 export default function AccountPage() {
   const { user, loading } = useCustomer();
+  const search = useSearchParams();
+  const router = useRouter();
+  const urlNext = safeNext(search.get("next"));
+  const [rememberedNext, setRememberedNext] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRememberedNext(readRememberedNext());
+  }, []);
+
+  const next = urlNext ?? rememberedNext;
+  const returning = Boolean(user && next);
+
+  // Signed in (email, new account, or back from Google): return to where they came from.
+  useEffect(() => {
+    if (!user || !next) return;
+    forgetNext();
+    router.replace(next);
+  }, [user, next, router]);
 
   return (
     <section className="bg-canvas section-y">
-      {loading ? (
-        <BrandLoaderBlock label="Loading your account" />
+      {loading || returning ? (
+        <AccountLoading
+          caption={
+            !returning
+              ? undefined
+              : next?.startsWith("/checkout")
+                ? "Signed in. Taking you back to checkout"
+                : "Signed in. Taking you back"
+          }
+        />
       ) : user ? (
         <ProfilePanel />
       ) : (
         <div className="container-ns">
-          <AuthPanel />
+          <AuthPanel next={next} />
         </div>
       )}
     </section>

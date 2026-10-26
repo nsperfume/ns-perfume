@@ -96,7 +96,7 @@ function PaymentPanel({ o }: { o: OrderEmailData }) {
           ["JazzCash", siteConfig.wallets.jazzcash],
           ["Easypaisa", siteConfig.wallets.easypaisa],
         ]}
-        note={`Use ${o.orderNumber} as the payment reference, then send the receipt on WhatsApp to ${siteConfig.phone}. We dispatch as soon as the payment is confirmed.`}
+        note={`Use ${o.orderNumber} as the payment reference, then send the receipt on WhatsApp to ${siteConfig.phoneDisplay}. We dispatch as soon as the payment is confirmed.`}
       />
     );
   }
@@ -126,8 +126,8 @@ export function OrderConfirmationEmail({ order: o }: { order: OrderEmailData }) 
       <Title>Thank you, {firstName(o)}</Title>
       <P>
         {isBank
-          ? "We have your order and are holding it for you. Complete the bank or wallet transfer below and we will prepare it for dispatch."
-          : "We have your order and are preparing it now. You will hear from us again when it ships."}
+          ? "We have your order and are holding it for you. Complete the bank or wallet transfer below and we will confirm and prepare it as soon as the payment arrives."
+          : "We have your order. Our team will call or WhatsApp you to confirm it before dispatch, and you will hear from us again when it ships."}
       </P>
       <ReferenceBadge label="Order number" value={o.orderNumber} />
       <PaymentPanel o={o} />

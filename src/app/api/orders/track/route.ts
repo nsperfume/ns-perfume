@@ -75,6 +75,7 @@ export async function POST(req: Request) {
         : estimateDeliveryRange(
             order.createdAt || new Date(),
             order.shippingMethod?.id,
+            order.shippingMethod?.description,
           );
 
     const timeline = buildTimeline(status, {

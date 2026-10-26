@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminWrite, adminDenied } from "@/lib/auth";
 import { OrderModel } from "@/models/Order";
 import {
   canTransitionOrderStatus,
@@ -57,8 +57,8 @@ export async function GET(_req: Request, { params }: Params) {
 
 export async function PATCH(req: Request, { params }: Params) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) return jsonError("Unauthorized", 401);
+    const admin = await requireAdminWrite();
+    if (!admin) return adminDenied();
 
     const { orderNumber: raw } = await params;
     const orderNumber = decodeURIComponent(raw).trim();
@@ -113,6 +113,7 @@ export async function PATCH(req: Request, { params }: Params) {
       const eta = estimateDeliveryRange(
         order.createdAt || now,
         order.shippingMethod?.id,
+        order.shippingMethod?.description,
       );
       set.estimatedDeliveryFrom = new Date(eta.from);
       set.estimatedDeliveryTo = new Date(eta.to);

@@ -4,10 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/context/cart";
+import { useCurrency } from "@/context/currency";
 import { Price } from "@/components/commerce/price";
 import { Button } from "@/components/ui/button";
-import { pageCopy } from "@/data/copy";
 import { cn } from "@/lib/cn";
+import { giftLineLabel } from "@/lib/checkout";
 import { animate, EASE, finished } from "@/lib/animate";
 import { useCheckoutConfig } from "@/context/checkout-config";
 import { freeShippingGap } from "@/lib/checkout-config";
@@ -15,10 +16,14 @@ import { freeShippingGap } from "@/lib/checkout-config";
 export function CartDrawer() {
   const { lines, isOpen, closeCart, removeItem, updateQuantity, subtotal } =
     useCart();
+  const { format } = useCurrency();
   const [mounted, setMounted] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  /** Element that had focus when the drawer opened; focus goes back there on close. */
+  const openerRef = useRef<HTMLElement | null>(null);
 
   const itemCount = lines.reduce((s, l) => s + l.quantity, 0);
   const checkoutConfig = useCheckoutConfig();
@@ -34,6 +39,18 @@ export function CartDrawer() {
   }, [isOpen]);
 
   useEffect(() => {
+    if (isOpen) {
+      const active = document.activeElement;
+      openerRef.current =
+        active instanceof HTMLElement && active !== document.body ? active : null;
+      return;
+    }
+    const opener = openerRef.current;
+    openerRef.current = null;
+    if (opener?.isConnected) opener.focus({ preventScroll: true });
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!mounted) return;
     const root = rootRef.current;
     const panel = panelRef.current;
@@ -43,6 +60,7 @@ export function CartDrawer() {
 
     if (isOpen) {
       root.style.opacity = "1";
+      closeRef.current?.focus({ preventScroll: true });
       animate(panel, [{ transform: "translateX(100%)" }, { transform: "translateX(0)" }], { duration: 450 });
       animate(scrim, [{ opacity: 0 }, { opacity: 1 }], { duration: 350 });
       listRef.current?.querySelectorAll("[data-cart-line]").forEach((item, i) => {
@@ -71,7 +89,33 @@ export function CartDrawer() {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeCart();
+      if (e.key === "Escape") {
+        closeCart();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      // Keep Tab inside the drawer while it is open.
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusables = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.getClientRects().length > 0);
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (!panel.contains(active)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -93,6 +137,7 @@ export function CartDrawer() {
       <button
         type="button"
         data-cart-scrim
+        tabIndex={-1}
         aria-label="Close cart"
         className="absolute inset-0 cursor-pointer bg-ink/40 backdrop-blur-[2px]"
         onClick={closeCart}
@@ -112,10 +157,11 @@ export function CartDrawer() {
             ) : null}
           </h2>
           <button
+            ref={closeRef}
             type="button"
             onClick={closeCart}
             className="-mr-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-xs text-taupe transition-colors hover:bg-muted hover:text-ink"
-            aria-label="Close"
+            aria-label="Close cart"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
               <path
@@ -132,27 +178,14 @@ export function CartDrawer() {
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto scrollbar-panel">
           {lines.length === 0 ? (
             <div className="flex flex-1 flex-col px-5 pt-8 pb-4 sm:px-7">
-              <p className="text-eyebrow text-taupe">
-                Empty
-              </p>
-              <p className="mt-3 max-w-[34ch] text-body-lg text-ink/85">
-                {pageCopy.cartEmpty}
-              </p>
-              <div className="mt-8 flex flex-col gap-3">
-                <Button
-                  href="/products"
-                  className="w-full sm:w-full"
-                  onClick={closeCart}
-                >
-                  Shop all
-                </Button>
+              <p className="text-body-lg text-ink">Your cart is empty</p>
+              <div className="mt-6 flex flex-col gap-3">
                 <Button
                   href="/collections/bestsellers"
-                  variant="secondary"
                   className="w-full sm:w-full"
                   onClick={closeCart}
                 >
-                  Bestsellers
+                  Shop bestsellers
                 </Button>
               </div>
               <div className="mt-auto border-t border-hairline pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -199,15 +232,20 @@ export function CartDrawer() {
                           className="line-clamp-2 text-base font-semibold leading-snug text-ink transition-colors hover:text-brass-ink"
                         >
                           {line.name}
-                          {line.isGift ? " (Gift)" : ""}
                         </Link>
-                        <p className="mt-1 font-sans tabular-nums text-xs text-taupe">
-                          {line.sizeMl > 0 ? `${line.sizeMl} ml` : line.sku}
-                          {line.giftWrap ? " · Wrap" : ""}
-                        </p>
+                        {line.sizeMl > 0 ? (
+                          <p className="mt-1 font-sans tabular-nums text-xs text-taupe">
+                            {line.sizeMl} ml
+                          </p>
+                        ) : null}
+                        {giftLineLabel(line) ? (
+                          <p className="mt-1 text-caption font-medium text-brass-ink">
+                            {giftLineLabel(line)}
+                          </p>
+                        ) : null}
                         {line.giftMessage ? (
                           <p className="mt-1 line-clamp-2 text-caption leading-snug text-taupe">
-                            Note: {line.giftMessage}
+                            Gift note: {line.giftMessage}
                           </p>
                         ) : null}
                       </div>
@@ -266,20 +304,20 @@ export function CartDrawer() {
         {lines.length > 0 ? (
           <div className="shrink-0 border-t border-hairline bg-muted/50 px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-7">
             {freeShipRemaining !== null ? (
-            <div className="mb-4" aria-label="Free shipping progress">
-              <div className="mb-2 flex justify-between gap-2 text-caption text-taupe">
-                <span>
-                  {freeShipRemaining > 0
-                    ? "Toward free shipping"
-                    : "Free standard shipping"}
-                </span>
+            <div className="mb-4">
+              <p className="mb-2 text-caption text-taupe">
                 {freeShipRemaining > 0 ? (
-                  <Price
-                    amountPkr={freeShipRemaining}
-                    className="text-sm text-taupe"
-                  />
-                ) : null}
-              </div>
+                  <>
+                    Add{" "}
+                    <span className="whitespace-nowrap font-sans tabular-nums text-ink">
+                      {format(freeShipRemaining)}
+                    </span>{" "}
+                    more for free standard shipping
+                  </>
+                ) : (
+                  "Your order qualifies for free standard shipping"
+                )}
+              </p>
               <div className="h-1 overflow-hidden bg-hairline">
                 <div
                   className={cn(
@@ -298,7 +336,9 @@ export function CartDrawer() {
                   Subtotal
                 </p>
                 <p className="mt-0.5 text-caption text-taupe">
-                  Shipping at checkout
+                  {freeShipRemaining === 0
+                    ? "Free standard shipping"
+                    : "Shipping calculated at checkout"}
                 </p>
               </div>
               <Price

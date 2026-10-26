@@ -13,8 +13,7 @@ export const metadata: Metadata = {
 export default function TrackOrderPage() {
   return (
     <>
-      {/* The client view streams in behind Suspense, so the page H1 lives here. */}
-      <h1 className="sr-only">Track your order</h1>
+      {/* The client view renders the visible H1 (lookup form or order status). */}
       <Suspense
         fallback={
           <BrandLoaderBlock className="min-h-dvh bg-canvas" label="Loading order tracking" />

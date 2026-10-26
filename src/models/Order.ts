@@ -97,4 +97,9 @@ const OrderSchema = new Schema(
   { timestamps: true },
 );
 
+// Admin lists sort by date and filter by status; COD follow-up looks orders up by phone.
+OrderSchema.index({ createdAt: -1 });
+OrderSchema.index({ status: 1, createdAt: -1 });
+OrderSchema.index({ phone: 1 });
+
 export const OrderModel = models.Order || model("Order", OrderSchema);
