@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/cn";
-import { HORIZONTAL } from "@/components/brand/paths";
+import { WORDMARK } from "@/components/brand/paths";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { ChevronDownIcon, MailIcon, MapPinIcon, PhoneIcon } from "@/components/ui/icons";
 import { whatsappUrl } from "@/lib/whatsapp";
@@ -159,7 +159,7 @@ export function Footer() {
           className="mb-10 grid gap-10 pb-4 md:mb-14 md:border-b md:border-white/10 md:pb-14 lg:grid-cols-12 lg:items-end lg:gap-12"
         >
           <div className="lg:col-span-5">
-            <Logo className="h-9 text-paper sm:h-10" />
+            <Logo className="h-11 text-paper sm:h-12" />
             <p className="mt-5 max-w-[30rem] text-body-lg text-paper/75">
               {siteConfig.description}
             </p>
@@ -309,12 +309,12 @@ export function Footer() {
       {/* Giant wordmark */}
       <div className="relative overflow-hidden border-t border-white/5 px-4 pb-4 pt-2 sm:pb-6">
         <svg
-          viewBox={`${HORIZONTAL.rule.x + 26} 8 ${HORIZONTAL.width - HORIZONTAL.rule.x - 26} 80`}
+          viewBox={`-4 -4 ${WORDMARK.width + 8} ${WORDMARK.height + 8}`}
           className="mx-auto block h-auto w-full max-w-[90rem] select-none fill-paper/[0.08] sm:fill-paper/[0.1]"
           aria-hidden="true"
           focusable="false"
         >
-          <path d={HORIZONTAL.wordmark} />
+          <path d={WORDMARK.d} />
         </svg>
         <span className="sr-only">{siteConfig.name}</span>
       </div>

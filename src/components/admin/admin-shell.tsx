@@ -274,7 +274,7 @@ function AdminShellInner({
       >
         {!collapsed ? (
           <Link href="/admin" className="block min-w-0 text-white">
-            <Logo className="h-6 max-w-full" title="NS Perfume admin" />
+            <Logo className="h-8 max-w-full" title="NS Perfume admin" />
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
               Admin console
             </p>
@@ -285,7 +285,7 @@ function AdminShellInner({
             className="flex text-white"
             title="NS Perfume Admin"
           >
-            <LogoMark className="h-8" title="NS Perfume admin" />
+            <LogoMark className="h-9" title="NS Perfume admin" />
           </Link>
         )}
         <Tooltip content={collapsed ? "Expand menu" : "Collapse menu"} side="right">
@@ -462,7 +462,7 @@ function AdminShellInner({
             Menu
           </button>
           <Link href="/admin" className="flex text-admin-ink">
-            <Logo className="h-5" title="NS Perfume admin" />
+            <Logo className="h-7" title="NS Perfume admin" />
           </Link>
           <Tooltip content="Log out">
             <button

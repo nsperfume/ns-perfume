@@ -1,18 +1,7 @@
 import path from "node:path";
-import {
-  Document,
-  Font,
-  G,
-  Page,
-  Path,
-  Rect,
-  StyleSheet,
-  Svg,
-  Text,
-  View,
-} from "@react-pdf/renderer";
+import { Document, Font, G, Page, Path, Rect, StyleSheet, Svg, Text, View, Defs, LinearGradient, Stop } from "@react-pdf/renderer";
 import { siteConfig } from "@/data/site";
-import { HORIZONTAL, MONOGRAM } from "@/components/brand/paths";
+import { CROWNED, GOLD, GOLD_RULE, HORIZONTAL, MONOGRAM } from "@/components/brand/paths";
 import { siteUrl } from "@/lib/site-url";
 import type { OrderEmailData } from "@/emails/order-data";
 
@@ -77,10 +66,33 @@ function LogoLockup() {
   const h = (w * HORIZONTAL.height) / HORIZONTAL.width;
   return (
     <Svg viewBox={`0 0 ${HORIZONTAL.width} ${HORIZONTAL.height}`} width={w} height={h}>
-      <G transform={`scale(${HORIZONTAL.monogramScale})`}>
-        <Path d={MONOGRAM.d} fill={C.brass} />
+      {/* Metallic gold. The mark gradient is in mark units (it sits inside the scaled group). */}
+      <Defs>
+        <LinearGradient
+          id="nsGold"
+          gradientUnits="userSpaceOnUse"
+          x1={GOLD.x1}
+          y1={GOLD.y1}
+          x2={GOLD.x2}
+          y2={GOLD.y2}
+        >
+          {GOLD.stops.map(([offset, color]) => (
+            <Stop key={offset} offset={offset} stopColor={color} />
+          ))}
+        </LinearGradient>
+        <LinearGradient id="nsGoldRule" gradientUnits="userSpaceOnUse" x1={0} y1={HORIZONTAL.rule.y} x2={0} y2={HORIZONTAL.rule.y + HORIZONTAL.rule.height}>
+          {GOLD_RULE.map(([offset, color]) => (
+            <Stop key={offset} offset={offset} stopColor={color} />
+          ))}
+        </LinearGradient>
+      </Defs>
+      <G transform={`scale(${HORIZONTAL.markScale})`}>
+        <Path d={CROWNED.crown} fill="url('#nsGold')" />
+        <G transform={`translate(0 ${CROWNED.monogramY})`}>
+          <Path d={MONOGRAM.d} fill="url('#nsGold')" />
+        </G>
       </G>
-      <Rect x={HORIZONTAL.rule.x} y={HORIZONTAL.rule.y} width={HORIZONTAL.rule.width} height={HORIZONTAL.rule.height} fill={C.brass} />
+      <Rect x={HORIZONTAL.rule.x} y={HORIZONTAL.rule.y} width={HORIZONTAL.rule.width} height={HORIZONTAL.rule.height} fill="url('#nsGoldRule')" />
       <Path d={HORIZONTAL.wordmark} fill={C.ink} />
     </Svg>
   );

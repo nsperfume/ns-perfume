@@ -84,7 +84,7 @@ export function ThankYouClient() {
             aria-label={`${siteConfig.name} home`}
             className="inline-block text-ink"
           >
-            <Logo className="h-7 sm:h-8 lg:h-9" />
+            <Logo className="h-9 sm:h-10 lg:h-11" />
           </Link>
 
           <div className="mt-10 flex items-start gap-4">
