@@ -12,7 +12,7 @@ import {
   View,
 } from "@react-pdf/renderer";
 import { siteConfig } from "@/data/site";
-import { HORIZONTAL, MONOGRAM } from "@/components/brand/paths";
+import { CROWNED, HORIZONTAL, MONOGRAM } from "@/components/brand/paths";
 import { siteUrl } from "@/lib/site-url";
 import type { OrderEmailData } from "@/emails/order-data";
 
@@ -77,8 +77,11 @@ function LogoLockup() {
   const h = (w * HORIZONTAL.height) / HORIZONTAL.width;
   return (
     <Svg viewBox={`0 0 ${HORIZONTAL.width} ${HORIZONTAL.height}`} width={w} height={h}>
-      <G transform={`scale(${HORIZONTAL.monogramScale})`}>
-        <Path d={MONOGRAM.d} fill={C.brass} />
+      <G transform={`scale(${HORIZONTAL.markScale})`}>
+        <Path d={CROWNED.crown} fill={C.brass} />
+        <G transform={`translate(0 ${CROWNED.monogramY})`}>
+          <Path d={MONOGRAM.d} fill={C.brass} />
+        </G>
       </G>
       <Rect x={HORIZONTAL.rule.x} y={HORIZONTAL.rule.y} width={HORIZONTAL.rule.width} height={HORIZONTAL.rule.height} fill={C.brass} />
       <Path d={HORIZONTAL.wordmark} fill={C.ink} />

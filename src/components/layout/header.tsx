@@ -160,7 +160,7 @@ export function Header() {
           aria-label={`${siteConfig.name} home`}
           className="shrink-0 cursor-pointer text-paper transition-colors hover:text-white"
         >
-          <Logo className="h-6 min-[380px]:h-7 sm:h-8 lg:h-9" />
+          <Logo className="h-8 min-[380px]:h-9 sm:h-10 lg:h-12" />
         </Link>
 
         <nav

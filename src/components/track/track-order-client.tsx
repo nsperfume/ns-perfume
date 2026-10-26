@@ -137,7 +137,7 @@ function TrackLookUpForm({
           aria-label={`${siteConfig.name} home`}
           className="inline-block text-ink"
         >
-          <Logo className="h-8 lg:h-9" />
+          <Logo className="h-10 lg:h-11" />
         </Link>
         <h1 className="mt-8 text-display-md text-ink">
           Track your order
@@ -305,7 +305,7 @@ function OrderStatusView({
             aria-label={`${siteConfig.name} home`}
             className="text-ink"
           >
-            <Logo className="h-8 lg:h-9" />
+            <Logo className="h-10 lg:h-11" />
           </Link>
           <button
             type="button"

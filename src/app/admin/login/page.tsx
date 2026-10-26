@@ -115,7 +115,7 @@ export default function AdminLoginPage() {
         noValidate
         className="w-full max-w-md rounded-xl border border-admin-line bg-admin-paper p-7 sm:p-10"
       >
-        <Logo className="h-7 text-admin-ink" />
+        <Logo className="h-9 text-admin-ink" />
         <h1 className="mt-7 text-[1.625rem] font-semibold tracking-[-0.015em] text-admin-ink">
           Sign in to your store
         </h1>
