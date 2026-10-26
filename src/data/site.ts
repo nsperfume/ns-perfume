@@ -65,7 +65,7 @@ export const shopMegaMenu = {
   ],
 } as const;
 
-/** Footer link map — keep every public storefront route represented once. */
+/** Footer link map. Account, wishlist, search and cart live in the header and mobile menu. */
 export const footerColumns = {
   shop: [
     { label: "Shop All", href: "/products" },
@@ -75,10 +75,6 @@ export const footerColumns = {
     { label: "Limited Edition", href: "/collections/limited-edition" },
     { label: "Gift Sets", href: "/collections/gift-sets" },
     { label: "Gift Cards", href: "/gift-cards" },
-    { label: "Wishlist", href: "/wishlist" },
-    { label: "Account", href: "/account" },
-    { label: "Search", href: "/search" },
-    { label: "Cart", href: "/cart" },
   ],
   collections: [
     { label: "For Her", href: "/collections/for-her" },

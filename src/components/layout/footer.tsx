@@ -22,7 +22,7 @@ import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/cn";
 import { HORIZONTAL } from "@/components/brand/paths";
 import { BrandIcon } from "@/components/ui/brand-icon";
-import { MailIcon, PhoneIcon } from "@/components/ui/icons";
+import { ChevronDownIcon, MailIcon, PhoneIcon } from "@/components/ui/icons";
 import { whatsappUrl } from "@/lib/whatsapp";
 
 const iconMap: Record<(typeof socialLinks)[number]["slug"], SimpleIcon> = {
@@ -61,6 +61,50 @@ const columnOrder = [
   { key: "company", title: "Company" },
   { key: "legal", title: "Legal" },
 ] as const;
+
+/** Link group: a tap-to-open section on phones, an always-open column from md up. */
+function FooterLinkGroup({
+  id,
+  title,
+  links,
+}: {
+  id: string;
+  title: string;
+  links: ReadonlyArray<{ label: string; href: string }>;
+}) {
+  const [open, setOpen] = useState(false);
+  const listId = `footer-links-${id}`;
+  return (
+    <div className="border-b border-white/10 md:border-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => setOpen((v) => !v)}
+        className="flex min-h-14 w-full cursor-pointer items-center justify-between text-eyebrow text-brass md:hidden"
+      >
+        {title}
+        <ChevronDownIcon
+          size={18}
+          className={cn("text-paper/60 transition-transform duration-200", open && "rotate-180")}
+        />
+      </button>
+      <p className="mb-5 hidden text-eyebrow text-brass md:block">{title}</p>
+      <ul id={listId} className={cn("flex-col gap-1 pb-4 md:flex md:pb-0", open ? "flex" : "hidden")}>
+        {links.map((link) => (
+          <li key={`${id}-${link.href}-${link.label}`}>
+            <Link
+              href={link.href}
+              className="inline-flex min-h-10 items-center text-body-sm text-paper/70 transition-colors hover:text-paper md:min-h-9"
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -112,7 +156,7 @@ export function Footer() {
         {/* Newsletter + brand intro */}
         <div
           id="newsletter"
-          className="mb-14 grid gap-10 border-b border-white/10 pb-14 lg:grid-cols-12 lg:items-end lg:gap-12"
+          className="mb-10 grid gap-10 pb-4 md:mb-14 md:border-b md:border-white/10 md:pb-14 lg:grid-cols-12 lg:items-end lg:gap-12"
         >
           <div className="lg:col-span-5">
             <Logo className="h-9 text-paper sm:h-10" />
@@ -210,30 +254,14 @@ export function Footer() {
         </div>
 
         {/* Link columns */}
-        <div className="mb-14 grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-5 lg:gap-8">
+        <div className="mb-12 border-t border-white/10 md:mb-14 md:grid md:grid-cols-3 md:gap-x-6 md:gap-y-10 md:border-0 lg:grid-cols-5 lg:gap-8">
           {columnOrder.map(({ key, title }) => (
-            <div key={key}>
-              <p className="mb-5 text-eyebrow text-brass">
-                {title}
-              </p>
-              <ul className="flex flex-col gap-1">
-                {footerColumns[key].map((link) => (
-                  <li key={`${key}-${link.href}-${link.label}`}>
-                    <Link
-                      href={link.href}
-                      className="inline-flex min-h-9 items-center text-body-sm text-paper/70 transition-colors hover:text-paper"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <FooterLinkGroup key={key} id={key} title={title} links={footerColumns[key]} />
           ))}
         </div>
 
         {/* Social + meta bar */}
-        <div className="mb-10 flex flex-col gap-8 border-t border-white/10 pt-8 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mb-10 flex flex-col gap-8 md:border-t md:border-white/10 md:pt-8 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="mb-4 text-eyebrow text-brass">
               Follow
