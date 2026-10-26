@@ -38,7 +38,7 @@ export function ConfirmDialog({
         <AlertDialog.Content
           className={cn(
             "fixed left-1/2 top-1/2 z-101 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2",
-            "rounded-lg border border-[#e4e6ea] bg-paper p-6 shadow-modal outline-none",
+            "rounded-lg border border-[#e4e6ea] bg-paper p-6 outline-none",
           )}
         >
           <AlertDialog.Title className="text-heading-sm text-ink">

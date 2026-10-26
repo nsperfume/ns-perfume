@@ -46,7 +46,7 @@ export function ProductCard({
         className,
       )}
     >
-      <div className="relative mb-4 aspect-4/5 w-full overflow-hidden bg-muted">
+      <div className="relative mb-4 aspect-4/5 w-full overflow-hidden rounded-2xl bg-muted">
         <Image
           src={product.imagePrimary}
           alt={`NS Perfume ${product.name} bottle`}

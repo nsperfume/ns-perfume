@@ -83,7 +83,7 @@ export function ReviewComposer({
           // A click on the backdrop lands on the <dialog> element itself.
           if (e.target === e.currentTarget) close();
         }}
-        className="m-auto max-h-[calc(100dvh-2rem)] w-[min(40rem,calc(100vw-2rem))] max-w-none overflow-y-auto overscroll-contain rounded-xs border border-hairline bg-paper p-0 text-ink shadow-2xl backdrop:bg-ink/55 max-sm:mb-0 max-sm:max-h-[92dvh] max-sm:w-full max-sm:rounded-b-none"
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[min(40rem,calc(100vw-2rem))] max-w-none overflow-y-auto overscroll-contain rounded-2xl border border-hairline bg-paper p-0 text-ink backdrop:bg-ink/55 max-sm:mb-0 max-sm:max-h-[92dvh] max-sm:w-full max-sm:rounded-b-none max-sm:rounded-t-3xl"
       >
         {open ? (
           <div className="relative px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-7">

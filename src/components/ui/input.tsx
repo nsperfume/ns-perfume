@@ -11,7 +11,7 @@ type FieldExtras = {
 type InputProps = InputHTMLAttributes<HTMLInputElement> & FieldExtras;
 
 const fieldClass =
-  "w-full rounded-xs border bg-paper px-4 py-3 font-sans text-base text-ink outline-none transition-colors placeholder:text-[#8a8f99] focus:ring-2";
+  "w-full rounded-xl border bg-paper px-4 py-3 font-sans text-base text-ink outline-none transition-colors placeholder:text-[#8a8f99] focus:ring-2";
 /** Border and focus colours, picked as a pair so they never fight in the stylesheet. */
 const toneClass = (error?: string) =>
   error

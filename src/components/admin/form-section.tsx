@@ -26,7 +26,7 @@ export function AdminFormSection({
     <section
       id={id}
       className={cn(
-        "scroll-mt-6 rounded-lg border border-admin-line bg-admin-paper shadow-admin",
+        "scroll-mt-6 rounded-lg border border-admin-line bg-admin-paper",
         className,
       )}
     >

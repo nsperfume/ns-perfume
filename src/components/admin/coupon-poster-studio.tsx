@@ -297,7 +297,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="poster-studio-title"
-          className="relative z-1 flex max-h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-xl border border-admin-line bg-admin-paper shadow-modal sm:max-h-[90dvh] sm:rounded-lg"
+          className="relative z-1 flex max-h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-xl border border-admin-line bg-admin-paper sm:max-h-[90dvh] sm:rounded-lg"
         >
           <header className="flex shrink-0 items-center justify-between gap-3 border-b border-admin-line py-3 pl-5 pr-3 sm:pl-6">
             <h2
@@ -322,7 +322,7 @@ export function CouponPosterStudio({ coupon, open, onClose, onSaved }: Props) {
             <div className="flex flex-col items-center gap-3 border-b border-admin-line bg-admin-soft-2 p-5 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
               <div
                 className={cn(
-                  "relative mx-auto w-full max-w-[17.5rem] overflow-hidden rounded-lg bg-admin-soft shadow-modal ring-1 ring-black/10 sm:max-w-80",
+                  "relative mx-auto w-full max-w-[17.5rem] overflow-hidden rounded-lg bg-admin-soft ring-1 ring-black/10 sm:max-w-80",
                   drawing && "opacity-80",
                 )}
                 style={{ aspectRatio: `${dims.width} / ${dims.height}` }}

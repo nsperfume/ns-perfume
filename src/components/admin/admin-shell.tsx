@@ -432,7 +432,7 @@ function AdminShellInner({
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="absolute left-0 top-0 flex h-full w-[min(18rem,88vw)] flex-col bg-admin-sidebar shadow-modal">
+          <aside className="absolute left-0 top-0 flex h-full w-[min(18rem,88vw)] flex-col bg-admin-sidebar">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5">
               <p className="text-base font-semibold text-white">
                 Menu

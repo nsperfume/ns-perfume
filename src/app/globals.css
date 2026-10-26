@@ -17,8 +17,6 @@
   --color-chrome: #000000;
   --color-canvas-deep: #f8f1e3;
   --color-hairline-dark: #333333;
-  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.14);
 
   /* Layout rhythm */
   --gutter: clamp(1rem, 4vw, 3rem);
@@ -85,9 +83,6 @@
   --radius-md: 8px;
   --radius-lg: 14px;
 
-  --shadow-card: var(--shadow-card);
-  --shadow-modal: var(--shadow-modal);
-  --shadow-admin: var(--admin-shadow);
 
   --spacing-chrome-height: var(--chrome-height);
   --spacing-carousel-gap: var(--carousel-gap);
@@ -195,9 +190,6 @@
     isolation: isolate;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     background: #0a0a0a;
-    box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
-      0 10px 28px rgba(0, 0, 0, 0.18);
   }
 
   .nav-glass-panel {
@@ -478,7 +470,6 @@
   --admin-input-border: #d9d1c2;
   /* Brass for text under 18px (4.5:1 on white) */
   --admin-accent: #7c5b2b;
-  --admin-shadow: 0 1px 2px rgba(28, 26, 23, 0.05);
   /* Status tones: brass (done/live), ink (in progress), amber (needs action), rose (stopped) */
   --admin-tone-brass-bg: #f5eddb;
   --admin-tone-brass-text: #6b4e22;
@@ -579,7 +570,6 @@ html.admin-scroll-lock body {
   --admin-danger-hover: #b8655e;
   --admin-input-border: #3d3931;
   --admin-accent: #d6b46c;
-  --admin-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   --admin-tone-brass-bg: rgba(169, 135, 60, 0.17);
   --admin-tone-brass-text: #dcbd7a;
   --admin-tone-brass-line: rgba(169, 135, 60, 0.45);

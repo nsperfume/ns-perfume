@@ -359,7 +359,7 @@ export default function AdminTestimonialsPage() {
           {visible.map((t) => (
             <li
               key={t._id}
-              className="flex h-full flex-col rounded-lg border border-admin-line bg-admin-paper shadow-admin transition-colors hover:border-admin-faint"
+              className="flex h-full flex-col rounded-lg border border-admin-line bg-admin-paper transition-colors hover:border-admin-faint"
             >
               <button
                 type="button"
@@ -419,7 +419,7 @@ export default function AdminTestimonialsPage() {
           ))}
         </ul>
       ) : (
-        <div className="rounded-lg border border-admin-line bg-admin-paper shadow-admin">
+        <div className="rounded-lg border border-admin-line bg-admin-paper">
           {loading ? (
             <BrandLoaderBlock className="min-h-[40vh]" label="Loading testimonials" />
           ) : items.length ? (

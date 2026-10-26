@@ -73,7 +73,7 @@ export function ProductGallery({
   return (
     <div className="w-full min-w-0">
       {/* Hero — full column width */}
-      <div className="group relative aspect-square w-full overflow-hidden bg-[#f5f5f5]">
+      <div className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-[#f5f5f5]">
         {list.map((src, i) => (
           <div
             key={`${src}-hero-${i}`}
@@ -104,7 +104,7 @@ export function ProductGallery({
               type="button"
               onClick={() => go(-1)}
               className={cn(
-                "absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs",
+                "absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full",
                 "border border-hairline bg-paper/95 text-ink opacity-0 transition-opacity duration-300",
                 "hover:border-ink/30 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
                 "max-md:opacity-100",
@@ -117,7 +117,7 @@ export function ProductGallery({
               type="button"
               onClick={() => go(1)}
               className={cn(
-                "absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs",
+                "absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full",
                 "border border-hairline bg-paper/95 text-ink opacity-0 transition-opacity duration-300",
                 "hover:border-ink/30 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
                 "max-md:opacity-100",
@@ -142,7 +142,7 @@ export function ProductGallery({
                 type="button"
                 onClick={() => setActive(i)}
                 className={cn(
-                  "relative aspect-square w-full cursor-pointer overflow-hidden bg-[#f5f5f5] transition-opacity duration-300",
+                  "relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl bg-[#f5f5f5] transition-opacity duration-300",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
                   i === active
                     ? "ring-1 ring-ink max-md:ring-offset-0 ring-offset-2 ring-offset-canvas"

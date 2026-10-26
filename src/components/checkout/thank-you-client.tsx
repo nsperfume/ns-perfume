@@ -115,7 +115,7 @@ export function ThankYouClient() {
             </div>
           </div>
 
-          <section className="mt-8 rounded-xs border border-hairline p-5 sm:p-6">
+          <section className="mt-8 rounded-xl border border-hairline p-5 sm:p-6">
             <h2 className="text-heading-sm">What happens next</h2>
             <p className="mt-2 text-body-sm text-taupe">
               {order.confirmationEmail ? (
@@ -159,7 +159,7 @@ export function ThankYouClient() {
           </section>
 
           {order.paymentMethod === "cod" ? (
-            <section className="mt-4 rounded-xs border border-hairline bg-canvas-deep p-5 sm:p-6">
+            <section className="mt-4 rounded-xl border border-hairline bg-canvas-deep p-5 sm:p-6">
               <h2 className="text-heading-sm">Cash on delivery</h2>
               <p className="mt-2 text-body-sm text-taupe">
                 Pay{" "}
@@ -174,7 +174,7 @@ export function ThankYouClient() {
           ) : null}
 
           {order.paymentMethod === "bank" ? (
-            <section className="mt-4 rounded-xs border border-hairline bg-canvas-deep p-4 sm:p-6">
+            <section className="mt-4 rounded-xl border border-hairline bg-canvas-deep p-4 sm:p-6">
               <h2 className="text-heading-sm">Payment next steps</h2>
               <p className="mt-2 text-body-sm text-taupe">
                 Transfer{" "}
@@ -197,14 +197,14 @@ export function ThankYouClient() {
                 href={receiptUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-xs border border-ink bg-ink px-6 text-center font-sans text-[0.9375rem] font-semibold leading-tight text-paper transition-colors hover:border-brass-ink hover:bg-brass-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2 sm:w-auto"
+                className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-full border border-ink bg-ink px-6 text-center font-sans text-[0.9375rem] font-semibold leading-tight text-paper transition-colors hover:border-brass-ink hover:bg-brass-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2 sm:w-auto"
               >
                 Send payment receipt on WhatsApp
               </a>
             </section>
           ) : null}
 
-          <section className="mt-4 rounded-xs border border-hairline p-5 sm:p-6">
+          <section className="mt-4 rounded-xl border border-hairline p-5 sm:p-6">
             <h2 className="text-heading-sm">Order details</h2>
             <div className="mt-5 grid gap-6 sm:grid-cols-2">
               <div className="min-w-0">
@@ -288,7 +288,7 @@ export function ThankYouClient() {
                 const gift = giftLineLabel(line);
                 return (
                   <li key={line.sku} className="flex gap-3.5">
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xs border border-hairline bg-paper">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-hairline bg-paper">
                       {line.image ? (
                         <Image
                           src={line.image}

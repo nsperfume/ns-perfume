@@ -262,7 +262,7 @@ function LinkDialog({
       <AlertDialog.Portal container={container ?? undefined}>
         <AlertDialog.Overlay className="fixed inset-0 z-100 bg-black/45 backdrop-blur-[1px]" />
         <AlertDialog.Content
-          className="fixed left-1/2 top-1/2 z-101 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-admin-line bg-admin-paper p-6 text-admin-ink shadow-modal outline-none"
+          className="fixed left-1/2 top-1/2 z-101 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-admin-line bg-admin-paper p-6 text-admin-ink outline-none"
           onOpenAutoFocus={(e) => {
             e.preventDefault();
             const el = document.getElementById(inputId) as HTMLInputElement | null;

@@ -157,7 +157,7 @@ function RevenueChart({ series }: { series: Dash["revenueSeries"] }) {
                       className="relative w-full max-w-11 rounded-t-[3px] bg-admin-ink transition-colors group-hover:bg-brass"
                       style={{ height: `${pct}%` }}
                     >
-                      <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-admin-ink px-2.5 py-1.5 text-xs font-medium text-admin-paper shadow-modal group-hover:block">
+                      <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-admin-ink px-2.5 py-1.5 text-xs font-medium text-admin-paper group-hover:block">
                         {shortDay(d.date)}
                         <span className="ml-2 font-sans tabular-nums ">
                           {formatPkr(d.revenue)}
@@ -372,7 +372,7 @@ export function AdminDashboard() {
               <Link
                 key={k.label}
                 href={k.href}
-                className="group rounded-lg border border-admin-line bg-admin-paper px-5 py-5 shadow-admin transition-colors hover:border-admin-faint"
+                className="group rounded-lg border border-admin-line bg-admin-paper px-5 py-5 transition-colors hover:border-admin-faint"
               >
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-admin-muted">
                   {k.label}
@@ -578,7 +578,7 @@ export function AdminDashboard() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group flex flex-col rounded-lg border border-admin-line bg-admin-paper px-5 py-4 shadow-admin transition-colors hover:border-admin-faint"
+                  className="group flex flex-col rounded-lg border border-admin-line bg-admin-paper px-5 py-4 transition-colors hover:border-admin-faint"
                 >
                   <p className="text-[0.9375rem] font-semibold text-admin-ink group-hover:text-admin-accent">
                     {item.title}

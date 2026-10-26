@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
  * `triggerClassName` (e.g. size-sm in table rows).
  */
 const TRIGGER =
-  "min-h-11! border-admin-input-border! bg-admin-soft-2! text-admin-ink! text-[0.9375rem]! font-medium hover:border-admin-muted! data-[state=open]:border-brass!";
+  "min-h-11! border-admin-input-border! bg-admin-soft-2! text-admin-ink! text-[0.9375rem]! font-medium hover:border-admin-muted! data-[state=open]:border-brass! rounded-md!";
 
 export function Select({
   triggerClassName,

@@ -22,7 +22,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 /**
  * Slide CTAs. Label: Manrope 600, sentence case, 15px (14px small).
- * Hover fill: brand gold #A9873C (danger uses red fill). Radius 2px.
+ * Hover fill: brand gold #A9873C (danger uses red fill). Pill shaped.
  */
 export function Button({
   variant = "primary",
@@ -39,7 +39,7 @@ export function Button({
 }: ButtonProps) {
   if (variant === "ghost") {
     const ghostClass = cn(
-      "group/nsghost inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xs py-2 text-label text-ink underline decoration-ink/25 decoration-1 underline-offset-[6px] outline-none transition-colors duration-300",
+      "group/nsghost inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full py-2 text-label text-ink underline decoration-ink/25 decoration-1 underline-offset-[6px] outline-none transition-colors duration-300",
       "hover:text-brass-ink hover:decoration-brass focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2 focus-visible:ring-offset-canvas",
       "disabled:cursor-not-allowed disabled:opacity-50",
       className,
@@ -88,7 +88,7 @@ export function Button({
 
   // Named group so hover fill is not stolen by ancestor `.group`
   const shell = cn(
-    "group/nsbtn relative inline-flex w-full max-w-full cursor-pointer select-none items-center justify-center overflow-hidden rounded-xs border font-sans outline-none",
+    "group/nsbtn relative inline-flex w-full max-w-full cursor-pointer select-none items-center justify-center overflow-hidden rounded-full border font-sans outline-none",
     small ? "h-10 min-h-10" : "h-12 min-h-12",
     "transition-[border-color,transform,box-shadow] duration-300 ease-out",
     "focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2 focus-visible:ring-offset-canvas",

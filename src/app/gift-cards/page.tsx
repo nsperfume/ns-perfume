@@ -31,7 +31,7 @@ export default function GiftCardsPage() {
       />
       <section className="bg-canvas section-y">
         <div className="container-ns grid gap-12 lg:grid-cols-2 lg:gap-16">
-          <div className="flex min-h-80 items-center justify-center rounded-xs border border-hairline bg-paper p-12">
+          <div className="flex min-h-80 items-center justify-center rounded-xl border border-hairline bg-paper p-12">
             <div className="text-center">
               <p className="text-eyebrow text-brass-ink">
                 Coming soon

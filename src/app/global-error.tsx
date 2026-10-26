@@ -42,13 +42,13 @@ export default function GlobalError({
               <button
                 type="button"
                 onClick={reset}
-                className="inline-flex min-h-11 cursor-pointer items-center justify-center border border-ink bg-ink px-5 text-label text-paper transition-colors hover:bg-brass hover:border-brass"
+                className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-ink bg-ink px-5 text-label text-paper transition-colors hover:bg-brass hover:border-brass"
               >
                 Try again
               </button>
               <a
                 href="/products"
-                className="inline-flex min-h-11 items-center justify-center border border-hairline bg-paper px-5 text-label text-ink transition-colors hover:border-ink/40"
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-hairline bg-paper px-5 text-label text-ink transition-colors hover:border-ink/40"
               >
                 Shop all
               </a>

@@ -63,7 +63,7 @@ export function Select({
           id={id}
           aria-label={ariaLabel ?? label}
           className={cn(
-            "group inline-flex min-h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-xs border px-4 py-2.5 font-sans text-base font-medium outline-none transition-colors",
+            "group inline-flex min-h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border px-4 py-2.5 font-sans text-base font-medium outline-none transition-colors",
             "focus-visible:ring-2 focus-visible:ring-brass/40 disabled:cursor-not-allowed disabled:opacity-50",
             "data-[placeholder]:text-[#9aa1ad]",
             dark
@@ -91,7 +91,7 @@ export function Select({
             sideOffset={6}
             collisionPadding={12}
             className={cn(
-              "scrollbar-panel z-80 max-h-[min(18rem,70vh)] min-w-(--radix-select-trigger-width) overflow-hidden rounded-md border border-hairline bg-paper text-ink shadow-modal",
+              "scrollbar-panel z-80 max-h-[min(18rem,70vh)] min-w-(--radix-select-trigger-width) overflow-hidden rounded-xl border border-hairline bg-paper text-ink",
             )}
           >
             <SelectPrimitive.Viewport
@@ -107,7 +107,7 @@ export function Select({
                   value={opt.value}
                   disabled={opt.disabled}
                   className={cn(
-                    "relative flex min-h-11 cursor-pointer select-none items-center rounded-xs px-3 py-2.5 text-body-sm font-medium outline-none",
+                    "relative flex min-h-11 cursor-pointer select-none items-center rounded-lg px-3 py-2.5 text-body-sm font-medium outline-none",
                     "data-[highlighted]:bg-ink data-[highlighted]:text-paper",
                     "data-[state=checked]:bg-ink data-[state=checked]:text-paper",
                     "data-[disabled]:pointer-events-none data-[disabled]:opacity-40",

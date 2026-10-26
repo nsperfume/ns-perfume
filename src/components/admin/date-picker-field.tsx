@@ -135,7 +135,7 @@ export function AdminDatePickerField({
             className={cn(
               "admin-date-popover z-200 w-[min(100vw-2rem,19.5rem)] rounded-lg border p-3 outline-none",
               "border-admin-line text-admin-ink",
-              "shadow-[0_16px_48px_rgba(0,0,0,0.45)]",
+              "",
             )}
             style={{
               backgroundColor: panelBg,

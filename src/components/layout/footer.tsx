@@ -144,7 +144,7 @@ export function Footer() {
   return (
     <footer
       id="site-footer"
-      className="relative mt-10 overflow-hidden rounded-t-[2rem] bg-chrome text-paper shadow-[0_-20px_60px_rgba(0,0,0,0.08)] sm:mt-14 sm:rounded-t-[2.75rem] lg:rounded-t-[3.5rem]"
+      className="relative mt-10 overflow-hidden rounded-t-[2rem] bg-chrome text-paper sm:mt-14 sm:rounded-t-[2.75rem] lg:rounded-t-[3.5rem]"
     >
       {/* soft gold hairline curve accent */}
       <div
@@ -217,7 +217,7 @@ export function Footer() {
             ) : (
               <form className="mt-5" onSubmit={subscribe} noValidate>
                 {/* Mobile: stacked. sm+: field + Subscribe share one flush bar */}
-                <div className="flex w-full flex-col overflow-hidden rounded-xs border border-white/30 bg-white/10 focus-within:border-brass sm:h-12 sm:flex-row">
+                <div className="flex w-full flex-col overflow-hidden rounded-xl border border-white/30 bg-white/10 focus-within:border-brass sm:h-12 sm:flex-row">
                   <Input
                     type="email"
                     name="email"

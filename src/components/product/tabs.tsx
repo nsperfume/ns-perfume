@@ -73,7 +73,7 @@ export function ProductTabs({ product }: { product: StoreProduct }) {
               html={product.story}
               className="max-w-2xl text-pretty text-body-lg text-ink/85"
             />
-            <aside className="border border-hairline bg-muted/50 p-6">
+            <aside className="rounded-2xl border border-hairline bg-muted/50 p-6">
               <p className="text-eyebrow text-taupe">
                 At a glance
               </p>
@@ -111,7 +111,7 @@ export function ProductTabs({ product }: { product: StoreProduct }) {
 
 function NoteSummary({ title, notes }: { title: string; notes: string[] }) {
   return (
-    <div className="border border-hairline bg-paper p-5">
+    <div className="rounded-2xl border border-hairline bg-paper p-5">
       <p className="text-eyebrow text-taupe">
         {title}
       </p>

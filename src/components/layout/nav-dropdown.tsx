@@ -35,10 +35,10 @@ type NavDropdownProps = {
 };
 
 const triggerClass =
-  "group inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xs px-3 text-label text-paper/85 outline-none transition-colors duration-300 hover:text-white focus-visible:text-white aria-expanded:text-white xl:px-4";
+  "group inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full px-3 text-label text-paper/85 outline-none transition-colors duration-300 hover:text-white focus-visible:text-white aria-expanded:text-white xl:px-4";
 
 const linkRowClass =
-  "group/link relative z-10 flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xs px-2 py-1.5 text-[0.9375rem] font-medium leading-snug text-ink/85 outline-none transition-colors duration-200 hover:bg-muted hover:text-ink focus-visible:bg-muted";
+  "group/link relative z-10 flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-[0.9375rem] font-medium leading-snug text-ink/85 outline-none transition-colors duration-200 hover:bg-muted hover:text-ink focus-visible:bg-muted";
 
 function chromeBottom(): number {
   const chrome = document.querySelector<HTMLElement>("[data-site-chrome]");
@@ -152,7 +152,7 @@ export function NavDropdown({
 
   if (wide && columns) {
     body = (
-      <div className="mx-auto w-full max-w-[80rem] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper text-ink shadow-[0_24px_48px_rgba(0,0,0,0.24)]">
+      <div className="mx-auto mt-2 w-full max-w-[80rem] overflow-hidden rounded-2xl border border-hairline bg-paper text-ink">
         <div className="flex flex-col gap-3 border-b border-hairline bg-[#FAF8F4] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="min-w-0">
             <p className="text-body-sm text-ink/75">
@@ -250,7 +250,7 @@ export function NavDropdown({
     );
   } else if (items) {
     body = (
-      <div className="w-[17rem] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-b-xl border border-t-0 border-hairline bg-paper p-2 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
+      <div className="mt-2 w-[17rem] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-hairline bg-paper p-2 text-ink">
         <ul className="flex flex-col">
           {items.map((item) => (
             <li key={item.href}>

@@ -247,7 +247,7 @@ export default function AdminProductsPage() {
             {empty}
           </div>
         ) : (
-          <ul className="divide-y divide-admin-line overflow-hidden rounded-lg border border-admin-line bg-admin-paper shadow-admin">
+          <ul className="divide-y divide-admin-line overflow-hidden rounded-lg border border-admin-line bg-admin-paper">
             {filtered.map((p) => (
               <li key={p.handle} className="flex items-center gap-1 pr-2">
                 <Link

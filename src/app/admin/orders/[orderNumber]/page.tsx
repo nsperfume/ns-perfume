@@ -111,7 +111,7 @@ function Section({
 }) {
   return (
     <section
-      className={`rounded-lg border border-admin-line bg-admin-paper shadow-admin ${className}`}
+      className={`rounded-lg border border-admin-line bg-admin-paper ${className}`}
     >
       <div className="flex min-h-13 items-center justify-between gap-3 border-b border-admin-line px-5 py-3 sm:px-6">
         <h2 className="text-base font-semibold text-admin-ink">{title}</h2>

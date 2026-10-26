@@ -54,7 +54,7 @@ const BILLING_FIELDS = ["bfirstName", "blastName", "baddress1", "bcity", "bprovi
 const DRAFT_KEY = "ns-checkout-draft";
 
 const primaryButton =
-  "min-h-14 cursor-pointer rounded-xs bg-ink px-8 text-label text-paper transition-colors hover:bg-brass hover:text-ink focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
+  "min-h-14 cursor-pointer rounded-full bg-ink px-8 text-label text-paper transition-colors hover:bg-brass hover:text-ink focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
 const backLink =
   "inline-flex min-h-11 cursor-pointer items-center justify-center text-sm font-medium text-brass-ink underline-offset-4 hover:underline sm:justify-start";
 const stepHeading = "text-heading-sm text-ink outline-none";
@@ -576,7 +576,7 @@ export function CheckoutClient() {
           {formError ? (
             <div
               role="alert"
-              className="mb-5 rounded-xs border border-rosewood/30 bg-rosewood/10 px-4 py-3 text-sm font-medium text-rosewood"
+              className="mb-5 rounded-xl border border-rosewood/30 bg-rosewood/10 px-4 py-3 text-sm font-medium text-rosewood"
             >
               {formError}
             </div>
@@ -754,7 +754,7 @@ export function CheckoutClient() {
           {/* SHIPPING */}
           {step === "shipping" ? (
             <div className="space-y-6">
-              <section aria-label="Your details" className="rounded-xs border border-hairline text-body-sm">
+              <section aria-label="Your details" className="rounded-xl border border-hairline text-body-sm">
                 {reviewContact}
                 {reviewShipTo(true)}
               </section>
@@ -765,7 +765,7 @@ export function CheckoutClient() {
                     Shipping method
                   </h2>
                 </legend>
-                <div className="overflow-hidden rounded-xs border border-hairline">
+                <div className="overflow-hidden rounded-xl border border-hairline">
                   {shippingMethods.map((method, idx) => {
                     const price = shippingFor(checkoutConfig, method.id, afterDiscount, freeShipPromo);
                     const free = price === 0;
@@ -829,7 +829,7 @@ export function CheckoutClient() {
           {/* PAYMENT */}
           {step === "payment" ? (
             <div className="space-y-6">
-              <section aria-label="Your details" className="rounded-xs border border-hairline text-body-sm">
+              <section aria-label="Your details" className="rounded-xl border border-hairline text-body-sm">
                 {reviewContact}
                 {reviewShipTo(false)}
                 <ReviewRow
@@ -867,7 +867,7 @@ export function CheckoutClient() {
                 <p className="mb-3 text-sm text-taupe">
                   Pay cash on delivery, or by bank transfer, JazzCash or Easypaisa.
                 </p>
-                <div className="overflow-hidden rounded-xs border border-hairline">
+                <div className="overflow-hidden rounded-xl border border-hairline">
                   {PAYMENT_METHODS.map((method, idx) => {
                     const selected = paymentMethod === method.id;
                     return (
@@ -893,7 +893,7 @@ export function CheckoutClient() {
                                 {method.title}
                               </span>
                               {method.badge ? (
-                                <span className="rounded-xs bg-ink px-1.5 py-0.5 text-eyebrow text-paper">
+                                <span className="rounded-xl bg-ink px-1.5 py-0.5 text-eyebrow text-paper">
                                   {method.badge}
                                 </span>
                               ) : null}
@@ -933,7 +933,7 @@ export function CheckoutClient() {
                               Pay to this account or wallet
                             </p>
                             <BankDetails />
-                            <div className="rounded-xs border border-hairline bg-paper px-3 py-2.5">
+                            <div className="rounded-xl border border-hairline bg-paper px-3 py-2.5">
                               <p className="text-eyebrow text-taupe">
                                 Amount to transfer
                               </p>
@@ -965,7 +965,7 @@ export function CheckoutClient() {
                 <legend className="mb-3 p-0">
                   <h2 className="text-heading-sm text-ink">Billing address</h2>
                 </legend>
-                <div className="overflow-hidden rounded-xs border border-hairline">
+                <div className="overflow-hidden rounded-xl border border-hairline">
                   <label
                     className={cn(
                       "flex cursor-pointer items-center gap-3 px-4 py-4",
@@ -1077,7 +1077,7 @@ export function CheckoutClient() {
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
                   maxLength={1000}
-                  className="mt-2 w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/25"
+                  className="mt-2 w-full rounded-xl border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/25"
                   placeholder="Delivery instructions or gift timing"
                 />
               </section>

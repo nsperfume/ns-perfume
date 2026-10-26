@@ -777,7 +777,7 @@ export default function AdminCollectionsPage() {
               return (
                 <li
                   key={c.handle}
-                  className="rounded-lg border border-admin-line bg-admin-paper p-4 shadow-admin"
+                  className="rounded-lg border border-admin-line bg-admin-paper p-4"
                 >
                   <button
                     type="button"

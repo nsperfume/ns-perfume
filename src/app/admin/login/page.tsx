@@ -113,7 +113,7 @@ export default function AdminLoginPage() {
         ref={formRef}
         onSubmit={onSubmit}
         noValidate
-        className="w-full max-w-md rounded-xl border border-admin-line bg-admin-paper p-7 shadow-[0_12px_40px_rgba(28,26,23,0.08)] sm:p-10"
+        className="w-full max-w-md rounded-xl border border-admin-line bg-admin-paper p-7 sm:p-10"
       >
         <Logo className="h-7 text-admin-ink" />
         <h1 className="mt-7 text-[1.625rem] font-semibold tracking-[-0.015em] text-admin-ink">

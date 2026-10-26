@@ -192,7 +192,7 @@ export function AdminSearchableSelect({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-70 mt-1 max-h-64 w-full overflow-auto rounded-md border border-admin-line bg-admin-paper py-1 shadow-modal"
+          className="absolute z-70 mt-1 max-h-64 w-full overflow-auto rounded-md border border-admin-line bg-admin-paper py-1"
         >
           {filtered.length ? (
             filtered.map((option, index) => (

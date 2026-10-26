@@ -163,7 +163,7 @@ export function ContactForm() {
             <label
               key={t.value}
               className={cn(
-                "inline-flex min-h-11 cursor-pointer select-none items-center rounded-xs border px-4 text-sm font-semibold transition-colors",
+                "inline-flex min-h-11 cursor-pointer select-none items-center rounded-full border px-4 text-sm font-semibold transition-colors",
                 "has-focus-visible:ring-2 has-focus-visible:ring-brass/50 has-focus-visible:ring-offset-2",
                 fields.topic === t.value
                   ? "border-ink bg-ink text-paper"

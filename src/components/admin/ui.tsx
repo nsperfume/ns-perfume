@@ -109,7 +109,7 @@ export function AdminCard({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border border-admin-line bg-admin-paper shadow-admin",
+        "overflow-hidden rounded-lg border border-admin-line bg-admin-paper",
         className,
       )}
     >
@@ -272,7 +272,7 @@ export function AdminTable({
   return (
     <div
       className={cn(
-        "admin-table-wrap overflow-x-auto overscroll-x-contain rounded-lg border border-admin-line bg-admin-paper shadow-admin",
+        "admin-table-wrap overflow-x-auto overscroll-x-contain rounded-lg border border-admin-line bg-admin-paper",
         flush && "rounded-none border-0 shadow-none",
         compact && "overflow-x-visible shadow-none",
         stickyFirst && !compact && "admin-table-sticky",
@@ -382,7 +382,7 @@ export function AdminModal({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "relative z-10 flex max-h-[92dvh] w-full flex-col rounded-t-xl border border-admin-line bg-admin-paper shadow-modal sm:max-h-[86dvh] sm:rounded-lg",
+          "relative z-10 flex max-h-[92dvh] w-full flex-col rounded-t-xl border border-admin-line bg-admin-paper sm:max-h-[86dvh] sm:rounded-lg",
           s === "md" && "sm:max-w-lg",
           s === "lg" && "sm:max-w-2xl lg:max-w-3xl",
           s === "xl" && "sm:max-w-3xl lg:max-w-5xl",

@@ -12,7 +12,7 @@ import { cn } from "@/lib/cn";
  * follow the admin field tokens (both themes) and match `adminFieldClass`.
  */
 const FIELD =
-  "bg-admin-soft-2! text-admin-ink! placeholder:text-admin-faint! disabled:bg-admin-soft! disabled:text-admin-muted!";
+  "rounded-md! bg-admin-soft-2! text-admin-ink! placeholder:text-admin-faint! disabled:bg-admin-soft! disabled:text-admin-muted!";
 /** Border colours forced over the storefront ones; the error colour wins when there is an error. */
 const border = (error?: string) =>
   error ? "border-admin-danger! focus:border-admin-danger!" : "border-admin-input-border! focus:border-brass!";

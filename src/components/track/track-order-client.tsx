@@ -149,7 +149,7 @@ function TrackLookUpForm({
       </header>
 
       <form
-        className="space-y-5 rounded-xs border border-hairline bg-paper p-6 sm:p-8"
+        className="space-y-5 rounded-xl border border-hairline bg-paper p-6 sm:p-8"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit();
@@ -169,7 +169,7 @@ function TrackLookUpForm({
             placeholder="e.g. NS-7K4Q2M"
             autoComplete="off"
             required
-            className="min-h-12 w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25"
+            className="min-h-12 w-full rounded-xl border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25"
           />
         </div>
         <div>
@@ -187,13 +187,13 @@ function TrackLookUpForm({
             placeholder="you@example.com"
             autoComplete="email"
             required
-            className="min-h-12 w-full rounded-xs border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25"
+            className="min-h-12 w-full rounded-xl border border-[#d6cfbf] bg-paper px-4 py-3 text-base text-ink outline-none hover:border-ink/40 focus:border-brass focus:ring-2 focus:ring-brass/25"
           />
         </div>
         {error ? (
           <div
             role="alert"
-            className="rounded-xs border border-rosewood/30 bg-rosewood/10 px-4 py-3 text-sm font-medium text-rosewood"
+            className="rounded-xl border border-rosewood/30 bg-rosewood/10 px-4 py-3 text-sm font-medium text-rosewood"
           >
             <p>{error}</p>
             {notFound ? (
@@ -207,7 +207,7 @@ function TrackLookUpForm({
         <button
           type="submit"
           disabled={loading}
-          className="flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xs bg-ink text-label text-paper transition-colors hover:bg-brass hover:text-ink disabled:cursor-wait disabled:opacity-60"
+          className="flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-ink text-label text-paper transition-colors hover:bg-brass hover:text-ink disabled:cursor-wait disabled:opacity-60"
         >
           {loading ? "Looking up…" : "Track order"}
         </button>
@@ -332,7 +332,7 @@ function OrderStatusView({
         </p>
 
         {order.status !== "cancelled" && order.status !== "delivered" ? (
-          <div className="mt-5 rounded-xs border border-hairline bg-canvas-deep px-4 py-3">
+          <div className="mt-5 rounded-xl border border-hairline bg-canvas-deep px-4 py-3">
             <p className="text-eyebrow text-taupe">
               Estimated delivery
             </p>
@@ -364,7 +364,7 @@ function OrderStatusView({
 
         {(order.trackingNumber || order.carrier) &&
         (order.status === "shipped" || order.status === "delivered") ? (
-          <section className="mt-4 rounded-xs border border-hairline p-4">
+          <section className="mt-4 rounded-xl border border-hairline p-4">
             <h2 className="text-sm font-semibold text-ink">
               Tracking details
             </h2>
@@ -389,7 +389,7 @@ function OrderStatusView({
                 href={order.trackingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-flex min-h-11 items-center rounded-xs bg-ink px-5 text-label text-paper transition-colors hover:bg-brass hover:text-ink"
+                className="mt-3 inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-label text-paper transition-colors hover:bg-brass hover:text-ink"
               >
                 Track shipment
               </a>
@@ -397,14 +397,14 @@ function OrderStatusView({
           </section>
         ) : null}
 
-        <section className="mt-6 rounded-xs border border-hairline p-5">
+        <section className="mt-6 rounded-xl border border-hairline p-5">
           <h2 className="mb-4 font-sans text-lg font-semibold text-ink">
             Order updates
           </h2>
           <Timeline steps={order.timeline} />
         </section>
 
-        <section className="mt-4 rounded-xs border border-hairline p-5">
+        <section className="mt-4 rounded-xl border border-hairline p-5">
           <h2 className="font-sans text-lg font-semibold text-ink">
             Customer information
           </h2>
@@ -503,7 +503,7 @@ function OrderStatusView({
           <ul className="space-y-4">
             {order.lines.map((line) => (
               <li key={line.sku} className="flex gap-3.5">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xs border border-hairline bg-paper">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-hairline bg-paper">
                   {line.image ? (
                     <Image
                       src={line.image}

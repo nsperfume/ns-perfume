@@ -171,7 +171,7 @@ export function FindYourScentGuide() {
                       aria-pressed={selected}
                       onClick={() => choose(opt.id)}
                       className={cn(
-                        "group flex w-full cursor-pointer items-start gap-4 rounded-xs border px-5 py-4 text-left transition-colors sm:px-6 sm:py-5",
+                        "group flex w-full cursor-pointer items-start gap-4 rounded-xl border px-5 py-4 text-left transition-colors sm:px-6 sm:py-5",
                         selected
                           ? "border-ink bg-ink text-paper"
                           : "border-[#d6cfbf] bg-paper text-ink hover:border-ink/50 hover:bg-muted/60",
@@ -414,7 +414,7 @@ export function FindYourScentGuide() {
         )}
       </div>
 
-      <aside className="border border-hairline bg-muted/40 p-6 sm:p-8 lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.5rem)]">
+      <aside className="rounded-2xl border border-hairline bg-muted/40 p-6 sm:p-8 lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.5rem)]">
         <p className="text-eyebrow text-taupe">
           How matching works
         </p>

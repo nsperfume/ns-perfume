@@ -338,7 +338,7 @@ export default function AdminOrdersPage() {
               return (
                 <li
                   key={o._id}
-                  className="rounded-lg border border-admin-line bg-admin-paper p-4 shadow-admin"
+                  className="rounded-lg border border-admin-line bg-admin-paper p-4"
                 >
                   <Link href={detailHref} className="block">
                     <div className="flex items-start justify-between gap-3">

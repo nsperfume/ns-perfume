@@ -204,7 +204,7 @@ export default function ContactPage() {
             </dl>
           </div>
 
-          <div className="self-start border border-hairline bg-paper p-6 shadow-[0_1px_0_rgba(43,36,25,0.04)] sm:p-10 xl:p-12">
+          <div className="self-start rounded-2xl border border-hairline bg-paper p-6 sm:p-10 xl:p-12">
             <ContactForm />
           </div>
         </div>

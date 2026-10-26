@@ -88,7 +88,7 @@ export function AdminColorPickerField({
             )}
           >
             <span
-              className="h-8 w-8 shrink-0 rounded-md border border-black/10 shadow-inner"
+              className="h-8 w-8 shrink-0 rounded-md border border-black/10"
               style={{ backgroundColor: safe }}
               aria-hidden
             />
@@ -105,7 +105,7 @@ export function AdminColorPickerField({
             align="start"
             sideOffset={6}
             collisionPadding={16}
-            className="z-200 w-[15.5rem] rounded-lg border border-admin-line bg-admin-paper p-3 text-admin-ink shadow-modal outline-none"
+            className="z-200 w-[15.5rem] rounded-lg border border-admin-line bg-admin-paper p-3 text-admin-ink outline-none"
           >
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-admin-muted">
               Brand colours

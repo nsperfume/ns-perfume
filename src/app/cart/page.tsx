@@ -96,7 +96,7 @@ export default function CartPage() {
                           <Link
                             href={`/products/${line.productHandle}`}
                             aria-label={`View ${line.name}`}
-                            className="relative aspect-square overflow-hidden bg-muted"
+                            className="relative aspect-square overflow-hidden rounded-xl bg-muted"
                           >
                             <Image
                               src={line.image}
@@ -146,7 +146,7 @@ export default function CartPage() {
 
                             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
                               <div
-                                className="inline-flex h-11 items-stretch rounded-xs border border-[#d6cfbf]"
+                                className="inline-flex h-11 items-stretch rounded-xl border border-[#d6cfbf]"
                                 role="group"
                                 aria-label={`Quantity for ${line.name}`}
                               >
@@ -206,7 +206,7 @@ export default function CartPage() {
                 aria-labelledby="cart-summary"
                 className="lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.25rem)]"
               >
-                <div className="border border-hairline bg-muted/40 p-6 sm:p-8">
+                <div className="rounded-2xl border border-hairline bg-muted/40 p-6 sm:p-8">
                   <h2 id="cart-summary" className="text-eyebrow text-taupe">
                     Order summary
                   </h2>
@@ -285,7 +285,7 @@ export default function CartPage() {
           className={
             ctaInView || footerInView
               ? "hidden"
-              : "fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-modal lg:hidden"
+              : "fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
           }
         >
           <Button href="/checkout" className="w-full sm:w-full">

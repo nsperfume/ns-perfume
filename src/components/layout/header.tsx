@@ -51,16 +51,16 @@ const mobileQuickLinks = [
 ];
 
 const linkClass =
-  "inline-flex min-h-11 cursor-pointer items-center rounded-xs px-3 text-label text-paper/85 transition-colors duration-300 hover:text-white xl:px-4";
+  "inline-flex min-h-11 cursor-pointer items-center rounded-full px-3 text-label text-paper/85 transition-colors duration-300 hover:text-white xl:px-4";
 
 const mobileLink =
   "flex min-h-12 cursor-pointer items-center text-label text-paper/90 transition-colors hover:text-white";
 
 const iconBtn =
-  "relative inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xs text-paper/85 transition-colors hover:bg-white/5 hover:text-white";
+  "relative inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-paper/85 transition-colors hover:bg-white/5 hover:text-white";
 
 const iconBtnDesktop =
-  "relative hidden h-11 w-11 cursor-pointer items-center justify-center rounded-xs text-paper/85 transition-colors hover:bg-white/5 hover:text-white sm:inline-flex";
+  "relative hidden h-11 w-11 cursor-pointer items-center justify-center rounded-full text-paper/85 transition-colors hover:bg-white/5 hover:text-white sm:inline-flex";
 
 export function Header() {
   const { openCart, itemCount } = useCart();
@@ -211,7 +211,7 @@ export function Header() {
             {ready && wishCount > 0 ? (
               <span
                 ref={wishBadgeRef}
-                className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF1744] px-1 font-sans tabular-nums text-xs font-medium leading-none text-white"
+                className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brass px-1 font-sans tabular-nums text-xs font-semibold leading-none text-ink"
               >
                 {wishCount}
               </span>
@@ -229,7 +229,7 @@ export function Header() {
             {ready && itemCount > 0 ? (
               <span
                 ref={cartBadgeRef}
-                className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF1744] px-1 font-sans tabular-nums text-xs font-medium leading-none text-white"
+                className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brass px-1 font-sans tabular-nums text-xs font-semibold leading-none text-ink"
               >
                 {itemCount}
               </span>

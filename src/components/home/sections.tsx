@@ -251,7 +251,7 @@ export function ShopByCollection() {
             <Link
               key={tile.href}
               href={tile.href}
-              className="group relative aspect-4/5 overflow-hidden bg-muted sm:aspect-4/3 lg:aspect-3/4"
+              className="group relative aspect-4/5 overflow-hidden rounded-2xl bg-muted sm:aspect-4/3 lg:aspect-3/4"
             >
               <Image
                 src={tile.image}
@@ -536,7 +536,7 @@ export function JournalPreview({
         <div className="grid gap-x-10 gap-y-6 lg:grid-cols-12 lg:items-stretch">
           <Link
             href={`/journal/${feature.slug}`}
-            className="group relative order-1 aspect-16/11 overflow-hidden bg-muted lg:col-span-7 lg:col-start-1 lg:row-start-1"
+            className="group relative order-1 aspect-16/11 overflow-hidden rounded-2xl bg-muted lg:col-span-7 lg:col-start-1 lg:row-start-1"
           >
             {feature.imageUrl ? (
               <Image
@@ -579,7 +579,7 @@ export function JournalPreview({
                 href={`/journal/${post.slug}`}
                 className="group grid min-h-0 flex-1 grid-cols-[6rem_1fr] items-center gap-5 py-5 first:pt-0 last:pb-0 sm:grid-cols-[8rem_1fr] sm:py-6"
               >
-                <div className="relative aspect-square overflow-hidden bg-muted">
+                <div className="relative aspect-square overflow-hidden rounded-xl bg-muted">
                   {post.imageUrl ? (
                     <Image
                       src={post.imageUrl}

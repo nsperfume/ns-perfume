@@ -72,7 +72,7 @@ export function CheckoutOrderSummary({
       <ul className="max-h-[40vh] space-y-5 overflow-y-auto pr-1 lg:max-h-none">
         {lines.map((line) => (
           <li key={line.sku} className="flex gap-3.5">
-            <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xs border border-hairline bg-paper">
+            <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xl border border-hairline bg-paper">
               <Image
                 src={line.image}
                 alt=""
@@ -126,13 +126,13 @@ export function CheckoutOrderSummary({
               }
             }}
             placeholder="Discount code"
-            className="min-h-12 min-w-0 flex-1 rounded-xs border border-[#d6cfbf] bg-paper px-4 text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/25"
+            className="min-h-12 min-w-0 flex-1 rounded-xl border border-[#d6cfbf] bg-paper px-4 text-base text-ink outline-none focus:border-brass focus:ring-2 focus:ring-brass/25"
           />
         </label>
         <button
           type="button"
           onClick={apply}
-          className="min-h-12 cursor-pointer rounded-xs border border-ink bg-ink px-6 text-label text-paper transition-colors hover:border-brass hover:bg-brass hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+          className="min-h-12 cursor-pointer rounded-full border border-ink bg-ink px-6 text-label text-paper transition-colors hover:border-brass hover:bg-brass hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
           disabled={!codeInput.trim() || applying}
         >
           {applying ? "…" : "Apply"}
@@ -142,7 +142,7 @@ export function CheckoutOrderSummary({
         <p className="mt-2 font-sans text-sm text-rosewood">{codeError}</p>
       ) : null}
       {discountCode ? (
-        <div className="mt-3 flex items-center justify-between rounded-xs bg-paper px-3 py-2 text-sm">
+        <div className="mt-3 flex items-center justify-between rounded-xl bg-paper px-3 py-2 text-sm">
           <span className="font-medium text-ink">
             {discountCode}
             <button
