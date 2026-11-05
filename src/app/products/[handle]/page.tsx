@@ -223,7 +223,7 @@ export default async function ProductPage({ params }: Props) {
 
           <div className="mt-2 grid items-start gap-8 md:gap-12 lg:mt-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:gap-14 xl:gap-20">
             <ProductGallery images={product.gallery} name={product.name} />
-            <div className="scrollbar-panel min-w-0 lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.5rem)] lg:-mr-3 lg:max-h-[calc(100dvh-var(--spacing-chrome-height)-2.5rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-3">
+            <div className="min-w-0 lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.5rem)] lg:self-start">
               <ProductPurchasePanel product={product} />
             </div>
           </div>
