@@ -238,7 +238,7 @@ export function FindYourScentGuide() {
               tabIndex={-1}
               className="text-display-md outline-none"
             >
-              Three perfumes to try first
+              Perfumes to try first
             </h2>
             <p className="mt-4 max-w-[36rem] text-body-lg text-taupe">
               Picked from your answers on who it is for, the scent you like, the

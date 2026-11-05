@@ -6,6 +6,8 @@ import { mailConfig, type MailConfig } from "@/lib/email/config";
 import type { EmailContent, EmailTemplateId } from "@/lib/email/types";
 import type { EmailDefinition } from "@/emails/types";
 import { EmailLogModel } from "@/models/EmailLog";
+import { getSiteSettings } from "@/lib/site-settings";
+import { setEmailSocialLinks } from "@/emails/social-links";
 
 /** "admin" sends to MAIL_ADMIN_TO (the store inbox). */
 export type Recipient = string | "admin";
@@ -76,6 +78,10 @@ const PLAIN_TEXT = {
 
 /** Render a React Email definition to subject, HTML and plain text. */
 export async function renderEmail(email: EmailDefinition): Promise<EmailContent> {
+  // Mail must still go out if settings cannot be read; it just shows no social icons.
+  await getSiteSettings()
+    .then(({ social }) => setEmailSocialLinks(social))
+    .catch((e) => console.error("[email] could not load social links", e));
   const [html, text] = await Promise.all([
     render(email.element),
     render(email.element, { plainText: true, htmlToTextOptions: PLAIN_TEXT }),

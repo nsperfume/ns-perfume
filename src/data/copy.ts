@@ -21,9 +21,9 @@ export const pageCopy = {
   findYourScent: {
     title: "Find your scent",
     description:
-      "Five short questions. Three perfumes picked for who wears them, the scent family you like, and how long you want them to last.",
+      "Five short questions. Perfumes picked for who wears them, the scent family you like, and how long you want them to last.",
     metaDescription:
-      "Answer five quick questions and get three NS Perfume picks for your style, weather and how long you want the scent to last.",
+      "Answer five quick questions and get NS Perfume picks for your style, weather and how long you want the scent to last.",
   },
   cart: {
     title: "Your cart",
@@ -44,6 +44,8 @@ export const pageCopy = {
     title: "Our story",
     description:
       "We write labels the way people wear scent: slowly, honestly, and close enough to the skin that strangers only catch it when they lean in.",
+    metaDescription:
+      "NS Perfume is a Pakistani perfume store in Qila Didar Singh, Punjab. Read how we choose our scents, list every note honestly and deliver across Pakistan.",
   },
   contact: {
     title: "Contact",
@@ -53,14 +55,15 @@ export const pageCopy = {
   shopMegaHint:
     "Choose by who wears it, what it smells like, or how long it stays.",
   homeHero:
-    "Amber Noir opens with bergamot and pink pepper. Later it settles into oud and amber that stay close through dinner. Notes as they wear, so you can match a bottle to heat, work, and the hours after.",
+    "Perfumes for men and women, from fresh everyday scents to rich evening wear. Every note listed, every price clear, with cash on delivery anywhere in Pakistan.",
   shopByCollection:
-    "Four doors into the line. Start with the wardrobe that already feels like yours.",
+    "Start with who will wear it, then narrow it down by scent.",
   bestsellers: "Our most popular perfumes, all with cash on delivery.",
+  ourPerfumes: "Every perfume lists its notes and wear time, all with cash on delivery.",
   brandStory:
-    "We list real top, heart, and base notes plus sillage and longevity so you can match a bottle to office air, outdoor heat, or a late table. Less guessing. More certainty on skin.",
+    "We list the top, heart and base notes, plus how far each perfume projects and how long it lasts, so you can match a bottle to the office, outdoor heat or a late dinner.",
   findYourScentHome:
-    "Answer five short questions on climate, family, and trail. Leave with three bottles scored from the catalog, each with a plain reason.",
+    "Answer five short questions on climate, family, and trail. Leave with the perfumes that match best, each with a plain reason.",
   testimonials: "What customers say after wearing them.",
   wornInWild: "How fragrance sits on fabric, wrist, and the walk home.",
   emptyFilters:

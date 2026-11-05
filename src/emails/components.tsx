@@ -21,7 +21,8 @@ import {
   Section,
   Text,
 } from "react-email";
-import { siteConfig, socialLinks } from "@/data/site";
+import { siteConfig } from "@/data/site";
+import { emailSocialLinks } from "@/emails/social-links";
 import { absoluteUrl, siteUrl } from "@/lib/site-url";
 import { whatsappUrl } from "@/lib/whatsapp";
 
@@ -72,9 +73,7 @@ export function EmailLayout({
   const whatsapp = whatsappUrl(siteConfig.phone);
   // Brand icons (Simple Icons, pre-rendered PNG: Gmail and Outlook do not show SVG).
   const social = [
-    ...socialLinks
-      .filter((s) => ["instagram", "facebook", "tiktok"].includes(s.slug))
-      .map((s) => ({ key: s.slug, label: s.label, href: s.href })),
+    ...emailSocialLinks(),
     { key: "whatsapp", label: "WhatsApp", href: whatsapp },
   ];
   return (

@@ -3,18 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  siFacebook,
-  siInstagram,
-  siPinterest,
-  siTiktok,
-  siX,
-  siYoutube,
-  type SimpleIcon,
-} from "simple-icons";
-import {
   footerColumns,
   siteConfig,
-  socialLinks,
 } from "@/data/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,36 +13,10 @@ import { cn } from "@/lib/cn";
 import { WORDMARK } from "@/components/brand/paths";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { ChevronDownIcon, MailIcon, MapPinIcon, PhoneIcon } from "@/components/ui/icons";
+import { SocialIcon } from "@/components/ui/social-icon";
+import { useShowNavLink } from "@/context/collections-nav";
+import type { SocialLink } from "@/lib/social";
 import { whatsappUrl } from "@/lib/whatsapp";
-
-const iconMap: Record<(typeof socialLinks)[number]["slug"], SimpleIcon> = {
-  instagram: siInstagram,
-  facebook: siFacebook,
-  pinterest: siPinterest,
-  tiktok: siTiktok,
-  x: siX,
-  youtube: siYoutube,
-};
-
-function SocialIcon({
-  icon,
-  className,
-}: {
-  icon: SimpleIcon;
-  className?: string;
-}) {
-  return (
-    <svg
-      role="img"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-      className={cn("h-5 w-5 fill-current", className)}
-      aria-hidden
-    >
-      <path d={icon.path} />
-    </svg>
-  );
-}
 
 const columnOrder = [
   { key: "shop", title: "Shop" },
@@ -106,7 +70,8 @@ function FooterLinkGroup({
   );
 }
 
-export function Footer() {
+export function Footer({ social }: { social: SocialLink[] }) {
+  const showLink = useShowNavLink();
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
   const [sending, setSending] = useState(false);
@@ -265,35 +230,34 @@ export function Footer() {
         {/* Link columns */}
         <div className="mb-12 border-t border-white/10 md:mb-14 md:grid md:grid-cols-3 md:gap-x-6 md:gap-y-10 md:border-0 lg:grid-cols-5 lg:gap-8">
           {columnOrder.map(({ key, title }) => (
-            <FooterLinkGroup key={key} id={key} title={title} links={footerColumns[key]} />
+            <FooterLinkGroup key={key} id={key} title={title} links={footerColumns[key].filter(showLink)} />
           ))}
         </div>
 
         {/* Social + meta bar */}
         <div className="mb-10 flex flex-col gap-8 md:border-t md:border-white/10 md:pt-8 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="mb-4 text-eyebrow text-brass">
-              Follow
-            </p>
-            <ul className="flex flex-wrap items-center gap-2">
-              {socialLinks.map((item) => {
-                const icon = iconMap[item.slug];
-                return (
-                  <li key={item.slug}>
+          {social.length ? (
+            <div>
+              <p className="mb-4 text-eyebrow text-brass">
+                Follow
+              </p>
+              <ul className="flex flex-wrap items-center gap-2">
+                {social.map((item) => (
+                  <li key={item.key}>
                     <a
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={item.label}
+                      aria-label={`${siteConfig.name} on ${item.label}`}
                       className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-paper/70 transition-colors hover:border-brass hover:text-brass"
                     >
-                      <SocialIcon icon={icon} />
+                      <SocialIcon platform={item.key} />
                     </a>
                   </li>
-                );
-              })}
-            </ul>
-          </div>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-8">
             <p className="text-caption text-paper/55">

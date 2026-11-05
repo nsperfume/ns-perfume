@@ -6,6 +6,7 @@ import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
 import { JournalModel } from "@/models/Journal";
 import slugify from "slugify";
 import { revalidateStorefront } from "@/lib/revalidate";
+import { announcePages } from "@/lib/indexnow";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -73,6 +74,7 @@ export async function PUT(req: Request, ctx: Ctx) {
 
     if (!doc) return jsonError("Not found", 404);
     revalidateStorefront();
+    announcePages([`/journal/${(doc as unknown as { slug: string }).slug}`]);
     return jsonOk(mapJournal(doc));
   } catch (e) {
     console.error(e);
@@ -86,9 +88,10 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     if (!admin) return adminDenied();
     await connectDB();
     const { id } = await ctx.params;
-    const doc = await JournalModel.findByIdAndDelete(id).lean();
+    const doc = await JournalModel.findByIdAndDelete(id).lean<{ slug: string }>();
     if (!doc) return jsonError("Journal post not found", 404);
     revalidateStorefront();
+    announcePages([`/journal/${doc.slug}`]);
     return jsonOk({ id });
   } catch (e) {
     console.error(e);

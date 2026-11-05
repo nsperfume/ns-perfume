@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/json-ld";
 import { faqItems } from "@/data/site";
+import { pageOpenGraph } from "@/lib/seo";
 import { OpenFromHash } from "@/components/faq/open-from-hash";
 import { fillCheckoutCopy } from "@/lib/checkout-config";
 import { getSiteSettings } from "@/lib/site-settings";
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   description:
     "Answers on shipping, returns, authenticity, ingredients, concentration, and how to store perfume.",
   alternates: { canonical: "/faq" },
+  openGraph: pageOpenGraph("/faq"),
 };
 
 export default async function FaqPage() {

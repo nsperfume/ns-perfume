@@ -1,9 +1,9 @@
 export const siteConfig = {
   name: "NS Perfume",
-  tagline: "Apothecary restraint. Editorial clarity.",
+  tagline: "Honest notes. Clear prices.",
   url: "https://nsperfume.pk",
   description:
-    "NS Perfume is a fragrance house with honest scent pyramids, clear sillage ratings, and prices that convert into the currency you choose.",
+    "NS Perfume sells long lasting perfumes for men and women across Pakistan, with honest notes, clear wear ratings and cash on delivery.",
   email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "care@nsperfume.pk",
   /** Primary care line (JazzCash / Easypaisa / WhatsApp). No spaces for easy copy. */
   phone: "03067861412",
@@ -54,6 +54,7 @@ export const shopMegaMenu = {
   type: [
     { label: "Eau de Parfum", href: "/collections/eau-de-parfum" },
     { label: "Eau de Toilette", href: "/collections/eau-de-toilette" },
+    { label: "Parfum", href: "/collections/parfum" },
   ],
   gifts: [
     { label: "Gift sets", href: "/collections/gift-sets" },
@@ -108,39 +109,6 @@ export const footerColumns = {
     { label: "Shipping policy", href: "/policies/shipping" },
   ],
 } as const;
-
-export const socialLinks = [
-  {
-    label: "Instagram",
-    href: "https://www.instagram.com/nsperfume",
-    slug: "instagram" as const,
-  },
-  {
-    label: "Facebook",
-    href: "https://www.facebook.com/nsperfume",
-    slug: "facebook" as const,
-  },
-  {
-    label: "Pinterest",
-    href: "https://www.pinterest.com/nsperfume",
-    slug: "pinterest" as const,
-  },
-  {
-    label: "TikTok",
-    href: "https://www.tiktok.com/@nsperfume",
-    slug: "tiktok" as const,
-  },
-  {
-    label: "X",
-    href: "https://x.com/nsperfume",
-    slug: "x" as const,
-  },
-  {
-    label: "YouTube",
-    href: "https://www.youtube.com/@nsperfume",
-    slug: "youtube" as const,
-  },
-] as const;
 
 export const faqItems = [
   {

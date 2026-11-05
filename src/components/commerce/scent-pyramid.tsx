@@ -18,7 +18,7 @@ export function ScentPyramid({
     { label: "Top", notes: topNotes },
     { label: "Heart", notes: heartNotes },
     { label: "Base", notes: baseNotes },
-  ];
+  ].filter((band) => band.notes.length);
 
   if (variant === "inline") {
     return (

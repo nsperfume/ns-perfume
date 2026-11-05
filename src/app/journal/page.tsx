@@ -2,15 +2,21 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getJournalPosts } from "@/lib/store-data";
+import { pageOpenGraph } from "@/lib/seo";
 import { siteImages } from "@/data/images";
 import { PageHero } from "@/components/layout/page-hero";
 
-export const metadata: Metadata = {
-  title: "Journal: scent guides and notes",
-  description:
-    "NS Perfume journal on scent pyramids, heat, office wear, layering, and gifting in plain language.",
-  alternates: { canonical: "/journal" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const posts = await getJournalPosts();
+  return {
+    title: "Journal: scent guides and notes",
+    description:
+      "NS Perfume journal on scent pyramids, heat, office wear, layering, and gifting in plain language.",
+    openGraph: pageOpenGraph("/journal"),
+    // Nothing to read yet: the empty page stays out of results until the first article.
+    ...(posts.length ? { alternates: { canonical: "/journal" } } : { robots: { index: false, follow: true } }),
+  };
+}
 
 /** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
 export const revalidate = 300;

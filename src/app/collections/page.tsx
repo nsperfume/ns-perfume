@@ -5,13 +5,15 @@ import { PageHero } from "@/components/layout/page-hero";
 import { StoreSectionHeader } from "@/components/layout/store-section";
 import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
-import { getCollections } from "@/lib/store-data";
+import { getActiveCollectionHandles, getCollections } from "@/lib/store-data";
+import { pageOpenGraph } from "@/lib/seo";
 import { richTextToPlain } from "@/lib/rich-text";
 
 export const metadata: Metadata = {
-  title: "Perfume collections",
+  title: "Perfume collections for men and women",
   description: pageCopy.collections.metaDescription,
   alternates: { canonical: "/collections" },
+  openGraph: pageOpenGraph("/collections"),
 };
 
 /** Cached for speed; admin edits refresh it at once via revalidateStorefront(). */
@@ -25,7 +27,9 @@ const tileImage: Record<string, string> = {
 };
 
 export default async function CollectionsIndexPage() {
-  const collections = await getCollections();
+  const [all, active] = await Promise.all([getCollections(), getActiveCollectionHandles()]);
+  // Only collections with perfumes, so a tile never opens an empty page.
+  const collections = all.filter((c) => active.includes(String(c.handle)));
 
   return (
     <>
@@ -41,13 +45,14 @@ export default async function CollectionsIndexPage() {
           <StoreSectionHeader
             eyebrow="Browse by theme"
             title={`${collections.length} collection${collections.length === 1 ? "" : "s"}`}
-            description="Gender, family, concentration, and gift formats. Open a lane and filter from there."
+            description="Browse by who will wear it, scent family or concentration."
             className="mb-8 sm:mb-10"
           />
           <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-5">
             {collections.map((c) => {
               const image =
-                tileImage[c.handle] ?? siteImages.collectionsHero;
+                (c as { bannerImage?: string }).bannerImage ||
+                (tileImage[c.handle] ?? siteImages.collectionsHero);
               return (
                 <Link
                   key={c.handle}

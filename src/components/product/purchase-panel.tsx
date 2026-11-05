@@ -28,6 +28,7 @@ import { siteConfig } from "@/data/site";
 import type { StoreProduct } from "@/lib/mappers";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { whatsappUrl } from "@/lib/whatsapp";
+import { cn } from "@/lib/cn";
 
 function pressFeedback(e: MouseEvent<HTMLElement>) {
   animate(e.currentTarget, [{ transform: "scale(0.97)" }, { transform: "scale(1)" }], { duration: 320 });
@@ -41,10 +42,10 @@ function WishlistHeart({ filled }: { filled?: boolean }) {
       viewBox="0 0 24 24"
       width={22}
       height={22}
-      className="block h-[22px] w-[22px] shrink-0"
+      className="block h-[22px] w-[22px] shrink-0 text-[#8b4a45] transition-colors duration-300 group-hover/nsbtn:text-paper motion-reduce:transition-none"
       aria-hidden
-      fill={filled ? "#8b4a45" : "none"}
-      stroke="#8b4a45"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -203,7 +204,9 @@ export function ProductPurchasePanel({ product }: { product: StoreProduct }) {
           .join(" · ")}
       </p>
 
-      <h1 className="mt-3 text-display-lg text-ink">{product.name}</h1>
+      <h1 className={cn("mt-3 text-ink", product.name.length > 40 ? "text-display-md" : "text-display-lg")}>
+        {product.name}
+      </h1>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
         {product.reviewCount > 0 ? (

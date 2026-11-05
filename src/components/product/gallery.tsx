@@ -126,16 +126,16 @@ export function ProductGallery({
             >
               <Chevron dir="right" className="h-4 w-4" />
             </button>
-            <p className="absolute bottom-3 left-3 z-10 font-sans tabular-nums text-xs text-taupe">
+            <p className="absolute bottom-3 left-3 z-10 rounded-full bg-paper/90 px-2.5 py-1 font-sans tabular-nums text-xs text-ink">
               {active + 1} / {list.length}
             </p>
           </>
         ) : null}
       </div>
 
-      {/* Same width as hero — exactly 2 per row */}
+      {/* Compact row under the main image; wraps after five */}
       {list.length > 1 ? (
-        <ul className="mt-2 flex w-full gap-2 overflow-x-auto pb-1 sm:mt-3 md:grid md:grid-cols-2 md:gap-3 md:overflow-hidden md:pb-0">
+        <ul className="mt-2 flex w-full gap-2 overflow-x-auto pb-1 sm:mt-3 md:grid md:grid-cols-5 md:gap-3 md:overflow-hidden md:pb-0">
           {list.map((src, i) => (
             <li key={`${src}-cell-${i}`} className="w-[4.5rem] shrink-0 md:w-auto md:min-w-0">
               <button
@@ -145,7 +145,7 @@ export function ProductGallery({
                   "relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl bg-[#f5f5f5] transition-opacity duration-300",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40",
                   i === active
-                    ? "ring-1 ring-ink max-md:ring-offset-0 ring-offset-2 ring-offset-canvas"
+                    ? "ring-2 ring-inset ring-brass"
                     : "hover:opacity-90",
                 )}
                 aria-label={`Show image ${i + 1}`}
@@ -157,8 +157,8 @@ export function ProductGallery({
                   fill
                   loading="lazy"
                   quality={85}
-                  sizes="(max-width: 768px) 72px, (max-width: 1280px) 29vw, 360px"
-                  className="object-contain object-center p-1.5 md:p-4"
+                  sizes="(max-width: 768px) 72px, 140px"
+                  className="object-contain object-center p-1.5"
                 />
               </button>
             </li>

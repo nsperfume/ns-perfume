@@ -223,8 +223,8 @@ export function SearchPageClient() {
         {empty ? (
           <div>
             <p className="mb-8 text-body text-taupe">
-              Check the spelling, or try a note like oud or rose. You could also
-              start with one of our bestsellers.
+              Check the spelling, or try a note like oud or rose.{" "}
+              {bestsellers.length ? "You could also start with one of our bestsellers." : null}
             </p>
             <ProductGrid products={bestsellers} className={fitColumns(bestsellers.length)} />
           </div>

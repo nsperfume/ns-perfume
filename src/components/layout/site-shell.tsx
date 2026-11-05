@@ -9,6 +9,8 @@ import { ToastHost } from "@/components/layout/toast-host";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/cart";
+import { CollectionsNavProvider } from "@/context/collections-nav";
+import type { SocialLink } from "@/lib/social";
 import { CurrencyProvider } from "@/context/currency";
 import { CustomerProvider } from "@/context/customer";
 import { UiProvider } from "@/context/ui";
@@ -17,10 +19,16 @@ import { WishlistProvider } from "@/context/wishlist";
 export function SiteShell({
   children,
   announcement,
+  social,
+  collectionHandles,
 }: {
   children: React.ReactNode;
   /** Announcement bar text from store settings; empty hides the message. */
   announcement: string;
+  /** Social pages entered in admin; shown in the footer. */
+  social: SocialLink[];
+  /** Collections that have perfumes; menus link only to these. */
+  collectionHandles: string[];
 }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
@@ -61,18 +69,20 @@ export function SiteShell({
           <WishlistProvider>
             <UiProvider>
               <TooltipProvider delayDuration={120} skipDelayDuration={0}>
-                <ScrollToTop />
-                <div className="fixed inset-x-0 top-0 z-50 overflow-visible">
-                  <div data-site-chrome className="overflow-visible">
-                    <AnnouncementBar text={announcement} />
-                    <Header />
+                <CollectionsNavProvider handles={collectionHandles}>
+                  <ScrollToTop />
+                  <div className="fixed inset-x-0 top-0 z-50 overflow-visible">
+                    <div data-site-chrome className="overflow-visible">
+                      <AnnouncementBar text={announcement} />
+                      <Header />
+                    </div>
                   </div>
-                </div>
-                <main className="flex-1 pt-chrome-height">{children}</main>
-                <Footer />
-                <LazyCartDrawer />
-                <LazySearchSheet />
-                <ToastHost />
+                  <main className="flex-1 pt-chrome-height">{children}</main>
+                  <Footer social={social} />
+                  <LazyCartDrawer />
+                  <LazySearchSheet />
+                  <ToastHost />
+                </CollectionsNavProvider>
               </TooltipProvider>
             </UiProvider>
           </WishlistProvider>

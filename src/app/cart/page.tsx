@@ -64,9 +64,9 @@ export default function CartPage() {
       <section className="border-b border-hairline bg-canvas pb-16 pt-8 sm:pt-10 lg:pb-24 lg:pt-12">
         <div className="container-ns">
           {!hasLines ? (
-            <div className="mx-auto flex max-w-lg flex-col items-start gap-6 py-10 sm:py-16">
+            <div className="mx-auto flex max-w-lg flex-col items-center gap-6 py-10 text-center sm:py-16">
               <h1 className="text-display-md text-ink">Your cart is empty</h1>
-              <Button href="/collections/bestsellers">Shop bestsellers</Button>
+              <Button href="/products">Shop all perfumes</Button>
             </div>
           ) : (
             <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-16 xl:grid-cols-[minmax(0,1fr)_25rem] 2xl:gap-24">

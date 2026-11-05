@@ -181,11 +181,11 @@ export function CartDrawer() {
               <p className="text-body-lg text-ink">Your cart is empty</p>
               <div className="mt-6 flex flex-col gap-3">
                 <Button
-                  href="/collections/bestsellers"
+                  href="/products"
                   className="w-full sm:w-full"
                   onClick={closeCart}
                 >
-                  Shop bestsellers
+                  Shop all perfumes
                 </Button>
               </div>
               <div className="mt-auto border-t border-hairline pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">

@@ -6,6 +6,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { Button } from "@/components/ui/button";
 import { RichHtml } from "@/components/ui/rich-html";
 import { siteConfig } from "@/data/site";
+import { BASE_OPEN_GRAPH, fitDescription, fitTitle } from "@/lib/seo";
 import {
   getJournalPost,
   getJournalPosts,
@@ -33,31 +34,17 @@ function formatDate(value: string) {
   });
 }
 
-/** Root layout appends " | NS Perfume"; keep the full title tag under 60 characters. */
-const MAX_TITLE = 59 - ` | ${siteConfig.name}`.length;
-
-/**
- * Full title with the brand when it fits; the bare title when only that fits;
- * otherwise cut at a word boundary (no ellipsis, which reads as broken in results).
- */
-function seoTitle(title: string): Metadata["title"] {
-  if (title.length <= MAX_TITLE) return title;
-  if (title.length <= 60) return { absolute: title };
-  const cut = title.slice(0, 60);
-  const space = cut.lastIndexOf(" ");
-  return { absolute: (space > 36 ? cut.slice(0, space) : cut).replace(/[\s,:;.\-]+$/, "") };
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = await getJournalPost(slug);
   if (!post) return { title: "Journal" };
   const url = `/journal/${post.slug}`;
   return {
-    title: seoTitle(post.title),
-    description: post.excerpt.slice(0, 160),
+    title: fitTitle(post.title),
+    description: fitDescription(post.excerpt),
     alternates: { canonical: url },
     openGraph: {
+      ...BASE_OPEN_GRAPH,
       type: "article",
       url,
       title: post.title,

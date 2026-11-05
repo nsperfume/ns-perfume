@@ -5,6 +5,7 @@ import { mapProduct } from "@/lib/mappers";
 import { ProductModel } from "@/models/Product";
 import { isDuplicateKey, productUpdateSchema, validationError } from "@/lib/validation/catalog";
 import { revalidateStorefront } from "@/lib/revalidate";
+import { announcePages } from "@/lib/indexnow";
 
 type Ctx = { params: Promise<{ handle: string }> };
 
@@ -49,6 +50,11 @@ export async function PUT(req: Request, ctx: Ctx) {
     }).lean();
     if (!doc) return jsonError("Product not found", 404);
     revalidateStorefront();
+    // Also when it just left the shop (draft or archived) or moved to a new web address.
+    if (status === "active" || current.status === "active") {
+      const saved = doc as unknown as { handle: string };
+      announcePages([`/products/${handle}`, `/products/${saved.handle}`]);
+    }
     return jsonOk(mapProduct(doc));
   } catch (e) {
     if (isDuplicateKey(e)) {
@@ -67,9 +73,10 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     if (!admin) return adminDenied();
     await connectDB();
     const { handle } = await ctx.params;
-    const doc = await ProductModel.findOneAndDelete({ handle }).lean();
+    const doc = await ProductModel.findOneAndDelete({ handle }).lean<{ status?: string }>();
     if (!doc) return jsonError("Product not found", 404);
     revalidateStorefront();
+    if (doc.status === "active") announcePages([`/products/${handle}`, "/products"]);
     return jsonOk({ handle });
   } catch (e) {
     console.error(e);

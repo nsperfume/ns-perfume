@@ -13,12 +13,14 @@ import { PerfumeMarquee } from "@/components/home/perfume-marquee";
 import { WornInWild } from "@/components/home/worn-in-wild";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
+  getActiveCollectionHandles,
   getBestsellers,
   getJournalPosts,
   getStoreProducts,
   getTestimonials,
 } from "@/lib/store-data";
-import { siteConfig, socialLinks } from "@/data/site";
+import { siteConfig } from "@/data/site";
+import { pageOpenGraph } from "@/lib/seo";
 import { getSiteSettings } from "@/lib/site-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,6 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { absolute: `${siteConfig.name} | Long Lasting Perfumes in Pakistan` },
     description: `Shop long lasting perfumes for men and women in Pakistan. ${from}Cash on delivery nationwide.${free}`,
     alternates: { canonical: "/" },
+    openGraph: pageOpenGraph("/"),
   };
 }
 
@@ -40,12 +43,13 @@ export async function generateMetadata(): Promise<Metadata> {
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const [bestsellers, products, testimonials, posts, { checkout }] = await Promise.all([
+  const [bestsellers, products, testimonials, posts, { checkout, social }, collectionHandles] = await Promise.all([
     getBestsellers(),
     getStoreProducts(),
     getTestimonials(),
     getJournalPosts(),
     getSiteSettings(),
+    getActiveCollectionHandles(),
   ]);
   const freeDeliveryLine =
     checkout.freeShippingThresholdPkr > 0 && checkout.shipping.standard.enabled
@@ -54,10 +58,12 @@ export default async function HomePage() {
 
   const orgLd = {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "OnlineStore",
+    "@id": `${siteConfig.url}/#store`,
     name: siteConfig.name,
+    alternateName: ["NS Perfumes", "NSPerfume"],
     url: siteConfig.url,
-    logo: `${siteConfig.url}/brand/ns-perfume-logo.svg`,
+    logo: `${siteConfig.url}/brand/icon-512.png`,
     description: siteConfig.description,
     email: siteConfig.email,
     telephone: `+92${siteConfig.phone.replace(/^0/, "")}`,
@@ -75,14 +81,16 @@ export default async function HomePage() {
       areaServed: "PK",
       availableLanguage: ["en", "ur"],
     },
-    sameAs: socialLinks.map((s) => s.href),
+    ...(social.length ? { sameAs: social.map((s) => s.href) } : {}),
   };
   const websiteLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: siteConfig.name,
+    alternateName: ["NS Perfumes", "nsperfume.pk"],
     url: siteConfig.url,
     inLanguage: "en-PK",
+    publisher: { "@id": `${siteConfig.url}/#store` },
   };
 
   const bestsellerList =
@@ -97,8 +105,8 @@ export default async function HomePage() {
       <JsonLd data={[orgLd, websiteLd]} />
       <HomeHero />
       <PerfumeMarquee />
-      <ShopByCollection />
-      <BestsellersSection products={bestsellerList} />
+      <ShopByCollection handles={collectionHandles} />
+      <BestsellersSection products={bestsellerList} curated={bestsellers.length > 0} />
       <HomeTrustSection freeDeliveryLine={freeDeliveryLine} />
       <BrandStoryBand />
       <FindYourScentTeaser />

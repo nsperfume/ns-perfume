@@ -15,6 +15,7 @@ import { animate, EASE, finished } from "@/lib/animate";
 import { SearchIcon, XIcon } from "@/components/ui/icons";
 import { useUi } from "@/context/ui";
 import { Price } from "@/components/commerce/price";
+import { useShowNavLink } from "@/context/collections-nav";
 import {
   fetchSearchCatalog,
   isBestseller,
@@ -42,6 +43,7 @@ const quickChipClass =
  * Drops open from the bottom edge of the fixed chrome (topbar + nav).
  */
 export function SearchSheet() {
+  const showLink = useShowNavLink();
   const { searchOpen, closeSearch } = useUi();
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -248,7 +250,7 @@ export function SearchSheet() {
                     Try a note or collection
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {QUICK_SEARCHES.map((item) =>
+                    {QUICK_SEARCHES.filter(showLink).map((item) =>
                       item.href ? (
                         <Link
                           key={item.label}

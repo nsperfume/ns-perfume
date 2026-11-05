@@ -7,6 +7,10 @@ import { revalidatePath } from "next/cache";
 export function revalidateStorefront() {
   try {
     revalidatePath("/", "layout");
+    // Search engines and AI assistants read these directly, so they update with the catalog.
+    revalidatePath("/sitemap.xml");
+    revalidatePath("/llms.txt");
+    revalidatePath("/llms-full.txt");
   } catch (e) {
     console.error("[revalidate] failed", e);
   }
