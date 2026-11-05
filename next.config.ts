@@ -20,7 +20,8 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
+  // Admin image uploads go straight from the browser to Cloudinary.
+  `connect-src 'self' https://api.cloudinary.com${isDev ? " ws: wss:" : ""}`,
   "frame-src https://www.openstreetmap.org",
   "frame-ancestors 'none'",
   "form-action 'self' https://accounts.google.com",

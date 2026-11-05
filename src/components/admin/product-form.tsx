@@ -152,11 +152,32 @@ function toHandle(name: string) {
     .replace(/-+$/g, "");
 }
 
+const MAX_SKU = 60;
+
+/** A long web address is shortened here, never the size, so each size keeps its own SKU. */
 function autoSku(handle: string, ml: number) {
-  return `NS-${handle}-${ml}`
+  const size = `-${ml}`;
+  const stem = `NS-${handle}`
     .toUpperCase()
     .replace(/[^A-Z0-9._-]/g, "-")
-    .slice(0, 60);
+    .slice(0, MAX_SKU - size.length)
+    .replace(/-+$/g, "");
+  return `${stem}${size}`;
+}
+
+/** Stop waiting after this long so a stalled connection never leaves "Saving…" on screen. */
+const SAVE_TIMEOUT_MS = 60_000;
+
+/** Plain-language reason for a refused save; server faults keep their code so they can be reported. */
+function saveErrorMessage(status: number, serverMessage?: string) {
+  if (status === 401) {
+    return "You have been signed out. Sign in again in a new tab, then save here. Your details are still on this page.";
+  }
+  if (status === 413) return "This product has too much text to save. Shorten the long descriptions and try again.";
+  if (status >= 500) {
+    return `The store could not save this right now (error ${status}). Your details are still on this page. Try again in a minute.`;
+  }
+  return serverMessage || `Could not save the product (error ${status}). Try again.`;
 }
 
 type FormState = {
@@ -674,61 +695,66 @@ export function ProductForm({
       return;
     }
 
-    const gallery = form.gallery.map((u) => u.trim()).filter(Boolean);
-    const used = new Set<string>();
-    const sizes = form.prices.map((p) => {
-      const base = p.sku || autoSku(form.handle, p.ml);
-      let sku = base;
-      let n = 2;
-      while (used.has(sku.toLowerCase())) sku = `${base}-${n++}`.slice(0, 60);
-      used.add(sku.toLowerCase());
-      return {
-        ml: p.ml,
-        pricePkr: p.price,
-        sku,
-        // Keep the sale "was" price; omit when blank so it is cleared.
-        ...(p.compareAt != null && Number.isFinite(p.compareAt) && p.compareAt > 0
-          ? { compareAtPkr: p.compareAt }
-          : {}),
-      };
-    });
-
-    const payload = {
-      handle: form.handle,
-      name: form.name.trim(),
-      descriptor: form.descriptor.trim(),
-      description: sanitizeRichHtml(toRichHtml(form.description)),
-      concentration: form.concentration,
-      family: form.family,
-      gender: form.gender,
-      sizes,
-      topNotes: form.topNotes,
-      heartNotes: form.heartNotes,
-      baseNotes: form.baseNotes,
-      sillage: form.sillage,
-      longevity: form.longevity,
-      ingredients: form.containsAlcohol
-        ? form.ingredients
-        : withoutAlcoholIngredients(form.ingredients),
-      containsAlcohol: form.containsAlcohol,
-      // Left blank means "not shown"; never store a placeholder dash.
-      countryOfOrigin: form.countryOfOrigin.trim(),
-      story: sanitizeRichHtml(toRichHtml(form.story)),
-      howToWear: sanitizeRichHtml(toRichHtml(form.howToWear)),
-      tags: buildTags(form),
-      collectionHandles: form.collectionHandles,
-      badges: form.badges,
-      // First gallery image = card/hero primary; second = hover.
-      imagePrimary: gallery[0] || "",
-      imageSecondary: gallery[1] || gallery[0] || "",
-      gallery,
-      relatedHandles: form.relatedHandles,
-      inStock: form.inStock,
-      status: form.status,
-    };
-
     setSaving(true);
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), SAVE_TIMEOUT_MS);
     try {
+      const gallery = form.gallery.map((u) => u.trim()).filter(Boolean);
+      const used = new Set<string>();
+      const sizes = form.prices.map((p) => {
+        const base = p.sku || autoSku(form.handle, p.ml);
+        let sku = base;
+        // The number has to fit inside the limit, or the SKU never changes and this never ends.
+        for (let n = 2; used.has(sku.toLowerCase()); n++) {
+          const suffix = `-${n}`;
+          sku = `${base.slice(0, MAX_SKU - suffix.length)}${suffix}`;
+        }
+        used.add(sku.toLowerCase());
+        return {
+          ml: p.ml,
+          pricePkr: p.price,
+          sku,
+          // Keep the sale "was" price; omit when blank so it is cleared.
+          ...(p.compareAt != null && Number.isFinite(p.compareAt) && p.compareAt > 0
+            ? { compareAtPkr: p.compareAt }
+            : {}),
+        };
+      });
+
+      const payload = {
+        handle: form.handle,
+        name: form.name.trim(),
+        descriptor: form.descriptor.trim(),
+        description: sanitizeRichHtml(toRichHtml(form.description)),
+        concentration: form.concentration,
+        family: form.family,
+        gender: form.gender,
+        sizes,
+        topNotes: form.topNotes,
+        heartNotes: form.heartNotes,
+        baseNotes: form.baseNotes,
+        sillage: form.sillage,
+        longevity: form.longevity,
+        ingredients: form.containsAlcohol
+          ? form.ingredients
+          : withoutAlcoholIngredients(form.ingredients),
+        containsAlcohol: form.containsAlcohol,
+        // Left blank means "not shown"; never store a placeholder dash.
+        countryOfOrigin: form.countryOfOrigin.trim(),
+        story: sanitizeRichHtml(toRichHtml(form.story)),
+        howToWear: sanitizeRichHtml(toRichHtml(form.howToWear)),
+        tags: buildTags(form),
+        collectionHandles: form.collectionHandles,
+        badges: form.badges,
+        // First gallery image = card/hero primary; second = hover.
+        imagePrimary: gallery[0] || "",
+        imageSecondary: gallery[1] || gallery[0] || "",
+        gallery,
+        relatedHandles: form.relatedHandles,
+        inStock: form.inStock,
+        status: form.status,
+      };
+
       const res = await fetch(
         isNew
           ? "/api/products"
@@ -737,6 +763,7 @@ export function ProductForm({
           method: isNew ? "POST" : "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
+          signal: abort.signal,
         },
       );
       const json = (await res.json().catch(() => null)) as {
@@ -746,11 +773,7 @@ export function ProductForm({
         details?: { fieldErrors?: Record<string, string> };
       } | null;
       if (!json?.ok) {
-        const message =
-          json?.error ||
-          (res.status === 401 || res.status === 403
-            ? "Your session ended. Sign in again."
-            : "Could not save the product. Try again.");
+        const message = saveErrorMessage(res.status, json?.error);
         const fieldErrors = mapServerErrors(json?.details?.fieldErrors);
         setServerError(message);
         toast.error(message);
@@ -766,11 +789,15 @@ export function ProductForm({
       setSnapshot(JSON.stringify(form));
       toast.success(isNew ? "Product created" : "Product saved");
       onSaved(json.data ?? null, { created: isNew, deleted: false });
-    } catch {
-      const message = "Network error. Check your connection and try again.";
+    } catch (err) {
+      console.error(err);
+      const message = abort.signal.aborted
+        ? "Saving took too long, so we stopped waiting. Check your connection, then look in Products before trying again, because it may have saved."
+        : "Could not reach the store. Check your connection and try again. Your details are still on this page.";
       setServerError(message);
       toast.error(message);
     } finally {
+      clearTimeout(timer);
       setSaving(false);
     }
   }
@@ -1270,14 +1297,14 @@ export function ProductForm({
         </aside>
       </div>
 
-      {serverError ? (
-        <div className="mt-6">
-          <AdminFormError>{serverError}</AdminFormError>
-        </div>
-      ) : null}
-
       {/* Save bar */}
       <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-admin-line bg-admin-paper/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 2xl:-mx-10 2xl:px-10">
+        {/* In the bar so the reason stays on screen wherever the page is scrolled. */}
+        {serverError ? (
+          <div className="mb-3">
+            <AdminFormError>{serverError}</AdminFormError>
+          </div>
+        ) : null}
         <div className="flex items-center justify-between gap-3">
           <p
             className={cn(

@@ -42,12 +42,20 @@ type Props = {
   hideLabel?: boolean;
 };
 
-/* Mirrors /api/admin/upload: magic-byte checked JPG, PNG, WebP, AVIF up to 8 MB. */
-const MAX_BYTES = 8 * 1024 * 1024;
+/*
+ * JPG, PNG, WebP or AVIF up to 6 MB. The file goes straight to Cloudinary, which checks
+ * the real format (see /api/admin/upload). Cloudinary cannot cap the size of a signed
+ * upload, so the size limit is enforced here.
+ */
+const MAX_BYTES = 6 * 1024 * 1024;
+/** Stop waiting after these so a stalled connection never leaves "Uploading" on screen. */
+const TICKET_TIMEOUT_MS = 30_000;
+const UPLOAD_TIMEOUT_MS = 300_000;
 const ACCEPT = "image/jpeg,image/png,image/webp,image/avif";
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 const ALLOWED_EXT = /\.(jpe?g|png|webp|avif)$/i;
 const TYPE_ERROR = "Use a JPG, PNG, WebP or AVIF image.";
+const CONNECTION_ERROR = "Upload failed. Check your connection and try again.";
 
 function checkFile(file: File): string | null {
   const typeOk = file.type
@@ -56,50 +64,86 @@ function checkFile(file: File): string | null {
   if (!typeOk) return TYPE_ERROR;
   if (file.size > MAX_BYTES) {
     const mb = (file.size / (1024 * 1024)).toFixed(1);
-    return `This image is ${mb} MB. The limit is 8 MB.`;
+    return `This image is ${mb} MB. The limit is 6 MB. Use a smaller photo.`;
   }
   return null;
 }
 
+type UploadTicket = {
+  cloudName: string;
+  apiKey: string;
+  folder: string;
+  allowed_formats: string;
+  timestamp: number;
+  signature: string;
+};
+
+/** Plain-language reason the store refused to sign an upload (no server/env details). */
+function ticketErrorMessage(status: number, serverMessage?: string) {
+  if (status === 401) return "You have been signed out. Sign in again in a new tab, then upload here.";
+  if (status === 503) return "Image uploads are not set up yet. Ask your site admin to turn them on.";
+  if (status === 403 && serverMessage) return serverMessage;
+  return `Upload failed (error ${status}). Try again.`;
+}
+
+/** Plain-language reason Cloudinary refused the file (no server/env details). */
+function cloudinaryErrorMessage(status: number) {
+  if (status === 400) return `This file could not be used. ${TYPE_ERROR}`;
+  if (status === 401 || status === 403) return "Image uploads are not set up correctly. Ask your site admin to check them.";
+  if (status === 420) return "Too many uploads right now. Wait a minute and try again.";
+  return `Upload failed (error ${status}). Try again.`;
+}
+
+/** Ask the store to sign this upload; only signed-in staff who can edit get a ticket. */
+async function requestTicket(): Promise<{ ticket?: UploadTicket; message?: string }> {
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), TICKET_TIMEOUT_MS);
+  try {
+    const res = await fetch("/api/admin/upload", { method: "POST", signal: abort.signal });
+    const body = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: UploadTicket;
+      error?: string;
+    } | null;
+    if (body?.ok && body.data) return { ticket: body.data };
+    return { message: ticketErrorMessage(res.status, body?.error) };
+  } catch {
+    return { message: CONNECTION_ERROR };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Upload with progress (fetch has no upload progress events). */
-function uploadWithProgress(
+function uploadToCloudinary(
   file: File,
+  ticket: UploadTicket,
   onProgress: (pct: number) => void,
-): Promise<{ ok: boolean; url?: string; error?: string; status: number }> {
+): Promise<{ url?: string; message?: string }> {
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/admin/upload");
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${ticket.cloudName}/image/upload`);
     xhr.responseType = "json";
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
     };
     xhr.onload = () => {
-      const body = (xhr.response || null) as {
-        ok?: boolean;
-        data?: { url?: string };
-        error?: string;
-      } | null;
-      if (body?.ok && body.data?.url) {
-        resolve({ ok: true, url: body.data.url, status: xhr.status });
-      } else {
-        resolve({ ok: false, error: body?.error, status: xhr.status });
-      }
+      const url = (xhr.response as { secure_url?: string } | null)?.secure_url;
+      resolve(url ? { url } : { message: cloudinaryErrorMessage(xhr.status) });
     };
-    xhr.onerror = () => resolve({ ok: false, status: 0 });
+    xhr.onerror = () => resolve({ message: CONNECTION_ERROR });
+    xhr.timeout = UPLOAD_TIMEOUT_MS;
+    xhr.ontimeout = () =>
+      resolve({ message: "The upload took too long. Check your connection or use a smaller photo, then try again." });
     const form = new FormData();
     form.append("file", file);
+    form.append("api_key", ticket.apiKey);
+    form.append("timestamp", String(ticket.timestamp));
+    form.append("signature", ticket.signature);
+    form.append("folder", ticket.folder);
+    form.append("allowed_formats", ticket.allowed_formats);
     xhr.send(form);
   });
-}
-
-/** Plain-language message for an upload failure (no server/env details). */
-function friendlyUploadError(status: number, serverMessage?: string) {
-  if (status === 0) return "Upload failed. Check your connection and try again.";
-  if (status === 401 || status === 403) return "Your session ended. Sign in again to upload.";
-  if (status === 413) return "This image is too large. The limit is 8 MB.";
-  if (status === 503) return "Image uploads are not set up yet. Ask your site admin to turn them on.";
-  if (status === 400 && serverMessage) return serverMessage.endsWith(".") ? serverMessage : `${serverMessage}.`;
-  return "Upload failed. Try again.";
 }
 
 function UploadGlyph({ className }: { className?: string }) {
@@ -176,17 +220,20 @@ export function AdminImageField({
     const objectUrl = URL.createObjectURL(file);
     setLocalPreview(objectUrl);
 
-    const res = await uploadWithProgress(file, setProgress);
+    const { ticket, message: refused } = await requestTicket();
+    const res = ticket
+      ? await uploadToCloudinary(file, ticket, setProgress)
+      : { url: undefined, message: refused };
     URL.revokeObjectURL(objectUrl);
     setLocalPreview(null);
     setProgress(null);
     if (fileRef.current) fileRef.current.value = "";
 
-    if (res.ok && res.url) {
+    if (res.url) {
       onChange(res.url);
       toast.success("Image uploaded");
     } else {
-      const message = friendlyUploadError(res.status, res.error);
+      const message = res.message || CONNECTION_ERROR;
       setError(message);
       toast.error(message);
     }
@@ -366,7 +413,7 @@ export function AdminImageField({
                 )}
               </span>
               <span className="text-xs text-admin-muted">
-                JPG, PNG, WebP or AVIF, up to 8 MB
+                JPG, PNG, WebP or AVIF, up to 6 MB
               </span>
             </>
           )}

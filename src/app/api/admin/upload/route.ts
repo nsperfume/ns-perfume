@@ -1,20 +1,16 @@
-import { connectDB } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api";
 import { requireAdminWrite, adminDenied } from "@/lib/auth";
 import { configureCloudinary, isCloudinaryConfigured } from "@/lib/cloudinary";
 
-const MAX_BYTES = 8 * 1024 * 1024;
+/*
+ * Signs one image upload. The browser then sends the file straight to Cloudinary,
+ * because hosting refuses request bodies over 4.5 MB before a route like this runs.
+ * The secret stays here. The signature only allows these formats (no SVG: it can
+ * carry script) in this folder, for one hour.
+ */
+const ALLOWED_FORMATS = "jpg,png,webp,avif";
 
-function sniffImageType(b: Buffer): string | null {
-  if (b.length < 12) return null;
-  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
-  if (b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
-  if (b.toString("ascii", 0, 4) === "RIFF" && b.toString("ascii", 8, 12) === "WEBP") return "image/webp";
-  if (b.toString("ascii", 4, 8) === "ftyp" && /^avi[fs]$/.test(b.toString("ascii", 8, 12))) return "image/avif";
-  return null;
-}
-
-export async function POST(req: Request) {
+export async function POST() {
   try {
     const admin = await requireAdminWrite();
     if (!admin) return adminDenied();
@@ -26,42 +22,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const declared = Number(req.headers.get("content-length") || 0);
-    if (declared > MAX_BYTES + 64 * 1024) {
-      return jsonError("Image must be 8MB or smaller", 413);
-    }
-
-    await connectDB();
-    const form = await req.formData();
-    const file = form.get("file");
-    if (!(file instanceof File)) return jsonError("file is required");
-
-    if (file.size > MAX_BYTES) {
-      return jsonError("Image must be 8MB or smaller", 400);
-    }
-
-    const bytes = Buffer.from(await file.arrayBuffer());
-    // Trust the file's magic bytes, not the browser-sent MIME type. No SVG (it can carry script).
-    const type = sniffImageType(bytes);
-    if (!type) {
-      return jsonError("Use a JPG, PNG, WebP or AVIF image", 400);
-    }
-    const base64 = `data:${type};base64,${bytes.toString("base64")}`;
-    const cloudinary = configureCloudinary();
-    const uploaded = await cloudinary.uploader.upload(base64, {
+    const params = {
+      allowed_formats: ALLOWED_FORMATS,
       folder: process.env.CLOUDINARY_FOLDER || "ns-perfume",
-      resource_type: "image",
-      allowed_formats: ["jpg", "png", "webp", "avif"],
-    });
-
+      timestamp: Math.round(Date.now() / 1000),
+    };
+    const cloudinary = configureCloudinary();
     return jsonOk({
-      url: uploaded.secure_url,
-      publicId: uploaded.public_id,
-      width: uploaded.width,
-      height: uploaded.height,
+      ...params,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      signature: cloudinary.utils.api_sign_request(params, process.env.CLOUDINARY_API_SECRET as string),
     });
   } catch (e) {
     console.error(e);
-    return jsonError("Upload failed", 500);
+    return jsonError("Could not start the upload", 500);
   }
 }
