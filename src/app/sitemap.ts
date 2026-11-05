@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "@/data/site";
 import {
+  getActiveCollectionHandles,
   getCollections,
   getJournalPosts,
   getStoreProducts,
@@ -14,7 +15,6 @@ const STATIC_PATHS = [
   "/products",
   "/collections",
   "/find-your-scent",
-  "/journal",
   "/about",
   "/contact",
   "/faq",
@@ -35,14 +35,17 @@ const iso = (v: unknown) => {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url;
-  const [products, collections, posts] = await Promise.all([
+  const [products, allCollections, active, posts] = await Promise.all([
     getStoreProducts(),
     getCollections(),
+    getActiveCollectionHandles(),
     getJournalPosts(),
   ]);
+  // Empty collections and an empty journal carry noindex, so they are not listed.
+  const collections = allCollections.filter((c) => active.includes(String(c.handle)));
 
   return [
-    ...STATIC_PATHS.map((path) => ({
+    ...[...STATIC_PATHS, ...(posts.length ? ["/journal"] : [])].map((path) => ({
       url: `${base}${path}`,
       changeFrequency: "weekly" as const,
       priority: path === "" ? 1 : 0.5,

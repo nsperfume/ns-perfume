@@ -1,170 +1,163 @@
-import { products } from "@/data/products";
-import type { Collection, Product } from "@/lib/types";
+import type { Collection } from "@/lib/types";
 
+const PAY = "Pay cash on delivery anywhere in Pakistan, or by bank transfer, JazzCash or Easypaisa.";
+const DETAIL = "Every bottle lists its top, heart and base notes, how far it projects and how long it lasts, so you can choose by occasion and weather instead of guessing.";
+
+/**
+ * Standard collections. Created once on a new database (see store-data) so every
+ * menu link has a page; the owner edits them in admin after that. Filter tags come
+ * from the product form automatically, so most of these fill themselves. Copy stays
+ * general, because the catalog changes: no product names, no claims about stock.
+ * The gender pages include unisex scents, which suit both.
+ */
 export const collections: Collection[] = [
   {
     handle: "for-her",
     title: "For her",
-    description: "Florals, iris, and soft gourmands composed for her wardrobe.",
-    seoCopy:
-      "Explore NS Perfume compositions created with feminine-leaning structures: powdered iris, rose, and warm vanilla gourmands. Each eau de parfum and eau de toilette is listed with its true scent pyramid, sillage, and longevity so you can choose by wear time and occasion rather than by trend. From Iris Solstice for daylight offices to Vanille Gilde for cooler evenings, every bottle links to full note breakdowns, concentration, and available sizes.",
+    description: "Perfumes for women, plus unisex scents that suit her just as well.",
+    seoCopy: `Shop perfumes for women in Pakistan at NS Perfume, from soft florals to warm evening scents. ${DETAIL} ${PAY}`,
     bannerTone: "canvas",
-    filterTags: ["gender:her"],
+    filterTags: ["gender:her", "gender:unisex"],
   },
   {
     handle: "for-him",
     title: "For him",
-    description: "Woods, oud, and dry amber structures built for daily and evening wear.",
-    seoCopy:
-      "Shop NS Perfume for him: cedar, vetiver, smoked leather, and restrained oud. Cedar Rift is a clean daytime EDT; Oud Atelier is a denser parfum for night. Filter by family and concentration to match climate, office policy, and how long you need a scent to last.",
+    description: "Perfumes for men, plus unisex scents that suit him just as well.",
+    seoCopy: `Shop perfumes for men in Pakistan at NS Perfume, from fresh daily wear to deep oud and amber for the evening. ${DETAIL} ${PAY}`,
     bannerTone: "deep",
-    filterTags: ["gender:him"],
+    filterTags: ["gender:him", "gender:unisex"],
   },
   {
     handle: "unisex",
     title: "Unisex",
-    description: "Shared compositions that sit well across wardrobes and seasons.",
-    seoCopy:
-      "Our unisex lineup balances fresh citrus, green fig, and oriental amber without leaning hard into gendered clichés. Amber Noir, Fig Verdure, and Citrus Atelier give you options from soft sillage to room-filling trails, each with transparent note lists and performance meters on the product page.",
+    description: "Scents made to be shared, for men and women alike.",
+    seoCopy: `Unisex perfumes at NS Perfume are made for anyone who likes the scent, whoever wears it. ${DETAIL} ${PAY}`,
     bannerTone: "canvas",
     filterTags: ["gender:unisex"],
   },
   {
     handle: "floral",
     title: "Floral",
-    description: "Iris, jasmine, rose, and violet constructed for modern wear.",
-    seoCopy:
-      "Floral at NS Perfume means structure over sweetness. Iris butter, violet leaf, and rose absolute are paired with musk and wood so the drydown stays wearable through a full day. Read each scent pyramid for top-to-base evolution before you commit to a bottle size.",
+    description: "Rose, jasmine and other flowers, from soft to rich.",
+    seoCopy: `Floral perfumes centre on flowers such as rose and jasmine, and suit daytime wear and special occasions alike. ${DETAIL} ${PAY}`,
     bannerTone: "canvas",
     filterTags: ["family:floral"],
   },
   {
     handle: "woody",
     title: "Woody",
-    description: "Cedar, vetiver, and dry timber accords with clean spice.",
-    seoCopy:
-      "Woody fragrances here favor dry, architectural woods over heavy resin. Pepper, grapefruit, and cypress brighten the opening; cashmeran and amberwood manage the trail. Ideal if you want something clean enough for daytime and grounded enough for evening.",
+    description: "Cedar, sandalwood and vetiver, dry and warm.",
+    seoCopy: `Woody perfumes are built on notes such as cedar, sandalwood and vetiver, for a dry, warm scent that stays close and wears well all day. ${DETAIL} ${PAY}`,
     bannerTone: "deep",
     filterTags: ["family:woody"],
   },
   {
     handle: "oriental",
     title: "Oriental and amber",
-    description: "Resins, amber, oud, and incense for longer nights.",
-    seoCopy:
-      "Oriental and amber compositions at NS Perfume emphasize depth without glitter or gimmick. Expect saffron, labdanum, oud, and leather crafted for sillage you can control with application. Compare performance meters to match intensity to occasion.",
+    description: "Oud, amber and spice, deep and long lasting.",
+    seoCopy: `Oriental and amber perfumes use rich notes such as oud, amber, resin and spice, a favourite for evenings, weddings and cooler weather. ${DETAIL} ${PAY}`,
     bannerTone: "deep",
     filterTags: ["family:oriental"],
   },
   {
     handle: "fresh",
     title: "Fresh and citrus",
-    description: "Green stems, fig leaf, and Italian citrus with soft drydowns.",
-    seoCopy:
-      "Fresh and citrus scents need more than top-note sparkle. Our lineup pairs lemon, blood orange, and fig leaf with musk and light woods so the scent does not disappear after an hour. Reapplication-friendly EDTs sit beside brighter everyday options for warm weather.",
+    description: "Bright, clean scents for heat and everyday wear.",
+    seoCopy: `Fresh and citrus perfumes open bright and clean, which makes them an easy choice for Pakistani summers, offices and daily wear. ${DETAIL} ${PAY}`,
     bannerTone: "canvas",
-    filterTags: ["family:fresh"],
+    filterTags: ["family:fresh", "family:citrus"],
+  },
+  {
+    handle: "citrus",
+    title: "Citrus",
+    description: "Lemon, bergamot and orange, bright and light.",
+    seoCopy: `Citrus perfumes open with notes such as lemon, bergamot and orange. They feel light in the heat and suit daytime wear. ${DETAIL} ${PAY}`,
+    bannerTone: "canvas",
+    filterTags: ["family:citrus"],
+  },
+  {
+    handle: "aromatic",
+    title: "Aromatic",
+    description: "Lavender, herbs and spice, clean and confident.",
+    seoCopy: `Aromatic perfumes draw on lavender, herbs and spice for a clean, confident scent that works well for office and daily wear. ${DETAIL} ${PAY}`,
+    bannerTone: "canvas",
+    filterTags: ["family:aromatic"],
   },
   {
     handle: "gourmand",
     title: "Gourmand",
-    description: "Vanilla, cacao, and tonka treated with restraint.",
-    seoCopy:
-      "Gourmand here is roasted, not sugary. Vanille Gilde layers vanilla absolute with cacao and tonka over sandalwood for a dinner-table presence that still reads adult. Check longevity ratings if you want a scent that lasts well past dessert.",
+    description: "Vanilla, caramel and warm spice, sweet and cosy.",
+    seoCopy: `Gourmand perfumes use warm, edible notes such as vanilla and caramel. They feel cosy and suit evenings and cooler weather. ${DETAIL} ${PAY}`,
     bannerTone: "canvas",
     filterTags: ["family:gourmand"],
   },
   {
     handle: "eau-de-parfum",
     title: "Eau de Parfum",
-    description: "Higher concentration for longer longevity on skin.",
-    seoCopy:
-      "EDP formulas in the NS Perfume range sit between daily EDT brightness and extrait intensity. Expect richer hearts and longer drydowns, ideal when you want six to eight hours of wear without heavy reapplication.",
+    description: "A higher concentration of perfume oil for longer wear.",
+    seoCopy: `Eau de Parfum holds more perfume oil than Eau de Toilette, so it usually lasts longer on skin and has a richer scent. ${DETAIL} ${PAY}`,
     bannerTone: "canvas",
     filterTags: ["concentration:edp"],
   },
   {
     handle: "eau-de-toilette",
     title: "Eau de Toilette",
-    description: "Lighter concentration for heat and daytime refresh.",
-    seoCopy:
-      "EDT bottles are built for climates and days when you want lift without weight. Citrus, fig, and dry cedar open cleanly; reapply after midday if skin chemistry burns through the top notes.",
+    description: "A lighter concentration for heat and daytime wear.",
+    seoCopy: `Eau de Toilette holds less perfume oil than Eau de Parfum, so it feels lighter and suits hot days and offices. ${DETAIL} ${PAY}`,
     bannerTone: "canvas",
     filterTags: ["concentration:edt"],
   },
   {
+    handle: "parfum",
+    title: "Parfum",
+    description: "The richest concentration, where a little goes a long way.",
+    seoCopy: `Parfum has the highest concentration of perfume oil in the range, so a small amount goes a long way. ${DETAIL} ${PAY}`,
+    bannerTone: "deep",
+    filterTags: ["concentration:parfum"],
+  },
+  {
     handle: "discovery",
     title: "Discovery and travel size",
-    description: "Sample sets and smaller formats for testing on skin.",
-    seoCopy:
-      "Start with the Discovery Set when you want to wear a formula for several days before buying a full bottle. Travel-friendly formats help you test sillage in real offices, evenings, and humidity.",
+    description: "Small sizes for testing a scent on your own skin.",
+    seoCopy: `Small sizes let you wear a perfume for a few days before you buy a full bottle, and they travel easily. ${PAY}`,
     bannerTone: "canvas",
-    filterTags: undefined,
   },
   {
     handle: "gift-sets",
     title: "Gift sets",
-    description: "Curated pairings for occasions that deserve a full wardrobe start.",
-    seoCopy:
-      "Gift sets combine discovery formats with signature bottles so recipients can map preference before committing to a larger size. Look for guided note descriptions and free shipping thresholds on eligible orders.",
+    description: "Perfume gifts for birthdays, weddings and Eid.",
+    seoCopy: `Perfume makes a thoughtful gift for birthdays, weddings and Eid. Gift wrap is offered at checkout when available. ${PAY}`,
     bannerTone: "deep",
-    filterTags: undefined,
+  },
+  {
+    handle: "wedding-season",
+    title: "Wedding season",
+    description: "Scents that last through mehndi, baraat and walima.",
+    seoCopy: `Wedding functions run long, so choose a perfume with the wear time to match. ${DETAIL} ${PAY}`,
+    bannerTone: "deep",
   },
   {
     handle: "new-arrivals",
     title: "New arrivals",
-    description: "Recently released compositions and limited formats.",
-    seoCopy:
-      "New arrivals at NS Perfume surface the latest note structures and bottle sizes. Browse concentration badges and scent pyramids first, then choose size once performance matches how you live.",
+    description: "The latest perfumes added to the store.",
+    seoCopy: `The newest perfumes at NS Perfume. ${DETAIL} ${PAY}`,
     bannerTone: "canvas",
     filterTags: ["badge:new"],
   },
   {
     handle: "bestsellers",
     title: "Bestsellers",
-    description: "Most requested bottles across gender and family.",
-    seoCopy:
-      "Bestsellers reflect wear-tested favorites: Amber Noir, Cedar Rift, Citrus Atelier, and the Discovery Set. Each listing still shows honest sillage and longevity so popular does not mean one-size-fits-all.",
+    description: "The perfumes customers order most.",
+    seoCopy: `The perfumes our customers order most. ${DETAIL} ${PAY}`,
     bannerTone: "deep",
     filterTags: ["badge:bestseller"],
   },
   {
     handle: "limited-edition",
     title: "Limited edition",
-    description: "Short-run compositions and seasonal strengths.",
-    seoCopy:
-      "Limited editions may use higher concentrations or restricted raw materials. Availability is finite; check stock on the product page and consider smaller sizes if you are sampling a denser formula for the first time.",
+    description: "Small batches, available while stock lasts.",
+    seoCopy: `Limited editions are available while stock lasts, so check availability on the product page. ${DETAIL} ${PAY}`,
     bannerTone: "deep",
     filterTags: ["badge:limited"],
   },
 ];
-
-export function getCollection(handle: string): Collection | undefined {
-  return collections.find((c) => c.handle === handle);
-}
-
-export function getCollectionProducts(handle: string): Product[] {
-  const collection = getCollection(handle);
-  if (!collection) return [];
-
-  if (handle === "discovery") {
-    return products.filter(
-      (p) => p.handle === "discovery-set-six" || p.prices.some((s) => s.ml <= 30),
-    );
-  }
-  if (handle === "gift-sets") {
-    return products.filter(
-      (p) => p.handle === "discovery-set-six" || p.badges.includes("bestseller"),
-    );
-  }
-  if (collection.filterTags?.length) {
-    return products.filter((p) =>
-      collection.filterTags!.some(
-        (tag) =>
-          p.tags.includes(tag) ||
-          p.badges.includes(tag.replace("badge:", "") as Product["badges"][number]),
-      ),
-    );
-  }
-  return products;
-}

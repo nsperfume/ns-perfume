@@ -1,7 +1,7 @@
 import { jsonOk } from "@/lib/api";
 import { getCollections, getStoreProducts } from "@/lib/store-data";
 import { toSearchProduct } from "@/lib/search";
-import type { StoreProduct } from "@/lib/mappers";
+import { isInCollection } from "@/lib/collection-query";
 
 /**
  * Lightweight catalog for storefront search (header sheet, /search, scent guide).
@@ -20,30 +20,13 @@ type CollectionRule = {
   filterTags?: unknown;
 };
 
-const strings = (value: unknown): string[] =>
-  Array.isArray(value) ? value.filter((v): v is string => typeof v === "string" && v.length > 0) : [];
-
-/** Same membership rules as productsInCollectionQuery, applied in memory. */
-function memberOf(p: StoreProduct, collection: CollectionRule): boolean {
-  const handle = typeof collection.handle === "string" ? collection.handle : "";
-  if (!handle) return false;
-  if (p.collectionHandles.includes(handle)) return true;
-  if (strings(collection.productHandles).includes(p.handle)) return true;
-  return strings(collection.filterTags).some(
-    (tag) =>
-      p.tags.includes(tag) ||
-      (tag.startsWith("badge:") &&
-        p.badges.includes(tag.slice(6) as StoreProduct["badges"][number])),
-  );
-}
-
 export async function GET() {
   const [products, collections] = await Promise.all([getStoreProducts(), getCollections()]);
   const rules = collections as CollectionRule[];
   const data = products.map((p) => {
     const handles = new Set(p.collectionHandles);
     for (const c of rules) {
-      if (typeof c.handle === "string" && memberOf(p, c)) handles.add(c.handle);
+      if (typeof c.handle === "string" && isInCollection(p, c)) handles.add(c.handle);
     }
     return toSearchProduct(p, [...handles]);
   });

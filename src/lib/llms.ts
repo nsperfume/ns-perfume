@@ -8,7 +8,7 @@ import { describeShipping, fillCheckoutCopy, type CheckoutConfig } from "@/lib/c
 import { getCheckoutConfig } from "@/lib/site-settings";
 import { richTextToPlain } from "@/lib/rich-text";
 import { siteUrl } from "@/lib/site-url";
-import { getCollections, getJournalPosts, getStoreProducts } from "@/lib/store-data";
+import { getActiveCollectionHandles, getCollections, getJournalPosts, getStoreProducts } from "@/lib/store-data";
 import type { StoreProduct } from "@/lib/mappers";
 
 const CONCENTRATION: Record<StoreProduct["concentration"], string> = {
@@ -42,9 +42,10 @@ function shippingFacts(config: CheckoutConfig) {
 
 export async function buildLlmsTxt() {
   const base = siteUrl();
-  const [products, collections, posts, config] = await Promise.all([
+  const [products, collections, active, posts, config] = await Promise.all([
     getStoreProducts(),
     getCollections(),
+    getActiveCollectionHandles(),
     getJournalPosts(),
     getCheckoutConfig(),
   ]);
@@ -62,7 +63,9 @@ export async function buildLlmsTxt() {
     ),
     "",
     "## Collections",
-    ...collections.map((c) => `- [${clean(String(c.title))}](${base}/collections/${c.handle})${c.description ? `: ${clean(String(c.description))}` : ""}`),
+    ...collections
+      .filter((c) => active.includes(String(c.handle)))
+      .map((c) => `- [${clean(String(c.title))}](${base}/collections/${c.handle})${c.description ? `: ${clean(String(c.description))}` : ""}`),
     "",
     "## Guides",
     `- [Find your scent](${base}/find-your-scent): a short quiz that matches notes, climate and occasion to a fragrance`,

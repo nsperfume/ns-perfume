@@ -19,6 +19,8 @@ type CarouselProps = {
   loop?: boolean;
   showDots?: boolean;
   showArrows?: boolean;
+  /** Classes for the arrows and dots row, e.g. to hide it where all slides fit. */
+  controlsClassName?: string;
   gap?: "sm" | "md" | "lg";
   /** Auto-advance delay in ms. 0 disables. */
   autoplayDelay?: number;
@@ -38,6 +40,7 @@ export function EmblaCarousel({
   loop = true,
   showDots = true,
   showArrows = true,
+  controlsClassName,
   gap = "md",
   autoplayDelay = 0,
 }: CarouselProps) {
@@ -110,7 +113,7 @@ export function EmblaCarousel({
       </div>
 
       {(showArrows || showDots) && (
-        <div className="mt-4 flex items-center justify-between gap-3 sm:mt-6 sm:gap-4">
+        <div className={cn("mt-4 items-center justify-between gap-3 sm:mt-6 sm:gap-4", controlsClassName || "flex")}>
           {showDots ? (
             <div className="flex flex-wrap items-center">
               {scrollSnaps.map((_, i) => (

@@ -7,6 +7,7 @@ import { jsonError } from "@/lib/api";
 import { revalidateStorefront } from "@/lib/revalidate";
 import { validationError } from "@/lib/validation/catalog";
 import { checkoutConfigSchema } from "@/lib/validation/settings";
+import { parseSocialForm } from "@/lib/social";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export async function PUT(req: NextRequest) {
       topbarText?: string;
       topbarEnabled?: boolean;
       checkout?: unknown;
+      social?: unknown;
     } | null;
     if (!body) return jsonError("Invalid request", 400);
 
@@ -50,6 +52,13 @@ export async function PUT(req: NextRequest) {
       const parsed = checkoutConfigSchema.safeParse(body.checkout);
       if (!parsed.success) return validationError(parsed.error);
       set.checkout = parsed.data;
+    }
+    if (body.social !== undefined) {
+      const { urls, errors } = parseSocialForm(body.social);
+      if (Object.keys(errors).length) {
+        return jsonError("Check the highlighted links.", 400, { fieldErrors: errors });
+      }
+      set.socialLinks = urls;
     }
     if (!Object.keys(set).length) return jsonError("Nothing to save", 400);
 

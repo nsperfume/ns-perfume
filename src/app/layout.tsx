@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { SiteShell } from "@/components/layout/site-shell";
 import { CheckoutConfigProvider } from "@/context/checkout-config";
 import { getSiteSettings } from "@/lib/site-settings";
+import { getActiveCollectionHandles } from "@/lib/store-data";
 import { siteConfig } from "@/data/site";
 import "./globals.css";
 
@@ -51,10 +52,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // Store charges are edited in admin; cached pages refresh when settings are saved.
-  const { checkout, topbarText, topbarEnabled } = await getSiteSettings();
+  const { checkout, topbarText, topbarEnabled, social } = await getSiteSettings();
+  const collectionHandles = await getActiveCollectionHandles();
   return (
     <html
-      lang="en"
+      lang="en-PK"
       className={`${cormorant.variable} ${manrope.variable} h-full antialiased`}
     >
       <body
@@ -62,7 +64,13 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <CheckoutConfigProvider value={checkout}>
-          <SiteShell announcement={topbarEnabled ? topbarText : ""}>{children}</SiteShell>
+          <SiteShell
+            announcement={topbarEnabled ? topbarText : ""}
+            social={social}
+            collectionHandles={collectionHandles}
+          >
+            {children}
+          </SiteShell>
         </CheckoutConfigProvider>
       </body>
     </html>

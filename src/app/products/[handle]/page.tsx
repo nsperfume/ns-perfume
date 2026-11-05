@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product/gallery";
 import { ProductPurchasePanel } from "@/components/product/purchase-panel";
-import { ProductCharacterWear } from "@/components/product/character-wear";
+import { StoryTabs } from "@/components/product/story-tabs";
 import { ProductDetailsAccordion } from "@/components/product/details-accordion";
 import { ProductReviewsSection } from "@/components/product/reviews-section";
 import { RecentlyViewed } from "@/components/product/recently-viewed";
@@ -19,6 +19,16 @@ import {
 import { siteImages } from "@/data/images";
 import { siteConfig } from "@/data/site";
 import {
+  BASE_OPEN_GRAPH,
+  absoluteUrl,
+  breadcrumbJsonLd,
+  fitDescription,
+  productDescription,
+  productTitle,
+  titleText,
+} from "@/lib/seo";
+import {
+  getCollections,
   getProductReviews,
   getStoreProduct,
   getStoreProducts,
@@ -39,16 +49,6 @@ export async function generateStaticParams() {
   return products.map((p) => ({ handle: p.handle }));
 }
 
-const CONCENTRATION_NAMES: Record<string, string> = {
-  EDP: "Eau de Parfum",
-  EDT: "Eau de Toilette",
-  EDC: "Eau de Cologne",
-  PARFUM: "Parfum",
-  EXTRAIT: "Extrait de Parfum",
-};
-const concentrationName = (c: string) => CONCENTRATION_NAMES[c.toUpperCase()] ?? c;
-const audience = (gender: string) =>
-  gender === "him" ? "for men" : gender === "her" ? "for women" : "for men and women";
 const genderLabel = (gender: string) =>
   gender === "him" ? "For him" : gender === "her" ? "For her" : "Unisex";
 
@@ -56,15 +56,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
   const product = await getStoreProduct(handle);
   if (!product) return { title: "Product" };
-  const prices = product.prices.map((p) => p.price).filter((n) => n > 0);
-  const from = prices.length ? ` Price in Pakistan from Rs ${Math.min(...prices).toLocaleString("en-US")}.` : "";
-  const title =
-    product.seoTitle ||
-    `${product.name} ${concentrationName(product.concentration)} ${audience(product.gender)}`;
-  const description = (
-    product.seoDescription ||
-    `${product.descriptor.replace(/\.?$/, ".")} ${concentrationName(product.concentration)} ${audience(product.gender)}.${from} Cash on delivery across Pakistan.`
-  ).slice(0, 160);
+  const title = product.seoTitle ? { absolute: product.seoTitle } : productTitle(product);
+  const description = product.seoDescription
+    ? fitDescription(product.seoDescription)
+    : productDescription(product);
   const url = `/products/${product.handle}`;
   return {
     title,
@@ -72,10 +67,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: { canonical: url },
     // WhatsApp and Instagram previews show the bottle, not the site banner.
     openGraph: {
-      title,
+      ...BASE_OPEN_GRAPH,
+      title: titleText(title),
       description,
       url,
-      type: "website",
       images: product.imagePrimary ? [{ url: product.imagePrimary, alt: `${product.name} bottle` }] : undefined,
     },
   };
@@ -86,7 +81,11 @@ export default async function ProductPage({ params }: Props) {
   const product = await getStoreProduct(handle);
   if (!product) notFound();
 
-  const [all, { checkout }] = await Promise.all([getStoreProducts(), getSiteSettings()]);
+  const [all, { checkout }, collections] = await Promise.all([
+    getStoreProducts(),
+    getSiteSettings(),
+    getCollections(),
+  ]);
   const related = product.relatedHandles
     .map((h) => all.find((p) => p.handle === h))
     .filter((p): p is StoreProduct => Boolean(p))
@@ -109,16 +108,8 @@ export default async function ProductPage({ params }: Props) {
   ]
     .slice(0, 4)
     .map(cardProduct);
-  const descriptionHtml = richTextToPlain(product.description || "").trim()
-    ? product.description
-    : "";
   const productReviews = await getProductReviews(product.handle);
 
-  // Structured data needs absolute URLs; uploaded images may already be absolute.
-  const absoluteUrl = (path: string) =>
-    /^https?:\/\//i.test(path)
-      ? path
-      : `${siteConfig.url}${path.startsWith("/") ? "" : "/"}${path}`;
   const productUrl = absoluteUrl(`/products/${product.handle}`);
 
   // Shopping-ready markup: one Offer per size in PKR with delivery and return terms.
@@ -155,6 +146,11 @@ export default async function ProductPage({ params }: Props) {
       richTextToPlain(product.description || "").trim() || product.descriptor,
     sku: product.prices[0]?.sku,
     brand: { "@type": "Brand", name: siteConfig.name },
+    category: "Fragrances",
+    audience: {
+      "@type": "PeopleAudience",
+      suggestedGender: product.gender === "him" ? "male" : product.gender === "her" ? "female" : "unisex",
+    },
     image: product.gallery.slice(0, 4).map((src) => absoluteUrl(src)),
     url: productUrl,
     offers: product.prices
@@ -185,25 +181,36 @@ export default async function ProductPage({ params }: Props) {
   };
 
   // One trail for the visible breadcrumb and the BreadcrumbList markup.
-  const familyLabel = product.family
-    ? product.family.charAt(0).toUpperCase() + product.family.slice(1)
-    : "";
+  const familyCollection = collections.find((c) => c.handle === product.family);
   const trail: { label: string; href?: string }[] = [
     { label: "Home", href: "/" },
     { label: "Shop all", href: "/products" },
-    ...(familyLabel ? [{ label: familyLabel, href: `/collections/${product.family}` }] : []),
+    ...(familyCollection
+      ? [{ label: String(familyCollection.title), href: `/collections/${product.family}` }]
+      : []),
     { label: product.name },
   ];
-  const breadcrumbLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: trail.map((t, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name: t.label,
-      item: t.href ? absoluteUrl(t.href) : productUrl,
-    })),
-  };
+  const breadcrumbLd = breadcrumbJsonLd(
+    trail.map((t) => ({ label: t.label, href: t.href ?? `/products/${product.handle}` })),
+  );
+
+  // Only what this product has text for; one panel shows at a time.
+  const storyPanels = [
+    { id: "about", label: "About", html: product.description },
+    { id: "story", label: "The story", html: product.story },
+    { id: "wear", label: "How to wear", html: product.howToWear },
+  ]
+    .filter((panel) => richTextToPlain(panel.html || "").trim())
+    .map((panel) => ({
+      id: panel.id,
+      label: panel.label,
+      content: (
+        <RichHtml
+          html={panel.html}
+          className="max-w-[44rem] text-pretty text-body-lg text-ink/85 [&_li]:my-1 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
+        />
+      ),
+    }));
 
   return (
     <>
@@ -235,13 +242,15 @@ export default async function ProductPage({ params }: Props) {
               <h2 className="text-display-md text-balance text-ink">
                 How {product.name} wears
               </h2>
-              <ScentPyramid
-                variant="inline"
-                className="mt-6"
-                topNotes={product.topNotes}
-                heartNotes={product.heartNotes}
-                baseNotes={product.baseNotes}
-              />
+              {product.topNotes.length + product.heartNotes.length + product.baseNotes.length > 0 ? (
+                <ScentPyramid
+                  variant="inline"
+                  className="mt-6"
+                  topNotes={product.topNotes}
+                  heartNotes={product.heartNotes}
+                  baseNotes={product.baseNotes}
+                />
+              ) : null}
             </div>
             <div>
               <PerformanceMeter
@@ -295,42 +304,31 @@ export default async function ProductPage({ params }: Props) {
         reviews={productReviews}
       />
 
-      {/* Story and wear: atmosphere image beside the story on desktop */}
-      <section className="border-b border-hairline bg-canvas lg:grid lg:grid-cols-2">
-        <div className="relative isolate h-[18rem] w-full overflow-hidden sm:h-[22rem] lg:h-auto lg:min-h-[28rem]">
-          <Image
-            src={siteImages.productAtmosphere}
-            alt="Perfume atmosphere for wearing NS Perfume"
-            fill
-            quality={85}
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover object-center"
-          />
-          <div
-            className="absolute inset-0 bg-linear-to-t from-ink/80 via-ink/40 to-ink/10"
-            aria-hidden
-          />
-          <div className="absolute inset-x-0 bottom-0 z-10 px-[var(--gutter)] pb-8 sm:pb-10 lg:pb-14 lg:pl-[max(var(--gutter),calc((100vw-var(--container-max))/2))] lg:pr-12">
-            <p className="text-eyebrow text-paper/80">Wear it in</p>
-            <h2 className="mt-3 max-w-[30rem] text-display-md text-balance text-paper">
-              {product.name} for rooms that hold a conversation
-            </h2>
-            <p className="mt-3 max-w-[30rem] text-body text-paper/90">
-              Built for Pakistani heat, layered fabric, and evenings that run
-              long.
-            </p>
+      {/* Story and wear: the image keeps one fixed size however long the copy is */}
+      {storyPanels.length ? (
+        <section className="border-b border-hairline bg-canvas py-14 lg:py-20">
+          <div className="container-ns grid gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-16 xl:gap-20">
+            <div className="relative aspect-video overflow-hidden rounded-2xl bg-muted lg:sticky lg:top-[calc(var(--spacing-chrome-height)+1.5rem)] lg:aspect-auto lg:h-[min(34rem,calc(100dvh-var(--spacing-chrome-height)-3rem))]">
+              <Image
+                src={siteImages.productAtmosphere}
+                alt="Citrus, dried rose petals and wood in brass bowls, the raw materials of perfume notes"
+                fill
+                loading="lazy"
+                quality={85}
+                sizes="(max-width: 1024px) 100vw, 40vw"
+                className="object-cover object-[38%_center]"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="mb-3 text-eyebrow text-taupe">Get to know it</p>
+              <h2 className="text-display-md text-balance text-ink">About {product.name}</h2>
+              <div className="mt-6">
+                <StoryTabs label={`About ${product.name}`} panels={storyPanels} />
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="px-[var(--gutter)] py-12 sm:py-14 lg:py-16 lg:pl-12 lg:pr-[max(var(--gutter),calc((100vw-var(--container-max))/2))] xl:pl-16">
-          {descriptionHtml ? (
-            <RichHtml
-              html={descriptionHtml}
-              className="mb-10 max-w-[40rem] text-body-lg text-ink/85 [&_li]:my-1 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
-            />
-          ) : null}
-          <ProductCharacterWear product={product} />
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <ProductDetailsAccordion product={product} />
 

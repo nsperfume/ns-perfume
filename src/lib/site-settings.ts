@@ -7,17 +7,21 @@ import {
   normalizeCheckoutConfig,
   type CheckoutConfig,
 } from "@/lib/checkout-config";
+import { socialLinksFrom, type SocialLink } from "@/lib/social";
 
 export type SiteSettingsData = {
   topbarText: string;
   topbarEnabled: boolean;
   checkout: CheckoutConfig;
+  /** Only the accounts the owner has entered. */
+  social: SocialLink[];
 };
 
 export const DEFAULT_SITE_SETTINGS: SiteSettingsData = {
   topbarText: defaultAnnouncement(DEFAULT_CHECKOUT_CONFIG),
   topbarEnabled: true,
   checkout: DEFAULT_CHECKOUT_CONFIG,
+  social: [],
 };
 
 /** Admin copy sometimes ends with a stray separator ("... Pakistan ·"); trim it. */
@@ -46,6 +50,7 @@ async function loadSiteSettings(): Promise<SiteSettingsData> {
           ? doc.topbarEnabled
           : DEFAULT_SITE_SETTINGS.topbarEnabled,
       checkout,
+      social: socialLinksFrom(doc.socialLinks),
     };
   } catch (e) {
     // In production, fail loudly so ISR keeps the last good page instead of

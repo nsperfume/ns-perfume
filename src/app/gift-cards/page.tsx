@@ -9,8 +9,7 @@ import { siteConfig } from "@/data/site";
 export const metadata: Metadata = {
   title: "Gift cards",
   description:
-    "Digital NS Perfume gift cards are coming soon. Until then, give the Discovery Set or a gift set, or ask our team to help you choose.",
-  alternates: { canonical: "/gift-cards" },
+    "Digital NS Perfume gift cards are coming soon. Until then, give a perfume or ask our team to help you choose.",
   // Placeholder until gift cards launch: keep it out of search results.
   robots: { index: false, follow: true },
 };
@@ -24,7 +23,7 @@ export default function GiftCardsPage() {
     <>
       <PageHero
         title={pageCopy.giftCards.title}
-        description="Digital gift cards are on the way. Until then, a Discovery Set or gift set lets them find a scent that fits their climate and wardrobe."
+        description="Digital gift cards are on the way. Until then, a small size lets them try a scent before choosing a full bottle."
         image={siteImages.giftCards}
         alt="NS Perfume gift card presentation with bottles in soft light"
         objectPosition="center 45%"
@@ -46,18 +45,12 @@ export default function GiftCardsPage() {
           <div>
             <h2 className="text-heading-sm text-ink">Gifting today</h2>
             <p className="mt-3 max-w-[38rem] text-body-lg text-taupe">
-              The Discovery Set is the easy choice when you do not know their
-              favourite yet. Six perfumes to wear for a few days each, so they
-              can settle on a full bottle later. You can add gift wrap and a
-              short note on any product page.
+              A small size is the easy choice when you do not know their
+              favourite yet. You can add gift wrap and a short note on any
+              product page.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button href="/products/discovery-set-six">
-                Shop the Discovery Set
-              </Button>
-              <Button href="/collections/gift-sets" variant="secondary">
-                Browse gift sets
-              </Button>
+              <Button href="/products">Shop all perfumes</Button>
             </div>
             <p className="mt-8 text-body text-taupe">
               Buying for a team or an occasion?{" "}

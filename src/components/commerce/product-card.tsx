@@ -86,7 +86,7 @@ export function ProductCard({
         >
           {!product.inStock ? "Sold out" : badge ? badgeLabel(badge) : product.family}
         </p>
-        <h3 className="mt-1.5 text-display-sm text-ink transition-colors duration-300 group-hover:text-brass-ink">
+        <h3 className="mt-1.5 line-clamp-2 text-display-sm text-ink transition-colors duration-300 group-hover:text-brass-ink">
           {product.name}
         </h3>
         {showDescriptor ? (

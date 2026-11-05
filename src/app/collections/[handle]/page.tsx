@@ -6,7 +6,7 @@ import { PageHero } from "@/components/layout/page-hero";
 import { StoreBreadcrumb } from "@/components/layout/store-section";
 import { JsonLd } from "@/components/seo/json-ld";
 import { siteImages } from "@/data/images";
-import { siteConfig } from "@/data/site";
+import { absoluteUrl, breadcrumbJsonLd, fitDescription, pageOpenGraph } from "@/lib/seo";
 import { getCollectionWithProducts, getCollections } from "@/lib/store-data";
 import { richTextToPlain } from "@/lib/rich-text";
 
@@ -32,6 +32,7 @@ const SEO_TITLES: Record<string, string> = {
   oriental: "Oud and amber perfumes in Pakistan",
   "eau-de-parfum": "Eau de parfum in Pakistan",
   "eau-de-toilette": "Eau de toilette in Pakistan",
+  parfum: "Parfum concentration perfumes in Pakistan",
   "wedding-season": "Wedding perfumes in Pakistan",
 };
 
@@ -48,11 +49,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const prices = data.products.flatMap((p) => p.prices.map((s) => s.price)).filter((n) => n > 0);
   const intro = richTextToPlain(data.collection.description || "").trim();
   const from = prices.length ? ` Prices from Rs ${Math.min(...prices).toLocaleString("en-US")}.` : "";
-  const description = `${intro ? `${intro.replace(/\.?$/, ".")} ` : ""}Shop ${data.products.length} perfume${data.products.length === 1 ? "" : "s"} online.${from} Cash on delivery across Pakistan.`;
+  const count = data.products.length;
+  const shop = count ? `Shop ${count} perfume${count === 1 ? "" : "s"} online.` : "";
+  const path = `/collections/${handle}`;
   return {
     title: seoTitle(handle, String(data.collection.title)),
-    description: description.slice(0, 160),
-    alternates: { canonical: `/collections/${handle}` },
+    description: fitDescription(`${intro ? `${intro.replace(/\.?$/, ".")} ` : ""}${shop}${from} Cash on delivery across Pakistan.`),
+    openGraph: pageOpenGraph(path),
+    // An empty page has nothing to rank with, so it stays out of results until it has perfumes.
+    ...(count ? { alternates: { canonical: path } } : { robots: { index: false, follow: true } }),
   };
 }
 
@@ -68,16 +73,7 @@ export default async function CollectionPage({ params }: Props) {
     { label: "Collections", href: "/collections" },
     { label: String(collection.title), href: `/collections/${handle}` },
   ];
-  const breadcrumbLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: trail.map((t, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name: t.label,
-      item: `${siteConfig.url}${t.href === "/" ? "" : t.href}`,
-    })),
-  };
+  const breadcrumbLd = breadcrumbJsonLd(trail);
   const itemListLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -86,7 +82,7 @@ export default async function CollectionPage({ params }: Props) {
     itemListElement: products.map((p, i) => ({
       "@type": "ListItem",
       position: i + 1,
-      url: `${siteConfig.url}/products/${p.handle}`,
+      url: absoluteUrl(`/products/${p.handle}`),
       name: p.name,
     })),
   };
@@ -95,10 +91,10 @@ export default async function CollectionPage({ params }: Props) {
     <>
       <JsonLd data={products.length ? [breadcrumbLd, itemListLd] : breadcrumbLd} />
       <PageHero
-        title={collection.title}
+        title={seoTitle(handle, String(collection.title))}
         description={richTextToPlain(collection.description || "")}
-        image={siteImages.collectionsHero}
-        alt={`${collection.title} collection atmosphere with fragrance bottles`}
+        image={(collection as { bannerImage?: string }).bannerImage || siteImages.collectionsHero}
+        alt={`${collection.title} perfumes at NS Perfume`}
         objectPosition="center 48%"
       />
       <section className="border-b border-hairline bg-paper">

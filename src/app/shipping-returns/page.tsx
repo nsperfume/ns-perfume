@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/seo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { describeShipping } from "@/lib/checkout-config";
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   description:
     "Delivery across Pakistan with standard and express options, unopened returns within 30 days, and damaged parcel reporting.",
   alternates: { canonical: "/shipping-returns" },
+  openGraph: pageOpenGraph("/shipping-returns"),
 };
 
 export default async function ShippingReturnsPage() {

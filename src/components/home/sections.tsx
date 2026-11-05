@@ -10,6 +10,7 @@ import {
 import type { StoreProduct } from "@/lib/mappers";
 import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
+import { siteConfig } from "@/data/site";
 import { cn } from "@/lib/cn";
 
 export type { TestimonialItem };
@@ -117,32 +118,27 @@ export function HomeHero() {
       />
       <div className="container-ns relative z-10 flex flex-1 flex-col justify-end pb-12 pt-[calc(var(--spacing-chrome-height)+1.5rem)] sm:justify-center sm:pb-16 sm:pt-[calc(var(--spacing-chrome-height)+2rem)] lg:pb-24">
         <div className="max-w-[40rem] fade-up lg:max-w-[46rem]">
-          <p className="mb-4 text-eyebrow text-paper/80 sm:mb-5">
-            Amber Noir · Eau de Parfum
-          </p>
-          <h1 className="text-display-xl text-balance text-paper">
-            Written for heat, stillness, and the hours after work
+          <h1>
+            <span className="mb-4 block text-eyebrow text-balance text-paper/80 sm:mb-5">
+              {siteConfig.name} · Long lasting perfumes in Pakistan
+            </span>
+            <span className="block text-display-xl text-balance text-paper">
+              Worn all day. Remembered long after.
+            </span>
           </h1>
           <p className="mt-5 max-w-[36rem] text-pretty text-body text-white/90 sm:mt-6 sm:text-body-lg">
-            <span className="sm:hidden">
-              Amber Noir opens with bergamot and pink pepper, then settles into
-              oud and amber that stay close through dinner.
-            </span>
-            <span className="hidden sm:inline">{pageCopy.homeHero}</span>
+            {pageCopy.homeHero}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap">
-            <Button
-              href="/products/amber-noir-edp"
-              className="w-full sm:w-auto"
-            >
-              Shop Amber Noir
+            <Button href="/products" className="w-full sm:w-auto">
+              Shop all perfumes
             </Button>
             <Button
-              href="/products"
+              href="/find-your-scent"
               variant="secondary"
               className="w-full border-paper/70 bg-transparent text-paper hover:border-brass focus-visible:ring-offset-ink sm:w-auto"
             >
-              Shop all
+              Find your scent
             </Button>
           </div>
         </div>
@@ -228,7 +224,12 @@ export const HomeTrustBanner = HomeTrustSection;
  * Equal 2×2 collection grid — stable heights, no clipped rows.
  * Desktop fills viewport content area without max-height clipping.
  */
-export function ShopByCollection() {
+export function ShopByCollection({ handles }: { handles: string[] }) {
+  // Only collections with perfumes, so a tile never opens an empty page.
+  const tiles = collectionTiles.filter((t) => handles.includes(t.href.replace("/collections/", "")));
+  if (!tiles.length) return null;
+  const threeTiles = tiles.length === 3;
+
   return (
     <section className="border-b border-hairline bg-canvas section-y">
       <div className="container-ns flex flex-col justify-center">
@@ -246,12 +247,18 @@ export function ShopByCollection() {
           }
         />
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-5">
-          {collectionTiles.map((tile) => (
+        <div className={cn("grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5", threeTiles ? "lg:grid-cols-3" : "lg:grid-cols-4")}>
+          {tiles.map((tile, i) => (
             <Link
               key={tile.href}
               href={tile.href}
-              className="group relative aspect-4/5 overflow-hidden rounded-2xl bg-muted sm:aspect-4/3 lg:aspect-3/4"
+              className={cn(
+                "group relative overflow-hidden rounded-2xl bg-muted lg:aspect-3/4",
+                // Three tiles in two columns: the last spans the row instead of leaving a hole.
+                threeTiles && i === 2
+                  ? "col-span-2 aspect-video lg:col-span-1"
+                  : "aspect-4/5 sm:aspect-4/3",
+              )}
             >
               <Image
                 src={tile.image}
@@ -282,18 +289,26 @@ export function ShopByCollection() {
   );
 }
 
-export function BestsellersSection({ products }: { products: StoreProduct[] }) {
+export function BestsellersSection({
+  products,
+  curated,
+}: {
+  products: StoreProduct[];
+  /** At least one product is marked bestseller. Until then this does not claim popularity. */
+  curated: boolean;
+}) {
   const items = products.slice(0, 8);
+  if (!items.length) return null;
   return (
     <section className="border-b border-hairline bg-muted/50 section-y">
       <div className="container-ns flex flex-col justify-center gap-0">
         <SectionLead
-          eyebrow="Most reached for"
-          title="Bestsellers"
-          description={pageCopy.bestsellers}
+          eyebrow={curated ? "Most reached for" : "The range"}
+          title={curated ? "Bestsellers" : "Our perfumes"}
+          description={curated ? pageCopy.bestsellers : pageCopy.ourPerfumes}
           action={
             <Button
-              href="/collections/bestsellers"
+              href={curated ? "/collections/bestsellers" : "/products"}
               variant="ghost"
             >
               View all
@@ -378,7 +393,7 @@ export function BrandStoryBand() {
               The house
             </p>
             <h2 className="text-display-lg max-w-[18ch] text-balance text-ink">
-              Composed like labels. Worn like daily architecture.
+              Every note on the label. Less guessing on skin.
             </h2>
             <p className="mt-5 max-w-[34rem] text-pretty text-body-lg text-taupe">
               {pageCopy.brandStory}
@@ -437,7 +452,7 @@ export function BrandStoryBand() {
 
 export function FindYourScentTeaser() {
   return (
-    <section className="relative min-h-[min(70dvh,34rem)] overflow-hidden border-b border-hairline md:min-h-[min(75dvh,38rem)]">
+    <section className="relative min-h-[min(70dvh,34rem)] overflow-hidden border-b border-hairline bg-ink md:min-h-[min(75dvh,38rem)]">
       <Image
         src={siteImages.findYourScent}
         alt="Three fragrance bottles arranged as choices for finding your scent"

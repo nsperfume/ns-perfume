@@ -4,11 +4,13 @@ import { FeaturePanel } from "@/components/commerce/feature-panel";
 import { PageHero } from "@/components/layout/page-hero";
 import { pageCopy } from "@/data/copy";
 import { siteImages } from "@/data/images";
+import { pageOpenGraph } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Our story",
-  description: pageCopy.about.description,
+  title: "About us: our story",
+  description: pageCopy.about.metaDescription,
   alternates: { canonical: "/about" },
+  openGraph: pageOpenGraph("/about"),
 };
 
 export default function AboutPage() {

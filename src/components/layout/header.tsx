@@ -24,8 +24,9 @@ import { NavDropdown } from "@/components/layout/nav-dropdown";
 import { Logo } from "@/components/brand/logo";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { whatsappUrl } from "@/lib/whatsapp";
+import { useShowNavLink } from "@/context/collections-nav";
 
-const shopColumns = [
+const shopColumns: { title: string; items: readonly { label: string; href: string }[] }[] = [
   { title: "Gender", items: shopMegaMenu.gender },
   { title: "Scent family", items: shopMegaMenu.family },
   { title: "Concentration", items: shopMegaMenu.type },
@@ -63,6 +64,10 @@ const iconBtnDesktop =
   "relative hidden h-11 w-11 cursor-pointer items-center justify-center rounded-full text-paper/85 transition-colors hover:bg-white/5 hover:text-white sm:inline-flex";
 
 export function Header() {
+  const showLink = useShowNavLink();
+  const visibleColumns = shopColumns
+    .map((col) => ({ ...col, items: col.items.filter(showLink) }))
+    .filter((col) => col.items.length);
   const { openCart, itemCount } = useCart();
   const { user } = useCustomer();
   const { count: wishCount } = useWishlist();
@@ -174,12 +179,12 @@ export function Header() {
                 { label: "All perfumes", href: "/products" },
                 { label: "All collections", href: "/collections" },
               ]}
-              columns={shopColumns}
+              columns={visibleColumns}
               panelImage={{
                 src: siteImages.navbarShop,
                 alt: "NS Perfume bottles on a styled shelf",
-                href: "/products/discovery-set-six",
-                cta: "Try six scents in the discovery set →",
+                href: "/products",
+                cta: "Browse every perfume →",
               }}
             />
             <NavDropdown label="Explore" items={exploreItems} />
@@ -260,7 +265,7 @@ export function Header() {
           <div className="px-[var(--gutter)] pb-8 pt-3">
             <nav aria-label="Mobile" className="divide-y divide-white/10">
               <div className="py-2">
-                {mobileQuickLinks.map((link) => (
+                {mobileQuickLinks.filter(showLink).map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
@@ -289,7 +294,7 @@ export function Header() {
                 </button>
                 {mobileShopOpen ? (
                   <div className="mb-3 space-y-5 border-l border-white/20 pl-4">
-                    {shopColumns.map((col) => (
+                    {visibleColumns.map((col) => (
                       <div key={col.title}>
                         <p className="mb-1 text-eyebrow text-paper/60">
                           {col.title}

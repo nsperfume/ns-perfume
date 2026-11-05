@@ -525,10 +525,10 @@ export function CheckoutClient() {
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas px-6 text-center">
         <p className="font-sans text-lg text-ink">Your cart is empty</p>
         <Link
-          href="/collections/bestsellers"
+          href="/products"
           className="font-sans text-sm font-semibold text-brass-ink hover:underline"
         >
-          Shop bestsellers
+          Shop all perfumes
         </Link>
       </div>
     );

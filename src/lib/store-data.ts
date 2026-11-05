@@ -7,8 +7,10 @@ import { TestimonialModel } from "@/models/Testimonial";
 import { ReviewModel } from "@/models/Review";
 import { JournalModel } from "@/models/Journal";
 import { products as fallbackProducts } from "@/data/products";
-import { collections as fallbackCollections } from "@/data/collections";
-import { productsInCollectionQuery } from "@/lib/collection-query";
+import { collections as standardCollections } from "@/data/collections";
+import { isInCollection, productsInCollectionQuery } from "@/lib/collection-query";
+import { getSiteSettings } from "@/lib/site-settings";
+import { SiteSettingsModel } from "@/models/SiteSettings";
 import { safeRichText } from "@/lib/rich-text";
 
 /**
@@ -87,9 +89,41 @@ export async function getBestsellers(): Promise<StoreProduct[]> {
   return all.filter((p) => p.badges.includes("bestseller"));
 }
 
+let collectionsChecked = false;
+
+/**
+ * First run on a new database: create the standard collections, so every menu link
+ * has a page and the owner can edit them in admin. A flag in settings makes this a
+ * one-time step, so deleting a collection later does not bring it back. Build workers
+ * can run this together: the unique handle index stops duplicates, and each one waits
+ * until the collections exist before it renders a page.
+ */
+async function ensureStandardCollections() {
+  if (collectionsChecked) return;
+  await getSiteSettings(); // creates the settings record the flag lives on
+  const settings = await SiteSettingsModel.findOne({ key: "main" })
+    .select("collectionsSeeded")
+    .lean<{ collectionsSeeded?: boolean }>();
+  if (!settings?.collectionsSeeded) {
+    await CollectionModel.init();
+    const existing = new Set<string>(await CollectionModel.distinct("handle"));
+    const missing = standardCollections
+      .map((c, sortOrder) => ({ ...c, sortOrder, status: "active" }))
+      .filter((c) => !existing.has(c.handle));
+    if (missing.length) {
+      await CollectionModel.insertMany(missing, { ordered: false }).catch((e: { code?: number }) => {
+        if (e.code !== 11000) throw e;
+      });
+    }
+    await SiteSettingsModel.updateOne({ key: "main" }, { $set: { collectionsSeeded: true } });
+  }
+  collectionsChecked = true;
+}
+
 export async function getCollections() {
   try {
     await connectDB();
+    await ensureStandardCollections();
     const docs = await CollectionModel.find({ status: "active" })
       .sort({ sortOrder: 1 })
       .lean();
@@ -97,7 +131,7 @@ export async function getCollections() {
   } catch (e) {
     dbFailed("getCollections", e);
   }
-  return fallbackCollections.map((c) => ({
+  return standardCollections.map((c) => ({
     ...c,
     status: "active",
     productHandles: [],
@@ -105,9 +139,18 @@ export async function getCollections() {
   }));
 }
 
+/** Collections with at least one perfume: menus, the sitemap and search engines only see these. */
+export const getActiveCollectionHandles = cache(async (): Promise<string[]> => {
+  const [collections, products] = await Promise.all([getCollections(), getStoreProducts()]);
+  return collections
+    .filter((c) => products.some((p) => isInCollection(p, c)))
+    .map((c) => String(c.handle));
+});
+
 export const getCollectionWithProducts = cache(async function getCollectionWithProducts(handle: string) {
   try {
     await connectDB();
+    await ensureStandardCollections();
     const collection = await CollectionModel.findOne({
       handle,
       status: "active",
@@ -124,7 +167,7 @@ export const getCollectionWithProducts = cache(async function getCollectionWithP
     dbFailed("getCollectionWithProducts", e);
   }
 
-  const fb = fallbackCollections.find((c) => c.handle === handle);
+  const fb = standardCollections.find((c) => c.handle === handle);
   if (!fb) return null;
   const all = await getStoreProducts();
   let products = all;

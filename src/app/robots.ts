@@ -6,7 +6,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/api/", "/account", "/cart", "/checkout", "/wishlist"],
+      // Cart, account and similar pages carry noindex. They are left crawlable on purpose:
+      // Google cannot read a noindex on a page it is told not to open.
+      disallow: ["/admin", "/api/"],
     },
     sitemap: `${siteConfig.url}/sitemap.xml`,
   };

@@ -27,6 +27,7 @@ import {
 import { useUnsavedChangesGuard } from "@/components/admin/unsaved-changes";
 import { cn } from "@/lib/cn";
 import { sanitizeRichHtml, toRichHtml } from "@/lib/rich-text";
+import { productDescription, productTitle, titleText } from "@/lib/seo";
 
 type Props = {
   initial: StoreProduct | null;
@@ -206,6 +207,8 @@ type FormState = {
   relatedHandles: string[];
   inStock: boolean;
   status: string;
+  seoTitle: string;
+  seoDescription: string;
 };
 
 const EMPTY: FormState = {
@@ -234,6 +237,8 @@ const EMPTY: FormState = {
   relatedHandles: [],
   inStock: true,
   status: "draft",
+  seoTitle: "",
+  seoDescription: "",
 };
 
 function initialGallery(product: StoreProduct) {
@@ -271,6 +276,8 @@ function fromProduct(p: StoreProduct): FormState {
     relatedHandles: [...p.relatedHandles],
     inStock: p.inStock,
     status: p.status || "active",
+    seoTitle: p.seoTitle || "",
+    seoDescription: p.seoDescription || "",
   };
 }
 
@@ -483,7 +490,7 @@ function ChipsField({
               }
             }}
             onBlur={() => add(draft)}
-            placeholder={values.length ? "Add another" : placeholder}
+            placeholder={values.length ? "Add another (Enter or comma)" : placeholder}
             className="min-w-36 flex-1 bg-transparent px-1.5 py-1 text-base text-admin-ink outline-none placeholder:text-admin-faint"
           />
         ) : (
@@ -753,6 +760,8 @@ export function ProductForm({
         relatedHandles: form.relatedHandles,
         inStock: form.inStock,
         status: form.status,
+        seoTitle: form.seoTitle.trim(),
+        seoDescription: form.seoDescription.trim(),
       };
 
       const res = await fetch(
@@ -830,6 +839,20 @@ export function ProductForm({
 
   const err = v.errors;
   const publishNeedsImage = form.status === "active" && form.gallery.length === 0;
+  const autoSeoTitle = titleText(
+    productTitle({
+      name: form.name.trim() || "Product name",
+      concentration: form.concentration,
+      gender: form.gender,
+    }),
+  );
+  const autoSeoDescription = productDescription({
+    name: form.name,
+    concentration: form.concentration,
+    gender: form.gender,
+    descriptor: form.descriptor,
+    prices: form.prices,
+  });
 
   return (
     <form ref={formRef} onSubmit={save} noValidate className="w-full">
@@ -1094,7 +1117,7 @@ export function ProductForm({
               name="topNotes"
               values={form.topNotes}
               onChange={(next) => setField("topNotes", next)}
-              placeholder="Type a note and press Enter"
+              placeholder="Type a note, then Enter or comma"
               max={MAX_NOTES}
               maxLength={60}
             />
@@ -1103,7 +1126,7 @@ export function ProductForm({
               name="heartNotes"
               values={form.heartNotes}
               onChange={(next) => setField("heartNotes", next)}
-              placeholder="Type a note and press Enter"
+              placeholder="Type a note, then Enter or comma"
               max={MAX_NOTES}
               maxLength={60}
             />
@@ -1112,7 +1135,7 @@ export function ProductForm({
               name="baseNotes"
               values={form.baseNotes}
               onChange={(next) => setField("baseNotes", next)}
-              placeholder="Type a note and press Enter"
+              placeholder="Type a note, then Enter or comma"
               max={MAX_NOTES}
               maxLength={60}
             />
@@ -1133,6 +1156,59 @@ export function ProductForm({
               placeholder="Two sprays on pulse points for evening."
               onChange={(howToWear) => setField("howToWear", howToWear)}
             />
+          </AdminFormSection>
+
+          <AdminFormSection
+            title="Search engine listing"
+            description="How this product can look on Google. Leave these empty to use the automatic text shown below."
+          >
+            <div>
+              <div className="flex items-baseline justify-between gap-3">
+                <AdminFieldLabel htmlFor="product-seo-title">Search title</AdminFieldLabel>
+                <span className="font-sans text-[0.8125rem] tabular-nums text-admin-muted">
+                  {form.seoTitle.length}/70
+                </span>
+              </div>
+              <input
+                id="product-seo-title"
+                name="seoTitle"
+                className={adminFieldClass}
+                value={form.seoTitle}
+                maxLength={70}
+                placeholder={autoSeoTitle}
+                onChange={(e) => setField("seoTitle", e.target.value)}
+              />
+            </div>
+            <div>
+              <div className="flex items-baseline justify-between gap-3">
+                <AdminFieldLabel htmlFor="product-seo-description">Search description</AdminFieldLabel>
+                <span className="font-sans text-[0.8125rem] tabular-nums text-admin-muted">
+                  {form.seoDescription.length}/170
+                </span>
+              </div>
+              <textarea
+                id="product-seo-description"
+                name="seoDescription"
+                rows={3}
+                className={adminFieldClass}
+                value={form.seoDescription}
+                maxLength={170}
+                placeholder={autoSeoDescription}
+                onChange={(e) => setField("seoDescription", e.target.value)}
+              />
+            </div>
+            <div className="rounded-md border border-admin-line bg-admin-soft-2 px-4 py-3">
+              <p className="mb-2 text-[0.8125rem] font-semibold text-admin-muted">Preview</p>
+              <p className="break-all text-[0.8125rem] text-admin-muted">
+                nsperfume.pk/products/{form.handle || "web-address"}
+              </p>
+              <p className="mt-0.5 text-base font-medium text-admin-accent">
+                {form.seoTitle.trim() || autoSeoTitle}
+              </p>
+              <p className="mt-1 text-[0.875rem] leading-snug text-admin-ink">
+                {form.seoDescription.trim() || autoSeoDescription}
+              </p>
+            </div>
           </AdminFormSection>
         </div>
 

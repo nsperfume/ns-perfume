@@ -8,6 +8,8 @@ import { MoonIcon, SunIcon } from "@animateicons/react/lucide";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { CouponManager } from "@/components/admin/coupon-manager";
 import { CheckoutSettings } from "@/components/admin/checkout-settings";
+import { SocialSettings } from "@/components/admin/social-settings";
+import type { SocialLink } from "@/lib/social";
 import type { CheckoutConfig } from "@/lib/checkout-config";
 import {
   AdminCard,
@@ -46,6 +48,7 @@ const announcementSchema = z.object({
 
 const SECTIONS = [
   { id: "announcement", label: "Announcement bar" },
+  { id: "social", label: "Social media" },
   { id: "charges", label: "Shipping and charges" },
   { id: "coupons", label: "Coupons" },
   { id: "currency", label: "Currency" },
@@ -170,9 +173,12 @@ export default function AdminSettingsPage() {
   const [checkout, setCheckout] = useState<CheckoutConfig | null>(null);
   const [chargesDirty, setChargesDirty] = useState(false);
   const onChargesDirty = useCallback((d: boolean) => setChargesDirty(d), []);
+  const [social, setSocial] = useState<SocialLink[] | null>(null);
+  const [socialDirty, setSocialDirty] = useState(false);
+  const onSocialDirty = useCallback((d: boolean) => setSocialDirty(d), []);
 
   const leaveGuard = useUnsavedChangesGuard(
-    (announcementDirty && !savingTopbar) || chargesDirty,
+    (announcementDirty && !savingTopbar) || chargesDirty || socialDirty,
   );
 
   useEffect(() => {
@@ -198,6 +204,7 @@ export default function AdminSettingsPage() {
           setAnnouncement(next);
           setSavedAnnouncement(next);
           if (j.data.checkout) setCheckout(j.data.checkout);
+          setSocial(j.data.social ?? []);
         }
       })
       .finally(() => setAnnouncementLoaded(true));
@@ -353,6 +360,10 @@ export default function AdminSettingsPage() {
                 </div>
               </form>
             </AdminCard>
+          </Section>
+
+          <Section id="social">
+            <SocialSettings initial={social} onDirtyChange={onSocialDirty} />
           </Section>
 
           <Section id="charges">

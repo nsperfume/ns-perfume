@@ -139,8 +139,8 @@ export function WishlistClient({ description }: { description: string }) {
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button href="/products">Shop all</Button>
-                <Button href="/collections/bestsellers" variant="secondary">
-                  Bestsellers
+                <Button href="/find-your-scent" variant="secondary">
+                  Find your scent
                 </Button>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/seo";
 import { PageHero } from "@/components/layout/page-hero";
 import { FindYourScentGuide } from "@/components/commerce/find-your-scent-guide";
 import { pageCopy } from "@/data/copy";
@@ -6,13 +7,14 @@ import { siteImages } from "@/data/images";
 
 /** Plain copy kept here until src/data/copy.ts drops "No AI ranking" and similar wording. */
 const HERO_DESCRIPTION =
-  "Five short questions. Three perfumes picked for who will wear them, the scent you like and how long it should last.";
+  "Five short questions. Perfumes picked for who will wear them, the scent you like and how long it should last.";
 
 export const metadata: Metadata = {
-  title: "Find your scent",
+  title: "Perfume finder quiz: find your scent",
   description:
-    "Answer five short questions and get three NS Perfume picks matched to who will wear it, the scent you like, the trail and how long it lasts.",
+    "Answer five short questions and get NS Perfume picks matched to who will wear it, the scent you like, the trail and how long it lasts.",
   alternates: { canonical: "/find-your-scent" },
+  openGraph: pageOpenGraph("/find-your-scent"),
 };
 
 export default function FindYourScentPage() {
